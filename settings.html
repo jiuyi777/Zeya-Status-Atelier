@@ -1,0 +1,117 @@
+<div id="status-atelier-settings" class="status-atelier-settings inline-drawer">
+    <div class="inline-drawer-toggle inline-drawer-header">
+        <b>状态工坊 · Status Atelier</b>
+        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+    </div>
+    <div class="inline-drawer-content">
+        <p class="status-atelier-settings-intro">把状态数据、显示文字和排版分开管理。修改后会立即重绘当前聊天，但不会改写聊天原文。</p>
+
+        <label class="checkbox_label">
+            <input id="status-atelier-enabled" type="checkbox">
+            <span>启用状态栏渲染</span>
+        </label>
+        <label class="checkbox_label">
+            <input id="status-atelier-prompt-enabled" type="checkbox">
+            <span>自动向模型注入状态栏格式</span>
+        </label>
+        <small class="status-atelier-hint">如果角色世界书已经要求输出状态栏，请关闭“自动注入”，避免出现两份重复指令。</small>
+
+        <div class="status-atelier-settings-grid">
+            <label>快速预设
+                <select id="status-atelier-preset" class="text_pole">
+                    <option value="universal">通用信息卡</option>
+                    <option value="aqua">水色状态栏</option>
+                    <option value="ticket">蓝格票据</option>
+                    <option value="custom">自定义</option>
+                </select>
+            </label>
+            <label>排版
+                <select id="status-atelier-layout" class="text_pole">
+                    <option value="grid">自动网格</option>
+                    <option value="stack">纵向票据</option>
+                    <option value="compact">紧凑横条</option>
+                </select>
+            </label>
+            <label>配色
+                <select id="status-atelier-palette" class="text_pole">
+                    <option value="aqua">水色玻璃</option>
+                    <option value="night">深蓝夜色</option>
+                    <option value="cream">奶油纸张</option>
+                    <option value="custom">自定义颜色</option>
+                </select>
+            </label>
+            <label>长文本区
+                <select id="status-atelier-collapse-long" class="text_pole">
+                    <option value="false">直接展开</option>
+                    <option value="true">默认折叠</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="status-atelier-settings-grid">
+            <label>主标题
+                <input id="status-atelier-title" class="text_pole" type="text" maxlength="80">
+            </label>
+            <label>副标题
+                <input id="status-atelier-subtitle" class="text_pole" type="text" maxlength="120">
+            </label>
+        </div>
+
+        <label>字段格式（每行：内部名称 | 显示标签…）
+            <textarea id="status-atelier-schema" class="text_pole" rows="7" spellcheck="false"></textarea>
+        </label>
+        <label>区块标题（每行：内部名称=显示标题）
+            <textarea id="status-atelier-aliases" class="text_pole" rows="6" spellcheck="false"></textarea>
+        </label>
+
+        <div class="status-atelier-settings-grid status-atelier-color-grid">
+            <label>强调色
+                <input id="status-atelier-accent" type="color">
+            </label>
+            <label>底色
+                <input id="status-atelier-surface" type="color">
+            </label>
+            <label>文字
+                <input id="status-atelier-text" type="color">
+            </label>
+            <label>次要文字
+                <input id="status-atelier-muted" type="color">
+            </label>
+        </div>
+
+        <div class="status-atelier-settings-grid">
+            <label>最大宽度（px）
+                <input id="status-atelier-max-width" class="text_pole" type="number" min="260" max="900" step="10">
+            </label>
+            <label>字号（px）
+                <input id="status-atelier-font-size" class="text_pole" type="number" min="11" max="20" step="1">
+            </label>
+            <label>圆角（px）
+                <input id="status-atelier-radius" class="text_pole" type="number" min="0" max="36" step="1">
+            </label>
+            <label>内边距（px）
+                <input id="status-atelier-density" class="text_pole" type="number" min="6" max="24" step="1">
+            </label>
+        </div>
+
+        <label class="checkbox_label">
+            <input id="status-atelier-show-opening" type="checkbox">
+            <span>在最新状态栏显示开场白标题和简介入口</span>
+        </label>
+
+        <div class="status-atelier-setting-actions">
+            <button id="status-atelier-open-greetings" type="button" class="menu_button">开场白管理</button>
+            <button id="status-atelier-detect-schema" type="button" class="menu_button">读取当前格式</button>
+            <button id="status-atelier-copy-prompt" type="button" class="menu_button">复制输出指令</button>
+            <button id="status-atelier-export" type="button" class="menu_button">导出配置</button>
+            <button id="status-atelier-import" type="button" class="menu_button">导入配置</button>
+            <input id="status-atelier-import-file" type="file" accept="application/json,.json" hidden>
+            <button id="status-atelier-reset" type="button" class="menu_button">恢复默认</button>
+        </div>
+
+        <div class="status-atelier-preview-wrap">
+            <small>实时预览</small>
+            <div id="status-atelier-preview"></div>
+        </div>
+    </div>
+</div>

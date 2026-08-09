@@ -1,0 +1,486 @@
+:root {
+    --status-atelier-ui-accent: #6ec7d9;
+}
+
+.status-atelier-settings,
+.status-atelier-settings * {
+    box-sizing: border-box;
+}
+
+.status-atelier-settings-intro,
+.status-atelier-hint {
+    color: var(--SmartThemeBodyColor);
+    opacity: 0.78;
+    line-height: 1.6;
+}
+
+.status-atelier-hint {
+    display: block;
+    margin: 0 0 12px 26px;
+}
+
+.status-atelier-settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.status-atelier-settings label:not(.checkbox_label) {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.status-atelier-settings textarea {
+    width: 100%;
+    resize: vertical;
+    font-family: ui-monospace, "Cascadia Code", "Microsoft YaHei", monospace;
+    line-height: 1.55;
+}
+
+.status-atelier-color-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.status-atelier-color-grid input[type="color"] {
+    width: 100%;
+    min-height: 38px;
+    padding: 2px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 8px;
+    background: transparent;
+}
+
+.status-atelier-setting-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 14px 0;
+}
+
+.status-atelier-preview-wrap {
+    padding: 10px;
+    border: 1px dashed color-mix(in srgb, var(--SmartThemeBorderColor) 75%, transparent);
+    border-radius: 12px;
+}
+
+.status-atelier-panel,
+.status-atelier-panel * {
+    box-sizing: border-box;
+}
+
+.status-atelier-panel {
+    --sa-accent: #6ec7d9;
+    --sa-surface: #102631;
+    --sa-text: #e9f8fb;
+    --sa-muted: #9dbdc5;
+    --sa-radius: 18px;
+    --sa-density: 14px;
+    --sa-font-size: 13px;
+    width: min(100%, var(--sa-max-width, 560px));
+    max-width: 100%;
+    margin: 16px auto 4px;
+    color: var(--sa-text);
+    font-family: inherit;
+    font-size: var(--sa-font-size);
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.status-atelier-shell {
+    position: relative;
+    overflow: hidden;
+    padding: var(--sa-density);
+    border: 1px solid color-mix(in srgb, var(--sa-accent) 42%, transparent);
+    border-radius: var(--sa-radius);
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--sa-accent) 11%, transparent), transparent 52%),
+        color-mix(in srgb, var(--sa-surface) 94%, transparent);
+    box-shadow: 0 12px 34px color-mix(in srgb, #000 28%, transparent);
+    backdrop-filter: blur(12px);
+}
+
+.status-atelier-shell::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+        linear-gradient(color-mix(in srgb, var(--sa-accent) 7%, transparent) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--sa-accent) 7%, transparent) 1px, transparent 1px);
+    background-size: 18px 18px;
+    mask-image: linear-gradient(to bottom, #000, transparent 72%);
+}
+
+.status-atelier-header,
+.status-atelier-grid,
+.status-atelier-opening-strip {
+    position: relative;
+    z-index: 1;
+}
+
+.status-atelier-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 2px 2px 11px;
+    border-bottom: 1px solid color-mix(in srgb, var(--sa-accent) 26%, transparent);
+}
+
+.status-atelier-title {
+    margin: 0;
+    color: var(--sa-text);
+    font-size: calc(var(--sa-font-size) * 1.23);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+}
+
+.status-atelier-subtitle {
+    color: var(--sa-muted);
+    font-size: calc(var(--sa-font-size) * 0.76);
+    letter-spacing: 0.12em;
+    text-align: right;
+}
+
+.status-atelier-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 168px), 1fr));
+    gap: 9px;
+    margin-top: 10px;
+}
+
+.status-atelier-panel[data-layout="stack"] .status-atelier-grid {
+    grid-template-columns: 1fr;
+}
+
+.status-atelier-panel[data-layout="compact"] .status-atelier-grid {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.status-atelier-panel[data-layout="compact"] .status-atelier-section {
+    flex: 1 1 145px;
+}
+
+.status-atelier-section {
+    min-width: 0;
+    padding: calc(var(--sa-density) * 0.72);
+    border: 1px solid color-mix(in srgb, var(--sa-accent) 21%, transparent);
+    border-radius: max(8px, calc(var(--sa-radius) * 0.64));
+    background: color-mix(in srgb, var(--sa-surface) 78%, transparent);
+}
+
+details.status-atelier-section {
+    padding: 0;
+}
+
+details.status-atelier-section > summary {
+    padding: calc(var(--sa-density) * 0.72);
+    cursor: pointer;
+    list-style: none;
+}
+
+details.status-atelier-section > summary::-webkit-details-marker {
+    display: none;
+}
+
+details.status-atelier-section .status-atelier-fields {
+    padding: 0 calc(var(--sa-density) * 0.72) calc(var(--sa-density) * 0.72);
+}
+
+.status-atelier-section-heading {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0 0 7px;
+    color: var(--sa-muted);
+    font-size: calc(var(--sa-font-size) * 0.82);
+    font-weight: 650;
+    letter-spacing: 0.12em;
+}
+
+summary.status-atelier-section-heading {
+    margin: 0;
+}
+
+.status-atelier-section-icon {
+    color: var(--sa-accent);
+    font-size: 1.05em;
+}
+
+.status-atelier-fields {
+    display: grid;
+    gap: 6px;
+}
+
+.status-atelier-field {
+    display: grid;
+    grid-template-columns: minmax(58px, auto) minmax(0, 1fr);
+    gap: 8px;
+    align-items: baseline;
+}
+
+.status-atelier-field-label {
+    color: var(--sa-muted);
+    font-size: calc(var(--sa-font-size) * 0.8);
+}
+
+.status-atelier-field-value {
+    min-width: 0;
+    color: var(--sa-text);
+    white-space: pre-wrap;
+}
+
+.status-atelier-meter {
+    grid-column: 1 / -1;
+    height: 7px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--sa-accent) 16%, transparent);
+}
+
+.status-atelier-meter > span {
+    display: block;
+    width: var(--sa-meter, 0%);
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--sa-accent) 68%, #fff), var(--sa-accent));
+    transition: width 0.45s ease;
+}
+
+.status-atelier-opening-strip {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 10px;
+    align-items: center;
+    margin-top: 10px;
+    padding: 10px 11px;
+    border-radius: max(8px, calc(var(--sa-radius) * 0.62));
+    background: color-mix(in srgb, var(--sa-accent) 10%, var(--sa-surface));
+}
+
+.status-atelier-opening-title {
+    color: var(--sa-text);
+    font-weight: 650;
+}
+
+.status-atelier-opening-summary {
+    grid-column: 1;
+    color: var(--sa-muted);
+    font-size: calc(var(--sa-font-size) * 0.86);
+}
+
+.status-atelier-opening-button {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: stretch;
+    min-width: 42px;
+    min-height: 36px;
+    border: 1px solid color-mix(in srgb, var(--sa-accent) 42%, transparent);
+    border-radius: 10px;
+    color: var(--sa-text);
+    background: color-mix(in srgb, var(--sa-accent) 16%, transparent);
+    cursor: pointer;
+}
+
+.status-atelier-opening-button:hover,
+.status-atelier-opening-button:focus-visible {
+    border-color: var(--sa-accent);
+    outline: 2px solid color-mix(in srgb, var(--sa-accent) 45%, transparent);
+    outline-offset: 2px;
+}
+
+#status-atelier-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10050;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+}
+
+#status-atelier-modal.status-atelier-modal-open {
+    display: flex;
+}
+
+.status-atelier-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 10, 14, 0.76);
+    backdrop-filter: blur(6px);
+}
+
+.status-atelier-dialog {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: min(760px, 100%);
+    max-height: min(86dvh, 860px);
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--status-atelier-ui-accent) 48%, var(--SmartThemeBorderColor));
+    border-radius: 18px;
+    color: var(--SmartThemeBodyColor);
+    background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 94%, #102631);
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
+}
+
+.status-atelier-dialog-header,
+.status-atelier-dialog-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 13px 15px;
+    border-bottom: 1px solid var(--SmartThemeBorderColor);
+}
+
+.status-atelier-dialog-footer {
+    border-top: 1px solid var(--SmartThemeBorderColor);
+    border-bottom: 0;
+}
+
+.status-atelier-dialog-header h3 {
+    margin: 0;
+}
+
+.status-atelier-dialog-body {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 14px;
+}
+
+.status-atelier-dialog-note {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border-left: 3px solid var(--status-atelier-ui-accent);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--status-atelier-ui-accent) 9%, transparent);
+    line-height: 1.55;
+}
+
+.status-atelier-greeting-list {
+    display: grid;
+    gap: 11px;
+}
+
+.status-atelier-greeting-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 9px 12px;
+    padding: 12px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 88%, transparent);
+}
+
+.status-atelier-greeting-card[data-current="true"] {
+    border-color: var(--status-atelier-ui-accent);
+    box-shadow: inset 3px 0 var(--status-atelier-ui-accent);
+}
+
+.status-atelier-greeting-card label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.status-atelier-greeting-card textarea {
+    min-height: 74px;
+    resize: vertical;
+}
+
+.status-atelier-greeting-fields {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+
+.status-atelier-greeting-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.status-atelier-greeting-preview {
+    margin: 0;
+    color: var(--SmartThemeBodyColor);
+    opacity: 0.72;
+    font-size: 0.88em;
+    line-height: 1.5;
+}
+
+.status-atelier-current-badge {
+    align-self: flex-start;
+    padding: 3px 8px;
+    border-radius: 999px;
+    color: #071216;
+    background: var(--status-atelier-ui-accent);
+    font-size: 0.78em;
+    font-weight: 700;
+}
+
+.status-atelier-empty {
+    padding: 22px;
+    text-align: center;
+    opacity: 0.75;
+}
+
+@media (max-width: 700px) {
+    .status-atelier-settings-grid,
+    .status-atelier-color-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .status-atelier-panel {
+        margin-inline: auto;
+    }
+
+    .status-atelier-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .status-atelier-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .status-atelier-subtitle {
+        text-align: left;
+    }
+
+    #status-atelier-modal {
+        align-items: flex-end;
+        padding: 8px;
+    }
+
+    .status-atelier-dialog {
+        max-height: 92dvh;
+        border-radius: 16px 16px 10px 10px;
+    }
+
+    .status-atelier-greeting-card {
+        grid-template-columns: 1fr;
+    }
+
+    .status-atelier-greeting-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .status-atelier-setting-actions .menu_button,
+    .status-atelier-greeting-actions .menu_button,
+    .status-atelier-dialog-footer .menu_button {
+        min-height: 42px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .status-atelier-meter > span {
+        transition: none;
+    }
+}
