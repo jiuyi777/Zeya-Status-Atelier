@@ -1,13 +1,13 @@
 {
-  "display_name": "状态工坊 · Status Atelier",
+  "display_name": "Zeya · 正则状态工坊",
   "loading_order": 115,
   "requires": [],
   "optional": [],
   "js": "index.js",
   "css": "style.css",
-  "author": "凡人歌",
-  "version": "0.1.0",
-  "description": "可视化编辑通用状态栏的文字、字段与排版，并管理角色主开场白、备用开场白的简介和快捷跳转。",
+  "author": "Zeya",
+  "version": "0.3.0",
+  "description": "生成由 AI 动态填写的多页状态栏与世界书规则，并制作可自由增删目录、换字体和配色的开场白跳转主页。",
   "minimum_client_version": "1.14.0",
   "auto_update": false
 }
