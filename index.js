@@ -424,7 +424,10 @@ function renderMessage(messageId, includeOpening) {
     }
 
     const extracted = extractStatusBlock(message.mes);
-    const sections = extracted ? parseStatusSections(extracted.body) : [];
+    const displaySource = typeof message.extra?.display_text === 'string' ? message.extra.display_text : '';
+    const displayExtracted = displaySource ? extractStatusBlock(displaySource) : null;
+    const statusForDisplay = displayExtracted || extracted;
+    const sections = statusForDisplay ? parseStatusSections(statusForDisplay.body) : [];
     if (!extracted || !sections.length) {
         restoreMessage(messageId, message);
         return;
@@ -433,7 +436,8 @@ function renderMessage(messageId, includeOpening) {
     const stored = settings();
     const opening = includeOpening ? greetingData() : null;
     const signature = stableHash(JSON.stringify({
-        raw: extracted.raw,
+        raw: statusForDisplay.raw,
+        displaySource,
         title: stored.title,
         subtitle: stored.subtitle,
         schema: stored.schema,
@@ -450,10 +454,12 @@ function renderMessage(messageId, includeOpening) {
         return;
     }
 
+    const bodyForDisplay = displayExtracted?.messageWithoutStatus
+        ?? (displaySource || extracted.messageWithoutStatus);
     const displayMessage = {
         ...message,
         mes: extracted.messageWithoutStatus,
-        extra: { ...(message.extra || {}), display_text: extracted.messageWithoutStatus },
+        extra: { ...(message.extra || {}), display_text: bodyForDisplay },
     };
     ctx.updateMessageBlock?.(messageId, displayMessage);
     const refreshedText = document.querySelector(`#chat .mes[mesid="${messageId}"] .mes_text`);
