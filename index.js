@@ -6,14 +6,14 @@ import {
     makePreviewRecords,
     normalizeRule,
     parseFields,
-} from './rule-generator.js?v=0.5.3';
+} from './rule-generator.js?v=0.5.4';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.5.3';
+} from './opening-home-generator.js?v=0.5.4';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -24,7 +24,7 @@ import { loadWorldInfo, world_names } from '../../../world-info.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.5.3';
+const VERSION = '0.5.4';
 const OPENING_HOME_SCHEMA_VERSION = 1;
 
 const HOME_TEMPLATES = Object.freeze([
@@ -1063,27 +1063,17 @@ function parseSummaryResponse(value, fallbackTitle, fallbackSummary) {
     }
 }
 
-async function generateWithCurrentPreset(prompt, responseLength = 4096) {
+async function generateWithCurrentPreset(prompt) {
     const generator = context()?.generateQuietPrompt;
     if (typeof generator !== 'function') throw new Error('当前酒馆版本没有提供携带当前预设的后台生成接口');
-    const lengths = [Math.max(4096, responseLength), Math.max(6144, responseLength)];
-    let lastError;
-    for (const length of lengths) {
-        try {
-            const response = await generator({
-                quietPrompt: prompt,
-                quietToLoud: false,
-                skipWIAN: false,
-                responseLength: length,
-                removeReasoning: true,
-            });
-            if (String(response || '').trim()) return response;
-            lastError = new Error('模型返回了空正文');
-        } catch (error) {
-            lastError = error;
-        }
-    }
-    throw new Error(`酒馆已经发出请求，但模型没有给出可用正文${lastError?.message ? `：${lastError.message}` : ''}。3.1 推理模型请把最大回复长度调高后重试`);
+    const response = await generator({
+        quietPrompt: prompt,
+        quietToLoud: false,
+        skipWIAN: false,
+        removeReasoning: true,
+    });
+    if (String(response || '').trim()) return response;
+    throw new Error('酒馆已经发出请求，但模型没有给出可用正文；请检查当前预设的最大回复长度与推理设置');
 }
 
 function externalApiBases(value) {
@@ -1101,7 +1091,7 @@ async function requestExternalSummary(prompt, maxTokens) {
         const response = await fetch(`${base}/chat/completions`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...(config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {}) },
-            body: JSON.stringify({ model: config.model, messages: [{ role: 'user', content: prompt }], temperature: 0.3, max_tokens: Math.max(4096, maxTokens) }),
+            body: JSON.stringify({ model: config.model, messages: [{ role: 'user', content: prompt }], temperature: 0.3, max_tokens: Math.max(32768, maxTokens) }),
         });
         if (response.ok) {
             const responseData = await response.json();
@@ -1120,7 +1110,7 @@ async function summarizeGreeting(raw, entry, index) {
     if (config.source === 'manual') return { title: entry.title, summary: entry.summary };
     const prompt = `请为下面的角色卡开场白生成目录信息。只输出JSON：{"title":"10字以内标题","summary":"40字以内简介"}。不要剧透，不要Markdown。\n\n开场白：\n${String(raw).slice(0, 6000)}`;
     if (config.source === 'main') {
-        const response = await generateWithCurrentPreset(prompt, 4096);
+        const response = await generateWithCurrentPreset(prompt);
         return parseSummaryResponse(response, entry.title || `开场白 ${index + 1}`, entry.summary);
     }
     return parseSummaryResponse(await requestExternalSummary(prompt, 4096), entry.title || `开场白 ${index + 1}`, entry.summary);
@@ -1154,7 +1144,7 @@ async function summarizeGreetingsBatch(entries) {
     const prompt = `你正在为当前角色卡制作开场白目录。请结合当前角色卡设定、当前聊天上下文和当前预设，为下面每条额外问候语同时生成标题与简介。\n\n严格只输出 JSON，不要 Markdown：\n{"entries":[{"index":1,"title":"10字以内标题","summary":"40字以内简介"}]}\n\n要求：每个输入编号都必须返回；不要剧透；标题不要写“开场白1”这类占位词。\n\n${source}`;
     let responseText = '';
     if (config.source === 'main') {
-        responseText = await generateWithCurrentPreset(prompt, Math.max(4096, 512 + requested.length * 220));
+        responseText = await generateWithCurrentPreset(prompt);
     } else {
         responseText = await requestExternalSummary(prompt, Math.max(4096, 512 + requested.length * 220));
     }
