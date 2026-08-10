@@ -6,14 +6,14 @@ import {
     makePreviewRecords,
     normalizeRule,
     parseFields,
-} from './rule-generator.js?v=0.5.4';
+} from './rule-generator.js?v=0.5.5';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.5.4';
+} from './opening-home-generator.js?v=0.5.5';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -24,7 +24,7 @@ import { loadWorldInfo, world_names } from '../../../world-info.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.5.4';
+const VERSION = '0.5.5';
 const OPENING_HOME_SCHEMA_VERSION = 1;
 
 const HOME_TEMPLATES = Object.freeze([
@@ -1091,7 +1091,7 @@ async function requestExternalSummary(prompt, maxTokens) {
         const response = await fetch(`${base}/chat/completions`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...(config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {}) },
-            body: JSON.stringify({ model: config.model, messages: [{ role: 'user', content: prompt }], temperature: 0.3, max_tokens: Math.max(32768, maxTokens) }),
+            body: JSON.stringify({ model: config.model, messages: [{ role: 'user', content: prompt }], temperature: 0.3, max_tokens: Math.max(4096, maxTokens) }),
         });
         if (response.ok) {
             const responseData = await response.json();
@@ -1108,7 +1108,7 @@ async function requestExternalSummary(prompt, maxTokens) {
 async function summarizeGreeting(raw, entry, index) {
     const config = settings().openingSummary;
     if (config.source === 'manual') return { title: entry.title, summary: entry.summary };
-    const prompt = `请为下面的角色卡开场白生成目录信息。只输出JSON：{"title":"10字以内标题","summary":"40字以内简介"}。不要剧透，不要Markdown。\n\n开场白：\n${String(raw).slice(0, 6000)}`;
+    const prompt = `请为下面的角色卡开场白生成目录信息。只输出JSON：{"title":"20字以内标题","summary":"40字左右线路简介"}。不要剧透，不要Markdown。\n\n开场白：\n${String(raw).slice(0, 6000)}`;
     if (config.source === 'main') {
         const response = await generateWithCurrentPreset(prompt);
         return parseSummaryResponse(response, entry.title || `开场白 ${index + 1}`, entry.summary);
@@ -1123,6 +1123,7 @@ function parseBatchSummaryResponse(value, requestedEntries) {
     if (start < 0 || end <= start) throw new Error('AI 没有返回可识别的标题与简介 JSON');
     const parsed = JSON.parse(text.slice(start, end + 1));
     const rows = Array.isArray(parsed?.entries) ? parsed.entries : [];
+    const workIntro = String(parsed?.workIntro || '').trim();
     const result = new Map();
     rows.forEach(row => {
         const index = Math.trunc(Number(row?.index)) - 1;
@@ -1132,24 +1133,31 @@ function parseBatchSummaryResponse(value, requestedEntries) {
             result.set(index, { title, summary });
         }
     });
-    if (!result.size) throw new Error('AI 返回了内容，但没有生成任何有效标题和简介');
-    return result;
+    if (!result.size && !workIntro) throw new Error('AI 返回了内容，但没有生成任何有效简介');
+    return { entries: result, workIntro };
+}
+
+function needsGeneratedWorkIntro() {
+    const intro = String(settings().openingHome.intro || '').trim();
+    return !intro || intro === OPENING_HOME_DEFAULTS.intro;
 }
 
 async function summarizeGreetingsBatch(entries) {
     const config = settings().openingSummary;
     const requested = entries.filter(entry => !entry.title || !entry.summary);
-    if (!requested.length) return new Map();
-    const source = requested.map(entry => `--- 额外问候语 #${entry.index + 1} ---\n${String(entry.raw).slice(0, 2400)}`).join('\n\n').slice(0, 20000);
-    const prompt = `你正在为当前角色卡制作开场白目录。请结合当前角色卡设定、当前聊天上下文和当前预设，为下面每条额外问候语同时生成标题与简介。\n\n严格只输出 JSON，不要 Markdown：\n{"entries":[{"index":1,"title":"10字以内标题","summary":"40字以内简介"}]}\n\n要求：每个输入编号都必须返回；不要剧透；标题不要写“开场白1”这类占位词。\n\n${source}`;
+    const makeWorkIntro = needsGeneratedWorkIntro();
+    if (!requested.length && !makeWorkIntro) return { entries: new Map(), workIntro: '' };
+    const sourceEntries = makeWorkIntro ? entries : requested;
+    const source = sourceEntries.map(entry => `--- 额外问候语 #${entry.index + 1} ---\n${String(entry.raw).slice(0, 2400)}`).join('\n\n').slice(0, 20000);
+    const prompt = `你正在为当前角色卡制作作品主页和开场白目录。请结合当前角色卡设定、当前聊天上下文和当前预设生成简短资料。\n\n严格只输出 JSON，不要 Markdown：\n{"workIntro":"100字左右的作品总简介","entries":[{"index":1,"title":"20字以内标题","summary":"40字左右线路简介"}]}\n\n要求：每个输入编号都必须返回；不要剧透；标题不要写“开场白1”这类占位词；作品简介概括世界观、人物关系与阅读提示。\n\n${source}`;
     let responseText = '';
     if (config.source === 'main') {
         responseText = await generateWithCurrentPreset(prompt);
     } else {
         responseText = await requestExternalSummary(prompt, Math.max(4096, 512 + requested.length * 220));
     }
-    const parsed = parseBatchSummaryResponse(responseText, requested);
-    const missing = requested.filter(entry => !parsed.has(entry.index));
+    const parsed = parseBatchSummaryResponse(responseText, sourceEntries);
+    const missing = requested.filter(entry => !parsed.entries.has(entry.index));
     if (missing.length) throw new Error(`AI 少返回了 ${missing.length} 条标题或简介，请点击重新补全`);
     return parsed;
 }
@@ -1169,11 +1177,15 @@ async function readGreetingsIntoOpeningHome() {
     renderGreetingList();
     saveSettingsSoon();
 
-    const missingEntries = data.entries.filter(entry => !entry.title || !entry.summary);
-    const batch = await summarizeGreetingsBatch(missingEntries);
+    const batch = await summarizeGreetingsBatch(data.entries);
+    if (batch.workIntro && needsGeneratedWorkIntro()) {
+        settings().openingHome.intro = batch.workIntro;
+        const introControl = field('status-atelier-opening-home-intro');
+        if (introControl) introControl.value = batch.workIntro;
+    }
     for (let index = 0; index < data.entries.length; index += 1) {
         const entry = data.entries[index];
-        const ai = batch.get(index);
+        const ai = batch.entries.get(index);
         generated[index].title = entry.title || ai?.title || generated[index].title;
         generated[index].summary = entry.summary || ai?.summary || generated[index].summary;
         if (data.key) {
@@ -1184,7 +1196,7 @@ async function readGreetingsIntoOpeningHome() {
         renderGreetingList();
     }
     saveSettingsSoon();
-    notify('success', `已读取 ${data.entries.length} 条额外问候语${batch.size ? `，并一次补全 ${batch.size} 组标题与简介` : ''}`);
+    notify('success', `已读取 ${data.entries.length} 条额外问候语${batch.entries.size ? `，并一次补全 ${batch.entries.size} 组标题与简介` : ''}${batch.workIntro ? '，作品简介也已补全' : ''}`);
 }
 
 async function regenerateOpeningEntry(index) {
