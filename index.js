@@ -6,13 +6,13 @@ import {
     makePreviewRecords,
     normalizeRule,
     parseFields,
-} from './rule-generator.js?v=0.5.1';
+} from './rule-generator.js?v=0.5.2';
 import {
     OPENING_HOME_DEFAULTS,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.5.1';
+} from './opening-home-generator.js?v=0.5.2';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -23,7 +23,7 @@ import { loadWorldInfo, world_names } from '../../../world-info.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.5.1';
+const VERSION = '0.5.2';
 
 const HOME_TEMPLATES = Object.freeze([
     { id: 'classical', name: '01 古典徽章', description: '双层雕花框 · 海军蓝金箔' },
@@ -1005,9 +1005,16 @@ async function summarizeGreeting(raw, entry, index) {
     if (config.source === 'manual') return { title: entry.title, summary: entry.summary };
     const prompt = `请为下面的角色卡开场白生成目录信息。只输出JSON：{"title":"10字以内标题","summary":"40字以内简介"}。不要剧透，不要Markdown。\n\n开场白：\n${String(raw).slice(0, 6000)}`;
     if (config.source === 'main') {
-        const generator = context()?.generateRaw;
-        if (typeof generator !== 'function') throw new Error('当前酒馆版本没有提供主 API 摘要接口');
-        const response = await generator({ prompt, responseLength: 180, trimNames: false });
+        const generator = context()?.generateQuietPrompt;
+        if (typeof generator !== 'function') throw new Error('当前酒馆版本没有提供携带预设的后台生成接口');
+        const response = await generator({
+            quietPrompt: prompt,
+            quietToLoud: false,
+            skipWIAN: false,
+            responseLength: 180,
+            removeReasoning: true,
+        });
+        if (!String(response || '').trim()) throw new Error('酒馆主 API 当前未连接或没有返回内容；请先连接模型并选择预设');
         return parseSummaryResponse(response, entry.title || `开场白 ${index + 1}`, entry.summary);
     }
     const endpoint = String(config.endpoint || '').replace(/\/+$/, '');
@@ -1020,6 +1027,62 @@ async function summarizeGreeting(raw, entry, index) {
     if (!response.ok) throw new Error(`额外 API 请求失败：${response.status}`);
     const data = await response.json();
     return parseSummaryResponse(data?.choices?.[0]?.message?.content, entry.title || `开场白 ${index + 1}`, entry.summary);
+}
+
+function parseBatchSummaryResponse(value, requestedEntries) {
+    const text = String(value || '').replace(/```(?:json)?/gi, '').trim();
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start < 0 || end <= start) throw new Error('AI 没有返回可识别的标题与简介 JSON');
+    const parsed = JSON.parse(text.slice(start, end + 1));
+    const rows = Array.isArray(parsed?.entries) ? parsed.entries : [];
+    const result = new Map();
+    rows.forEach(row => {
+        const index = Math.trunc(Number(row?.index)) - 1;
+        const title = String(row?.title || '').trim();
+        const summary = String(row?.summary || '').trim();
+        if (requestedEntries.some(entry => entry.index === index) && title && summary) {
+            result.set(index, { title, summary });
+        }
+    });
+    if (!result.size) throw new Error('AI 返回了内容，但没有生成任何有效标题和简介');
+    return result;
+}
+
+async function summarizeGreetingsBatch(entries) {
+    const config = settings().openingSummary;
+    const requested = entries.filter(entry => !entry.title || !entry.summary);
+    if (!requested.length) return new Map();
+    const source = requested.map(entry => `--- 额外问候语 #${entry.index + 1} ---\n${String(entry.raw).slice(0, 2400)}`).join('\n\n').slice(0, 20000);
+    const prompt = `你正在为当前角色卡制作开场白目录。请结合当前角色卡设定、当前聊天上下文和当前预设，为下面每条额外问候语同时生成标题与简介。\n\n严格只输出 JSON，不要 Markdown：\n{"entries":[{"index":1,"title":"10字以内标题","summary":"40字以内简介"}]}\n\n要求：每个输入编号都必须返回；不要剧透；标题不要写“开场白1”这类占位词。\n\n${source}`;
+    let responseText = '';
+    if (config.source === 'main') {
+        const generator = context()?.generateQuietPrompt;
+        if (typeof generator !== 'function') throw new Error('当前酒馆版本没有提供携带预设的后台生成接口');
+        responseText = await generator({
+            quietPrompt: prompt,
+            quietToLoud: false,
+            skipWIAN: false,
+            responseLength: Math.min(1800, 220 + requested.length * 150),
+            removeReasoning: true,
+        });
+        if (!String(responseText || '').trim()) throw new Error('酒馆主 API 没有返回内容；请确认模型已连接并已选择预设');
+    } else {
+        const endpoint = String(config.endpoint || '').replace(/\/+$/, '');
+        if (!endpoint || !config.model) throw new Error('请填写额外 API 地址和模型名称');
+        const response = await fetch(`${endpoint}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {}) },
+            body: JSON.stringify({ model: config.model, messages: [{ role: 'user', content: prompt }], temperature: 0.3, max_tokens: Math.min(1800, 220 + requested.length * 150) }),
+        });
+        if (!response.ok) throw new Error(`额外 API 请求失败：${response.status}`);
+        const responseData = await response.json();
+        responseText = responseData?.choices?.[0]?.message?.content || '';
+    }
+    const parsed = parseBatchSummaryResponse(responseText, requested);
+    const missing = requested.filter(entry => !parsed.has(entry.index));
+    if (missing.length) throw new Error(`AI 少返回了 ${missing.length} 条标题或简介，请点击重新补全`);
+    return parsed;
 }
 
 async function readGreetingsIntoOpeningHome() {
@@ -1037,25 +1100,13 @@ async function readGreetingsIntoOpeningHome() {
     renderGreetingList();
     saveSettingsSoon();
 
-    let generatedCount = 0;
-    let firstError = null;
+    const missingEntries = data.entries.filter(entry => !entry.title || !entry.summary);
+    const batch = await summarizeGreetingsBatch(missingEntries);
     for (let index = 0; index < data.entries.length; index += 1) {
         const entry = data.entries[index];
-        let title = entry.title;
-        let summary = entry.summary;
-        if (!title || !summary) {
-            try {
-                const ai = await summarizeGreeting(entry.raw, { title: title || `开场白 ${index + 1}`, summary: summary || '' }, index);
-                title ||= ai.title;
-                summary ||= ai.summary;
-                generatedCount += 1;
-            } catch (error) {
-                firstError = error;
-                break;
-            }
-        }
-        generated[index].title = title || generated[index].title;
-        generated[index].summary = summary || generated[index].summary;
+        const ai = batch.get(index);
+        generated[index].title = entry.title || ai?.title || generated[index].title;
+        generated[index].summary = entry.summary || ai?.summary || generated[index].summary;
         if (data.key) {
             settings().openingNotes[data.key] ??= {};
             settings().openingNotes[data.key][index] = { title: generated[index].title, summary: generated[index].summary };
@@ -1064,10 +1115,7 @@ async function readGreetingsIntoOpeningHome() {
         renderGreetingList();
     }
     saveSettingsSoon();
-    if (firstError) {
-        throw new Error(`已读取 ${data.entries.length} 条额外问候语，但 AI 补全失败：${firstError?.message || '请检查 API 连接'}`);
-    }
-    notify('success', `已读取 ${data.entries.length} 条额外问候语${generatedCount ? `，并用 AI 补全 ${generatedCount} 条` : ''}`);
+    notify('success', `已读取 ${data.entries.length} 条额外问候语${batch.size ? `，并一次补全 ${batch.size} 组标题与简介` : ''}`);
 }
 
 async function regenerateOpeningEntry(index) {
