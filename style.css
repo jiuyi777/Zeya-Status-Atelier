@@ -190,7 +190,7 @@
 
 .status-atelier-opening-live-intro {
     padding: 14px;
-    color: color-mix(in srgb, var(--zop-text) 12%, white);
+    color: var(--zop-text);
     background: var(--zop-intro);
     text-align: center;
 }
@@ -873,12 +873,43 @@ summary.status-atelier-section-heading {
 
 .status-atelier-greeting-card {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 9px 12px;
+    gap: 8px;
     padding: 12px;
     border: 1px solid var(--SmartThemeBorderColor);
     border-radius: 13px;
     background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 88%, transparent);
+}
+
+.status-atelier-greeting-read-status {
+    margin: 0 0 10px;
+    padding: 9px 11px;
+    border: 1px solid color-mix(in srgb, var(--status-atelier-ui-accent) 35%, var(--SmartThemeBorderColor));
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--status-atelier-ui-accent) 7%, transparent);
+}
+
+.status-atelier-greeting-card-heading {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+}
+
+.status-atelier-greeting-card-heading > b {
+    color: var(--status-atelier-ui-accent);
+}
+
+.status-atelier-greeting-card-heading > span {
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--status-atelier-ui-accent) 12%, transparent);
+    font-size: .72em;
+    opacity: .8;
+}
+
+.status-atelier-greeting-summary {
+    margin: 0;
+    line-height: 1.55;
 }
 
 .status-atelier-greeting-card[data-current="true"] {
@@ -997,6 +1028,24 @@ summary.status-atelier-section-heading {
     .status-atelier-dialog {
         max-height: 92dvh;
         border-radius: 16px 16px 10px 10px;
+    }
+
+    .status-atelier-dialog-footer {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .status-atelier-dialog-footer [data-status-atelier-close] {
+        grid-column: 1 / -1;
+    }
+
+    .status-atelier-greeting-card-heading {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .status-atelier-greeting-card-heading > span {
+        grid-column: 2;
+        justify-self: start;
     }
 
     .status-atelier-greeting-card {

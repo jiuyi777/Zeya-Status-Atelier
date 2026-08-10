@@ -6,13 +6,13 @@ import {
     makePreviewRecords,
     normalizeRule,
     parseFields,
-} from './rule-generator.js?v=0.5.0';
+} from './rule-generator.js?v=0.5.1';
 import {
     OPENING_HOME_DEFAULTS,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.5.0';
+} from './opening-home-generator.js?v=0.5.1';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -23,7 +23,7 @@ import { loadWorldInfo, world_names } from '../../../world-info.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.5.0';
+const VERSION = '0.5.1';
 
 const HOME_TEMPLATES = Object.freeze([
     { id: 'classical', name: '01 古典徽章', description: '双层雕花框 · 海军蓝金箔' },
@@ -42,7 +42,7 @@ const STATUS_TEMPLATES = Object.freeze([
 const KIND_LABELS = Object.freeze({ text: '短文本', long: '长文本', number: '数字', progress: '数值 0–100', currency: '金额' });
 
 const OPENING_PALETTES = Object.freeze({
-    navy: { background: '#f5ead7', cardBackground: '#fffaf0', text: '#2f261e', accent: '#914538', secondary: '#7d6a56', introBackground: '#1a3048', buttonColor: '#1a3048' },
+    navy: { background: '#f5ead7', cardBackground: '#fffaf0', text: '#2f261e', accent: '#914538', secondary: '#7d6a56', introBackground: '#e8e0d0', buttonColor: '#1a3048' },
     sage: { background: '#e4e5d8', cardBackground: '#f4f1e8', text: '#343331', accent: '#71877a', secondary: '#66756c', introBackground: '#d5dfd7', buttonColor: '#b96f54' },
     berry: { background: '#eadcda', cardBackground: '#f8efeb', text: '#3b3835', accent: '#95676b', secondary: '#7a6868', introBackground: '#ded0d2', buttonColor: '#7d626c' },
     aqua: { background: '#dce8e5', cardBackground: '#f2f6f3', text: '#303536', accent: '#678584', secondary: '#5f7776', introBackground: '#cfdfdc', buttonColor: '#577472' },
@@ -157,6 +157,12 @@ function settings() {
         }).join('\n');
         stored.sharedFieldsText = '';
         stored.statusFieldsUnified = true;
+    }
+    if (stored.openingIntroContrastV051 !== true) {
+        if (String(stored.openingHome?.introBackground || '').toLowerCase() === '#1a3048') {
+            stored.openingHome.introBackground = '#e8e0d0';
+        }
+        stored.openingIntroContrastV051 = true;
     }
     stored.openingHome = normalizeOpeningHomeSettings(stored.openingHome);
     return stored;
@@ -951,7 +957,13 @@ function alternateGreetingData() {
     const key = characterStorageKey(ctx);
     const character = ctx?.characters?.[ctx?.characterId];
     const data = character?.data || character || {};
-    const rawEntries = [data?.alternate_greetings, character?.alternate_greetings].find(Array.isArray) || [];
+    const rawEntries = [
+        data?.alternate_greetings,
+        data?.data?.alternate_greetings,
+        character?.alternate_greetings,
+        ctx?.character?.data?.alternate_greetings,
+        ctx?.character?.alternate_greetings,
+    ].find(Array.isArray) || [];
     const notes = settings().openingNotes[key] || {};
     const entries = rawEntries.map((raw, index) => {
         const saved = notes[index] || {};
@@ -1013,22 +1025,49 @@ async function summarizeGreeting(raw, entry, index) {
 async function readGreetingsIntoOpeningHome() {
     const data = alternateGreetingData();
     if (!data.entries.length) throw new Error('当前角色卡没有额外问候语；主开场白会保留给作品主页');
-    const generated = [];
+    const generated = data.entries.map((entry, index) => ({
+        number: String(index + 1).padStart(2, '0'),
+        title: entry.title || `开场白 ${index + 1}`,
+        summary: entry.summary || '已读取原文，等待 AI 生成简介。',
+        target: entry.target,
+        worldlineId: settings().openingHome.entries[index]?.worldlineId || '',
+    }));
+    settings().openingHome.entries = generated;
+    renderOpeningHomeEntries();
+    renderGreetingList();
+    saveSettingsSoon();
+
+    let generatedCount = 0;
+    let firstError = null;
     for (let index = 0; index < data.entries.length; index += 1) {
         const entry = data.entries[index];
         let title = entry.title;
         let summary = entry.summary;
         if (!title || !summary) {
-            const ai = await summarizeGreeting(entry.raw, { title: title || `开场白 ${index + 1}`, summary: summary || '' }, index);
-            title ||= ai.title;
-            summary ||= ai.summary;
+            try {
+                const ai = await summarizeGreeting(entry.raw, { title: title || `开场白 ${index + 1}`, summary: summary || '' }, index);
+                title ||= ai.title;
+                summary ||= ai.summary;
+                generatedCount += 1;
+            } catch (error) {
+                firstError = error;
+                break;
+            }
         }
-        generated.push({ number: String(index + 1).padStart(2, '0'), title, summary, target: entry.target, worldlineId: '' });
+        generated[index].title = title || generated[index].title;
+        generated[index].summary = summary || generated[index].summary;
+        if (data.key) {
+            settings().openingNotes[data.key] ??= {};
+            settings().openingNotes[data.key][index] = { title: generated[index].title, summary: generated[index].summary };
+        }
+        renderOpeningHomeEntries();
+        renderGreetingList();
     }
-    settings().openingHome.entries = generated;
-    renderOpeningHomeEntries();
     saveSettingsSoon();
-    notify('success', `已读取 ${data.entries.length} 条额外问候语；缺失标题或简介的条目已自动生成`);
+    if (firstError) {
+        throw new Error(`已读取 ${data.entries.length} 条额外问候语，但 AI 补全失败：${firstError?.message || '请检查 API 连接'}`);
+    }
+    notify('success', `已读取 ${data.entries.length} 条额外问候语${generatedCount ? `，并用 AI 补全 ${generatedCount} 条` : ''}`);
 }
 
 async function regenerateOpeningEntry(index) {
@@ -1051,22 +1090,31 @@ function buildGreetingModal() {
         <div class="status-atelier-modal-backdrop" data-status-atelier-close></div>
         <section class="status-atelier-dialog" role="dialog" aria-modal="true" aria-labelledby="status-atelier-dialog-title">
             <header class="status-atelier-dialog-header">
-                <h3 id="status-atelier-dialog-title">开场白跳转与固定资料</h3>
+                <h3 id="status-atelier-dialog-title">读取当前角色卡的额外问候语</h3>
                 <button type="button" class="menu_button" data-status-atelier-close aria-label="关闭">×</button>
             </header>
             <div class="status-atelier-dialog-body">
-                <p class="status-atelier-dialog-note">这里编辑的才是固定内容：这条开场白叫什么、涉及谁、故事从哪里开始。不会改写角色卡原文。</p>
+                <p class="status-atelier-dialog-note">主开场白保留给作品主页；这里读取额外问候语 #1、#2、#3……。有标题与简介注释就直接使用，没有就调用你在工坊选择的 AI 补全。</p>
+                <div class="status-atelier-greeting-read-status" role="status" aria-live="polite"></div>
                 <div class="status-atelier-greeting-list"></div>
             </div>
             <footer class="status-atelier-dialog-footer">
-                <button type="button" class="menu_button" id="status-atelier-jump-first">只定位到聊天第 1 条</button>
+                <button type="button" class="menu_button" id="status-atelier-read-current-card">重新读取并补全</button>
+                <button type="button" class="menu_button" id="status-atelier-open-full-workbench">打开完整主页工坊</button>
                 <button type="button" class="menu_button" data-status-atelier-close>完成</button>
             </footer>
         </section>`;
     greetingModal.querySelectorAll('[data-status-atelier-close]').forEach(button => button.addEventListener('click', closeGreetingModal));
-    greetingModal.querySelector('#status-atelier-jump-first').addEventListener('click', () => {
-        jumpToFirstMessage();
+    greetingModal.querySelector('#status-atelier-read-current-card').addEventListener('click', event => {
+        refreshGreetingModal(event.currentTarget);
+    });
+    greetingModal.querySelector('#status-atelier-open-full-workbench').addEventListener('click', () => {
         closeGreetingModal();
+        setWorkspace('opening');
+        const toggle = settingsRoot?.querySelector('.inline-drawer-toggle');
+        const content = settingsRoot?.querySelector('.inline-drawer-content');
+        if (content && getComputedStyle(content).display === 'none') toggle?.click();
+        settingsRoot?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     document.body.append(greetingModal);
 }
@@ -1092,59 +1140,54 @@ function labeledInput(labelText, value, { multiline = false, maxLength = 160 } =
 }
 
 function renderGreetingList() {
+    if (!greetingModal) return;
     const list = greetingModal.querySelector('.status-atelier-greeting-list');
+    const status = greetingModal.querySelector('.status-atelier-greeting-read-status');
     const data = greetingData();
+    const ctx = context();
+    const character = ctx?.characters?.[ctx?.characterId];
+    const characterName = character?.name || character?.data?.name || '当前角色卡';
     list.replaceChildren();
     if (!data.entries.length) {
-        list.append(makeElement('div', 'status-atelier-empty', '当前没有可管理的开场白。请先打开一个单人角色聊天。'));
+        status.textContent = `${characterName}：没有读取到额外问候语。请确认当前是单人角色聊天，并已在角色卡“额外问候语”中添加内容。`;
+        list.append(makeElement('div', 'status-atelier-empty', '主开场白不会计入目录；需要至少一条额外问候语。'));
         return;
     }
-
+    status.textContent = `${characterName}：已读取 ${data.entries.length} 条额外问候语。`;
     data.entries.forEach(entry => {
         const card = makeElement('article', 'status-atelier-greeting-card');
-        card.dataset.current = String(entry.index === data.current);
-        const fields = makeElement('div', 'status-atelier-greeting-fields');
-        const title = labeledInput('导航标题', entry.title, { maxLength: 80 });
-        const characters = labeledInput('涉及人物 / 视角', entry.characters, { maxLength: 160 });
-        const summary = labeledInput('故事简介', entry.summary, { multiline: true, maxLength: 500 });
-        const note = labeledInput('备注 / 关键词', entry.note, { multiline: true, maxLength: 300 });
-        fields.append(
-            title.label,
-            characters.label,
-            summary.label,
-            note.label,
-            makeElement('p', 'status-atelier-greeting-preview', `原文预览：${entry.preview || '（空）'}`),
+        const generated = settings().openingHome.entries[entry.index];
+        const heading = makeElement('div', 'status-atelier-greeting-card-heading');
+        heading.append(
+            makeElement('b', '', `#${entry.index + 1}`),
+            makeElement('strong', '', entry.title || generated?.title || '等待 AI 生成标题'),
+            makeElement('span', '', entry.hasMetadata ? '使用角色卡注释' : '需要 AI 补全'),
         );
-
-        const actions = makeElement('div', 'status-atelier-greeting-actions');
-        if (entry.index === data.current) actions.append(makeElement('span', 'status-atelier-current-badge', '当前'));
-        const switchButton = makeElement('button', 'menu_button', entry.index === data.current ? '定位到这条' : '切换并定位');
-        switchButton.type = 'button';
-        switchButton.addEventListener('click', async () => {
-            switchButton.disabled = true;
-            try {
-                if (entry.index !== greetingData().current) await switchGreeting(entry.index);
-                jumpToFirstMessage();
-                renderGreetingList();
-            } catch (error) {
-                console.error('[Zeya 正则状态工坊] 切换开场白失败', error);
-                notify('error', error?.message || '切换开场白失败');
-            } finally {
-                switchButton.disabled = false;
-            }
-        });
-        actions.append(switchButton);
-
-        const persist = () => saveGreetingNote(data.key, entry.index, {
-            title: title.input.value,
-            characters: characters.input.value,
-            summary: summary.input.value,
-            note: note.input.value,
-        });
-        [title.input, characters.input, summary.input, note.input].forEach(input => input.addEventListener('input', persist));
-        card.append(fields, actions);
+        card.append(
+            heading,
+            makeElement('p', 'status-atelier-greeting-summary', entry.summary || generated?.summary || '等待 AI 生成简介'),
+            makeElement('small', 'status-atelier-greeting-preview', `原文预览：${entry.preview || '（空）'}`),
+        );
         list.append(card);
     });
+}
+
+async function refreshGreetingModal(button) {
+    renderGreetingList();
+    const status = greetingModal?.querySelector('.status-atelier-greeting-read-status');
+    if (!alternateGreetingData().entries.length) return;
+    if (button) button.disabled = true;
+    if (status) status.textContent = `已读取 ${alternateGreetingData().entries.length} 条，正在补全缺少的标题与简介……`;
+    try {
+        await readGreetingsIntoOpeningHome();
+        renderGreetingList();
+    } catch (error) {
+        renderGreetingList();
+        if (status) status.textContent = error?.message || '读取或补全失败';
+        notify('error', error?.message || '读取或补全失败');
+    } finally {
+        if (button) button.disabled = false;
+    }
 }
 
 function openGreetingModal() {
@@ -1152,6 +1195,7 @@ function openGreetingModal() {
     renderGreetingList();
     greetingModal.classList.add('status-atelier-modal-open');
     greetingModal.setAttribute('aria-hidden', 'false');
+    refreshGreetingModal(greetingModal.querySelector('#status-atelier-read-current-card'));
 }
 
 function closeGreetingModal() {
@@ -1188,10 +1232,10 @@ function addExtensionsMenuItem() {
     item.id = 'status-atelier-menu-item';
     item.tabIndex = 0;
     item.setAttribute('role', 'button');
-    item.setAttribute('aria-label', '打开开场白跳转');
-    const icon = makeElement('div', 'fa-solid fa-book-open extensionsMenuExtensionButton');
+    item.setAttribute('aria-label', '读取当前角色卡的额外问候语');
+    const icon = makeElement('div', 'fa-solid fa-wand-magic-sparkles extensionsMenuExtensionButton');
     icon.setAttribute('aria-hidden', 'true');
-    item.append(icon, makeElement('span', '', '开场白跳转 · Zeya'));
+    item.append(icon, makeElement('span', '', '读取额外问候语 · Zeya'));
     item.addEventListener('click', openGreetingModal);
     item.addEventListener('keydown', event => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -1316,6 +1360,11 @@ async function initialize() {
     updatePrompt();
     for (let attempt = 0; attempt < 20; attempt += 1) {
         if (await addSettingsPanel()) break;
+        await new Promise(resolve => setTimeout(resolve, 250));
+    }
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+        addExtensionsMenuItem();
+        if (document.querySelector('#status-atelier-menu-item')) break;
         await new Promise(resolve => setTimeout(resolve, 250));
     }
     console.info(`[Zeya 正则状态工坊] v${VERSION} 已加载`);
