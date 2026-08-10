@@ -6,13 +6,14 @@ import {
     makePreviewRecords,
     normalizeRule,
     parseFields,
-} from './rule-generator.js?v=0.5.2';
+} from './rule-generator.js?v=0.5.3';
 import {
     OPENING_HOME_DEFAULTS,
+    appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.5.2';
+} from './opening-home-generator.js?v=0.5.3';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -23,7 +24,8 @@ import { loadWorldInfo, world_names } from '../../../world-info.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.5.2';
+const VERSION = '0.5.3';
+const OPENING_HOME_SCHEMA_VERSION = 1;
 
 const HOME_TEMPLATES = Object.freeze([
     { id: 'classical', name: '01 古典徽章', description: '双层雕花框 · 海军蓝金箔' },
@@ -164,7 +166,12 @@ function settings() {
         }
         stored.openingIntroContrastV051 = true;
     }
-    stored.openingHome = normalizeOpeningHomeSettings(stored.openingHome);
+    // Only normalize/migrate once. Replacing this object during every UI read makes
+    // input handlers keep stale worldline references and can erase edited routes.
+    if (stored.openingHomeSchemaVersion !== OPENING_HOME_SCHEMA_VERSION) {
+        stored.openingHome = normalizeOpeningHomeSettings(stored.openingHome);
+        stored.openingHomeSchemaVersion = OPENING_HOME_SCHEMA_VERSION;
+    }
     return stored;
 }
 
@@ -183,6 +190,55 @@ function makeElement(tagName, className, text) {
     if (className) element.className = className;
     if (text !== undefined) setText(element, text);
     return element;
+}
+
+function appendInlineMarkdown(host, value) {
+    const source = String(value || '');
+    const tokenPattern = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*)/g;
+    let offset = 0;
+    for (const match of source.matchAll(tokenPattern)) {
+        if (match.index > offset) host.append(document.createTextNode(source.slice(offset, match.index)));
+        const token = match[0];
+        const element = token.startsWith('**')
+            ? makeElement('strong', '', token.slice(2, -2))
+            : token.startsWith('`')
+                ? makeElement('code', '', token.slice(1, -1))
+                : makeElement('em', '', token.slice(1, -1));
+        host.append(element);
+        offset = match.index + token.length;
+    }
+    if (offset < source.length) host.append(document.createTextNode(source.slice(offset)));
+}
+
+function renderSafeMarkdown(host, value) {
+    host.replaceChildren();
+    let list = null;
+    const flushList = () => { list = null; };
+    String(value || '—').replace(/\r\n?/g, '\n').split('\n').forEach(line => {
+        const heading = line.match(/^(#{1,3})\s+(.+)$/);
+        const bullet = line.match(/^[-*]\s+(.+)$/);
+        if (heading) {
+            flushList();
+            const node = makeElement(`h${Math.min(6, heading[1].length + 3)}`, 'status-atelier-markdown-heading');
+            appendInlineMarkdown(node, heading[2]);
+            host.append(node);
+        } else if (bullet) {
+            if (!list) {
+                list = makeElement('ul', 'status-atelier-markdown-list');
+                host.append(list);
+            }
+            const item = makeElement('li');
+            appendInlineMarkdown(item, bullet[1]);
+            list.append(item);
+        } else if (line.trim()) {
+            flushList();
+            const paragraph = makeElement('p');
+            appendInlineMarkdown(paragraph, line.trim());
+            host.append(paragraph);
+        } else {
+            flushList();
+        }
+    });
 }
 
 function field(id) {
@@ -463,7 +519,9 @@ function updateOpeningHomePreview() {
         meta.append(item);
     });
     const intro = makeElement('div', 'status-atelier-opening-live-intro');
-    intro.append(makeElement('h4', '', '作品简介'), makeElement('p', '', data.intro));
+    const introMarkdown = makeElement('div', 'status-atelier-opening-live-intro-markdown');
+    renderSafeMarkdown(introMarkdown, data.intro);
+    intro.append(makeElement('h4', '', '作品简介'), introMarkdown);
     if (data.worldlines.length) {
         const routes = makeElement('div', 'status-atelier-opening-live-routes');
         data.worldlines.forEach(worldline => {
@@ -655,6 +713,8 @@ function renderOpeningWorldlines() {
     if (!host) return;
     host.replaceChildren();
     const lines = settings().openingHome.worldlines;
+    const clearButton = field('status-atelier-opening-clear-worldlines');
+    if (clearButton) clearButton.hidden = !lines.length;
     if (!lines.length) {
         host.append(makeElement('p', 'status-atelier-empty', '没有世界线。主页只显示作品简介和额外问候语目录。'));
         renderOpeningHomeEntries();
@@ -920,9 +980,12 @@ async function importProfile(fileToImport) {
     }
     const notes = settings().openingNotes;
     const apiKey = settings().openingSummary?.apiKey || '';
-    Object.assign(settings(), clone(DEFAULT_SETTINGS), data.settings, { openingNotes: notes, preset: 'custom' });
-    settings().openingSummary ??= clone(DEFAULT_SETTINGS.openingSummary);
-    settings().openingSummary.apiKey = apiKey;
+    const stored = settings();
+    Object.assign(stored, clone(DEFAULT_SETTINGS), data.settings, { openingNotes: notes, preset: 'custom' });
+    stored.openingHome = normalizeOpeningHomeSettings(stored.openingHome);
+    stored.openingHomeSchemaVersion = OPENING_HOME_SCHEMA_VERSION;
+    stored.openingSummary ??= clone(DEFAULT_SETTINGS.openingSummary);
+    stored.openingSummary.apiKey = apiKey;
     loadSettingsUI();
     updatePrompt();
     updatePreview();
@@ -1000,33 +1063,67 @@ function parseSummaryResponse(value, fallbackTitle, fallbackSummary) {
     }
 }
 
+async function generateWithCurrentPreset(prompt, responseLength = 4096) {
+    const generator = context()?.generateQuietPrompt;
+    if (typeof generator !== 'function') throw new Error('当前酒馆版本没有提供携带当前预设的后台生成接口');
+    const lengths = [Math.max(4096, responseLength), Math.max(6144, responseLength)];
+    let lastError;
+    for (const length of lengths) {
+        try {
+            const response = await generator({
+                quietPrompt: prompt,
+                quietToLoud: false,
+                skipWIAN: false,
+                responseLength: length,
+                removeReasoning: true,
+            });
+            if (String(response || '').trim()) return response;
+            lastError = new Error('模型返回了空正文');
+        } catch (error) {
+            lastError = error;
+        }
+    }
+    throw new Error(`酒馆已经发出请求，但模型没有给出可用正文${lastError?.message ? `：${lastError.message}` : ''}。3.1 推理模型请把最大回复长度调高后重试`);
+}
+
+function externalApiBases(value) {
+    const endpoint = String(value || '').trim().replace(/\/+$/, '');
+    if (!endpoint) return [];
+    if (/\/v1$/i.test(endpoint)) return [endpoint];
+    return [`${endpoint}/v1`, endpoint];
+}
+
+async function requestExternalSummary(prompt, maxTokens) {
+    const config = settings().openingSummary;
+    if (!config.endpoint || !config.model) throw new Error('请填写额外 API 地址和模型名称');
+    let lastError;
+    for (const base of externalApiBases(config.endpoint)) {
+        const response = await fetch(`${base}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {}) },
+            body: JSON.stringify({ model: config.model, messages: [{ role: 'user', content: prompt }], temperature: 0.3, max_tokens: Math.max(4096, maxTokens) }),
+        });
+        if (response.ok) {
+            const responseData = await response.json();
+            const content = responseData?.choices?.[0]?.message?.content || '';
+            if (!String(content).trim()) throw new Error('API 已连通，但模型只返回了空正文；请提高模型回复上限或换用非纯推理模型');
+            return content;
+        }
+        lastError = new Error(`额外 API 请求失败：${response.status}`);
+        if (response.status !== 404) break;
+    }
+    throw lastError || new Error('额外 API 请求失败');
+}
+
 async function summarizeGreeting(raw, entry, index) {
     const config = settings().openingSummary;
     if (config.source === 'manual') return { title: entry.title, summary: entry.summary };
     const prompt = `请为下面的角色卡开场白生成目录信息。只输出JSON：{"title":"10字以内标题","summary":"40字以内简介"}。不要剧透，不要Markdown。\n\n开场白：\n${String(raw).slice(0, 6000)}`;
     if (config.source === 'main') {
-        const generator = context()?.generateQuietPrompt;
-        if (typeof generator !== 'function') throw new Error('当前酒馆版本没有提供携带预设的后台生成接口');
-        const response = await generator({
-            quietPrompt: prompt,
-            quietToLoud: false,
-            skipWIAN: false,
-            responseLength: 180,
-            removeReasoning: true,
-        });
-        if (!String(response || '').trim()) throw new Error('酒馆主 API 当前未连接或没有返回内容；请先连接模型并选择预设');
+        const response = await generateWithCurrentPreset(prompt, 4096);
         return parseSummaryResponse(response, entry.title || `开场白 ${index + 1}`, entry.summary);
     }
-    const endpoint = String(config.endpoint || '').replace(/\/+$/, '');
-    if (!endpoint || !config.model) throw new Error('请填写额外 API 地址和模型名称');
-    const response = await fetch(`${endpoint}/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {}) },
-        body: JSON.stringify({ model: config.model, messages: [{ role: 'user', content: prompt }], temperature: 0.3, max_tokens: 180 }),
-    });
-    if (!response.ok) throw new Error(`额外 API 请求失败：${response.status}`);
-    const data = await response.json();
-    return parseSummaryResponse(data?.choices?.[0]?.message?.content, entry.title || `开场白 ${index + 1}`, entry.summary);
+    return parseSummaryResponse(await requestExternalSummary(prompt, 4096), entry.title || `开场白 ${index + 1}`, entry.summary);
 }
 
 function parseBatchSummaryResponse(value, requestedEntries) {
@@ -1057,27 +1154,9 @@ async function summarizeGreetingsBatch(entries) {
     const prompt = `你正在为当前角色卡制作开场白目录。请结合当前角色卡设定、当前聊天上下文和当前预设，为下面每条额外问候语同时生成标题与简介。\n\n严格只输出 JSON，不要 Markdown：\n{"entries":[{"index":1,"title":"10字以内标题","summary":"40字以内简介"}]}\n\n要求：每个输入编号都必须返回；不要剧透；标题不要写“开场白1”这类占位词。\n\n${source}`;
     let responseText = '';
     if (config.source === 'main') {
-        const generator = context()?.generateQuietPrompt;
-        if (typeof generator !== 'function') throw new Error('当前酒馆版本没有提供携带预设的后台生成接口');
-        responseText = await generator({
-            quietPrompt: prompt,
-            quietToLoud: false,
-            skipWIAN: false,
-            responseLength: Math.min(1800, 220 + requested.length * 150),
-            removeReasoning: true,
-        });
-        if (!String(responseText || '').trim()) throw new Error('酒馆主 API 没有返回内容；请确认模型已连接并已选择预设');
+        responseText = await generateWithCurrentPreset(prompt, Math.max(4096, 512 + requested.length * 220));
     } else {
-        const endpoint = String(config.endpoint || '').replace(/\/+$/, '');
-        if (!endpoint || !config.model) throw new Error('请填写额外 API 地址和模型名称');
-        const response = await fetch(`${endpoint}/chat/completions`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...(config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {}) },
-            body: JSON.stringify({ model: config.model, messages: [{ role: 'user', content: prompt }], temperature: 0.3, max_tokens: Math.min(1800, 220 + requested.length * 150) }),
-        });
-        if (!response.ok) throw new Error(`额外 API 请求失败：${response.status}`);
-        const responseData = await response.json();
-        responseText = responseData?.choices?.[0]?.message?.content || '';
+        responseText = await requestExternalSummary(prompt, Math.max(4096, 512 + requested.length * 220));
     }
     const parsed = parseBatchSummaryResponse(responseText, requested);
     const missing = requested.filter(entry => !parsed.has(entry.index));
@@ -1091,7 +1170,7 @@ async function readGreetingsIntoOpeningHome() {
     const generated = data.entries.map((entry, index) => ({
         number: String(index + 1).padStart(2, '0'),
         title: entry.title || `开场白 ${index + 1}`,
-        summary: entry.summary || '已读取原文，等待 AI 生成简介。',
+        summary: entry.summary || '待 AI 补全',
         target: entry.target,
         worldlineId: settings().openingHome.entries[index]?.worldlineId || '',
     }));
@@ -1142,7 +1221,10 @@ function buildGreetingModal() {
                 <button type="button" class="menu_button" data-status-atelier-close aria-label="关闭">×</button>
             </header>
             <div class="status-atelier-dialog-body">
-                <p class="status-atelier-dialog-note">主开场白保留给作品主页；这里读取额外问候语 #1、#2、#3……。有标题与简介注释就直接使用，没有就调用你在工坊选择的 AI 补全。</p>
+                <details class="status-atelier-dialog-note">
+                    <summary>读取说明</summary>
+                    <p>主开场白保留给作品主页；这里只读取额外问候语。有标题与简介注释就直接使用，没有才调用工坊选择的 AI。</p>
+                </details>
                 <div class="status-atelier-greeting-read-status" role="status" aria-live="polite"></div>
                 <div class="status-atelier-greeting-list"></div>
             </div>
@@ -1156,15 +1238,24 @@ function buildGreetingModal() {
     greetingModal.querySelector('#status-atelier-read-current-card').addEventListener('click', event => {
         refreshGreetingModal(event.currentTarget);
     });
-    greetingModal.querySelector('#status-atelier-open-full-workbench').addEventListener('click', () => {
-        closeGreetingModal();
+    greetingModal.querySelector('#status-atelier-open-full-workbench').addEventListener('click', openFullWorkbench);
+    document.body.append(greetingModal);
+}
+
+function openFullWorkbench() {
+    closeGreetingModal();
+    const extensionsDrawer = document.querySelector('#extensions-settings-button');
+    const drawerContent = document.querySelector('#rm_extensions_block');
+    if (drawerContent?.classList.contains('closedDrawer')) {
+        extensionsDrawer?.querySelector(':scope > .drawer-toggle')?.click();
+    }
+    setTimeout(() => {
         setWorkspace('opening');
         const toggle = settingsRoot?.querySelector('.inline-drawer-toggle');
         const content = settingsRoot?.querySelector('.inline-drawer-content');
         if (content && getComputedStyle(content).display === 'none') toggle?.click();
         settingsRoot?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-    document.body.append(greetingModal);
+    }, 180);
 }
 
 function saveGreetingNote(key, index, values) {
@@ -1203,17 +1294,17 @@ function renderGreetingList() {
     }
     status.textContent = `${characterName}：已读取 ${data.entries.length} 条额外问候语。`;
     data.entries.forEach(entry => {
-        const card = makeElement('article', 'status-atelier-greeting-card');
+        const card = makeElement('details', 'status-atelier-greeting-card');
         const generated = settings().openingHome.entries[entry.index];
-        const heading = makeElement('div', 'status-atelier-greeting-card-heading');
+        const heading = makeElement('summary', 'status-atelier-greeting-card-heading');
         heading.append(
             makeElement('b', '', `#${entry.index + 1}`),
-            makeElement('strong', '', entry.title || generated?.title || '等待 AI 生成标题'),
-            makeElement('span', '', entry.hasMetadata ? '使用角色卡注释' : '需要 AI 补全'),
+            makeElement('strong', '', entry.title || generated?.title || `开场白 ${entry.index + 1}`),
+            makeElement('span', '', entry.hasMetadata ? '已有注释' : generated?.summary && generated.summary !== '待 AI 补全' ? '已补全' : '待生成'),
         );
         card.append(
             heading,
-            makeElement('p', 'status-atelier-greeting-summary', entry.summary || generated?.summary || '等待 AI 生成简介'),
+            makeElement('p', 'status-atelier-greeting-summary', entry.summary || generated?.summary || '待 AI 补全'),
             makeElement('small', 'status-atelier-greeting-preview', `原文预览：${entry.preview || '（空）'}`),
         );
         list.append(card);
@@ -1358,9 +1449,13 @@ async function addSettingsPanel() {
     field('status-atelier-reset').addEventListener('click', () => applyPreset(settings().statusTemplate || 'relationship'));
     field('status-atelier-add-field').addEventListener('click', addStatusField);
     field('status-atelier-opening-add-worldline').addEventListener('click', () => {
-        const worldlines = settings().openingHome.worldlines;
-        const position = worldlines.length + 1;
-        worldlines.push({ id: `line-${Date.now()}-${position}`, name: `世界线 ${position}`, description: '', entries: [] });
+        appendOpeningWorldline(settings().openingHome);
+        renderOpeningWorldlines();
+        saveSettingsSoon();
+    });
+    field('status-atelier-opening-clear-worldlines').addEventListener('click', () => {
+        settings().openingHome.worldlines.splice(0);
+        settings().openingHome.entries.forEach(entry => { entry.worldlineId = ''; });
         renderOpeningWorldlines();
         saveSettingsSoon();
     });

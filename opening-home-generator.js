@@ -39,10 +39,18 @@ function cleanMultiline(value, fallback = '') {
     const normalized = String(value ?? '')
         .replace(/\r\n?/g, '\n')
         .split('\n')
-        .map(line => line.trim())
-        .filter(Boolean)
-        .join('\n');
+        .map(line => line.trimEnd())
+        .join('\n')
+        .trim();
     return normalized || fallback;
+}
+
+export function appendOpeningWorldline(openingHome, now = Date.now()) {
+    openingHome.worldlines ??= [];
+    const position = openingHome.worldlines.length + 1;
+    const worldline = { id: `line-${now}-${position}`, name: `世界线 ${position}`, description: '', entries: [] };
+    openingHome.worldlines.push(worldline);
+    return worldline;
 }
 
 function escapeValue(value) {
@@ -132,7 +140,7 @@ function replacementHtml() {
       <div><span>推荐模型</span><strong class="zoh-model"></strong></div>
       <div><span>推荐预设</span><strong class="zoh-preset"></strong></div>
     </div>
-    <section class="zoh-intro"><h2>作品简介</h2><p></p><div class="zoh-routes"></div></section>
+    <section class="zoh-intro"><h2>作品简介</h2><div class="zoh-intro-markdown"></div><div class="zoh-routes"></div></section>
     <section class="zoh-directory">
       <div class="zoh-directory-head"><h2>开场白目录</h2><span class="zoh-count"></span></div>
       <div class="zoh-list"></div>
@@ -146,7 +154,7 @@ function replacementHtml() {
 .zoh-root[data-theme="timeline"] .zoh-page{border:1px solid color-mix(in srgb,var(--zoh-secondary) 55%,transparent);border-radius:22px}.zoh-root[data-theme="timeline"] .zoh-meta,.zoh-root[data-theme="timeline"] .zoh-intro,.zoh-root[data-theme="timeline"] .zoh-directory{position:relative;margin-left:24px}.zoh-root[data-theme="timeline"] .zoh-meta::before,.zoh-root[data-theme="timeline"] .zoh-intro::before,.zoh-root[data-theme="timeline"] .zoh-directory::before{content:"";position:absolute;left:-25px;top:-8px;bottom:-8px;width:1px;background:var(--zoh-secondary)}.zoh-root[data-theme="timeline"] .zoh-entry{border-radius:14px}.zoh-root[data-theme="timeline"] .zoh-entry::before{content:"";position:absolute;left:-18px;width:9px;height:9px;border:2px solid var(--zoh-bg);border-radius:50%;background:var(--zoh-secondary)}.zoh-root[data-theme="timeline"] .zoh-jump{border-radius:999px}
 .zoh-root[data-theme="minimal"] .zoh-page{padding:24px;border:0;background:var(--zoh-bg);box-shadow:none}.zoh-root[data-theme="minimal"] .zoh-header{text-align:left}.zoh-root[data-theme="minimal"] .zoh-meta{grid-template-columns:1fr}.zoh-root[data-theme="minimal"] .zoh-meta>div{display:grid;grid-template-columns:100px minmax(0,1fr);padding:9px 0;border-width:0 0 1px;background:transparent}.zoh-root[data-theme="minimal"] .zoh-meta strong{margin:0}.zoh-root[data-theme="minimal"] .zoh-intro{border:0;border-left:2px solid var(--zoh-secondary);background:color-mix(in srgb,var(--zoh-secondary) 5%,var(--zoh-bg))}.zoh-root[data-theme="minimal"] .zoh-entry{border-width:0 0 1px;background:transparent}.zoh-root[data-theme="minimal"] .zoh-jump{border-radius:999px}
 @media(max-width:560px){.zoh-page{padding:13px}.zoh-meta{grid-template-columns:1fr}.zoh-entry{grid-template-columns:48px minmax(0,1fr)}.zoh-number{font-size:1.45em}.zoh-jump{grid-column:2;justify-self:end;min-width:88px}.zoh-root[data-theme="minimal"] .zoh-meta>div{grid-template-columns:88px minmax(0,1fr)}}@media(prefers-reduced-motion:reduce){.zoh-root *{scroll-behavior:auto!important}}
-.zoh-root{--zoh-card:#fffaf0;--zoh-intro:#e8e0d0;--zoh-intro-text:#3f3024;--zoh-button:#1a3048}.zoh-model,.zoh-preset{white-space:pre-line}.zoh-meta>div,.zoh-entry{background:var(--zoh-card)}.zoh-intro{color:var(--zoh-intro-text);background:var(--zoh-intro)}.zoh-intro h2{color:inherit}.zoh-jump{background:var(--zoh-button)}
+.zoh-root{--zoh-card:#fffaf0;--zoh-intro:#e8e0d0;--zoh-intro-text:#3f3024;--zoh-button:#1a3048}.zoh-model,.zoh-preset{white-space:pre-line}.zoh-meta>div,.zoh-entry{background:var(--zoh-card)}.zoh-intro{color:var(--zoh-intro-text);background:var(--zoh-intro)}.zoh-intro h2{color:inherit}.zoh-intro-markdown{margin-top:10px}.zoh-intro-markdown p,.zoh-intro-markdown ul,.zoh-intro-markdown h4,.zoh-intro-markdown h5,.zoh-intro-markdown h6{margin:.45em 0}.zoh-intro-markdown ul{padding-left:1.35em}.zoh-intro-markdown code{padding:.08em .3em;border-radius:4px;background:color-mix(in srgb,currentColor 9%,transparent)}.zoh-jump{background:var(--zoh-button)}
 </style>
 <script>
 (function(script){
@@ -158,7 +166,9 @@ function replacementHtml() {
   var meta=first('Meta'),style=first('Style'),intro=first('Intro');var openings=records.filter(function(r){return r[0]==='Opening';});var worldlines=records.filter(function(r){return r[0]==='Worldline';});
   var theme=['classical','newspaper','timeline','minimal'].includes(style[1])?style[1]:'classical';var font=['serif','sans','kai','mono'].includes(style[2])?style[2]:'serif';root.dataset.theme=theme;root.dataset.font=font;
   function validColor(value,fallback){return /^#[0-9a-f]{6}$/i.test(value||'')?value:fallback;}function contrast(value){var n=parseInt(value.slice(1),16),r=n>>16,g=n>>8&255,b=n&255;return r*299+g*587+b*114>150000?'#3f3024':'#fffaf0';}root.style.setProperty('--zoh-accent',validColor(style[3],'#9b3f32'));root.style.setProperty('--zoh-bg',validColor(style[4],'#f7f0df'));root.style.setProperty('--zoh-text',validColor(style[5],'#3f3024'));root.style.setProperty('--zoh-secondary',validColor(style[6],'#36526d'));root.style.setProperty('--zoh-card',validColor(style[7],'#fffaf0'));var introColor=validColor(style[8],'#e8e0d0');root.style.setProperty('--zoh-intro',introColor);root.style.setProperty('--zoh-intro-text',contrast(introColor));root.style.setProperty('--zoh-button',validColor(style[9],'#1a3048'));
-  function text(selector,value,fallback){var el=root.querySelector(selector);if(el)el.textContent=value||fallback||'';}text('.zoh-title',meta[1],'作品导航');text('.zoh-subtitle',meta[2],'STORY HOME');text('.zoh-author',meta[3],'—');text('.zoh-model',meta[4],'—');text('.zoh-preset',meta[5],'—');text('.zoh-intro p',intro[1],'—');text('.zoh-count','共 '+openings.length+' 条');
+  function text(selector,value,fallback){var el=root.querySelector(selector);if(el)el.textContent=value||fallback||'';}text('.zoh-title',meta[1],'作品导航');text('.zoh-subtitle',meta[2],'STORY HOME');text('.zoh-author',meta[3],'—');text('.zoh-model',meta[4],'—');text('.zoh-preset',meta[5],'—');text('.zoh-count','共 '+openings.length+' 条');
+  function inline(host,value){var re=/(\\*\\*[^*]+\\*\\*|\\x60[^\\x60]+\\x60|\\*[^*]+\\*)/g,last=0,match;while((match=re.exec(value))){if(match.index>last)host.append(document.createTextNode(value.slice(last,match.index)));var token=match[0],node=make(token.startsWith('**')?'strong':token.charCodeAt(0)===96?'code':'em','',token.startsWith('**')?token.slice(2,-2):token.slice(1,-1));host.append(node);last=match.index+token.length;}if(last<value.length)host.append(document.createTextNode(value.slice(last)));}
+  function markdown(host,value){host.replaceChildren();var list=null;String(value||'—').replace(/\\r\\n?/g,'\\n').split('\\n').forEach(function(line){var heading=line.match(/^(#{1,3})\\s+(.+)$/),bullet=line.match(/^[-*]\\s+(.+)$/);if(heading){list=null;var h=make('h'+Math.min(6,heading[1].length+3),'');inline(h,heading[2]);host.append(h);}else if(bullet){if(!list){list=make('ul','');host.append(list);}var li=make('li','');inline(li,bullet[1]);list.append(li);}else if(line.trim()){list=null;var p=make('p','');inline(p,line.trim());host.append(p);}else{list=null;}});}markdown(root.querySelector('.zoh-intro-markdown'),intro[1]);
   var host=root.querySelector('.zoh-list');var notice=root.querySelector('.zoh-notice');var topWindow=window.parent&&window.parent!==window?window.parent:window;var ctx=topWindow.SillyTavern?.getContext?.();var current=Number(ctx?.chat?.[0]?.swipe_id)+1;
   function make(tag,className,value){var el=document.createElement(tag);if(className)el.className=className;if(value!==undefined)el.textContent=String(value);return el;}
   function decodeEntries(value){try{var parsed=JSON.parse(decodeURIComponent(value||''));return Array.isArray(parsed)?parsed:[];}catch(_){return [];}}function bindingKey(item){return String(item.book||'')+'::'+String(item.uid??'');}function quote(value){return JSON.stringify(String(value||''));}

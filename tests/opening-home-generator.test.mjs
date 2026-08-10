@@ -2,10 +2,27 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     OPENING_HOME_DEFAULTS,
+    appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
 } from '../opening-home-generator.js';
+
+test('adding a worldline appends without replacing existing edited routes', () => {
+    const openingHome = {
+        worldlines: [
+            { id: 'rain', name: '雨夜线', description: '已经写好的雨夜简介', entries: [{ book: '旧城', uid: 12, title: '规则' }] },
+            { id: 'city', name: '旧城线', description: '已经写好的旧城简介', entries: [] },
+        ],
+    };
+    const first = openingHome.worldlines[0];
+    appendOpeningWorldline(openingHome, 123456);
+    assert.equal(openingHome.worldlines.length, 3);
+    assert.equal(openingHome.worldlines[0], first);
+    assert.equal(openingHome.worldlines[0].description, '已经写好的雨夜简介');
+    assert.equal(openingHome.worldlines[1].description, '已经写好的旧城简介');
+    assert.equal(openingHome.worldlines[2].id, 'line-123456-3');
+});
 
 test('opening homepage accepts any number of directory entries', () => {
     const entries = Array.from({ length: 10 }, (_, index) => ({
@@ -56,6 +73,8 @@ test('opening homepage regex renders four selected themes and uses native swipe'
     assert.match(script.replaceString, /swipe\[direction\]\.call/);
     assert.match(script.replaceString, /textContent/);
     assert.match(script.replaceString, /openings\.forEach/);
+    assert.match(script.replaceString, /zoh-intro-markdown/);
+    assert.match(script.replaceString, /function markdown/);
 });
 
 test('generated opening homepage browser script is syntactically valid', () => {
