@@ -1,216 +1,196 @@
 <div id="status-atelier-settings" class="status-atelier-settings inline-drawer">
     <div class="inline-drawer-toggle inline-drawer-header">
-        <b>Zeya · 正则状态工坊</b>
+        <b>Zeya · 酒馆美化工坊</b>
         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
     </div>
-    <div class="inline-drawer-content">
-        <p class="status-atelier-settings-intro">这里编辑的是固定规则和显示名称，不填写剧情中的当前数值。金额、好感度、位置、日记正文等内容由 AI 每轮生成。</p>
-
-        <section class="status-atelier-setting-section">
-            <h4>第一步：定义 AI 要输出什么</h4>
-            <label class="checkbox_label">
-                <input id="status-atelier-prompt-enabled" type="checkbox">
-                <span>把生成的规则自动接入当前聊天模型</span>
-            </label>
-            <small class="status-atelier-hint">如果世界书里已经放了同一份规则，请关闭自动接入，避免重复。它使用当前聊天所选的模型，不需要单独填写 API。</small>
-
-            <div class="status-atelier-settings-grid">
-                <label>规则模板
-                    <select id="status-atelier-preset" class="text_pole">
-                        <option value="relationship">攻略关系型</option>
-                        <option value="openingInfo">开局信息型</option>
-                        <option value="worldNpc">大世界 NPC 型</option>
-                        <option value="survival">生存探索型</option>
-                        <option value="custom">当前自定义</option>
-                    </select>
-                </label>
-                <label>规则名称
-                    <input id="status-atelier-rule-name" class="text_pole" type="text" maxlength="80">
-                </label>
-                <label>输出标签
-                    <input id="status-atelier-tag-name" class="text_pole" type="text" maxlength="60" spellcheck="false">
-                </label>
-                <label>页面排版
-                    <select id="status-atelier-layout" class="text_pole">
-                        <option value="grid">信息网格</option>
-                        <option value="stack">纵向长栏</option>
-                    </select>
-                </label>
+    <div class="inline-drawer-content status-atelier-workbench">
+        <header class="status-atelier-workbench-header">
+            <div>
+                <h3>Zeya · 酒馆美化工坊</h3>
+                <p>两个独立工作区：通用开场白主页 / 状态栏库</p>
             </div>
+            <nav class="status-atelier-workspace-tabs" aria-label="选择工作区">
+                <button type="button" class="menu_button is-active" data-status-workspace="opening" aria-pressed="true">通用开场白主页</button>
+                <button type="button" class="menu_button" data-status-workspace="status" aria-pressed="false">状态栏库</button>
+            </nav>
+        </header>
 
-            <label>切换页（每行：按钮名称 | 这个人物或视角的 AI 要求）
-                <textarea id="status-atelier-pages" class="text_pole" rows="4" spellcheck="false"></textarea>
-            </label>
-            <small class="status-atelier-hint">两行就是两个可切换状态；也可以写一行、三行或更多。这里写名字，不写人物当前状态。</small>
-
-            <label>共享字段（每行：显示名称 | AI 填写要求 | 类型）
-                <textarea id="status-atelier-shared-fields" class="text_pole" rows="5" spellcheck="false"></textarea>
-            </label>
-            <label>每个切换页的字段（每行：显示名称 | AI 填写要求 | 类型）
-                <textarea id="status-atelier-page-fields" class="text_pole" rows="10" spellcheck="false"></textarea>
-            </label>
-            <small class="status-atelier-hint">类型可写：text 普通文字、long 长文本、number 数字、progress 0–100进度、currency 金额。你改的是字段定义，真实值永远由 AI 填。</small>
-            <small class="status-atelier-hint">可修改：显示名称、AI 填写要求、类型和顺序。自动锁定：输出标签、View/Field 记录键与捕获结构；修改后插件会同时重建世界书模板和显示正则。</small>
-        </section>
-
-        <section class="status-atelier-setting-section">
-            <h4>第二步：选择正则显示外观</h4>
-            <div class="status-atelier-settings-grid">
-                <label>主标题
-                    <input id="status-atelier-title" class="text_pole" type="text" maxlength="80">
-                </label>
-                <label>副标题
-                    <input id="status-atelier-subtitle" class="text_pole" type="text" maxlength="120">
-                </label>
-                <label>视觉主题
-                    <select id="status-atelier-theme" class="text_pole">
-                        <option value="classical">古典对称</option>
-                        <option value="newspaper">复古报纸</option>
-                        <option value="timeline">中轴时间线</option>
-                        <option value="minimal">极简留白</option>
-                        <option value="envelope">信封日记</option>
-                        <option value="glass">水色玻璃</option>
-                        <option value="obsidian">黑银档案</option>
-                    </select>
-                </label>
-            </div>
-
-            <div class="status-atelier-preview-wrap">
-                <div class="status-atelier-preview-heading">
-                    <small>结构预览（“AI动态填写”不是固定值）</small>
+        <section class="status-atelier-workspace" data-status-workspace-panel="opening">
+            <section class="status-atelier-library">
+                <div class="status-atelier-section-heading">
+                    <div><strong>已收藏主页模板</strong><small>收藏后的模板只在这里显示。</small></div>
+                    <span>★ 已收藏</span>
                 </div>
-                <div id="status-atelier-preview"></div>
+                <div id="status-atelier-home-favorites" class="status-atelier-template-grid"></div>
+                <details class="status-atelier-library-more">
+                    <summary>展开未收藏主页模板</summary>
+                    <div id="status-atelier-home-others" class="status-atelier-template-grid"></div>
+                </details>
+            </section>
+
+            <div class="status-atelier-workspace-grid">
+                <main>
+                    <section class="status-atelier-setting-section">
+                        <div class="status-atelier-section-heading">
+                            <div><h4>作品固定资料</h4><small>作者、推荐模型和推荐预设可以保存后长期复用。</small></div>
+                        </div>
+                        <div class="status-atelier-settings-grid">
+                            <label>主页标题<input id="status-atelier-opening-home-title" class="text_pole" type="text" maxlength="80"></label>
+                            <label>英文 / 小副标题<input id="status-atelier-opening-home-subtitle" class="text_pole" type="text" maxlength="100"></label>
+                            <label>作者<input id="status-atelier-opening-home-author" class="text_pole" type="text" maxlength="80"></label>
+                            <label>推荐模型（每行一个）<textarea id="status-atelier-opening-home-model" class="text_pole" rows="2" maxlength="400"></textarea></label>
+                            <label>推荐预设（每行一个）<textarea id="status-atelier-opening-home-preset" class="text_pole" rows="2" maxlength="400"></textarea></label>
+                            <label>字体
+                                <select id="status-atelier-opening-home-font" class="text_pole">
+                                    <option value="serif">宋体 / 衬线</option><option value="sans">黑体 / 无衬线</option><option value="kai">楷体</option><option value="mono">等宽字体</option>
+                                </select>
+                            </label>
+                        </div>
+                        <label class="status-atelier-wide-field">作品总简介<textarea id="status-atelier-opening-home-intro" class="text_pole" rows="4" maxlength="1600"></textarea></label>
+                        <input id="status-atelier-opening-home-theme" type="hidden">
+                    </section>
+
+                    <section class="status-atelier-setting-section">
+                        <div class="status-atelier-section-heading"><div><h4>推荐色卡</h4><small>点击一组，同时更换主页、卡片、文字、简介与按钮颜色。</small></div></div>
+                        <div id="status-atelier-palette-toolbar" class="status-atelier-palette-toolbar">
+                            <button type="button" data-opening-palette="navy"></button>
+                            <button type="button" data-opening-palette="sage"></button>
+                            <button type="button" data-opening-palette="berry"></button>
+                            <button type="button" data-opening-palette="aqua"></button>
+                        </div>
+                        <details class="status-atelier-advanced">
+                            <summary>自定义单个颜色</summary>
+                            <div class="status-atelier-opening-color-grid">
+                                <label>主页底图<input id="status-atelier-opening-home-background" type="color"></label>
+                                <label>内容卡片<input id="status-atelier-opening-home-card-background" type="color"></label>
+                                <label>标题文字<input id="status-atelier-opening-home-text" type="color"></label>
+                                <label>推荐信息<input id="status-atelier-opening-home-accent" type="color"></label>
+                                <label>简介底色<input id="status-atelier-opening-home-intro-background" type="color"></label>
+                                <label>进入按钮<input id="status-atelier-opening-home-button-color" type="color"></label>
+                                <label>辅助色<input id="status-atelier-opening-home-secondary" type="color"></label>
+                            </div>
+                        </details>
+                    </section>
+
+                    <section class="status-atelier-setting-section">
+                        <div class="status-atelier-section-heading">
+                            <div><h4>世界线介绍（可选）</h4><small>单线作品可完全不添加；不绑定 UID 时只跳转开场白，不开关世界书。</small></div>
+                            <button id="status-atelier-opening-add-worldline" type="button" class="menu_button">＋ 新增世界线</button>
+                        </div>
+                        <div id="status-atelier-opening-worldline-list" class="status-atelier-opening-worldline-list"></div>
+                    </section>
+
+                    <section class="status-atelier-setting-section">
+                        <div class="status-atelier-section-heading">
+                            <div><h4>额外问候语目录</h4><small>主开场白留给主页；这里只读取额外问候语 #1、#2、#3……</small></div>
+                        </div>
+                        <div class="status-atelier-summary-bar">
+                            <label>缺少标题或简介时使用
+                                <select id="status-atelier-opening-summary-source" class="text_pole">
+                                    <option value="main">酒馆主 API 与当前预设</option>
+                                    <option value="extra">额外 OpenAI 兼容 API</option>
+                                </select>
+                            </label>
+                            <button id="status-atelier-opening-read-greetings" type="button" class="menu_button">读取额外问候语并自动补全</button>
+                        </div>
+                        <div id="status-atelier-opening-summary-extra" class="status-atelier-summary-extra" hidden>
+                            <label>API 地址<input id="status-atelier-opening-summary-endpoint" class="text_pole" type="url" placeholder="https://api.example.com/v1"></label>
+                            <label>API 密钥（仅本机保存）<input id="status-atelier-opening-summary-key" class="text_pole" type="password" autocomplete="off"></label>
+                            <label>模型<input id="status-atelier-opening-summary-model" class="text_pole" type="text" placeholder="填写模型名称"></label>
+                        </div>
+                        <div id="status-atelier-opening-entry-list" class="status-atelier-opening-entry-list"></div>
+                    </section>
+
+                    <section class="status-atelier-setting-section">
+                        <div class="status-atelier-section-heading"><div><h4>保存开场白主页</h4><small>主页模板放进主开场白；正则负责显示与真实跳转。</small></div></div>
+                        <div class="status-atelier-setting-actions">
+                            <button id="status-atelier-opening-copy-block" type="button" class="menu_button">复制主页模板</button>
+                            <button id="status-atelier-opening-download-regex" type="button" class="menu_button">下载主页正则</button>
+                            <button id="status-atelier-opening-install-scoped" type="button" class="menu_button">应用到当前角色卡</button>
+                            <button id="status-atelier-opening-install-global" type="button" class="menu_button">应用到全局</button>
+                        </div>
+                    </section>
+                </main>
+                <aside class="status-atelier-preview-shell">
+                    <div class="status-atelier-preview-heading"><small>主页实时预览</small><span>手机端显示</span></div>
+                    <div id="status-atelier-opening-live-preview"></div>
+                </aside>
             </div>
         </section>
 
-        <section class="status-atelier-setting-section">
-            <h4>第三步：生成与安装</h4>
-            <div class="status-atelier-setting-actions">
-                <button id="status-atelier-copy-prompt" type="button" class="menu_button">复制 AI 输出规则</button>
-                <button id="status-atelier-download-worldbook" type="button" class="menu_button">下载世界书 JSON</button>
-                <button id="status-atelier-download-regex" type="button" class="menu_button">下载正则 JSON</button>
-                <button id="status-atelier-install-scoped" type="button" class="menu_button">生成并应用到当前角色卡</button>
-                <button id="status-atelier-install-global" type="button" class="menu_button">生成并应用到全局</button>
-                <button id="status-atelier-export" type="button" class="menu_button">导出工坊配置</button>
-                <button id="status-atelier-import" type="button" class="menu_button">导入工坊配置</button>
-                <input id="status-atelier-import-file" type="file" accept="application/json,.json" hidden>
-                <button id="status-atelier-reset" type="button" class="menu_button">恢复模板默认</button>
+        <section class="status-atelier-workspace" data-status-workspace-panel="status" hidden>
+            <section class="status-atelier-library">
+                <div class="status-atelier-section-heading"><div><strong>已收藏状态栏用途</strong><small>用途模板只是起点，不绑定固定人物。</small></div><span>★ 已收藏</span></div>
+                <div id="status-atelier-status-favorites" class="status-atelier-template-grid"></div>
+                <details class="status-atelier-library-more"><summary>展开未收藏状态栏用途</summary><div id="status-atelier-status-others" class="status-atelier-template-grid"></div></details>
+            </section>
+            <div class="status-atelier-workspace-grid">
+                <main>
+                    <section class="status-atelier-setting-section">
+                        <div class="status-atelier-section-heading">
+                            <div><h4 id="status-atelier-status-editor-title">状态栏字段</h4><small>改显示名称和类型；真实数值始终由 AI 填写。</small></div>
+                            <button id="status-atelier-add-field" type="button" class="menu_button">＋ 新增字段</button>
+                        </div>
+                        <div class="status-atelier-edit-legend">
+                            <span><b>可修改</b> 名称、类型、填写要求和顺序</span>
+                            <span><b>AI 填写</b> 好感度、生命值、地点、独白等动态内容</span>
+                            <span><b>自动锁定</b> 字段 key、标签和捕获结构</span>
+                        </div>
+                        <div id="status-atelier-status-schema" class="status-atelier-schema-list"></div>
+                    </section>
+
+                    <section class="status-atelier-setting-section">
+                        <div class="status-atelier-section-heading"><div><h4>外观</h4><small>只调整安全的显示项目。</small></div></div>
+                        <div class="status-atelier-settings-grid">
+                            <label>状态栏标题<input id="status-atelier-title" class="text_pole" type="text" maxlength="80"></label>
+                            <label>副标题<input id="status-atelier-subtitle" class="text_pole" type="text" maxlength="120"></label>
+                            <label>排版<select id="status-atelier-layout" class="text_pole"><option value="grid">信息网格</option><option value="stack">纵向长栏</option></select></label>
+                            <label>外观主题<select id="status-atelier-theme" class="text_pole"><option value="classical">古典对称</option><option value="newspaper">复古报纸</option><option value="timeline">中轴时间线</option><option value="minimal">极简留白</option><option value="envelope">信封日记</option><option value="glass">水色玻璃</option><option value="obsidian">黑银档案</option></select></label>
+                        </div>
+                    </section>
+
+                    <details class="status-atelier-setting-section status-atelier-advanced">
+                        <summary>高级规则与备份</summary>
+                        <label class="checkbox_label"><input id="status-atelier-prompt-enabled" type="checkbox"><span>自动把 AI 输出规则接入当前聊天</span></label>
+                        <div class="status-atelier-settings-grid">
+                            <label>规则名称<input id="status-atelier-rule-name" class="text_pole" type="text" maxlength="80"></label>
+                            <label>锁定的输出标签<input id="status-atelier-tag-name" class="text_pole" type="text" maxlength="60" readonly></label>
+                        </div>
+                        <input id="status-atelier-preset" type="hidden">
+                        <textarea id="status-atelier-pages" hidden></textarea>
+                        <textarea id="status-atelier-shared-fields" hidden></textarea>
+                        <textarea id="status-atelier-page-fields" hidden></textarea>
+                        <div class="status-atelier-setting-actions">
+                            <button id="status-atelier-export" type="button" class="menu_button">备份编辑配置</button>
+                            <button id="status-atelier-import" type="button" class="menu_button">恢复编辑配置</button>
+                            <input id="status-atelier-import-file" type="file" accept="application/json,.json" hidden>
+                            <button id="status-atelier-reset" type="button" class="menu_button">恢复当前用途默认</button>
+                        </div>
+                    </details>
+
+                    <section class="status-atelier-setting-section">
+                        <div class="status-atelier-section-heading"><div><h4>生成与应用</h4><small>世界书负责让 AI 输出，正则负责显示。</small></div></div>
+                        <div class="status-atelier-setting-actions">
+                            <button id="status-atelier-copy-prompt" type="button" class="menu_button">复制 AI 输出规则</button>
+                            <button id="status-atelier-download-worldbook" type="button" class="menu_button">下载世界书</button>
+                            <button id="status-atelier-download-regex" type="button" class="menu_button">下载正则</button>
+                            <button id="status-atelier-install-scoped" type="button" class="menu_button">生成并应用到当前角色卡</button>
+                            <button id="status-atelier-install-global" type="button" class="menu_button">生成并应用到全局</button>
+                        </div>
+                    </section>
+                </main>
+                <aside class="status-atelier-preview-shell">
+                    <div class="status-atelier-preview-heading"><small>状态栏实时预览</small><span>示例值仅用于看排版</span></div>
+                    <div id="status-atelier-preview"></div>
+                </aside>
             </div>
         </section>
 
-        <section class="status-atelier-setting-section status-atelier-opening-home-section">
-            <h4>开场白主页正则（风格 1 / 3 / 4 / 5）</h4>
-            <p class="status-atelier-settings-intro">先填写整部作品的固定资料，再自由新增或删除目录条目。目录数量不限；每条“跳转到第几个开场白”对应角色卡里的真实开场白顺序。</p>
-
-            <div class="status-atelier-settings-grid">
-                <label>主页标题
-                    <input id="status-atelier-opening-home-title" class="text_pole" type="text" maxlength="80">
-                </label>
-                <label>英文 / 小副标题
-                    <input id="status-atelier-opening-home-subtitle" class="text_pole" type="text" maxlength="100">
-                </label>
-                <label>作者
-                    <input id="status-atelier-opening-home-author" class="text_pole" type="text" maxlength="80">
-                </label>
-                <label>推荐模型（每行一个）
-                    <textarea id="status-atelier-opening-home-model" class="text_pole" rows="3" maxlength="400"></textarea>
-                </label>
-                <label>推荐预设（每行一个）
-                    <textarea id="status-atelier-opening-home-preset" class="text_pole" rows="3" maxlength="400"></textarea>
-                </label>
-                <label>主页风格
-                    <select id="status-atelier-opening-home-theme" class="text_pole">
-                        <option value="classical">01 · 古典对称</option>
-                        <option value="newspaper">03 · 复古报刊</option>
-                        <option value="timeline">04 · 中轴时间线</option>
-                        <option value="minimal">05 · 极简留白</option>
-                    </select>
-                </label>
-                <label>字体
-                    <select id="status-atelier-opening-home-font" class="text_pole">
-                        <option value="serif">宋体 / 衬线</option>
-                        <option value="sans">黑体 / 无衬线</option>
-                        <option value="kai">楷体</option>
-                        <option value="mono">等宽字体</option>
-                    </select>
-                </label>
-            </div>
-
-            <label>整部作品简介
-                <textarea id="status-atelier-opening-home-intro" class="text_pole" rows="5" maxlength="1200"></textarea>
-            </label>
-
-            <div class="status-atelier-palette-toolbar">
-                <strong>推荐色卡</strong>
-                <button type="button" class="menu_button" data-opening-palette="navy">奶油海军蓝</button>
-                <button type="button" class="menu_button" data-opening-palette="sage">秋杏染青</button>
-                <button type="button" class="menu_button" data-opening-palette="berry">燕麦莓果</button>
-                <button type="button" class="menu_button" data-opening-palette="aqua">雾灰水色</button>
-            </div>
-            <div class="status-atelier-opening-color-grid">
-                <label>主页底图<input id="status-atelier-opening-home-background" type="color"></label>
-                <label>内容卡片<input id="status-atelier-opening-home-card-background" type="color"></label>
-                <label>标题文字<input id="status-atelier-opening-home-text" type="color"></label>
-                <label>推荐信息<input id="status-atelier-opening-home-accent" type="color"></label>
-                <label>简介底色<input id="status-atelier-opening-home-intro-background" type="color"></label>
-                <label>进入按钮<input id="status-atelier-opening-home-button-color" type="color"></label>
-                <label>辅助色<input id="status-atelier-opening-home-secondary" type="color"></label>
-            </div>
-            <div class="status-atelier-opening-live-wrap">
-                <small>主页实时预览</small>
-                <div id="status-atelier-opening-live-preview"></div>
-            </div>
-
-            <div class="status-atelier-opening-entry-toolbar">
-                <div>
-                    <strong>世界线定义（可选）</strong>
-                    <small>每条世界线绑定一个或多个具体世界书条目；全部删除后，主页不使用世界线切换。</small>
-                </div>
-                <button id="status-atelier-opening-add-worldline" type="button" class="menu_button">＋ 新增世界线</button>
-            </div>
-            <div id="status-atelier-opening-worldline-list" class="status-atelier-opening-worldline-list"></div>
-
-            <div class="status-atelier-opening-entry-toolbar">
-                <div>
-                    <strong>开场白目录</strong>
-                    <small>想要 8 条或 10 条，继续新增即可；删除也不会限制版式。</small>
-                </div>
-                <button id="status-atelier-opening-add-entry" type="button" class="menu_button">＋ 新增目录条目</button>
-            </div>
-            <div class="status-atelier-settings-grid">
-                <label>目录摘要方式
-                    <select id="status-atelier-opening-summary-source" class="text_pole">
-                        <option value="main">使用酒馆主 API 与当前预设</option>
-                        <option value="extra">额外 OpenAI 兼容 API</option>
-                        <option value="manual">不使用 AI，截取原文后手动修改</option>
-                    </select>
-                </label>
-                <label>额外 API 地址
-                    <input id="status-atelier-opening-summary-endpoint" class="text_pole" type="url" placeholder="https://api.example.com/v1">
-                </label>
-                <label>额外 API 密钥（只保存在本地，不导出）
-                    <input id="status-atelier-opening-summary-key" class="text_pole" type="password" autocomplete="off">
-                </label>
-                <label>额外 API 模型
-                    <input id="status-atelier-opening-summary-model" class="text_pole" type="text" placeholder="填写模型名称">
-                </label>
-            </div>
-            <button id="status-atelier-opening-read-greetings" type="button" class="menu_button">读取当前角色卡全部开场白并生成目录</button>
-            <div id="status-atelier-opening-entry-list" class="status-atelier-opening-entry-list"></div>
-            <small class="status-atelier-hint">跳转编号从 1 开始。如果第 1 个开场白专门放主页模板，那么第一个故事入口通常填 2，第二个故事入口填 3，以此类推。</small>
-
-            <div class="status-atelier-setting-actions">
-                <button id="status-atelier-opening-copy-block" type="button" class="menu_button">复制主页模板</button>
-                <button id="status-atelier-opening-download-regex" type="button" class="menu_button">下载主页正则 JSON</button>
-                <button id="status-atelier-opening-install-scoped" type="button" class="menu_button">保存并应用到当前角色卡</button>
-                <button id="status-atelier-opening-install-global" type="button" class="menu_button">保存并应用到全局</button>
-            </div>
-        </section>
-
-        <section class="status-atelier-setting-section status-atelier-opening-section">
-            <h4>读取角色卡现有开场白（辅助功能）</h4>
-            <p class="status-atelier-settings-intro">读取角色卡真实存在的主开场白和备用开场白。你只编辑固定的导航资料：标题、涉及人物、故事简介和备注。</p>
-            <button id="status-atelier-open-greetings" type="button" class="menu_button">管理开场白与跳转</button>
-        </section>
+        <dialog id="status-atelier-entry-dialog" class="status-atelier-entry-dialog">
+            <div class="status-atelier-dialog-title"><div><strong>选择世界书条目</strong><small>可以一次勾选多个 UID；再次选择其他世界书可继续追加。</small></div><button id="status-atelier-entry-dialog-close" type="button" class="menu_button">×</button></div>
+            <label>世界书<select id="status-atelier-entry-dialog-book" class="text_pole"></select></label>
+            <div id="status-atelier-entry-dialog-list" class="status-atelier-entry-dialog-list"></div>
+            <div class="status-atelier-setting-actions"><button id="status-atelier-entry-dialog-cancel" type="button" class="menu_button">取消</button><button id="status-atelier-entry-dialog-confirm" type="button" class="menu_button">绑定所选 UID</button></div>
+        </dialog>
     </div>
 </div>

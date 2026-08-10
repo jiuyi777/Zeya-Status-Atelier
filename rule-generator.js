@@ -26,8 +26,8 @@ export const RULE_PRESETS = Object.freeze({
         theme: 'classical',
         layout: 'grid',
         pagesText: '当前攻略对象|填写当前主要攻略对象的姓名与身份',
-        sharedFieldsText: '日期时间|填写当前剧情日期与时间|text\n当前位置|填写当前场景地点|text',
-        pageFieldsText: '当前关系|填写双方目前的关系阶段|text\n好感度|填写0到100之间的整数，只写数字|progress\n变化原因|填写本轮关系变化的具体原因|long\n内心独白|第一人称填写没有说出口的真实想法|long',
+        sharedFieldsText: '日期时间|填写当前剧情日期与时间|text|datetime\n当前位置|填写当前场景地点|text|location',
+        pageFieldsText: '当前关系|填写双方目前的关系阶段|text|relation\n好感度|填写0到100之间的整数，只写数字|progress|affection\n变化原因|填写本轮关系变化的具体原因|long|change_reason\n内心独白|第一人称填写没有说出口的真实想法|long|inner_voice',
     },
     openingInfo: {
         ruleName: '开局信息状态栏',
@@ -37,8 +37,8 @@ export const RULE_PRESETS = Object.freeze({
         theme: 'newspaper',
         layout: 'grid',
         pagesText: '当前开局|填写当前开局路线或视角',
-        sharedFieldsText: '日期时间|填写当前剧情日期与时间|text\n当前位置|填写当前地点|text\n玩家身份|填写用户在本路线中的身份|text',
-        pageFieldsText: '世界前提|概括本路线必须知道的世界设定|long\n当前目标|填写用户目前最需要完成的目标|long\n阅读提示|填写本路线当前重要提示|long',
+        sharedFieldsText: '日期时间|填写当前剧情日期与时间|text|datetime\n当前位置|填写当前地点|text|location\n玩家身份|填写用户在本路线中的身份|text|player_identity',
+        pageFieldsText: '世界前提|概括本路线必须知道的世界设定|long|world_intro\n当前目标|填写用户目前最需要完成的目标|long|objective\n阅读提示|填写本路线当前重要提示|long|reading_tip',
     },
     worldNpc: {
         ruleName: '大世界NPC状态栏',
@@ -48,8 +48,8 @@ export const RULE_PRESETS = Object.freeze({
         theme: 'timeline',
         layout: 'grid',
         pagesText: '当前区域|填写当前所在地区或主要观察区域',
-        sharedFieldsText: '区域|填写当前地区|text\n天气|填写天气与环境变化|text\n世界事件|填写正在发生的重要世界事件|long',
-        pageFieldsText: '阵营态势|填写当前主要阵营关系|long\nNPC动态|列出当前重要NPC及其最新动向|long\n声望|填写用户在当前区域的声望数值或级别|number\n威胁等级|填写当前区域威胁等级|text',
+        sharedFieldsText: '区域|填写当前地区|text|region\n天气|填写天气与环境变化|text|weather\n世界事件|填写正在发生的重要世界事件|long|world_event',
+        pageFieldsText: '阵营态势|填写当前主要阵营关系|long|faction_state\nNPC动态|列出当前重要NPC及其最新动向|long|npc_list\n声望|填写用户在当前区域的声望数值或级别|number|reputation\n威胁等级|填写当前区域威胁等级|text|threat',
     },
     survival: {
         ruleName: '生存探索状态栏',
@@ -59,8 +59,8 @@ export const RULE_PRESETS = Object.freeze({
         theme: 'obsidian',
         layout: 'grid',
         pagesText: '当前探索|填写当前探索者或队伍名称',
-        sharedFieldsText: '时间|填写当前时间|text\n区域|填写当前探索区域|text\n环境危险|填写即将发生或正在发生的环境危险|long',
-        pageFieldsText: '生命值|填写0到100之间的整数，只写数字|progress\n补给|填写剩余水、食物与关键资源|text\n背包摘要|列出当前关键物品|long\n当前任务|填写当前任务目标与进度|long',
+        sharedFieldsText: '时间|填写当前时间|text|time\n区域|填写当前探索区域|text|region\n环境危险|填写即将发生或正在发生的环境危险|long|environment_danger',
+        pageFieldsText: '生命值|填写0到100之间的整数，只写数字|progress|health\n补给|填写剩余水、食物与关键资源|text|supply\n背包摘要|列出当前关键物品|long|inventory\n当前任务|填写当前任务目标与进度|long|quest',
     },
     universalClassical: {
         ruleName: '通用状态栏01·古典对称',
@@ -182,10 +182,11 @@ export function parsePages(value) {
 
 export function parseFields(value) {
     return meaningfulLines(value).map((line, index) => {
-        const [label, instruction = '', rawKind = 'text'] = splitLine(line);
+        const [label, instruction = '', rawKind = 'text', rawKey = ''] = splitLine(line);
         const kind = FIELD_KINDS.has(rawKind.toLowerCase()) ? rawKind.toLowerCase() : 'text';
+        const stableKey = String(rawKey || `field_${index + 1}`).trim().replace(/[^a-zA-Z0-9_-]/g, '_') || `field_${index + 1}`;
         return {
-            id: `Field${index + 1}`,
+            id: stableKey,
             label: label || `字段${index + 1}`,
             instruction: instruction || `根据当前剧情填写${label || `字段${index + 1}`}`,
             kind,

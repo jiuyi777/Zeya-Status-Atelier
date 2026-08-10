@@ -19,7 +19,7 @@ test('parses any number of switch pages without storing story values', () => {
 test('parses editable field names, AI instructions and display kinds', () => {
     const fields = parseFields('好感度|填写0到100整数|progress\n日记|第一人称写作|long');
     assert.deepEqual(fields[0], {
-        id: 'Field1',
+        id: 'field_1',
         label: '好感度',
         instruction: '填写0到100整数',
         kind: 'progress',
