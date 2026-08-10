@@ -17,13 +17,10 @@
             <div class="status-atelier-settings-grid">
                 <label>规则模板
                     <select id="status-atelier-preset" class="text_pole">
-                        <option value="universalClassical">通用状态栏 01 · 古典对称</option>
-                        <option value="universalNewspaper">通用状态栏 03 · 复古报刊</option>
-                        <option value="universalTimeline">通用状态栏 04 · 中轴时间线</option>
-                        <option value="universalMinimal">通用状态栏 05 · 极简留白</option>
-                        <option value="richTwins">双角色 / 双视角丰富状态</option>
-                        <option value="twinsDiary">双角色信封日记</option>
-                        <option value="singleStatus">单角色通用状态</option>
+                        <option value="relationship">攻略关系型</option>
+                        <option value="openingInfo">开局信息型</option>
+                        <option value="worldNpc">大世界 NPC 型</option>
+                        <option value="survival">生存探索型</option>
                         <option value="custom">当前自定义</option>
                     </select>
                 </label>
@@ -53,6 +50,7 @@
                 <textarea id="status-atelier-page-fields" class="text_pole" rows="10" spellcheck="false"></textarea>
             </label>
             <small class="status-atelier-hint">类型可写：text 普通文字、long 长文本、number 数字、progress 0–100进度、currency 金额。你改的是字段定义，真实值永远由 AI 填。</small>
+            <small class="status-atelier-hint">可修改：显示名称、AI 填写要求、类型和顺序。自动锁定：输出标签、View/Field 记录键与捕获结构；修改后插件会同时重建世界书模板和显示正则。</small>
         </section>
 
         <section class="status-atelier-setting-section">
@@ -87,19 +85,12 @@
 
         <section class="status-atelier-setting-section">
             <h4>第三步：生成与安装</h4>
-            <div class="status-atelier-settings-grid">
-                <label>安装位置
-                    <select id="status-atelier-install-scope" class="text_pole">
-                        <option value="scoped">当前角色（推荐）</option>
-                        <option value="global">全局</option>
-                    </select>
-                </label>
-            </div>
             <div class="status-atelier-setting-actions">
                 <button id="status-atelier-copy-prompt" type="button" class="menu_button">复制 AI 输出规则</button>
                 <button id="status-atelier-download-worldbook" type="button" class="menu_button">下载世界书 JSON</button>
                 <button id="status-atelier-download-regex" type="button" class="menu_button">下载正则 JSON</button>
-                <button id="status-atelier-install-regex" type="button" class="menu_button">一键安装 / 更新正则</button>
+                <button id="status-atelier-install-scoped" type="button" class="menu_button">生成并应用到当前角色卡</button>
+                <button id="status-atelier-install-global" type="button" class="menu_button">生成并应用到全局</button>
                 <button id="status-atelier-export" type="button" class="menu_button">导出工坊配置</button>
                 <button id="status-atelier-import" type="button" class="menu_button">导入工坊配置</button>
                 <input id="status-atelier-import-file" type="file" accept="application/json,.json" hidden>
@@ -121,11 +112,11 @@
                 <label>作者
                     <input id="status-atelier-opening-home-author" class="text_pole" type="text" maxlength="80">
                 </label>
-                <label>推荐模型
-                    <input id="status-atelier-opening-home-model" class="text_pole" type="text" maxlength="100">
+                <label>推荐模型（每行一个）
+                    <textarea id="status-atelier-opening-home-model" class="text_pole" rows="3" maxlength="400"></textarea>
                 </label>
-                <label>推荐预设
-                    <input id="status-atelier-opening-home-preset" class="text_pole" type="text" maxlength="100">
+                <label>推荐预设（每行一个）
+                    <textarea id="status-atelier-opening-home-preset" class="text_pole" rows="3" maxlength="400"></textarea>
                 </label>
                 <label>主页风格
                     <select id="status-atelier-opening-home-theme" class="text_pole">
@@ -149,12 +140,35 @@
                 <textarea id="status-atelier-opening-home-intro" class="text_pole" rows="5" maxlength="1200"></textarea>
             </label>
 
+            <div class="status-atelier-palette-toolbar">
+                <strong>推荐色卡</strong>
+                <button type="button" class="menu_button" data-opening-palette="navy">奶油海军蓝</button>
+                <button type="button" class="menu_button" data-opening-palette="sage">秋杏染青</button>
+                <button type="button" class="menu_button" data-opening-palette="berry">燕麦莓果</button>
+                <button type="button" class="menu_button" data-opening-palette="aqua">雾灰水色</button>
+            </div>
             <div class="status-atelier-opening-color-grid">
-                <label>主题色<input id="status-atelier-opening-home-accent" type="color"></label>
-                <label>背景色<input id="status-atelier-opening-home-background" type="color"></label>
-                <label>正文色<input id="status-atelier-opening-home-text" type="color"></label>
+                <label>主页底图<input id="status-atelier-opening-home-background" type="color"></label>
+                <label>内容卡片<input id="status-atelier-opening-home-card-background" type="color"></label>
+                <label>标题文字<input id="status-atelier-opening-home-text" type="color"></label>
+                <label>推荐信息<input id="status-atelier-opening-home-accent" type="color"></label>
+                <label>简介底色<input id="status-atelier-opening-home-intro-background" type="color"></label>
+                <label>进入按钮<input id="status-atelier-opening-home-button-color" type="color"></label>
                 <label>辅助色<input id="status-atelier-opening-home-secondary" type="color"></label>
             </div>
+            <div class="status-atelier-opening-live-wrap">
+                <small>主页实时预览</small>
+                <div id="status-atelier-opening-live-preview"></div>
+            </div>
+
+            <div class="status-atelier-opening-entry-toolbar">
+                <div>
+                    <strong>世界线定义（可选）</strong>
+                    <small>每条世界线绑定一个或多个具体世界书条目；全部删除后，主页不使用世界线切换。</small>
+                </div>
+                <button id="status-atelier-opening-add-worldline" type="button" class="menu_button">＋ 新增世界线</button>
+            </div>
+            <div id="status-atelier-opening-worldline-list" class="status-atelier-opening-worldline-list"></div>
 
             <div class="status-atelier-opening-entry-toolbar">
                 <div>
@@ -163,13 +177,33 @@
                 </div>
                 <button id="status-atelier-opening-add-entry" type="button" class="menu_button">＋ 新增目录条目</button>
             </div>
+            <div class="status-atelier-settings-grid">
+                <label>目录摘要方式
+                    <select id="status-atelier-opening-summary-source" class="text_pole">
+                        <option value="main">使用酒馆主 API 与当前预设</option>
+                        <option value="extra">额外 OpenAI 兼容 API</option>
+                        <option value="manual">不使用 AI，截取原文后手动修改</option>
+                    </select>
+                </label>
+                <label>额外 API 地址
+                    <input id="status-atelier-opening-summary-endpoint" class="text_pole" type="url" placeholder="https://api.example.com/v1">
+                </label>
+                <label>额外 API 密钥（只保存在本地，不导出）
+                    <input id="status-atelier-opening-summary-key" class="text_pole" type="password" autocomplete="off">
+                </label>
+                <label>额外 API 模型
+                    <input id="status-atelier-opening-summary-model" class="text_pole" type="text" placeholder="填写模型名称">
+                </label>
+            </div>
+            <button id="status-atelier-opening-read-greetings" type="button" class="menu_button">读取当前角色卡全部开场白并生成目录</button>
             <div id="status-atelier-opening-entry-list" class="status-atelier-opening-entry-list"></div>
             <small class="status-atelier-hint">跳转编号从 1 开始。如果第 1 个开场白专门放主页模板，那么第一个故事入口通常填 2，第二个故事入口填 3，以此类推。</small>
 
             <div class="status-atelier-setting-actions">
                 <button id="status-atelier-opening-copy-block" type="button" class="menu_button">复制主页模板</button>
                 <button id="status-atelier-opening-download-regex" type="button" class="menu_button">下载主页正则 JSON</button>
-                <button id="status-atelier-opening-install-regex" type="button" class="menu_button">一键安装 / 更新主页正则</button>
+                <button id="status-atelier-opening-install-scoped" type="button" class="menu_button">保存并应用到当前角色卡</button>
+                <button id="status-atelier-opening-install-global" type="button" class="menu_button">保存并应用到全局</button>
             </div>
         </section>
 

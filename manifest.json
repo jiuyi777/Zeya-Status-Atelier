@@ -6,8 +6,8 @@
   "js": "index.js",
   "css": "style.css",
   "author": "Zeya",
-  "version": "0.3.0",
-  "description": "生成由 AI 动态填写的多页状态栏与世界书规则，并制作可自由增删目录、换字体和配色的开场白跳转主页。",
+  "version": "0.4.0",
+  "description": "生成可填空的动态状态栏与配对世界书规则，并制作能读取开场白、绑定具体世界书条目、换整套色卡的跳转主页。",
   "minimum_client_version": "1.14.0",
   "auto_update": false
 }

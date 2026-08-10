@@ -18,19 +18,28 @@ import {
     getScriptsByType,
     saveScriptsByType,
 } from '../../regex/engine.js';
+import { loadWorldInfo, world_names } from '../../../world-info.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.3.0';
+const VERSION = '0.4.0';
+
+const OPENING_PALETTES = Object.freeze({
+    navy: { background: '#f5ead7', cardBackground: '#fffaf0', text: '#2f261e', accent: '#914538', secondary: '#7d6a56', introBackground: '#1a3048', buttonColor: '#1a3048' },
+    sage: { background: '#e4e5d8', cardBackground: '#f4f1e8', text: '#343331', accent: '#71877a', secondary: '#66756c', introBackground: '#d5dfd7', buttonColor: '#b96f54' },
+    berry: { background: '#eadcda', cardBackground: '#f8efeb', text: '#3b3835', accent: '#95676b', secondary: '#7a6868', introBackground: '#ded0d2', buttonColor: '#7d626c' },
+    aqua: { background: '#dce8e5', cardBackground: '#f2f6f3', text: '#303536', accent: '#678584', secondary: '#5f7776', introBackground: '#cfdfdc', buttonColor: '#577472' },
+});
 
 const DEFAULT_SETTINGS = Object.freeze({
-    ...RULE_PRESETS.richTwins,
-    preset: 'richTwins',
+    ...RULE_PRESETS.relationship,
+    preset: 'relationship',
     promptEnabled: false,
     installScope: 'scoped',
     ruleId: 'zeya-status-rule-v2',
     openingNotes: {},
     openingHome: OPENING_HOME_DEFAULTS,
+    openingSummary: { source: 'main', endpoint: '', apiKey: '', model: '' },
 });
 
 const OPENING_HOME_FIELDS = Object.freeze({
@@ -44,8 +53,11 @@ const OPENING_HOME_FIELDS = Object.freeze({
     'status-atelier-opening-home-font': 'font',
     'status-atelier-opening-home-accent': 'accent',
     'status-atelier-opening-home-background': 'background',
+    'status-atelier-opening-home-card-background': 'cardBackground',
     'status-atelier-opening-home-text': 'text',
     'status-atelier-opening-home-secondary': 'secondary',
+    'status-atelier-opening-home-intro-background': 'introBackground',
+    'status-atelier-opening-home-button-color': 'buttonColor',
 });
 
 const SETTING_FIELDS = Object.freeze({
@@ -60,6 +72,13 @@ const SETTING_FIELDS = Object.freeze({
     'status-atelier-page-fields': 'pageFieldsText',
     'status-atelier-install-scope': 'installScope',
     'status-atelier-prompt-enabled': 'promptEnabled',
+});
+
+const OPENING_SUMMARY_FIELDS = Object.freeze({
+    'status-atelier-opening-summary-source': 'source',
+    'status-atelier-opening-summary-endpoint': 'endpoint',
+    'status-atelier-opening-summary-key': 'apiKey',
+    'status-atelier-opening-summary-model': 'model',
 });
 
 let settingsRoot;
@@ -92,6 +111,12 @@ function settings() {
     }
     if (!stored.openingNotes || typeof stored.openingNotes !== 'object' || Array.isArray(stored.openingNotes)) {
         stored.openingNotes = {};
+    }
+    if (!stored.openingSummary || typeof stored.openingSummary !== 'object' || Array.isArray(stored.openingSummary)) {
+        stored.openingSummary = clone(DEFAULT_SETTINGS.openingSummary);
+    }
+    for (const [key, value] of Object.entries(DEFAULT_SETTINGS.openingSummary)) {
+        if (!Object.hasOwn(stored.openingSummary, key)) stored.openingSummary[key] = value;
     }
     stored.openingHome = normalizeOpeningHomeSettings(stored.openingHome);
     return stored;
@@ -164,14 +189,63 @@ function loadSettingsUI() {
         const control = field(id);
         if (control) control.value = String(stored.openingHome[key] ?? '');
     }
-    renderOpeningHomeEntries();
+    for (const [id, key] of Object.entries(OPENING_SUMMARY_FIELDS)) {
+        const control = field(id);
+        if (control) control.value = String(stored.openingSummary[key] ?? '');
+    }
+    renderOpeningWorldlines();
 }
 
 function readOpeningHomeControl(control) {
     const key = OPENING_HOME_FIELDS[control.id];
     if (!key) return;
     settings().openingHome[key] = control.value;
+    updateOpeningHomePreview();
     saveSettingsSoon();
+}
+
+function readOpeningSummaryControl(control) {
+    const key = OPENING_SUMMARY_FIELDS[control.id];
+    if (!key) return;
+    settings().openingSummary[key] = control.value;
+    saveSettingsSoon();
+}
+
+function updateOpeningHomePreview() {
+    const host = field('status-atelier-opening-live-preview');
+    if (!host) return;
+    const data = normalizeOpeningHomeSettings(settings().openingHome);
+    const root = makeElement('section', 'status-atelier-opening-live');
+    root.dataset.theme = data.theme;
+    root.style.setProperty('--zop-accent', data.accent);
+    root.style.setProperty('--zop-bg', data.background);
+    root.style.setProperty('--zop-card', data.cardBackground);
+    root.style.setProperty('--zop-text', data.text);
+    root.style.setProperty('--zop-secondary', data.secondary);
+    root.style.setProperty('--zop-intro', data.introBackground);
+    root.style.setProperty('--zop-button', data.buttonColor);
+    const header = makeElement('header', 'status-atelier-opening-live-header');
+    header.append(makeElement('h3', '', data.title), makeElement('small', '', data.subtitle));
+    const meta = makeElement('div', 'status-atelier-opening-live-meta');
+    [['作者', data.author], ['推荐模型', data.model], ['推荐预设', data.preset]].forEach(([label, value]) => {
+        const item = makeElement('div');
+        item.append(makeElement('span', '', label), makeElement('strong', '', value));
+        meta.append(item);
+    });
+    const intro = makeElement('div', 'status-atelier-opening-live-intro');
+    intro.append(makeElement('h4', '', '作品简介'), makeElement('p', '', data.intro));
+    const directory = makeElement('div', 'status-atelier-opening-live-directory');
+    directory.append(makeElement('h4', '', `开场白目录 · 共 ${data.entries.length} 条`));
+    data.entries.forEach((entry, index) => {
+        const item = makeElement('div', 'status-atelier-opening-live-entry');
+        item.append(makeElement('b', '', entry.number || String(index + 1).padStart(2, '0')));
+        const copy = makeElement('div');
+        copy.append(makeElement('strong', '', entry.title), makeElement('small', '', entry.summary));
+        item.append(copy, makeElement('span', '', '进入'));
+        directory.append(item);
+    });
+    root.append(header, meta, intro, directory);
+    host.replaceChildren(root);
 }
 
 function openingEntryInput(labelText, value, key, index, { type = 'text', min, maxLength = 180 } = {}) {
@@ -185,6 +259,137 @@ function openingEntryInput(labelText, value, key, index, { type = 'text', min, m
     if (maxLength) input.maxLength = maxLength;
     label.append(input);
     return label;
+}
+
+function openingWorldlineSelect(value, index) {
+    const label = makeElement('label', '', '绑定世界线');
+    const select = makeElement('select', 'text_pole');
+    select.dataset.openingEntryKey = 'worldlineId';
+    select.dataset.openingEntryIndex = String(index);
+    const empty = makeElement('option', '', '不绑定世界线');
+    empty.value = '';
+    select.append(empty);
+    settings().openingHome.worldlines.forEach(worldline => {
+        const option = makeElement('option', '', worldline.name);
+        option.value = worldline.id;
+        select.append(option);
+    });
+    select.value = value || '';
+    label.append(select);
+    return label;
+}
+
+function openingExtraEntryPicker(openingEntry, index) {
+    openingEntry.extraEntries ??= [];
+    const host = makeElement('div', 'status-atelier-opening-extra');
+    const label = makeElement('strong', '', '本条开场白额外启用的条目（可选）');
+    const controls = makeElement('div', 'status-atelier-opening-extra-controls');
+    const book = makeElement('select', 'text_pole');
+    const blank = makeElement('option', '', '选择世界书');
+    blank.value = '';
+    book.append(blank);
+    (world_names || []).forEach(worldName => { const option = makeElement('option', '', worldName); option.value = worldName; book.append(option); });
+    const entry = makeElement('select', 'text_pole');
+    loadEntryOptions('', entry);
+    book.addEventListener('change', () => loadEntryOptions(book.value, entry).catch(error => notify('error', error?.message || '读取世界书条目失败')));
+    const add = makeElement('button', 'menu_button', '添加额外条目');
+    add.type = 'button';
+    add.addEventListener('click', () => {
+        if (!book.value || !entry.value) return notify('warning', '请先选择世界书和具体条目');
+        const uid = Number(entry.value);
+        const title = entry.selectedOptions[0]?.dataset.entryTitle || `UID ${uid}`;
+        if (!openingEntry.extraEntries.some(item => item.book === book.value && Number(item.uid) === uid)) openingEntry.extraEntries.push({ book: book.value, uid, title });
+        renderOpeningHomeEntries();
+        saveSettingsSoon();
+    });
+    controls.append(book, entry, add);
+    const chips = makeElement('div', 'status-atelier-opening-worldline-chips');
+    openingEntry.extraEntries.forEach((binding, bindingIndex) => {
+        const chip = makeElement('button', 'menu_button', `${binding.book} · UID ${binding.uid} · ${binding.title} ×`);
+        chip.type = 'button';
+        chip.addEventListener('click', () => { openingEntry.extraEntries.splice(bindingIndex, 1); renderOpeningHomeEntries(); saveSettingsSoon(); });
+        chips.append(chip);
+    });
+    host.append(label, controls, chips);
+    host.dataset.openingIndex = String(index);
+    return host;
+}
+
+async function loadEntryOptions(bookName, select) {
+    select.replaceChildren();
+    if (!bookName) {
+        const option = makeElement('option', '', '先选择世界书');
+        option.value = '';
+        select.append(option);
+        return;
+    }
+    const data = await loadWorldInfo(bookName);
+    const entries = Object.values(data?.entries || {}).sort((a, b) => Number(a.uid) - Number(b.uid));
+    if (!entries.length) {
+        const option = makeElement('option', '', '这本世界书没有条目');
+        option.value = '';
+        select.append(option);
+        return;
+    }
+    entries.forEach(entry => {
+        const option = makeElement('option', '', `UID ${entry.uid} · ${entry.comment || entry.key?.join?.(', ') || '未命名条目'}`);
+        option.value = String(entry.uid);
+        option.dataset.entryTitle = entry.comment || entry.key?.join?.(', ') || `UID ${entry.uid}`;
+        select.append(option);
+    });
+}
+
+function renderOpeningWorldlines() {
+    const host = field('status-atelier-opening-worldline-list');
+    if (!host) return;
+    host.replaceChildren();
+    const lines = settings().openingHome.worldlines;
+    if (!lines.length) {
+        host.append(makeElement('p', 'status-atelier-empty', '没有世界线。最终主页只负责开场白跳转，不切换世界书条目。'));
+        renderOpeningHomeEntries();
+        return;
+    }
+    lines.forEach((worldline, index) => {
+        const row = makeElement('article', 'status-atelier-opening-worldline');
+        const name = makeElement('input', 'text_pole');
+        name.value = worldline.name;
+        name.maxLength = 80;
+        name.addEventListener('input', () => { worldline.name = name.value; renderOpeningHomeEntries(); saveSettingsSoon(); });
+        const book = makeElement('select', 'text_pole');
+        const blank = makeElement('option', '', '选择世界书');
+        blank.value = '';
+        book.append(blank);
+        (world_names || []).forEach(worldName => { const option = makeElement('option', '', worldName); option.value = worldName; book.append(option); });
+        const entry = makeElement('select', 'text_pole');
+        loadEntryOptions('', entry);
+        book.addEventListener('change', () => loadEntryOptions(book.value, entry).catch(error => notify('error', error?.message || '读取世界书条目失败')));
+        const bind = makeElement('button', 'menu_button', '绑定条目');
+        bind.type = 'button';
+        bind.addEventListener('click', () => {
+            if (!book.value || !entry.value) return notify('warning', '请先选择世界书和具体条目');
+            const uid = Number(entry.value);
+            const title = entry.selectedOptions[0]?.dataset.entryTitle || `UID ${uid}`;
+            if (!worldline.entries.some(item => item.book === book.value && Number(item.uid) === uid)) worldline.entries.push({ book: book.value, uid, title });
+            renderOpeningWorldlines();
+            saveSettingsSoon();
+        });
+        const remove = makeElement('button', 'menu_button', '删除世界线');
+        remove.type = 'button';
+        remove.addEventListener('click', () => { lines.splice(index, 1); renderOpeningWorldlines(); saveSettingsSoon(); });
+        const controls = makeElement('div', 'status-atelier-opening-worldline-controls');
+        controls.append(name, book, entry, bind, remove);
+        const chips = makeElement('div', 'status-atelier-opening-worldline-chips');
+        worldline.entries.forEach((binding, bindingIndex) => {
+            const chip = makeElement('button', 'menu_button', `${binding.book} · UID ${binding.uid} · ${binding.title} ×`);
+            chip.type = 'button';
+            chip.addEventListener('click', () => { worldline.entries.splice(bindingIndex, 1); renderOpeningWorldlines(); saveSettingsSoon(); });
+            chips.append(chip);
+        });
+        if (!worldline.entries.length) chips.append(makeElement('small', 'status-atelier-hint', '尚未绑定条目'));
+        row.append(controls, chips);
+        host.append(row);
+    });
+    renderOpeningHomeEntries();
 }
 
 function renderOpeningHomeEntries() {
@@ -207,6 +412,8 @@ function renderOpeningHomeEntries() {
             openingEntryInput('涉及人物 / 视角', entry.characters, 'characters', index, { maxLength: 180 }),
             openingEntryInput('简介', entry.summary, 'summary', index, { maxLength: 320 }),
             openingEntryInput('跳转到第几个开场白', entry.target, 'target', index, { type: 'number', min: 1, maxLength: 0 }),
+            openingWorldlineSelect(entry.worldlineId, index),
+            openingExtraEntryPicker(entry, index),
         );
         card.append(heading, grid);
         host.append(card);
@@ -214,6 +421,7 @@ function renderOpeningHomeEntries() {
     if (!host.children.length) {
         host.append(makeElement('p', 'status-atelier-empty', '当前目录为空。点击“新增目录条目”即可开始。'));
     }
+    updateOpeningHomePreview();
 }
 
 function updateOpeningEntry(control) {
@@ -222,6 +430,7 @@ function updateOpeningEntry(control) {
     const entries = settings().openingHome.entries;
     if (!Number.isInteger(index) || !entries[index] || !key) return;
     entries[index][key] = key === 'target' ? Math.max(1, Math.trunc(Number(control.value) || 1)) : control.value;
+    updateOpeningHomePreview();
     saveSettingsSoon();
 }
 
@@ -347,9 +556,8 @@ function downloadWorldbook() {
     notify('success', '世界书 JSON 已生成；导入后会要求 AI 每轮动态填写状态');
 }
 
-async function installGeneratedRegex(script) {
-    const stored = settings();
-    const type = stored.installScope === 'global' ? SCRIPT_TYPES.GLOBAL : SCRIPT_TYPES.SCOPED;
+async function installGeneratedRegex(script, requestedScope = settings().installScope) {
+    const type = requestedScope === 'global' ? SCRIPT_TYPES.GLOBAL : SCRIPT_TYPES.SCOPED;
     const ctx = context();
     if (type === SCRIPT_TYPES.SCOPED && (ctx?.characterId === undefined || ctx?.characterId === null || ctx?.groupId)) {
         throw new Error('请先打开一个单人角色聊天，再安装到当前角色');
@@ -367,17 +575,31 @@ async function installGeneratedRegex(script) {
     notify('success', `${existingIndex >= 0 ? '已更新' : '已安装'}正则：${script.scriptName}`);
 }
 
-async function installRegex() {
-    await installGeneratedRegex(buildRegexScript(settings()));
+async function installRegex(scope) {
+    await installGeneratedRegex(buildRegexScript(settings()), scope);
 }
 
-async function installOpeningHomeRegex() {
-    await installGeneratedRegex(buildOpeningHomeRegex(settings().openingHome));
+async function installOpeningHomeRegex(scope) {
+    await installGeneratedRegex(buildOpeningHomeRegex(settings().openingHome), scope);
+}
+
+async function runInstallButton(button, installer, scope, errorMessage) {
+    button.disabled = true;
+    try {
+        settings().installScope = scope;
+        await installer(scope);
+        saveSettingsSoon();
+    } catch (error) {
+        notify('error', error?.message || errorMessage);
+    } finally {
+        button.disabled = false;
+    }
 }
 
 function exportProfile() {
     const exported = clone(settings());
     delete exported.openingNotes;
+    if (exported.openingSummary) delete exported.openingSummary.apiKey;
     downloadJson('zeya-regex-status-profile.json', { format: 'zeya-regex-status-profile', version: 2, settings: exported });
 }
 
@@ -387,7 +609,10 @@ async function importProfile(fileToImport) {
         throw new Error('这不是 Zeya 正则状态工坊配置');
     }
     const notes = settings().openingNotes;
+    const apiKey = settings().openingSummary?.apiKey || '';
     Object.assign(settings(), clone(DEFAULT_SETTINGS), data.settings, { openingNotes: notes, preset: 'custom' });
+    settings().openingSummary ??= clone(DEFAULT_SETTINGS.openingSummary);
+    settings().openingSummary.apiKey = apiKey;
     loadSettingsUI();
     updatePrompt();
     updatePreview();
@@ -431,6 +656,56 @@ function greetingData() {
         };
     });
     return { key, entries, current };
+}
+
+function parseSummaryResponse(value, fallbackTitle, fallbackSummary) {
+    const text = String(value || '').replace(/```(?:json)?/gi, '').trim();
+    try {
+        const start = text.indexOf('{');
+        const end = text.lastIndexOf('}');
+        const parsed = JSON.parse(start >= 0 && end > start ? text.slice(start, end + 1) : text);
+        return { title: String(parsed.title || fallbackTitle).trim(), summary: String(parsed.summary || fallbackSummary).trim() };
+    } catch {
+        return { title: fallbackTitle, summary: text.slice(0, 160) || fallbackSummary };
+    }
+}
+
+async function summarizeGreeting(raw, entry, index) {
+    const config = settings().openingSummary;
+    if (config.source === 'manual') return { title: entry.title, summary: entry.summary };
+    const prompt = `请为下面的角色卡开场白生成目录信息。只输出JSON：{"title":"10字以内标题","summary":"40字以内简介"}。不要剧透，不要Markdown。\n\n开场白：\n${String(raw).slice(0, 6000)}`;
+    if (config.source === 'main') {
+        const generator = context()?.generateRaw;
+        if (typeof generator !== 'function') throw new Error('当前酒馆版本没有提供主 API 摘要接口');
+        const response = await generator({ prompt, responseLength: 180, trimNames: false });
+        return parseSummaryResponse(response, entry.title || `开场白 ${index + 1}`, entry.summary);
+    }
+    const endpoint = String(config.endpoint || '').replace(/\/+$/, '');
+    if (!endpoint || !config.model) throw new Error('请填写额外 API 地址和模型名称');
+    const response = await fetch(`${endpoint}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {}) },
+        body: JSON.stringify({ model: config.model, messages: [{ role: 'user', content: prompt }], temperature: 0.3, max_tokens: 180 }),
+    });
+    if (!response.ok) throw new Error(`额外 API 请求失败：${response.status}`);
+    const data = await response.json();
+    return parseSummaryResponse(data?.choices?.[0]?.message?.content, entry.title || `开场白 ${index + 1}`, entry.summary);
+}
+
+async function readGreetingsIntoOpeningHome() {
+    const data = greetingData();
+    if (!data.entries.length) throw new Error('当前没有可读取的开场白，请先打开一个单人角色聊天');
+    const rawEntries = context()?.chat?.[0]?.swipes || [];
+    const generated = [];
+    for (let index = 0; index < data.entries.length; index += 1) {
+        const entry = data.entries[index];
+        const summary = await summarizeGreeting(rawEntries[index] || entry.preview, entry, index);
+        generated.push({ number: String(index + 1).padStart(2, '0'), title: summary.title, characters: entry.characters || '未填写人物 / 视角', summary: summary.summary, target: index + 1, worldlineId: '', extraEntries: [] });
+    }
+    settings().openingHome.entries = generated;
+    renderOpeningHomeEntries();
+    saveSettingsSoon();
+    notify('success', `已读取 ${data.entries.length} 条开场白并按顺序生成目录`);
 }
 
 function buildGreetingModal() {
@@ -608,16 +883,27 @@ async function addSettingsPanel() {
     settingsRoot.addEventListener('input', event => readSettingsControl(event.target));
     settingsRoot.addEventListener('input', event => {
         readOpeningHomeControl(event.target);
+        readOpeningSummaryControl(event.target);
         updateOpeningEntry(event.target);
     });
     settingsRoot.addEventListener('change', event => {
         if (event.target.id !== 'status-atelier-preset' && event.target.id !== 'status-atelier-import-file') {
             readSettingsControl(event.target);
             readOpeningHomeControl(event.target);
+            readOpeningSummaryControl(event.target);
             updateOpeningEntry(event.target);
         }
     });
     settingsRoot.addEventListener('click', event => {
+        const paletteButton = event.target.closest('[data-opening-palette]');
+        if (paletteButton) {
+            const palette = OPENING_PALETTES[paletteButton.dataset.openingPalette];
+            if (!palette) return;
+            Object.assign(settings().openingHome, palette);
+            loadSettingsUI();
+            saveSettingsSoon();
+            return;
+        }
         const removeButton = event.target.closest('[data-opening-remove-index]');
         if (!removeButton) return;
         const index = Number(removeButton.dataset.openingRemoveIndex);
@@ -632,16 +918,8 @@ async function addSettingsPanel() {
     });
     field('status-atelier-download-regex').addEventListener('click', downloadRegex);
     field('status-atelier-download-worldbook').addEventListener('click', downloadWorldbook);
-    field('status-atelier-install-regex').addEventListener('click', async event => {
-        event.currentTarget.disabled = true;
-        try {
-            await installRegex();
-        } catch (error) {
-            notify('error', error?.message || '安装正则失败');
-        } finally {
-            event.currentTarget.disabled = false;
-        }
-    });
+    field('status-atelier-install-scoped').addEventListener('click', event => runInstallButton(event.currentTarget, installRegex, 'scoped', '安装正则失败'));
+    field('status-atelier-install-global').addEventListener('click', event => runInstallButton(event.currentTarget, installRegex, 'global', '安装正则失败'));
     field('status-atelier-export').addEventListener('click', exportProfile);
     field('status-atelier-import').addEventListener('click', () => field('status-atelier-import-file').click());
     field('status-atelier-import-file').addEventListener('change', async event => {
@@ -655,8 +933,25 @@ async function addSettingsPanel() {
             notify('error', error?.message || '导入失败');
         }
     });
-    field('status-atelier-reset').addEventListener('click', () => applyPreset('richTwins'));
+    field('status-atelier-reset').addEventListener('click', () => applyPreset('relationship'));
     field('status-atelier-open-greetings').addEventListener('click', openGreetingModal);
+    field('status-atelier-opening-add-worldline').addEventListener('click', () => {
+        const worldlines = settings().openingHome.worldlines;
+        const position = worldlines.length + 1;
+        worldlines.push({ id: `line-${Date.now()}-${position}`, name: `世界线 ${position}`, entries: [] });
+        renderOpeningWorldlines();
+        saveSettingsSoon();
+    });
+    field('status-atelier-opening-read-greetings').addEventListener('click', async event => {
+        event.currentTarget.disabled = true;
+        try {
+            await readGreetingsIntoOpeningHome();
+        } catch (error) {
+            notify('error', error?.message || '读取开场白失败');
+        } finally {
+            event.currentTarget.disabled = false;
+        }
+    });
     field('status-atelier-opening-add-entry').addEventListener('click', () => {
         const entries = settings().openingHome.entries;
         const position = entries.length + 1;
@@ -678,16 +973,8 @@ async function addSettingsPanel() {
         downloadJson('regex-Zeya-通用开场白主页.json', buildOpeningHomeRegex(settings().openingHome));
         notify('success', '开场白主页正则 JSON 已生成');
     });
-    field('status-atelier-opening-install-regex').addEventListener('click', async event => {
-        event.currentTarget.disabled = true;
-        try {
-            await installOpeningHomeRegex();
-        } catch (error) {
-            notify('error', error?.message || '安装开场白主页正则失败');
-        } finally {
-            event.currentTarget.disabled = false;
-        }
-    });
+    field('status-atelier-opening-install-scoped').addEventListener('click', event => runInstallButton(event.currentTarget, installOpeningHomeRegex, 'scoped', '安装开场白主页正则失败'));
+    field('status-atelier-opening-install-global').addEventListener('click', event => runInstallButton(event.currentTarget, installOpeningHomeRegex, 'global', '安装开场白主页正则失败'));
     loadSettingsUI();
     updatePreview();
     return true;
