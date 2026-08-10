@@ -6,14 +6,14 @@ import {
     makePreviewRecords,
     normalizeRule,
     parseFields,
-} from './rule-generator.js?v=0.5.6';
+} from './rule-generator.js?v=0.5.7';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.5.6';
+} from './opening-home-generator.js?v=0.5.7';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -24,7 +24,7 @@ import { loadWorldInfo, world_names } from '../../../world-info.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.5.6';
+const VERSION = '0.5.7';
 const OPENING_HOME_SCHEMA_VERSION = 1;
 
 const HOME_TEMPLATES = Object.freeze([
@@ -110,6 +110,7 @@ let settingsRoot;
 let greetingModal;
 let saveTimer;
 let entryDialogWorldlineIndex = null;
+let openingReadToast = null;
 
 function context() {
     return globalThis.SillyTavern?.getContext?.();
@@ -125,6 +126,22 @@ function notify(level, message) {
     } else {
         console[level === 'error' ? 'error' : 'log'](`[Zeya 正则状态工坊] ${message}`);
     }
+}
+
+function showOpeningReadProgress(message) {
+    if (!globalThis.toastr?.info) return;
+    if (openingReadToast) globalThis.toastr.clear?.(openingReadToast);
+    openingReadToast = globalThis.toastr.info(message, 'Zeya · AI 正在生成', {
+        timeOut: 0,
+        extendedTimeOut: 0,
+        tapToDismiss: false,
+        closeButton: false,
+    });
+}
+
+function hideOpeningReadProgress() {
+    if (openingReadToast) globalThis.toastr?.clear?.(openingReadToast);
+    openingReadToast = null;
 }
 
 function settings() {
@@ -1370,6 +1387,7 @@ async function refreshGreetingModal(button) {
     if (button) button.textContent = '正在读取并生成…';
     if (status) status.textContent = `已读取 ${alternateGreetingData().entries.length} 条，正在补全缺少的标题与简介……`;
     setOpeningReadStatus(`已读取 ${alternateGreetingData().entries.length} 条，AI 正在生成标题与简介……`, 'loading');
+    showOpeningReadProgress('已读取角色卡内容，正在生成作品简介、标题和线路简介。返回聊天页也可以继续等待。');
     try {
         await readGreetingsIntoOpeningHome();
         renderGreetingList();
@@ -1380,6 +1398,7 @@ async function refreshGreetingModal(button) {
         setOpeningReadStatus(`失败：${error?.message || '读取或补全失败'}`, 'error');
         notify('error', error?.message || '读取或补全失败');
     } finally {
+        hideOpeningReadProgress();
         if (button) button.disabled = false;
         if (button) button.textContent = originalLabel;
     }
@@ -1522,6 +1541,7 @@ async function addSettingsPanel() {
         button.textContent = '正在读取并生成…';
         const count = alternateGreetingData().entries.length;
         setOpeningReadStatus(count ? `已读取 ${count} 条额外问候语，AI 正在生成标题与简介……` : '正在读取当前角色卡的额外问候语……', 'loading');
+        showOpeningReadProgress('已读取角色卡内容，正在生成作品简介、标题和线路简介。返回聊天页也可以继续等待。');
         try {
             await readGreetingsIntoOpeningHome();
             setOpeningReadStatus(`完成：已读取 ${alternateGreetingData().entries.length} 条额外问候语并生成目录资料。`, 'success');
@@ -1529,6 +1549,7 @@ async function addSettingsPanel() {
             setOpeningReadStatus(`失败：${error?.message || '读取开场白失败'}`, 'error');
             notify('error', error?.message || '读取开场白失败');
         } finally {
+            hideOpeningReadProgress();
             button.disabled = false;
             button.textContent = originalLabel;
         }
