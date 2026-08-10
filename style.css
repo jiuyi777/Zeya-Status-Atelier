@@ -896,6 +896,28 @@ summary.status-atelier-section-heading {
     background: color-mix(in srgb, var(--status-atelier-ui-accent) 7%, transparent);
 }
 
+.status-atelier-opening-read-status {
+    margin: 9px 0 0;
+    padding: 9px 11px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 82%, transparent);
+    font-size: .9em;
+    line-height: 1.5;
+}
+
+.status-atelier-opening-read-status[data-state="loading"] {
+    border-color: color-mix(in srgb, #d8a34a 65%, var(--SmartThemeBorderColor));
+}
+
+.status-atelier-opening-read-status[data-state="success"] {
+    border-color: color-mix(in srgb, #58a877 65%, var(--SmartThemeBorderColor));
+}
+
+.status-atelier-opening-read-status[data-state="error"] {
+    border-color: color-mix(in srgb, #c95f5f 68%, var(--SmartThemeBorderColor));
+}
+
 .status-atelier-greeting-card-heading {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;

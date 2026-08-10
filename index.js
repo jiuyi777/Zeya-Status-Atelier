@@ -6,14 +6,14 @@ import {
     makePreviewRecords,
     normalizeRule,
     parseFields,
-} from './rule-generator.js?v=0.5.5';
+} from './rule-generator.js?v=0.5.6';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.5.5';
+} from './opening-home-generator.js?v=0.5.6';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -24,7 +24,7 @@ import { loadWorldInfo, world_names } from '../../../world-info.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.5.5';
+const VERSION = '0.5.6';
 const OPENING_HOME_SCHEMA_VERSION = 1;
 
 const HOME_TEMPLATES = Object.freeze([
@@ -61,6 +61,8 @@ const DEFAULT_SETTINGS = Object.freeze({
     favoriteHomeTemplates: ['classical', 'newspaper', 'timeline'],
     favoriteStatusTemplates: ['relationship', 'worldNpc'],
     openingNotes: {},
+    openingReadStatus: '',
+    openingReadState: '',
     openingHome: OPENING_HOME_DEFAULTS,
     openingSummary: { source: 'main', endpoint: '', apiKey: '', model: '' },
 });
@@ -479,6 +481,23 @@ function loadSettingsUI() {
     renderStatusSchema();
     updateSummarySourceVisibility();
     renderOpeningWorldlines();
+    const readStatus = field('status-atelier-opening-read-status');
+    if (readStatus) {
+        readStatus.textContent = stored.openingReadStatus || '尚未读取当前角色卡。';
+        readStatus.dataset.state = stored.openingReadState || 'idle';
+    }
+}
+
+function setOpeningReadStatus(message, state = 'idle') {
+    const stored = settings();
+    stored.openingReadStatus = String(message || '');
+    stored.openingReadState = state;
+    const status = field('status-atelier-opening-read-status');
+    if (status) {
+        status.textContent = stored.openingReadStatus;
+        status.dataset.state = state;
+    }
+    saveSettingsSoon();
 }
 
 function readOpeningHomeControl(control) {
@@ -1051,16 +1070,42 @@ function greetingData() {
     return { ...data, current };
 }
 
-function parseSummaryResponse(value, fallbackTitle, fallbackSummary) {
-    const text = String(value || '').replace(/```(?:json)?/gi, '').trim();
-    try {
-        const start = text.indexOf('{');
-        const end = text.lastIndexOf('}');
-        const parsed = JSON.parse(start >= 0 && end > start ? text.slice(start, end + 1) : text);
-        return { title: String(parsed.title || fallbackTitle).trim(), summary: String(parsed.summary || fallbackSummary).trim() };
-    } catch {
-        return { title: fallbackTitle, summary: text.slice(0, 160) || fallbackSummary };
+function jsonObjectsFromResponse(value) {
+    const text = String(value || '').trim();
+    const objects = [];
+    for (let start = 0; start < text.length; start += 1) {
+        if (text[start] !== '{') continue;
+        let depth = 0;
+        let quoted = false;
+        let escaped = false;
+        for (let end = start; end < text.length; end += 1) {
+            const char = text[end];
+            if (quoted) {
+                if (escaped) escaped = false;
+                else if (char === '\\') escaped = true;
+                else if (char === '"') quoted = false;
+                continue;
+            }
+            if (char === '"') quoted = true;
+            else if (char === '{') depth += 1;
+            else if (char === '}') {
+                depth -= 1;
+                if (depth === 0) {
+                    try { objects.push(JSON.parse(text.slice(start, end + 1))); }
+                    catch { /* Keep scanning for the final answer object. */ }
+                    break;
+                }
+            }
+        }
     }
+    return objects;
+}
+
+function parseSummaryResponse(value, fallbackTitle, fallbackSummary) {
+    const text = String(value || '').trim();
+    const parsed = jsonObjectsFromResponse(text).findLast(item => item && (item.title || item.summary));
+    if (parsed) return { title: String(parsed.title || fallbackTitle).trim(), summary: String(parsed.summary || fallbackSummary).trim() };
+    return { title: fallbackTitle, summary: text.replace(/```(?:json)?/gi, '').slice(-160).trim() || fallbackSummary };
 }
 
 async function generateWithCurrentPreset(prompt) {
@@ -1070,7 +1115,10 @@ async function generateWithCurrentPreset(prompt) {
         quietPrompt: prompt,
         quietToLoud: false,
         skipWIAN: false,
-        removeReasoning: true,
+        // Some 3.1-compatible gateways expose the final answer inside a response
+        // that SillyTavern's preset-specific reasoning cleaner removes entirely.
+        // Keep the full response and extract the last valid JSON object ourselves.
+        removeReasoning: false,
     });
     if (String(response || '').trim()) return response;
     throw new Error('酒馆已经发出请求，但模型没有给出可用正文；请检查当前预设的最大回复长度与推理设置');
@@ -1117,11 +1165,8 @@ async function summarizeGreeting(raw, entry, index) {
 }
 
 function parseBatchSummaryResponse(value, requestedEntries) {
-    const text = String(value || '').replace(/```(?:json)?/gi, '').trim();
-    const start = text.indexOf('{');
-    const end = text.lastIndexOf('}');
-    if (start < 0 || end <= start) throw new Error('AI 没有返回可识别的标题与简介 JSON');
-    const parsed = JSON.parse(text.slice(start, end + 1));
+    const parsed = jsonObjectsFromResponse(value).findLast(item => item && (Array.isArray(item.entries) || item.workIntro));
+    if (!parsed) throw new Error('模型有返回内容，但其中没有可识别的标题与简介 JSON');
     const rows = Array.isArray(parsed?.entries) ? parsed.entries : [];
     const workIntro = String(parsed?.workIntro || '').trim();
     const result = new Map();
@@ -1316,18 +1361,27 @@ function renderGreetingList() {
 async function refreshGreetingModal(button) {
     renderGreetingList();
     const status = greetingModal?.querySelector('.status-atelier-greeting-read-status');
-    if (!alternateGreetingData().entries.length) return;
+    if (!alternateGreetingData().entries.length) {
+        setOpeningReadStatus('失败：当前角色卡没有读取到额外问候语。', 'error');
+        return;
+    }
     if (button) button.disabled = true;
+    const originalLabel = button?.textContent || '';
+    if (button) button.textContent = '正在读取并生成…';
     if (status) status.textContent = `已读取 ${alternateGreetingData().entries.length} 条，正在补全缺少的标题与简介……`;
+    setOpeningReadStatus(`已读取 ${alternateGreetingData().entries.length} 条，AI 正在生成标题与简介……`, 'loading');
     try {
         await readGreetingsIntoOpeningHome();
         renderGreetingList();
+        setOpeningReadStatus(`完成：已读取 ${alternateGreetingData().entries.length} 条额外问候语并生成目录资料。`, 'success');
     } catch (error) {
         renderGreetingList();
         if (status) status.textContent = error?.message || '读取或补全失败';
+        setOpeningReadStatus(`失败：${error?.message || '读取或补全失败'}`, 'error');
         notify('error', error?.message || '读取或补全失败');
     } finally {
         if (button) button.disabled = false;
+        if (button) button.textContent = originalLabel;
     }
 }
 
@@ -1462,13 +1516,21 @@ async function addSettingsPanel() {
         saveSettingsSoon();
     });
     field('status-atelier-opening-read-greetings').addEventListener('click', async event => {
-        event.currentTarget.disabled = true;
+        const button = event.currentTarget;
+        const originalLabel = button.textContent;
+        button.disabled = true;
+        button.textContent = '正在读取并生成…';
+        const count = alternateGreetingData().entries.length;
+        setOpeningReadStatus(count ? `已读取 ${count} 条额外问候语，AI 正在生成标题与简介……` : '正在读取当前角色卡的额外问候语……', 'loading');
         try {
             await readGreetingsIntoOpeningHome();
+            setOpeningReadStatus(`完成：已读取 ${alternateGreetingData().entries.length} 条额外问候语并生成目录资料。`, 'success');
         } catch (error) {
+            setOpeningReadStatus(`失败：${error?.message || '读取开场白失败'}`, 'error');
             notify('error', error?.message || '读取开场白失败');
         } finally {
-            event.currentTarget.disabled = false;
+            button.disabled = false;
+            button.textContent = originalLabel;
         }
     });
     field('status-atelier-entry-dialog-book').addEventListener('change', () => renderEntryDialogOptions().catch(error => notify('error', error?.message || '读取世界书条目失败')));
