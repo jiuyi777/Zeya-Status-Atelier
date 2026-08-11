@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     RULE_PRESETS,
+    STATUS_STYLE_PRESETS,
     buildAiInstruction,
     buildRegexScript,
     buildWorldbookJson,
@@ -73,4 +74,28 @@ test('builds an importable constant worldbook entry containing the dynamic outpu
     assert.match(entry.content, /<zeya_status_classical_rules>/);
     assert.match(entry.content, /所有值都必须根据当前剧情动态生成/);
     assert.equal(Object.hasOwn(entry, 'affection'), false);
+});
+
+test('registers 20 editable mobile themes with unique codes and ids', () => {
+    assert.equal(STATUS_STYLE_PRESETS.length, 20);
+    assert.equal(new Set(STATUS_STYLE_PRESETS.map(style => style.code)).size, 20);
+    assert.equal(new Set(STATUS_STYLE_PRESETS.map(style => style.id)).size, 20);
+    assert.deepEqual(STATUS_STYLE_PRESETS.map(style => style.code), Array.from({ length: 20 }, (_, index) => String(index + 1).padStart(2, '0')));
+});
+
+test('every status theme generates syntactically valid mobile renderer code', () => {
+    for (const style of STATUS_STYLE_PRESETS) {
+        const script = buildRegexScript({
+            ...RULE_PRESETS.universalClassical,
+            theme: style.id,
+            layout: style.layout,
+            title: style.title,
+            subtitle: style.subtitle,
+        });
+        assert.match(script.replaceString, new RegExp(`data-theme="${style.id}"`));
+        assert.match(script.replaceString, /@media\(max-width:520px\)/);
+        const browserScript = script.replaceString.match(/<script>\n([\s\S]*?)\n<\/script>/);
+        assert.ok(browserScript, `${style.code} ${style.name} includes browser script`);
+        assert.doesNotThrow(() => new Function(browserScript[1]), `${style.code} ${style.name} browser script parses`);
+    }
 });

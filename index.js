@@ -6,14 +6,21 @@ import {
     makePreviewRecords,
     normalizeRule,
     parseFields,
-} from './rule-generator.js?v=0.5.7';
+} from './rule-generator.js?v=0.6.0';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.5.7';
+} from './opening-home-generator.js?v=0.6.0';
+import {
+    SUMMARY_RESPONSE_LENGTH,
+    generationErrorMessage,
+    parseBatchSummaryResponse,
+    parseSummaryResponse,
+    usableGreetingRecords,
+} from './response-parser.js?v=0.6.0';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -21,10 +28,11 @@ import {
     saveScriptsByType,
 } from '../../regex/engine.js';
 import { loadWorldInfo, world_names } from '../../../world-info.js';
+import { saveSettings } from '../../../../script.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.5.7';
+const VERSION = '0.6.0';
 const OPENING_HOME_SCHEMA_VERSION = 1;
 
 const HOME_TEMPLATES = Object.freeze([
@@ -197,6 +205,12 @@ function settings() {
 function saveSettingsSoon() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => context()?.saveSettingsDebounced?.(), 120);
+}
+
+async function saveSettingsNow() {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    await saveSettings();
 }
 
 function setText(element, value) {
@@ -505,7 +519,7 @@ function loadSettingsUI() {
     }
 }
 
-function setOpeningReadStatus(message, state = 'idle') {
+function setOpeningReadStatus(message, state = 'idle', persistNow = false) {
     const stored = settings();
     stored.openingReadStatus = String(message || '');
     stored.openingReadState = state;
@@ -514,7 +528,9 @@ function setOpeningReadStatus(message, state = 'idle') {
         status.textContent = stored.openingReadStatus;
         status.dataset.state = state;
     }
+    if (persistNow) return saveSettingsNow();
     saveSettingsSoon();
+    return Promise.resolve();
 }
 
 function readOpeningHomeControl(control) {
@@ -1035,15 +1051,6 @@ function characterStorageKey(ctx = context()) {
     return `character:${character.avatar || character.name || ctx.characterId}`;
 }
 
-function stripForSummary(value) {
-    return String(value ?? '')
-        .replace(/```[\s\S]*?```/g, ' ')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/[#*_~`>|\[\]()]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-}
-
 function parseGreetingMetadata(raw) {
     const source = String(raw || '');
     const title = source.match(/<!--\s*(?:title|标题)\s*[:：]\s*([\s\S]*?)-->/i)?.[1]?.trim() || '';
@@ -1064,20 +1071,21 @@ function alternateGreetingData() {
         ctx?.character?.alternate_greetings,
     ].find(Array.isArray) || [];
     const notes = settings().openingNotes[key] || {};
-    const entries = rawEntries.map((raw, index) => {
-        const saved = notes[index] || {};
-        const metadata = parseGreetingMetadata(raw);
-        const preview = stripForSummary(raw);
-        return {
-            index,
-            raw: String(raw || ''),
-            title: saved.title || metadata.title,
-            summary: saved.summary || metadata.summary,
-            preview: preview.length > 220 ? `${preview.slice(0, 220)}…` : preview,
-            target: index + 2,
-            hasMetadata: Boolean(metadata.title && metadata.summary),
-        };
-    });
+    const entries = usableGreetingRecords(rawEntries)
+        .map(({ raw, sourceIndex, preview }, index) => {
+            const saved = notes[sourceIndex] || notes[index] || {};
+            const metadata = parseGreetingMetadata(raw);
+            return {
+                index,
+                sourceIndex,
+                raw: String(raw || ''),
+                title: saved.title || metadata.title,
+                summary: saved.summary || metadata.summary,
+                preview: preview.length > 220 ? `${preview.slice(0, 220)}…` : preview,
+                target: sourceIndex + 2,
+                hasMetadata: Boolean(metadata.title && metadata.summary),
+            };
+        });
     return { key, entries };
 }
 
@@ -1087,56 +1095,35 @@ function greetingData() {
     return { ...data, current };
 }
 
-function jsonObjectsFromResponse(value) {
-    const text = String(value || '').trim();
-    const objects = [];
-    for (let start = 0; start < text.length; start += 1) {
-        if (text[start] !== '{') continue;
-        let depth = 0;
-        let quoted = false;
-        let escaped = false;
-        for (let end = start; end < text.length; end += 1) {
-            const char = text[end];
-            if (quoted) {
-                if (escaped) escaped = false;
-                else if (char === '\\') escaped = true;
-                else if (char === '"') quoted = false;
-                continue;
-            }
-            if (char === '"') quoted = true;
-            else if (char === '{') depth += 1;
-            else if (char === '}') {
-                depth -= 1;
-                if (depth === 0) {
-                    try { objects.push(JSON.parse(text.slice(start, end + 1))); }
-                    catch { /* Keep scanning for the final answer object. */ }
-                    break;
-                }
-            }
-        }
-    }
-    return objects;
-}
-
-function parseSummaryResponse(value, fallbackTitle, fallbackSummary) {
-    const text = String(value || '').trim();
-    const parsed = jsonObjectsFromResponse(text).findLast(item => item && (item.title || item.summary));
-    if (parsed) return { title: String(parsed.title || fallbackTitle).trim(), summary: String(parsed.summary || fallbackSummary).trim() };
-    return { title: fallbackTitle, summary: text.replace(/```(?:json)?/gi, '').slice(-160).trim() || fallbackSummary };
-}
-
 async function generateWithCurrentPreset(prompt) {
-    const generator = context()?.generateQuietPrompt;
+    const ctx = context();
+    const completion = ctx?.chatCompletionSettings;
+    if (ctx?.mainApi === 'openai' && completion?.chat_completion_source === 'custom' && !String(completion?.custom_url || '').trim()) {
+        throw new Error('当前主 API 使用“自定义（兼容 OpenAI）”，但接口地址为空；请先在酒馆 API 连接设置中填写并连接真实接口');
+    }
+    const generator = ctx?.generateQuietPrompt;
     if (typeof generator !== 'function') throw new Error('当前酒馆版本没有提供携带当前预设的后台生成接口');
-    const response = await generator({
-        quietPrompt: prompt,
-        quietToLoud: false,
-        skipWIAN: false,
-        // Some 3.1-compatible gateways expose the final answer inside a response
-        // that SillyTavern's preset-specific reasoning cleaner removes entirely.
-        // Keep the full response and extract the last valid JSON object ourselves.
-        removeReasoning: false,
-    });
+    let response;
+    try {
+        response = await generator({
+            quietPrompt: prompt,
+            quietToLoud: false,
+            // The current character and preset are still used. World Info and
+            // Author's Note are unrelated to a short greeting index and can
+            // otherwise inflate this request enough to trigger a 524.
+            skipWIAN: true,
+            // Preserve the selected model and complete preset, but do not let a
+            // short directory task inherit a 32k reply budget and hit a 524.
+            responseLength: SUMMARY_RESPONSE_LENGTH,
+            // Keep the full response; tag names vary by model and preset, so the
+            // plugin removes common reasoning blocks and extracts JSON itself.
+            removeReasoning: false,
+        });
+    } catch (error) {
+        const friendlyMessage = generationErrorMessage(error);
+        if (friendlyMessage) throw new Error(friendlyMessage);
+        throw error;
+    }
     if (String(response || '').trim()) return response;
     throw new Error('酒馆已经发出请求，但模型没有给出可用正文；请检查当前预设的最大回复长度与推理设置');
 }
@@ -1181,24 +1168,6 @@ async function summarizeGreeting(raw, entry, index) {
     return parseSummaryResponse(await requestExternalSummary(prompt, 4096), entry.title || `开场白 ${index + 1}`, entry.summary);
 }
 
-function parseBatchSummaryResponse(value, requestedEntries) {
-    const parsed = jsonObjectsFromResponse(value).findLast(item => item && (Array.isArray(item.entries) || item.workIntro));
-    if (!parsed) throw new Error('模型有返回内容，但其中没有可识别的标题与简介 JSON');
-    const rows = Array.isArray(parsed?.entries) ? parsed.entries : [];
-    const workIntro = String(parsed?.workIntro || '').trim();
-    const result = new Map();
-    rows.forEach(row => {
-        const index = Math.trunc(Number(row?.index)) - 1;
-        const title = String(row?.title || '').trim();
-        const summary = String(row?.summary || '').trim();
-        if (requestedEntries.some(entry => entry.index === index) && title && summary) {
-            result.set(index, { title, summary });
-        }
-    });
-    if (!result.size && !workIntro) throw new Error('AI 返回了内容，但没有生成任何有效简介');
-    return { entries: result, workIntro };
-}
-
 function needsGeneratedWorkIntro() {
     const intro = String(settings().openingHome.intro || '').trim();
     return !intro || intro === OPENING_HOME_DEFAULTS.intro;
@@ -1210,8 +1179,8 @@ async function summarizeGreetingsBatch(entries) {
     const makeWorkIntro = needsGeneratedWorkIntro();
     if (!requested.length && !makeWorkIntro) return { entries: new Map(), workIntro: '' };
     const sourceEntries = makeWorkIntro ? entries : requested;
-    const source = sourceEntries.map(entry => `--- 额外问候语 #${entry.index + 1} ---\n${String(entry.raw).slice(0, 2400)}`).join('\n\n').slice(0, 20000);
-    const prompt = `你正在为当前角色卡制作作品主页和开场白目录。请结合当前角色卡设定、当前聊天上下文和当前预设生成简短资料。\n\n严格只输出 JSON，不要 Markdown：\n{"workIntro":"100字左右的作品总简介","entries":[{"index":1,"title":"20字以内标题","summary":"40字左右线路简介"}]}\n\n要求：每个输入编号都必须返回；不要剧透；标题不要写“开场白1”这类占位词；作品简介概括世界观、人物关系与阅读提示。\n\n${source}`;
+    const source = sourceEntries.map(entry => `--- 额外问候语 #${entry.index + 1} ---\n${String(entry.raw).slice(0, 1600)}`).join('\n\n').slice(0, 12000);
+    const prompt = `你正在为当前角色卡制作作品主页和开场白目录。请结合当前角色卡设定、当前聊天上下文和当前预设生成简短资料。\n\n严格只输出 JSON，不要 Markdown：\n{"workIntro":"80到120个汉字的作品总简介","entries":[{"index":1,"title":"20个汉字以内标题","summary":"30到50个汉字的线路简介"}]}\n\n要求：每个输入编号都必须返回；不要剧透；标题不要写“开场白1”这类占位词；作品简介概括世界观、人物关系与阅读提示。\n\n${source}`;
     let responseText = '';
     if (config.source === 'main') {
         responseText = await generateWithCurrentPreset(prompt);
@@ -1252,7 +1221,7 @@ async function readGreetingsIntoOpeningHome() {
         generated[index].summary = entry.summary || ai?.summary || generated[index].summary;
         if (data.key) {
             settings().openingNotes[data.key] ??= {};
-            settings().openingNotes[data.key][index] = { title: generated[index].title, summary: generated[index].summary };
+            settings().openingNotes[data.key][entry.sourceIndex ?? index] = { title: generated[index].title, summary: generated[index].summary };
         }
         renderOpeningHomeEntries();
         renderGreetingList();
@@ -1379,7 +1348,7 @@ async function refreshGreetingModal(button) {
     renderGreetingList();
     const status = greetingModal?.querySelector('.status-atelier-greeting-read-status');
     if (!alternateGreetingData().entries.length) {
-        setOpeningReadStatus('失败：当前角色卡没有读取到额外问候语。', 'error');
+        await setOpeningReadStatus('失败：当前角色卡没有读取到额外问候语。', 'error', true);
         return;
     }
     if (button) button.disabled = true;
@@ -1391,11 +1360,11 @@ async function refreshGreetingModal(button) {
     try {
         await readGreetingsIntoOpeningHome();
         renderGreetingList();
-        setOpeningReadStatus(`完成：已读取 ${alternateGreetingData().entries.length} 条额外问候语并生成目录资料。`, 'success');
+        await setOpeningReadStatus(`完成：已读取 ${alternateGreetingData().entries.length} 条额外问候语并生成目录资料。`, 'success', true);
     } catch (error) {
         renderGreetingList();
         if (status) status.textContent = error?.message || '读取或补全失败';
-        setOpeningReadStatus(`失败：${error?.message || '读取或补全失败'}`, 'error');
+        await setOpeningReadStatus(`失败：${error?.message || '读取或补全失败'}`, 'error', true);
         notify('error', error?.message || '读取或补全失败');
     } finally {
         hideOpeningReadProgress();
@@ -1544,9 +1513,9 @@ async function addSettingsPanel() {
         showOpeningReadProgress('已读取角色卡内容，正在生成作品简介、标题和线路简介。返回聊天页也可以继续等待。');
         try {
             await readGreetingsIntoOpeningHome();
-            setOpeningReadStatus(`完成：已读取 ${alternateGreetingData().entries.length} 条额外问候语并生成目录资料。`, 'success');
+            await setOpeningReadStatus(`完成：已读取 ${alternateGreetingData().entries.length} 条额外问候语并生成目录资料。`, 'success', true);
         } catch (error) {
-            setOpeningReadStatus(`失败：${error?.message || '读取开场白失败'}`, 'error');
+            await setOpeningReadStatus(`失败：${error?.message || '读取开场白失败'}`, 'error', true);
             notify('error', error?.message || '读取开场白失败');
         } finally {
             hideOpeningReadProgress();

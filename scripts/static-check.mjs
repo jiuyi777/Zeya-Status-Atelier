@@ -1,6 +1,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { STATUS_STYLE_PRESETS } from '../rule-generator.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const requiredFiles = [
@@ -8,6 +9,7 @@ const requiredFiles = [
     'index.js',
     'rule-generator.js',
     'opening-home-generator.js',
+    'response-parser.js',
     'settings.html',
     'style.css',
     'README.md',
@@ -90,7 +92,7 @@ if (files.some(file => /secret|token|cookie|credential/i.test(file))) {
     errors.push('仓库根目录出现疑似秘密文件名');
 }
 
-const starterDefinitions = [
+const openingDefinitions = [
     ['01', '古典对称'],
     ['03', '复古报刊'],
     ['04', '中轴时间线'],
@@ -98,9 +100,8 @@ const starterDefinitions = [
 ];
 const openingIds = new Set();
 const statusIds = new Set();
-for (const [code, name] of starterDefinitions) {
+for (const [code, name] of openingDefinitions) {
     const openingFolder = join(root, 'starter-packs', '开场白主页', `${code}-${name}`);
-    const statusFolder = join(root, 'starter-packs', '通用状态栏', `${code}-${name}`);
     try {
         const openingRegex = JSON.parse(await readFile(join(openingFolder, `regex-开场白主页${code}-${name}.json`), 'utf8'));
         const openingTemplate = await readFile(join(openingFolder, `开场白主页${code}-可编辑模板.txt`), 'utf8');
@@ -114,11 +115,19 @@ for (const [code, name] of starterDefinitions) {
     } catch (error) {
         errors.push(`开场白主页${code}成品缺失或 JSON 无效：${error.message}`);
     }
+}
+
+for (const style of STATUS_STYLE_PRESETS) {
+    const { code, id, name } = style;
+    const statusFolder = join(root, 'starter-packs', '通用状态栏', `${code}-${name}`);
     try {
         const statusRegex = JSON.parse(await readFile(join(statusFolder, `regex-通用状态栏${code}-${name}.json`), 'utf8'));
         const worldbook = JSON.parse(await readFile(join(statusFolder, `世界书-通用状态栏${code}-${name}.json`), 'utf8'));
         statusIds.add(statusRegex.id);
         const entry = worldbook.entries?.[0];
+        if (!statusRegex.replaceString.includes(`data-theme="${id}"`)) {
+            errors.push(`通用状态栏${code}没有写入主题 ${id}`);
+        }
         if (!entry?.constant || !entry.content?.includes('所有值都必须根据当前剧情动态生成')) {
             errors.push(`通用状态栏${code}世界书没有动态输出规则`);
         }
@@ -130,7 +139,9 @@ for (const [code, name] of starterDefinitions) {
     }
 }
 if (openingIds.size !== 4) errors.push('四套开场白主页必须使用四个独立正则 ID');
-if (statusIds.size !== 4) errors.push('四套通用状态栏必须使用四个独立正则 ID');
+if (STATUS_STYLE_PRESETS.length !== 20) errors.push('状态栏主题注册表必须正好包含20套');
+if (new Set(STATUS_STYLE_PRESETS.map(style => style.id)).size !== 20) errors.push('20套状态栏必须使用20个独立主题 ID');
+if (statusIds.size !== 20) errors.push('20套通用状态栏必须使用20个独立正则 ID');
 
 if (errors.length) {
     console.error('STATIC_CHECK_FAILED');

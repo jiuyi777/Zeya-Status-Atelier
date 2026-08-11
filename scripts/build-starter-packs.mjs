@@ -2,7 +2,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildOpeningHomeBlock, buildOpeningHomeRegex } from '../opening-home-generator.js';
-import { RULE_PRESETS, buildAiInstruction, buildRegexScript, buildWorldbookJson } from '../rule-generator.js';
+import { RULE_PRESETS, STATUS_STYLE_PRESETS, buildAiInstruction, buildRegexScript, buildWorldbookJson } from '../rule-generator.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const outputRoot = join(root, 'starter-packs');
@@ -22,12 +22,7 @@ const openingPacks = [
     { code: '05', slug: 'minimal', name: '极简留白', theme: 'minimal', font: 'sans', accent: '#677f72', background: '#f6f4ee', text: '#2c322f', secondary: '#a98763' },
 ];
 
-const statusPacks = [
-    { code: '01', slug: 'classical', name: '古典对称', preset: 'universalClassical' },
-    { code: '03', slug: 'newspaper', name: '复古报刊', preset: 'universalNewspaper' },
-    { code: '04', slug: 'timeline', name: '中轴时间线', preset: 'universalTimeline' },
-    { code: '05', slug: 'minimal', name: '极简留白', preset: 'universalMinimal' },
-];
+const statusPacks = STATUS_STYLE_PRESETS;
 
 async function writeJson(filePath, value) {
     await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
@@ -70,11 +65,16 @@ for (const pack of openingPacks) {
 for (const pack of statusPacks) {
     const folder = join(outputRoot, '通用状态栏', `${pack.code}-${pack.name}`);
     await mkdir(folder, { recursive: true });
-    const tagName = `zeya_status_${pack.slug}`;
+    const tagName = `zeya_status_${pack.id}`;
     const settings = {
-        ...RULE_PRESETS[pack.preset],
-        ruleId: `zeya-status-${pack.slug}-v1`,
+        ...RULE_PRESETS.universalClassical,
+        ruleId: `zeya-status-${pack.id}-v1`,
         tagName,
+        ruleName: `通用状态栏${pack.code}·${pack.name}`,
+        title: pack.title,
+        subtitle: pack.subtitle,
+        theme: pack.id,
+        layout: pack.layout,
     };
     const instruction = buildAiInstruction(settings);
     const regex = buildRegexScript(settings);
