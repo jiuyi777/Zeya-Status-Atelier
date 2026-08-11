@@ -149,6 +149,8 @@ https://github.com/jiuyi777/Zeya-Status-Atelier
 
 “复制主页模板”用于得到要放进主页开场白的文本；“下载主页正则 JSON”或“一键安装”负责显示和真实跳转。
 
+0.8.6 起，“进入”按钮会优先使用酒馆助手已经公开并用于前端切换开场白的 `setChatMessages` 接口，同时通过 `setLorebookEntries` 启用所选线路绑定的 UID、禁用其他已绑定线路；旧酒馆环境才回退到原生 swipe 与 Slash 命令。
+
 仓库中的 `starter-packs/开场白主页` 已放好四套成品。每套包含一个正则 JSON 和一个可编辑模板。
 
 ### 读取角色卡现有开场白

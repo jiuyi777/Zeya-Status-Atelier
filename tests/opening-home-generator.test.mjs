@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import vm from 'node:vm';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
@@ -73,6 +74,10 @@ test('opening homepage regex renders four selected themes and uses native swipe'
     assert.match(script.findRegex, /opening_home/);
     assert.match(script.replaceString, /classical','newspaper','timeline','minimal/);
     assert.match(script.replaceString, /swipe\[direction\]\.call/);
+    assert.match(script.replaceString, /setChatMessages/);
+    assert.match(script.replaceString, /message_id:0,swipe_id:target/);
+    assert.match(script.replaceString, /setLorebookEntries/);
+    assert.match(script.replaceString, /enabled:value\.enabled/);
     assert.match(script.replaceString, /textContent/);
     assert.match(script.replaceString, /openings\.forEach/);
     assert.match(script.replaceString, /zoh-intro-markdown/);
@@ -88,6 +93,74 @@ test('generated opening homepage browser script is syntactically valid', () => {
     const match = replacement.match(/<script>\n([\s\S]*?)\n<\/script>/);
     assert.ok(match, 'generated script block is present');
     assert.doesNotThrow(() => new Function(match[1]));
+});
+
+test('enter button switches the greeting and applies the selected UID worldline through TavernHelper', async () => {
+    const input = {
+        ...OPENING_HOME_DEFAULTS,
+        worldlines: [
+            { id: 'sinner', name: '罪人线', entries: [{ book: '谈论爱之生', uid: 2, title: '罪人线 NSFW' }] },
+            { id: 'god', name: '神明线', entries: [{ book: '谈论爱之生', uid: 10, title: '神明线设定' }] },
+        ],
+        entries: [{ number: '01', title: '赦免', route: '罪人线', summary: '简介', target: 2, worldlineId: 'sinner' }],
+    };
+    const replacement = buildOpeningHomeRegex(input).replaceString;
+    const scriptSource = replacement.match(/<script>\n([\s\S]*?)\n<\/script>/)?.[1];
+    assert.ok(scriptSource);
+
+    const node = () => ({
+        children: [],
+        dataset: {},
+        style: { setProperty() {} },
+        classList: { contains: () => true },
+        listeners: {},
+        append(...items) { this.children.push(...items); },
+        prepend(...items) { this.children.unshift(...items); },
+        replaceChildren(...items) { this.children = items; },
+        remove() { this.removed = true; },
+        addEventListener(type, listener) { this.listeners[type] = listener; },
+        scrollIntoView() {},
+    });
+    const button = node();
+    const article = { ...node(), querySelector: selector => selector === '.zoh-jump' ? button : null };
+    const list = { ...node(), querySelectorAll: selector => selector === '.zoh-entry' ? [article] : [] };
+    const routes = node();
+    const source = { ...node(), value: buildOpeningHomeBlock(input) };
+    const generic = node();
+    const root = {
+        ...node(),
+        querySelector(selector) {
+            if (selector === '.zoh-source') return source;
+            if (selector === '.zoh-list') return list;
+            if (selector === '.zoh-routes') return routes;
+            return generic;
+        },
+    };
+    const style = { previousElementSibling: root };
+    const currentScript = { previousElementSibling: style };
+    const worldbookCalls = [];
+    const chatCalls = [];
+    const document = {
+        currentScript,
+        createElement: () => node(),
+        createTextNode: value => ({ textContent: value }),
+        querySelector: () => generic,
+    };
+    const TavernHelper = {
+        getChatMessages: async () => [{ swipe_id: 0, swipes: ['主页', '罪人线开场', '神明线开场'] }],
+        setChatMessages: async (messages, options) => chatCalls.push({ messages, options }),
+        setLorebookEntries: async (book, entries) => worldbookCalls.push({ book, entries }),
+    };
+    const window = { document, TavernHelper, parent: null };
+    window.parent = window;
+    vm.runInNewContext(scriptSource, { window, document, Map, JSON, Number, String, Array, Math, decodeURIComponent, console });
+
+    await button.listeners.click();
+    assert.deepEqual(JSON.parse(JSON.stringify(chatCalls)), [{ messages: [{ message_id: 0, swipe_id: 1 }], options: { refresh: 'affected' } }]);
+    assert.deepEqual(JSON.parse(JSON.stringify(worldbookCalls)), [{
+        book: '谈论爱之生',
+        entries: [{ uid: 2, enabled: true }, { uid: 10, enabled: false }],
+    }]);
 });
 
 test('downloaded opening regex embeds current edited content instead of an empty capture', () => {
