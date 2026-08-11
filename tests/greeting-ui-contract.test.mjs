@@ -27,3 +27,16 @@ test('AI routes are constrained by the current character worldbook catalog', () 
     assert.match(source, /route 只能逐字选择上面世界书中已经存在的线路名/);
     assert.doesNotMatch(source, /不得重复这些已使用线路标签/);
 });
+
+test('worldbook route prefixes create UID bindings and connect each opening', () => {
+    assert.match(source, /syncWorldbookRouteBindings\(routeCatalog\)/);
+    assert.match(source, /routeWorldlineIds\?\.\[generated\[index\]\.route\]/);
+    assert.match(source, /查看\/调整绑定 UID/);
+    assert.match(source, /已自动绑定/);
+});
+
+test('regenerate all preserves written work intro and only fills missing homepage fields', () => {
+    assert.match(source, /const makeHomepage = Boolean\(homepageFields\.length\)/);
+    assert.match(source, /if \(batch\.workIntro && needsGeneratedWorkIntro\(\)\)/);
+    assert.doesNotMatch(source, /overwrite \|\| needsGeneratedWorkIntro\(\)/);
+});

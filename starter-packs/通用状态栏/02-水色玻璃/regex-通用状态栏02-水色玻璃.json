@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-glass-v1",
-  "scriptName": "久一 · 通用状态栏02·水色玻璃",
+  "scriptName": "九一 · 通用状态栏02·水色玻璃",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_glass>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_glass>/i",

@@ -68,3 +68,40 @@ export function constrainRouteToCatalog(value, catalog) {
     const normalized = canonicalWorldbookRouteLabel(value) || clean(value);
     return labels.find(label => label === normalized) || labels.find(label => normalized.includes(label) || label.includes(normalized)) || '';
 }
+
+function stableAutoWorldlineId(label) {
+    let hash = 2166136261;
+    for (const character of String(label || '')) hash = Math.imul(hash ^ character.codePointAt(0), 16777619);
+    return `auto-route-${(hash >>> 0).toString(36)}`;
+}
+
+export function syncRouteCatalogWorldlines(worldlines, catalog) {
+    const lines = Array.isArray(worldlines) ? worldlines : [];
+    const ids = {};
+    for (const record of Array.isArray(catalog) ? catalog : []) {
+        const bindings = record.variants.map(variant => ({
+            book: String(variant.book || '').trim(),
+            uid: Math.max(0, Math.trunc(Number(variant.uid) || 0)),
+            title: String(variant.title || `UID ${variant.uid}`).trim(),
+        })).filter(binding => binding.book);
+        let worldline = lines.find(line => String(line.name || '').trim() === record.label);
+        if (!worldline) {
+            worldline = lines.find(line => bindings.some(binding => (line.entries || []).some(item => item.book === binding.book && Number(item.uid) === binding.uid)));
+        }
+        if (!worldline) {
+            worldline = lines.find(line => /^世界线\s*\d+$/u.test(String(line.name || '').trim()) && !(line.entries || []).length);
+        }
+        if (!worldline) {
+            worldline = { id: stableAutoWorldlineId(record.label), name: record.label, description: '', entries: [] };
+            lines.push(worldline);
+        } else if (/^世界线\s*\d+$/u.test(String(worldline.name || '').trim())) {
+            worldline.name = record.label;
+        }
+        worldline.entries ??= [];
+        for (const binding of bindings) {
+            if (!worldline.entries.some(item => item.book === binding.book && Number(item.uid) === binding.uid)) worldline.entries.push(binding);
+        }
+        ids[record.label] = worldline.id;
+    }
+    return ids;
+}

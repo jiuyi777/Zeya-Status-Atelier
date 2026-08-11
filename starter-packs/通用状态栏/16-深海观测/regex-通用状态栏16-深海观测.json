@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-ocean-v1",
-  "scriptName": "久一 · 通用状态栏16·深海观测",
+  "scriptName": "九一 · 通用状态栏16·深海观测",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_ocean>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_ocean>/i",

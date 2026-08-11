@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-newspaper-v1",
-  "scriptName": "久一 · 通用状态栏03·复古报刊",
+  "scriptName": "九一 · 通用状态栏03·复古报刊",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_newspaper>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_newspaper>/i",

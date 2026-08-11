@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-cyber-v1",
-  "scriptName": "久一 · 通用状态栏09·赛博终端",
+  "scriptName": "九一 · 通用状态栏09·赛博终端",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_cyber>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_cyber>/i",

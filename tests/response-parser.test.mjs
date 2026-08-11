@@ -18,9 +18,20 @@ import {
 
 test('provides SillyTavern-compatible JSON schemas for single and batch summaries', () => {
     assert.deepEqual(SINGLE_SUMMARY_JSON_SCHEMA.value.required, ['title', 'route', 'summary']);
-    assert.deepEqual(BATCH_SUMMARY_JSON_SCHEMA.value.required, ['workIntro', 'entries']);
+    assert.deepEqual(BATCH_SUMMARY_JSON_SCHEMA.value.required, ['homeTitle', 'homeSubtitle', 'workIntro', 'entries']);
     assert.deepEqual(BATCH_SUMMARY_JSON_SCHEMA.value.properties.entries.items.required, ['index', 'title', 'route', 'summary']);
     assert.deepEqual(ENTRY_BATCH_JSON_SCHEMA.value.required, ['entries']);
+});
+
+test('parses optional AI-filled homepage title fields without losing the directory', () => {
+    const parsed = parseBatchSummaryResponse(JSON.stringify({
+        homeTitle: '白冠秘闻',
+        homeSubtitle: '圣光之下',
+        entries: [{ index: 1, title: '地牢赦免', route: '罪人线', summary: '塞恩在行刑前夜进入地牢，决定暗中带走即将受刑的你。' }],
+    }), [{ index: 0 }]);
+    assert.equal(parsed.homeTitle, '白冠秘闻');
+    assert.equal(parsed.homeSubtitle, '圣光之下');
+    assert.equal(parsed.entries.get(0).route, '罪人线');
 });
 
 test('normalizes route labels and clamps generated directory copy', () => {

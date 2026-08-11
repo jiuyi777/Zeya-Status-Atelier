@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-airline-passport-v1",
-  "scriptName": "久一 · 通用状态栏33·复古旅行护照",
+  "scriptName": "九一 · 通用状态栏33·复古旅行护照",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_airline-passport>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_airline-passport>/i",

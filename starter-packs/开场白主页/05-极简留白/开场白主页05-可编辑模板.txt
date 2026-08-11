@@ -1,5 +1,5 @@
 <opening_home_minimal>
-[Meta|作品导航|STORY HOME|久一|填写推荐模型|填写推荐预设]
+[Meta|作品导航|STORY HOME|九一|填写推荐模型|填写推荐预设]
 [Style|minimal|sans|#677f72|#f6f4ee|#2c322f|#a98763|#fffaf0|#e8e0d0|#1a3048]
 [Intro|这里填写整部作品的世界观、主要人物、故事背景与阅读提示。]
 [Opening|01|开场白 1|未分类线|填写这一条开场白的故事简介。|2|]

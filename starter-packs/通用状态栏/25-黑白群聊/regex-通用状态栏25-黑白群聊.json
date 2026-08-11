@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-mono-chat-v1",
-  "scriptName": "久一 · 通用状态栏25·黑白群聊",
+  "scriptName": "九一 · 通用状态栏25·黑白群聊",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_mono-chat>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_mono-chat>/i",

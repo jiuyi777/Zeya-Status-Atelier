@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-prism-dashboard-v1",
-  "scriptName": "久一 · 通用状态栏43·棱镜企业仪表盘",
+  "scriptName": "九一 · 通用状态栏43·棱镜企业仪表盘",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_prism-dashboard>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_prism-dashboard>/i",

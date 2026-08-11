@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-memphis-food-v1",
-  "scriptName": "久一 · 通用状态栏32·孟菲斯食评",
+  "scriptName": "九一 · 通用状态栏32·孟菲斯食评",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_memphis-food>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_memphis-food>/i",

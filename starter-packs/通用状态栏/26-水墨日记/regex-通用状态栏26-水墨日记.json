@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-ink-diary-v1",
-  "scriptName": "久一 · 通用状态栏26·水墨日记",
+  "scriptName": "九一 · 通用状态栏26·水墨日记",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_ink-diary>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_ink-diary>/i",

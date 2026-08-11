@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-barrage-video-v1",
-  "scriptName": "久一 · 通用状态栏22·弹幕放映",
+  "scriptName": "九一 · 通用状态栏22·弹幕放映",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_barrage-video>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_barrage-video>/i",

@@ -6,14 +6,14 @@ import {
     makePreviewRecords,
     normalizeRule,
     parseFields,
-} from './rule-generator.js?v=0.8.4';
+} from './rule-generator.js?v=0.8.5';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.8.4';
+} from './opening-home-generator.js?v=0.8.5';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -25,13 +25,14 @@ import {
     parseSummaryResponse,
     responseText,
     usableGreetingRecords,
-} from './response-parser.js?v=0.8.4';
+} from './response-parser.js?v=0.8.5';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
+    syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.8.4';
+} from './worldbook-routes.js?v=0.8.5';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -43,7 +44,7 @@ import { saveSettings } from '../../../../script.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.8.4';
+const VERSION = '0.8.5';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 
 const HOME_TEMPLATES = Object.freeze([
@@ -143,14 +144,14 @@ function notify(level, message) {
     if (globalThis.toastr?.[level]) {
         globalThis.toastr[level](message);
     } else {
-        console[level === 'error' ? 'error' : 'log'](`[久一 正则状态工坊] ${message}`);
+        console[level === 'error' ? 'error' : 'log'](`[九一 正则状态工坊] ${message}`);
     }
 }
 
 function showOpeningReadProgress(message) {
     if (!globalThis.toastr?.info) return;
     if (openingReadToast) globalThis.toastr.clear?.(openingReadToast);
-    openingReadToast = globalThis.toastr.info(message, '久一 · AI 正在生成', {
+    openingReadToast = globalThis.toastr.info(message, '九一 · AI 正在生成', {
         timeOut: 0,
         extendedTimeOut: 0,
         tapToDismiss: false,
@@ -729,7 +730,7 @@ async function currentWorldbookRouteCatalog() {
     return extractWorldbookRouteCatalog(books);
 }
 
-function schemaWithRouteCatalog(schema, catalog, batch = false) {
+function schemaWithRouteCatalog(schema, catalog, batch = false, homepageFields = null) {
     const copy = JSON.parse(JSON.stringify(schema));
     const labels = worldbookRouteLabels(catalog);
     const allowed = labels.length ? labels : ['未分类线'];
@@ -737,7 +738,19 @@ function schemaWithRouteCatalog(schema, catalog, batch = false) {
         ? copy?.value?.properties?.entries?.items?.properties?.route
         : copy?.value?.properties?.route;
     if (routeSchema) routeSchema.enum = allowed;
+    if (batch && homepageFields && copy?.value?.properties) {
+        for (const key of ['homeTitle', 'homeSubtitle', 'workIntro']) {
+            if (!homepageFields.includes(key)) delete copy.value.properties[key];
+        }
+        copy.value.required = [...homepageFields, 'entries'];
+    }
     return copy;
+}
+
+function syncWorldbookRouteBindings(catalog) {
+    const home = settings().openingHome;
+    home.worldlines ??= [];
+    return syncRouteCatalogWorldlines(home.worldlines, catalog);
 }
 
 async function renderEntryDialogOptions() {
@@ -801,6 +814,7 @@ function confirmEntryDialog() {
     });
     closeEntryDialog();
     renderOpeningWorldlines();
+    renderGreetingList();
     saveSettingsSoon();
 }
 
@@ -1085,7 +1099,7 @@ function exportProfile() {
 async function importProfile(fileToImport) {
     const data = JSON.parse(await fileToImport.text());
     if (data?.format !== 'zeya-regex-status-profile' || !data.settings || typeof data.settings !== 'object') {
-        throw new Error('这不是久一正则状态工坊配置');
+        throw new Error('这不是九一正则状态工坊配置');
     }
     const notes = settings().openingNotes;
     const apiKey = settings().openingSummary?.apiKey || '';
@@ -1245,6 +1259,16 @@ function needsGeneratedWorkIntro() {
     return !intro || intro === OPENING_HOME_DEFAULTS.intro;
 }
 
+function needsGeneratedHomeTitle() {
+    const title = String(settings().openingHome.title || '').trim();
+    return !title || title === OPENING_HOME_DEFAULTS.title;
+}
+
+function needsGeneratedHomeSubtitle() {
+    const subtitle = String(settings().openingHome.subtitle || '').trim();
+    return !subtitle || subtitle === OPENING_HOME_DEFAULTS.subtitle;
+}
+
 function fallbackGreetingMetadata(entry) {
     const number = (entry?.index ?? 0) + 1;
     return {
@@ -1257,32 +1281,41 @@ function fallbackGreetingMetadata(entry) {
 async function summarizeGreetingsBatch(entries, { overwrite = false } = {}) {
     const config = settings().openingSummary;
     const routeCatalog = await currentWorldbookRouteCatalog();
+    const routeWorldlineIds = syncWorldbookRouteBindings(routeCatalog);
     const requested = overwrite ? entries : entries.filter(entry => !entry.title || !entry.route || !entry.summary);
-    const makeWorkIntro = overwrite || needsGeneratedWorkIntro();
-    if (!requested.length && !makeWorkIntro) return { entries: new Map(), workIntro: '' };
-    const sourceEntries = makeWorkIntro ? entries : requested;
+    const homepageFields = [
+        ...(needsGeneratedHomeTitle() ? ['homeTitle'] : []),
+        ...(needsGeneratedHomeSubtitle() ? ['homeSubtitle'] : []),
+        ...(needsGeneratedWorkIntro() ? ['workIntro'] : []),
+    ];
+    const makeHomepage = Boolean(homepageFields.length);
+    if (!requested.length && !makeHomepage) return { entries: new Map(), homeTitle: '', homeSubtitle: '', workIntro: '', routeLabels: worldbookRouteLabels(routeCatalog), routeWorldlineIds };
+    const sourceEntries = makeHomepage ? entries : requested;
     const chunks = [];
     for (let index = 0; index < sourceEntries.length; index += 4) chunks.push(sourceEntries.slice(index, index + 4));
-    const parsed = { entries: new Map(), workIntro: '' };
+    const parsed = { entries: new Map(), homeTitle: '', homeSubtitle: '', workIntro: '' };
     const warnings = [];
     for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex += 1) {
         const chunk = chunks[chunkIndex];
-        const includeIntro = makeWorkIntro && chunkIndex === 0;
+        const includeHomepage = makeHomepage && chunkIndex === 0;
         const source = chunk.map(entry => `--- 额外问候语 #${entry.index + 1} ---\n${String(entry.raw).slice(0, 900)}`).join('\n\n');
-        const introContext = includeIntro
-            ? `\n\n全篇开局线索（只用于作品总简介）：\n${sourceEntries.map(entry => `#${entry.index + 1} ${String(entry.raw).slice(0, 260)}`).join('\n').slice(0, 2600)}`
+        const introContext = includeHomepage
+            ? `\n\n全篇开局线索（只用于缺失的主页资料）：\n${sourceEntries.map(entry => `#${entry.index + 1} ${String(entry.raw).slice(0, 260)}`).join('\n').slice(0, 2600)}`
             : '';
-        const outputExample = includeIntro
-            ? '{"workIntro":"作品总简介","entries":[{"index":1,"title":"短标题","route":"世界书线路名","summary":"路线简介"}]}'
+        const homepageExample = homepageFields.map(key => `"${key}":"${key === 'homeTitle' ? '作品短标题' : key === 'homeSubtitle' ? '小副标题' : '作品总简介'}"`).join(',');
+        const outputExample = includeHomepage
+            ? `{${homepageExample}${homepageExample ? ',' : ''}"entries":[{"index":1,"title":"短标题","route":"世界书线路名","summary":"路线简介"}]}`
             : '{"entries":[{"index":1,"title":"短标题","route":"世界书线路名","summary":"路线简介"}]}';
-        const introRule = includeIntro
-            ? '1. workIntro 为 60 到 100 个汉字，只介绍核心背景、主要人物关系与互动故事的总体开局，不堆砌使用说明，不照抄任一开场正文；\n'
-            : '';
-        const prompt = `你是互动故事的目录编辑。请制作${includeIntro ? '“作品简介 + ' : '“'}开局路线目录”。\n\n严格只输出 JSON，不要 Markdown，不要思考过程：\n${outputExample}\n\n世界书线路：\n${routeCatalogPrompt(routeCatalog)}\n\n写作标准：\n${introRule}2. title 为 4 到 12 个汉字的文学化短标题，体现该开局的基调或核心事件，禁止把正文第一句截断后当标题；\n3. route 只能逐字选择上面世界书中已经存在的线路名；同一线路允许对应多条开场，禁止自创或为了避免重复而改名；\n4. summary 为 28 到 50 个汉字的一句话，明确写出“谁处于什么情境、正在做什么、发生了什么”，只介绍本开局，不剧透后续；\n5. 本批每个输入编号都必须返回，index 必须使用输入中的数字；短标题不能重复。\n\n${source}${introContext}`;
+        const homepageRules = includeHomepage ? [
+            homepageFields.includes('homeTitle') ? 'homeTitle 为 4 到 10 个汉字的作品主页短标题；' : '',
+            homepageFields.includes('homeSubtitle') ? 'homeSubtitle 为简短的小副标题，可用中文或英文，不超过 24 字；' : '',
+            homepageFields.includes('workIntro') ? 'workIntro 为 60 到 100 个汉字，只介绍核心背景、主要人物关系与总体开局，不照抄正文；' : '',
+        ].filter(Boolean).join('\n') : '';
+        const prompt = `你是互动故事的目录编辑。请补全缺失的主页资料并制作开场目录。已经由用户填写的主页资料不会发送给你，也绝不能改写。\n\n严格只输出 JSON，不要 Markdown，不要思考过程：\n${outputExample}\n\n世界书线路：\n${routeCatalogPrompt(routeCatalog)}\n\n写作标准：\n${homepageRules}\n1. title 为 4 到 12 个汉字的文学化短标题，体现该开局的基调或核心事件，禁止把正文第一句截断后当标题；\n2. route 只能逐字选择上面世界书中已经存在的线路名；同一线路允许对应多条开场，禁止自创或为了避免重复而改名；\n3. summary 为 28 到 50 个汉字的一句话，明确写出“谁处于什么情境、正在做什么、发生了什么”，只介绍本开局，不剧透后续；\n4. 本批每个输入编号都必须返回，index 必须使用输入中的数字；短标题不能重复。\n\n${source}${introContext}`;
         let responseText = '';
         try {
             if (config.source === 'main') {
-                responseText = await generateWithCurrentPreset(prompt, schemaWithRouteCatalog(includeIntro ? BATCH_SUMMARY_JSON_SCHEMA : ENTRY_BATCH_JSON_SCHEMA, routeCatalog, true));
+                responseText = await generateWithCurrentPreset(prompt, schemaWithRouteCatalog(includeHomepage ? BATCH_SUMMARY_JSON_SCHEMA : ENTRY_BATCH_JSON_SCHEMA, routeCatalog, true, includeHomepage ? homepageFields : null));
             } else {
                 responseText = await requestExternalSummary(prompt, 4096);
             }
@@ -1292,6 +1325,8 @@ async function summarizeGreetingsBatch(entries, { overwrite = false } = {}) {
         if (!responseText) continue;
         try {
             const chunkParsed = parseBatchSummaryResponse(responseText, chunk);
+            if (!parsed.homeTitle && chunkParsed.homeTitle) parsed.homeTitle = chunkParsed.homeTitle;
+            if (!parsed.homeSubtitle && chunkParsed.homeSubtitle) parsed.homeSubtitle = chunkParsed.homeSubtitle;
             if (!parsed.workIntro && chunkParsed.workIntro) parsed.workIntro = chunkParsed.workIntro;
             chunkParsed.entries.forEach((value, key) => {
                 value.route = constrainRouteToCatalog(value.route, routeCatalog) || '未分类线';
@@ -1303,7 +1338,7 @@ async function summarizeGreetingsBatch(entries, { overwrite = false } = {}) {
     }
     const missing = requested.filter(entry => !parsed.entries.has(entry.index));
     missing.forEach(entry => parsed.entries.set(entry.index, fallbackGreetingMetadata(entry)));
-    return { ...parsed, routeLabels: worldbookRouteLabels(routeCatalog), fallbackCount: missing.length, formatWarning: warnings.join('；') };
+    return { ...parsed, routeLabels: worldbookRouteLabels(routeCatalog), routeWorldlineIds, fallbackCount: missing.length, formatWarning: warnings.join('；') };
 }
 
 async function readGreetingsIntoOpeningHome({ overwrite = false } = {}) {
@@ -1327,7 +1362,17 @@ async function readGreetingsIntoOpeningHome({ overwrite = false } = {}) {
     saveSettingsSoon();
 
     const batch = await summarizeGreetingsBatch(data.entries, { overwrite });
-    if (batch.workIntro && (overwrite || needsGeneratedWorkIntro())) {
+    if (batch.homeTitle && needsGeneratedHomeTitle()) {
+        settings().openingHome.title = batch.homeTitle;
+        const titleControl = field('status-atelier-opening-home-title');
+        if (titleControl) titleControl.value = batch.homeTitle;
+    }
+    if (batch.homeSubtitle && needsGeneratedHomeSubtitle()) {
+        settings().openingHome.subtitle = batch.homeSubtitle;
+        const subtitleControl = field('status-atelier-opening-home-subtitle');
+        if (subtitleControl) subtitleControl.value = batch.homeSubtitle;
+    }
+    if (batch.workIntro && needsGeneratedWorkIntro()) {
         settings().openingHome.intro = batch.workIntro;
         const introControl = field('status-atelier-opening-home-intro');
         if (introControl) introControl.value = batch.workIntro;
@@ -1338,6 +1383,7 @@ async function readGreetingsIntoOpeningHome({ overwrite = false } = {}) {
         generated[index].title = overwrite ? ai?.title || generated[index].title : entry.title || ai?.title || generated[index].title;
         generated[index].route = overwrite ? ai?.route || generated[index].route : entry.route || ai?.route || generated[index].route;
         generated[index].summary = overwrite ? ai?.summary || generated[index].summary : entry.summary || ai?.summary || generated[index].summary;
+        generated[index].worldlineId = batch.routeWorldlineIds?.[generated[index].route] || generated[index].worldlineId || '';
         if (data.key) {
             settings().openingNotes[data.key] ??= {};
             settings().openingNotes[data.key][entry.sourceIndex ?? index] = { title: generated[index].title, route: generated[index].route, summary: generated[index].summary };
@@ -1345,10 +1391,12 @@ async function readGreetingsIntoOpeningHome({ overwrite = false } = {}) {
         renderOpeningHomeEntries();
         renderGreetingList();
     }
+    renderOpeningWorldlines();
     saveSettingsSoon();
     const fallbackNotice = batch.fallbackCount ? `；其中 ${batch.fallbackCount} 条未取得有效 AI 目录，已保留为明确的待编辑项` : '';
     const routeNotice = batch.routeLabels?.length ? `；线路取自世界书：${batch.routeLabels.join('、')}` : '；世界书中未识别到线路条目';
-    notify(batch.fallbackCount ? 'warning' : 'success', `已读取 ${data.entries.length} 条额外问候语${batch.entries.size ? `，生成 ${batch.entries.size} 组标题、线路标签与简介` : ''}${batch.workIntro ? '，作品简介也已生成' : ''}${routeNotice}${fallbackNotice}`);
+    const homepageNotice = [batch.homeTitle && '主页标题', batch.homeSubtitle && '小副标题', batch.workIntro && '作品简介'].filter(Boolean);
+    notify(batch.fallbackCount ? 'warning' : 'success', `已读取 ${data.entries.length} 条额外问候语${batch.entries.size ? `，生成 ${batch.entries.size} 组短标题与简介` : ''}${homepageNotice.length ? `；补全${homepageNotice.join('、')}` : ''}${routeNotice}${fallbackNotice}`);
     return batch;
 }
 
@@ -1360,6 +1408,10 @@ async function regenerateOpeningEntry(index) {
     target.title = generated.title;
     target.route = generated.route;
     target.summary = generated.summary;
+    const routeCatalog = await currentWorldbookRouteCatalog();
+    const routeWorldlineIds = syncWorldbookRouteBindings(routeCatalog);
+    target.worldlineId = routeWorldlineIds[target.route] || target.worldlineId || '';
+    renderOpeningWorldlines();
     renderOpeningHomeEntries();
     saveSettingsSoon();
     const data = alternateGreetingData();
@@ -1375,7 +1427,7 @@ function buildGreetingModal() {
         <div class="status-atelier-modal-backdrop" data-status-atelier-close></div>
         <section class="status-atelier-dialog" role="dialog" aria-modal="true" aria-labelledby="status-atelier-dialog-title">
             <header class="status-atelier-dialog-header">
-                <h3 id="status-atelier-dialog-title">读取当前角色卡的额外问候语</h3>
+                <h3 id="status-atelier-dialog-title">制作当前角色卡的开场白主页</h3>
                 <button type="button" class="menu_button" data-status-atelier-close aria-label="关闭">×</button>
             </header>
             <div class="status-atelier-dialog-body">
@@ -1389,9 +1441,9 @@ function buildGreetingModal() {
             <footer class="status-atelier-dialog-footer">
                 <button type="button" class="menu_button" id="status-atelier-read-current-card">补全缺失项</button>
                 <button type="button" class="menu_button status-atelier-regenerate-all" id="status-atelier-regenerate-all">全部重新生成</button>
-                <button type="button" class="menu_button" id="status-atelier-modal-copy-home">复制主页模板</button>
+                <button type="button" class="menu_button" id="status-atelier-modal-copy-home">复制主页</button>
                 <button type="button" class="menu_button" id="status-atelier-modal-download-regex">下载正则</button>
-                <button type="button" class="menu_button" id="status-atelier-open-full-workbench">更多样式与世界线</button>
+                <button type="button" class="menu_button" id="status-atelier-open-full-workbench">样式与 UID</button>
                 <button type="button" class="menu_button" data-status-atelier-close>完成</button>
             </footer>
         </section>`;
@@ -1407,7 +1459,7 @@ function buildGreetingModal() {
         notify('success', '已复制包含当前填写内容的主页模板');
     });
     greetingModal.querySelector('#status-atelier-modal-download-regex').addEventListener('click', () => {
-        downloadJson('regex-久一-通用开场白主页.json', buildOpeningHomeRegex(settings().openingHome));
+        downloadJson('regex-九一-通用开场白主页.json', buildOpeningHomeRegex(settings().openingHome));
         notify('success', '已下载包含当前填写内容的主页正则');
     });
     greetingModal.querySelector('#status-atelier-open-full-workbench').addEventListener('click', openFullWorkbench);
@@ -1518,6 +1570,23 @@ function renderGreetingList() {
         const summaryField = labeledInput('路线简介（1句话，谁在做什么、发生了什么）', entry.summary || generated?.summary || '', { multiline: true, maxLength: 56 });
         const fields = makeElement('div', 'status-atelier-greeting-fields');
         fields.append(titleField.label, routeField.label, summaryField.label);
+        const bindingBox = makeElement('div', 'status-atelier-greeting-binding');
+        const routeName = entry.route || generated?.route || '';
+        const boundWorldline = settings().openingHome.worldlines.find(line => line.id === generated?.worldlineId)
+            || settings().openingHome.worldlines.find(line => line.name === routeName);
+        if (boundWorldline) {
+            const bindingText = (boundWorldline.entries || []).map(item => `${item.book} · UID ${item.uid}`).join('；');
+            bindingBox.append(makeElement('small', '', bindingText ? `已自动绑定：${bindingText}` : `线路“${boundWorldline.name}”尚未绑定 UID`));
+            const adjustBinding = makeElement('button', 'menu_button', '查看/调整绑定 UID');
+            adjustBinding.type = 'button';
+            adjustBinding.addEventListener('click', () => {
+                const worldlineIndex = settings().openingHome.worldlines.indexOf(boundWorldline);
+                openEntryDialog(worldlineIndex).catch(error => notify('error', error?.message || '读取世界书条目失败'));
+            });
+            bindingBox.append(adjustBinding);
+        } else {
+            bindingBox.append(makeElement('small', '', '尚未从世界书识别到可绑定线路；生成后会自动匹配条目前缀。'));
+        }
         const actions = makeElement('div', 'status-atelier-greeting-actions');
         const regenerate = makeElement('button', 'menu_button', '让 AI 重写本条');
         regenerate.type = 'button';
@@ -1533,6 +1602,7 @@ function renderGreetingList() {
             if (!target) return;
             target.title = titleField.input.value.trim() || `未命名开局 ${entry.index + 1}`;
             target.route = routeField.input.value.trim() || '未分类线';
+            target.worldlineId = settings().openingHome.worldlines.find(line => line.name === target.route)?.id || target.worldlineId || '';
             target.summary = summaryField.input.value.trim();
             headingTitle.textContent = target.title;
             headingRoute.textContent = target.route;
@@ -1552,6 +1622,7 @@ function renderGreetingList() {
         card.append(
             heading,
             fields,
+            bindingBox,
             actions,
             original,
         );
@@ -1570,7 +1641,7 @@ async function refreshGreetingModal(button, overwrite = false) {
     generationButtons.forEach(item => { item.disabled = true; });
     const originalLabel = button?.textContent || '';
     if (button) button.textContent = overwrite ? '正在全部重写…' : '正在补全缺失项…';
-    const actionText = overwrite ? '覆盖生成全部短标题、线路标签、路线简介与作品简介' : '补全缺少的短标题、线路标签与路线简介';
+    const actionText = overwrite ? '覆盖生成全部开场目录，并仅补全缺失的主页标题资料' : '补全缺少的主页资料、短标题与路线简介';
     if (status) status.textContent = `已读取 ${alternateGreetingData().entries.length} 条，AI 正在${actionText}……`;
     setOpeningReadStatus(`已读取 ${alternateGreetingData().entries.length} 条，AI 正在${actionText}……`, 'loading');
     showOpeningReadProgress(`已读取角色卡内容，正在${actionText}。返回聊天页也可以继续等待。`);
@@ -1596,6 +1667,15 @@ function openGreetingModal() {
     renderGreetingList();
     greetingModal.classList.add('status-atelier-modal-open');
     greetingModal.setAttribute('aria-hidden', 'false');
+    currentWorldbookRouteCatalog().then(catalog => {
+        const routeWorldlineIds = syncWorldbookRouteBindings(catalog);
+        settings().openingHome.entries.forEach(entry => {
+            entry.worldlineId = routeWorldlineIds[entry.route] || entry.worldlineId || '';
+        });
+        renderOpeningWorldlines();
+        renderGreetingList();
+        saveSettingsSoon();
+    }).catch(error => console.warn(`[${MODULE_NAME}] 自动绑定世界书 UID 失败`, error));
 }
 
 function closeGreetingModal() {
@@ -1635,7 +1715,7 @@ function addExtensionsMenuItem() {
     item.setAttribute('aria-label', '读取当前角色卡的额外问候语');
     const icon = makeElement('div', 'fa-solid fa-wand-magic-sparkles extensionsMenuExtensionButton');
     icon.setAttribute('aria-hidden', 'true');
-    item.append(icon, makeElement('span', '', '读取额外问候语 · 久一'));
+    item.append(icon, makeElement('span', '', '制作开场白主页 · 九一'));
     item.addEventListener('click', openGreetingModal);
     item.addEventListener('keydown', event => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -1749,7 +1829,7 @@ async function addSettingsPanel() {
         notify('success', '开场白主页模板已复制');
     });
     field('status-atelier-opening-download-regex').addEventListener('click', () => {
-        downloadJson('regex-久一-通用开场白主页.json', buildOpeningHomeRegex(settings().openingHome));
+        downloadJson('regex-九一-通用开场白主页.json', buildOpeningHomeRegex(settings().openingHome));
         notify('success', '开场白主页正则 JSON 已生成');
     });
     field('status-atelier-opening-install-scoped').addEventListener('click', event => runInstallButton(event.currentTarget, installOpeningHomeRegex, 'scoped', '安装开场白主页正则失败'));
@@ -1781,7 +1861,7 @@ async function initialize() {
         if (document.querySelector('#status-atelier-menu-item')) break;
         await new Promise(resolve => setTimeout(resolve, 250));
     }
-    console.info(`[久一 正则状态工坊] v${VERSION} 已加载`);
+    console.info(`[九一 正则状态工坊] v${VERSION} 已加载`);
 }
 
 if (document.readyState === 'loading') {

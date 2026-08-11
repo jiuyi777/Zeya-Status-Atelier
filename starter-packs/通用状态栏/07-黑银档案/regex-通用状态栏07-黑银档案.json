@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-obsidian-v1",
-  "scriptName": "久一 · 通用状态栏07·黑银档案",
+  "scriptName": "九一 · 通用状态栏07·黑银档案",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_obsidian>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_obsidian>/i",

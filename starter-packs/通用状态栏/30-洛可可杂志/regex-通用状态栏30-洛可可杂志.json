@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-rococo-zine-v1",
-  "scriptName": "久一 · 通用状态栏30·洛可可杂志",
+  "scriptName": "九一 · 通用状态栏30·洛可可杂志",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_rococo-zine>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_rococo-zine>/i",

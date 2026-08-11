@@ -72,8 +72,8 @@ if (!indexSource.includes('saveScriptsByType')) {
 if (!generatorSource.includes('buildAiInstruction') || !generatorSource.includes('buildRegexScript')) {
     errors.push('缺少 AI 规则或正则 JSON 生成器');
 }
-if (manifest.author !== '久一') {
-    errors.push('manifest 作者必须为 久一');
+if (manifest.author !== '九一') {
+    errors.push('manifest 作者必须为 九一');
 }
 if (!cssSource.includes('@media (max-width: 700px)')) {
     errors.push('缺少手机端样式契约');

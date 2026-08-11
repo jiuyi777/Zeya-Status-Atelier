@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-candy-live-v1",
-  "scriptName": "久一 · 通用状态栏24·糖果直播",
+  "scriptName": "九一 · 通用状态栏24·糖果直播",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_candy-live>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_candy-live>/i",

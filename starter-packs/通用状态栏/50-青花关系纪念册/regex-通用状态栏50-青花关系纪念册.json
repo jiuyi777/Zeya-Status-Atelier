@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-porcelain-memory-v1",
-  "scriptName": "久一 · 通用状态栏50·青花关系纪念册",
+  "scriptName": "九一 · 通用状态栏50·青花关系纪念册",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_porcelain-memory>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_porcelain-memory>/i",

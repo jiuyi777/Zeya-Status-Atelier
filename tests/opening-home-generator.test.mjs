@@ -77,10 +77,10 @@ test('opening homepage regex renders four selected themes and uses native swipe'
     assert.match(script.replaceString, /openings\.forEach/);
     assert.match(script.replaceString, /zoh-intro-markdown/);
     assert.match(script.replaceString, /function markdown/);
-    assert.ok(script.replaceString.startsWith('<div class="zoh-root">'));
+    assert.ok(script.replaceString.startsWith('<div class="zoh-root"'));
     assert.doesNotMatch(script.replaceString, /```html/);
     assert.doesNotMatch(script.replaceString, /\$1/);
-    assert.match(script.replaceString, /\[Meta\|作品导航\|STORY HOME\|久一\|/);
+    assert.match(script.replaceString, /\[Meta\|作品导航\|STORY HOME\|九一\|/);
 });
 
 test('generated opening homepage browser script is syntactically valid', () => {
@@ -105,6 +105,9 @@ test('downloaded opening regex embeds current edited content instead of an empty
     assert.match(script.replaceString, /这里是已经填写的作品简介/);
     assert.match(script.replaceString, /雨夜重逢/);
     assert.match(script.replaceString, /旧识重逢线/);
+    assert.match(script.replaceString, /<h1 class="zoh-title">作品导航<\/h1>/);
+    assert.match(script.replaceString, /<h3 class="zoh-entry-title">雨夜重逢<\/h3>/);
+    assert.match(script.replaceString, /\.zoh-source,.zoh-routes,.zoh-route-tag\{display:none!important\}/);
 });
 
 test('embedded opening data cannot break the textarea or html fence', () => {

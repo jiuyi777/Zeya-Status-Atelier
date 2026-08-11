@@ -20,6 +20,8 @@ export const BATCH_SUMMARY_JSON_SCHEMA = Object.freeze({
     value: {
         type: 'object',
         properties: {
+            homeTitle: { type: 'string' },
+            homeSubtitle: { type: 'string' },
             workIntro: { type: 'string' },
             entries: {
                 type: 'array',
@@ -35,7 +37,7 @@ export const BATCH_SUMMARY_JSON_SCHEMA = Object.freeze({
                 },
             },
         },
-        required: ['workIntro', 'entries'],
+        required: ['homeTitle', 'homeSubtitle', 'workIntro', 'entries'],
     },
 });
 
@@ -94,7 +96,7 @@ export function responseText(value) {
     if (value === null || value === undefined) return '';
     if (Array.isArray(value)) return value.map(responseText).filter(Boolean).join('\n');
     if (typeof value !== 'object') return String(value);
-    if (value.entries || value.workIntro || value.title || value.summary) {
+    if (value.entries || value.workIntro || value.homeTitle || value.homeSubtitle || value.title || value.summary) {
         try { return JSON.stringify(value); } catch { /* fall through */ }
     }
     const candidates = [
@@ -187,8 +189,10 @@ export function parseSummaryResponse(value, fallbackTitle, fallbackSummary, fall
 
 export function parseBatchSummaryResponse(value, requestedEntries) {
     const text = responseText(value);
-    const parsed = lastMatchingJson(text, item => item && (Array.isArray(item.entries) || item.workIntro));
+    const parsed = lastMatchingJson(text, item => item && (Array.isArray(item.entries) || item.workIntro || item.homeTitle || item.homeSubtitle));
     const rows = Array.isArray(parsed?.entries) ? parsed.entries : [];
+    let homeTitle = compactText(parsed?.homeTitle, 18);
+    let homeSubtitle = compactText(parsed?.homeSubtitle, 30);
     let workIntro = compactText(parsed?.workIntro, 110);
     const requestedIndexes = new Set(requestedEntries.map(entry => entry.index));
     const entries = new Map();
@@ -201,12 +205,16 @@ export function parseBatchSummaryResponse(value, requestedEntries) {
     });
 
     const cleaned = stripReasoningBlocks(text).replace(/```(?:json)?/gi, '').trim();
+    if (!homeTitle) homeTitle = cleaned.match(/(?:主页标题|作品标题)\s*[:：]\s*([^\n]+)/i)?.[1]?.trim() || '';
+    if (!homeSubtitle) homeSubtitle = cleaned.match(/(?:小副标题|主页副标题)\s*[:：]\s*([^\n]+)/i)?.[1]?.trim() || '';
     if (!workIntro) {
         workIntro = cleaned.match(/\[(?:WorkIntro|作品简介)\s*\|\s*([^\]\n]+)\]/i)?.[1]?.trim()
             || cleaned.match(/(?:作品简介|总简介)\s*[:：]\s*([^\n]+)/i)?.[1]?.trim()
             || '';
     }
     workIntro = compactText(workIntro, 110);
+    homeTitle = compactText(homeTitle, 18);
+    homeSubtitle = compactText(homeSubtitle, 30);
     const addEntry = (rawIndex, rawTitle, rawRoute, rawSummary) => {
         const index = Math.trunc(Number(rawIndex)) - 1;
         const title = String(rawTitle || '').trim();
@@ -220,8 +228,8 @@ export function parseBatchSummaryResponse(value, requestedEntries) {
     for (const match of cleaned.matchAll(/(?:^|\n)\s*#?(\d+)\s*[.、)）-]\s*(?:标题\s*[:：]\s*)?([^\n]+)\n\s*(?:线路|路线|线路标签)\s*[:：]\s*([^\n]+)\n\s*(?:简介|摘要|线路简介)\s*[:：]\s*([^\n]+)/gi)) {
         addEntry(match[1], match[2], match[3], match[4]);
     }
-    if (!entries.size && !workIntro) throw new Error('AI 返回了内容，但没有生成任何有效简介');
-    return { entries, workIntro };
+    if (!entries.size && !workIntro && !homeTitle && !homeSubtitle) throw new Error('AI 返回了内容，但没有生成任何有效主页资料');
+    return { entries, homeTitle, homeSubtitle, workIntro };
 }
 
 export function generationErrorMessage(error) {

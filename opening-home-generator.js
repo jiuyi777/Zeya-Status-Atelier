@@ -5,7 +5,7 @@ export const OPENING_HOME_DEFAULTS = Object.freeze({
     ruleId: 'zeya-opening-home-v1',
     title: '作品导航',
     subtitle: 'STORY HOME',
-    author: '久一',
+    author: '九一',
     model: '填写模型名称',
     preset: '填写预设名称',
     intro: '这里填写整部作品的世界观、主要人物、故事背景与阅读提示。',
@@ -75,6 +75,22 @@ function escapeHtmlText(value) {
         .replace(/>/g, '&gt;');
 }
 
+function staticMultiline(value, fallback = '—') {
+    return escapeHtmlText(cleanMultiline(value, fallback)).replace(/\n/g, '<br>');
+}
+
+function staticIntro(value) {
+    const lines = cleanMultiline(value, '—').split('\n').filter(line => line.trim());
+    return lines.map(line => `<p>${escapeHtmlText(line)}</p>`).join('');
+}
+
+function contrastColor(value) {
+    const normalized = /^#[0-9a-f]{6}$/i.test(value) ? value : '#e8e0d0';
+    const number = Number.parseInt(normalized.slice(1), 16);
+    const brightness = (number >> 16) * 299 + ((number >> 8) & 255) * 587 + (number & 255) * 114;
+    return brightness > 150000 ? '#3f3024' : '#fffaf0';
+}
+
 export function normalizeOpeningHomeSettings(input = {}) {
     const defaults = clone(OPENING_HOME_DEFAULTS);
     const entries = Array.isArray(input.entries) ? input.entries : defaults.entries;
@@ -136,29 +152,36 @@ export function buildOpeningHomeBlock(input) {
 }
 
 function replacementHtml(input) {
-    const embeddedSource = escapeHtmlText(buildOpeningHomeBlock(input));
-    return `<div class="zoh-root">
+    const data = normalizeOpeningHomeSettings(input);
+    const embeddedSource = escapeHtmlText(buildOpeningHomeBlock(data));
+    const rootStyle = `--zoh-accent:${data.accent};--zoh-bg:${data.background};--zoh-text:${data.text};--zoh-secondary:${data.secondary};--zoh-card:${data.cardBackground};--zoh-intro:${data.introBackground};--zoh-intro-text:${contrastColor(data.introBackground)};--zoh-button:${data.buttonColor}`;
+    const staticEntries = data.entries.map((entry, index) => `<article class="zoh-entry" data-opening-index="${index}">
+        <div class="zoh-number">${escapeHtmlText(entry.number)}</div>
+        <div class="zoh-entry-copy"><h3 class="zoh-entry-title">${escapeHtmlText(entry.title)}</h3><span class="zoh-route-tag" hidden>${escapeHtmlText(entry.route)}</span><p class="zoh-summary">${escapeHtmlText(entry.summary)}</p></div>
+        <button class="zoh-jump" type="button">进入</button>
+      </article>`).join('\n      ');
+    return `<div class="zoh-root" data-theme="${data.theme}" data-font="${data.font}" style="${rootStyle}">
   <textarea class="zoh-source" hidden>${embeddedSource}</textarea>
   <section class="zoh-page">
     <header class="zoh-header">
-      <h1 class="zoh-title"></h1>
-      <div class="zoh-subtitle"></div>
+      <h1 class="zoh-title">${escapeHtmlText(data.title)}</h1>
+      <div class="zoh-subtitle">${escapeHtmlText(data.subtitle)}</div>
     </header>
     <div class="zoh-meta">
-      <div><span>作者</span><strong class="zoh-author"></strong></div>
-      <div><span>推荐模型</span><strong class="zoh-model"></strong></div>
-      <div><span>推荐预设</span><strong class="zoh-preset"></strong></div>
+      <div><span>作者</span><strong class="zoh-author">${escapeHtmlText(data.author)}</strong></div>
+      <div><span>推荐模型</span><strong class="zoh-model">${staticMultiline(data.model)}</strong></div>
+      <div><span>推荐预设</span><strong class="zoh-preset">${staticMultiline(data.preset)}</strong></div>
     </div>
-    <section class="zoh-intro"><h2>作品简介</h2><div class="zoh-intro-markdown"></div><div class="zoh-routes"></div></section>
+    <section class="zoh-intro"><h2>作品简介</h2><div class="zoh-intro-markdown">${staticIntro(data.intro)}</div><div class="zoh-routes" hidden></div></section>
     <section class="zoh-directory">
-      <div class="zoh-directory-head"><h2>开场白目录</h2><span class="zoh-count"></span></div>
-      <div class="zoh-list"></div>
+      <div class="zoh-directory-head"><h2>开场白目录</h2><span class="zoh-count">共 ${data.entries.length} 条</span></div>
+      <div class="zoh-list">${staticEntries}</div>
       <p class="zoh-notice" role="status" aria-live="polite"></p>
     </section>
   </section>
 </div>
 <style>
-.zoh-root,.zoh-root *{box-sizing:border-box}.zoh-root{--zoh-accent:#9b3f32;--zoh-bg:#f7f0df;--zoh-text:#3f3024;--zoh-secondary:#36526d;width:min(100%,680px);margin:14px auto;color:var(--zoh-text);font-family:"Noto Serif SC","Songti SC",serif;line-height:1.55}.zoh-root[data-font="sans"]{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.zoh-root[data-font="kai"]{font-family:"LXGW WenKai","KaiTi","STKaiti",serif}.zoh-root[data-font="mono"]{font-family:"Noto Sans Mono CJK SC","Cascadia Mono",monospace}.zoh-page{position:relative;padding:18px;border:3px double var(--zoh-accent);background:var(--zoh-bg);box-shadow:0 12px 30px rgba(0,0,0,.2);overflow:hidden}.zoh-header{text-align:center;padding:10px 8px 16px;border-bottom:1px solid color-mix(in srgb,var(--zoh-accent) 45%,transparent)}.zoh-title{margin:0;font-size:clamp(1.8em,8vw,3.2em);line-height:1.12;letter-spacing:.12em}.zoh-subtitle{margin-top:6px;color:var(--zoh-accent);font:600 .76em/1.2 sans-serif;letter-spacing:.28em}.zoh-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:13px 0}.zoh-meta>div{min-width:0;padding:10px;border:1px solid color-mix(in srgb,var(--zoh-accent) 30%,transparent);background:color-mix(in srgb,var(--zoh-bg) 88%,white)}.zoh-meta span,.zoh-meta strong{display:block}.zoh-meta span{color:var(--zoh-secondary);font-size:.72em;letter-spacing:.08em}.zoh-meta strong{margin-top:3px;overflow-wrap:anywhere;font-size:.92em}.zoh-intro{padding:16px;border:1px solid color-mix(in srgb,var(--zoh-secondary) 36%,transparent);background:color-mix(in srgb,var(--zoh-secondary) 8%,var(--zoh-bg))}.zoh-intro h2,.zoh-directory h2{margin:0;color:var(--zoh-accent);font-size:1.15em;letter-spacing:.14em}.zoh-intro p{margin:10px 0 0;white-space:pre-wrap}.zoh-routes{display:grid;gap:7px;margin-top:12px}.zoh-route{padding-top:8px;border-top:1px solid color-mix(in srgb,currentColor 24%,transparent)}.zoh-route strong,.zoh-route small{display:block}.zoh-route small{margin-top:3px;opacity:.82;white-space:pre-wrap}.zoh-directory{margin-top:18px}.zoh-directory-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:9px;border-bottom:1px solid color-mix(in srgb,var(--zoh-accent) 45%,transparent)}.zoh-count{color:var(--zoh-secondary);font-size:.84em}.zoh-list{display:grid;gap:9px;margin-top:10px}.zoh-entry{position:relative;display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px;border:1px solid color-mix(in srgb,var(--zoh-accent) 32%,transparent);background:color-mix(in srgb,var(--zoh-bg) 90%,white)}.zoh-number{font-size:1.85em;color:var(--zoh-accent);text-align:center}.zoh-entry-copy{min-width:0}.zoh-entry-title{display:inline;margin:0;font-size:1.08em}.zoh-route-tag{display:inline-block;margin:0 0 0 7px;padding:1px 7px;border:1px solid color-mix(in srgb,var(--zoh-secondary) 55%,transparent);border-radius:999px;color:var(--zoh-secondary);font-size:.7em;vertical-align:.12em}.zoh-summary{margin:5px 0 0;font-size:.85em;overflow-wrap:anywhere}.zoh-jump{min-width:64px;min-height:42px;padding:8px 12px;border:1px solid var(--zoh-accent);border-radius:7px;color:var(--zoh-bg);background:var(--zoh-accent);cursor:pointer;font:inherit;font-weight:700}.zoh-current{position:absolute;top:-1px;left:-1px;padding:2px 7px;color:var(--zoh-bg);background:var(--zoh-secondary);font-size:.68em}.zoh-notice{min-height:1.3em;margin:8px 0 0;color:var(--zoh-secondary);font-size:.8em;text-align:center}
+.zoh-root,.zoh-root *{box-sizing:border-box}.zoh-source,.zoh-routes,.zoh-route-tag{display:none!important}.zoh-root{--zoh-accent:#9b3f32;--zoh-bg:#f7f0df;--zoh-text:#3f3024;--zoh-secondary:#36526d;width:min(100%,680px);margin:14px auto;color:var(--zoh-text);font-family:"Noto Serif SC","Songti SC",serif;line-height:1.55}.zoh-root[data-font="sans"]{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.zoh-root[data-font="kai"]{font-family:"LXGW WenKai","KaiTi","STKaiti",serif}.zoh-root[data-font="mono"]{font-family:"Noto Sans Mono CJK SC","Cascadia Mono",monospace}.zoh-page{position:relative;padding:18px;border:3px double var(--zoh-accent);background:var(--zoh-bg);box-shadow:0 12px 30px rgba(0,0,0,.2);overflow:hidden}.zoh-header{text-align:center;padding:10px 8px 16px;border-bottom:1px solid color-mix(in srgb,var(--zoh-accent) 45%,transparent)}.zoh-title{margin:0;font-size:clamp(1.8em,8vw,3.2em);line-height:1.12;letter-spacing:.12em}.zoh-subtitle{margin-top:6px;color:var(--zoh-accent);font:600 .76em/1.2 sans-serif;letter-spacing:.28em}.zoh-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:13px 0}.zoh-meta>div{min-width:0;padding:10px;border:1px solid color-mix(in srgb,var(--zoh-accent) 30%,transparent);background:color-mix(in srgb,var(--zoh-bg) 88%,white)}.zoh-meta span,.zoh-meta strong{display:block}.zoh-meta span{color:var(--zoh-secondary);font-size:.72em;letter-spacing:.08em}.zoh-meta strong{margin-top:3px;overflow-wrap:anywhere;font-size:.92em}.zoh-intro{padding:16px;border:1px solid color-mix(in srgb,var(--zoh-secondary) 36%,transparent);background:color-mix(in srgb,var(--zoh-secondary) 8%,var(--zoh-bg))}.zoh-intro h2,.zoh-directory h2{margin:0;color:var(--zoh-accent);font-size:1.15em;letter-spacing:.14em}.zoh-intro p{margin:10px 0 0;white-space:pre-wrap}.zoh-routes{display:grid;gap:7px;margin-top:12px}.zoh-route{padding-top:8px;border-top:1px solid color-mix(in srgb,currentColor 24%,transparent)}.zoh-route strong,.zoh-route small{display:block}.zoh-route small{margin-top:3px;opacity:.82;white-space:pre-wrap}.zoh-directory{margin-top:18px}.zoh-directory-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:9px;border-bottom:1px solid color-mix(in srgb,var(--zoh-accent) 45%,transparent)}.zoh-count{color:var(--zoh-secondary);font-size:.84em}.zoh-list{display:grid;gap:9px;margin-top:10px}.zoh-entry{position:relative;display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px;border:1px solid color-mix(in srgb,var(--zoh-accent) 32%,transparent);background:color-mix(in srgb,var(--zoh-bg) 90%,white)}.zoh-number{font-size:1.85em;color:var(--zoh-accent);text-align:center}.zoh-entry-copy{min-width:0}.zoh-entry-title{display:inline;margin:0;font-size:1.08em}.zoh-route-tag{display:inline-block;margin:0 0 0 7px;padding:1px 7px;border:1px solid color-mix(in srgb,var(--zoh-secondary) 55%,transparent);border-radius:999px;color:var(--zoh-secondary);font-size:.7em;vertical-align:.12em}.zoh-summary{margin:5px 0 0;font-size:.85em;overflow-wrap:anywhere}.zoh-jump{min-width:64px;min-height:42px;padding:8px 12px;border:1px solid var(--zoh-accent);border-radius:7px;color:var(--zoh-bg);background:var(--zoh-accent);cursor:pointer;font:inherit;font-weight:700}.zoh-current{position:absolute;top:-1px;left:-1px;padding:2px 7px;color:var(--zoh-bg);background:var(--zoh-secondary);font-size:.68em}.zoh-notice{min-height:1.3em;margin:8px 0 0;color:var(--zoh-secondary);font-size:.8em;text-align:center}
 .zoh-root[data-theme="newspaper"] .zoh-page{border:2px solid var(--zoh-text);background-image:radial-gradient(rgba(50,40,30,.055) .7px,transparent .7px);background-size:4px 4px}.zoh-root[data-theme="newspaper"] .zoh-header{border-top:5px double var(--zoh-text);border-bottom:5px double var(--zoh-text)}.zoh-root[data-theme="newspaper"] .zoh-title{letter-spacing:.04em}.zoh-root[data-theme="newspaper"] .zoh-meta>div{border-width:0 1px 0 0;background:transparent}.zoh-root[data-theme="newspaper"] .zoh-intro{border:1px dashed var(--zoh-text);background:transparent}.zoh-root[data-theme="newspaper"] .zoh-entry{border-radius:0;border-color:var(--zoh-text);background:transparent}.zoh-root[data-theme="newspaper"] .zoh-jump{border-radius:0}
 .zoh-root[data-theme="timeline"] .zoh-page{border:1px solid color-mix(in srgb,var(--zoh-secondary) 55%,transparent);border-radius:22px}.zoh-root[data-theme="timeline"] .zoh-meta,.zoh-root[data-theme="timeline"] .zoh-intro,.zoh-root[data-theme="timeline"] .zoh-directory{position:relative;margin-left:24px}.zoh-root[data-theme="timeline"] .zoh-meta::before,.zoh-root[data-theme="timeline"] .zoh-intro::before,.zoh-root[data-theme="timeline"] .zoh-directory::before{content:"";position:absolute;left:-25px;top:-8px;bottom:-8px;width:1px;background:var(--zoh-secondary)}.zoh-root[data-theme="timeline"] .zoh-entry{border-radius:14px}.zoh-root[data-theme="timeline"] .zoh-entry::before{content:"";position:absolute;left:-18px;width:9px;height:9px;border:2px solid var(--zoh-bg);border-radius:50%;background:var(--zoh-secondary)}.zoh-root[data-theme="timeline"] .zoh-jump{border-radius:999px}
 .zoh-root[data-theme="minimal"] .zoh-page{padding:24px;border:0;background:var(--zoh-bg);box-shadow:none}.zoh-root[data-theme="minimal"] .zoh-header{text-align:left}.zoh-root[data-theme="minimal"] .zoh-meta{grid-template-columns:1fr}.zoh-root[data-theme="minimal"] .zoh-meta>div{display:grid;grid-template-columns:100px minmax(0,1fr);padding:9px 0;border-width:0 0 1px;background:transparent}.zoh-root[data-theme="minimal"] .zoh-meta strong{margin:0}.zoh-root[data-theme="minimal"] .zoh-intro{border:0;border-left:2px solid var(--zoh-secondary);background:color-mix(in srgb,var(--zoh-secondary) 5%,var(--zoh-bg))}.zoh-root[data-theme="minimal"] .zoh-entry{border-width:0 0 1px;background:transparent}.zoh-root[data-theme="minimal"] .zoh-jump{border-radius:999px}
@@ -185,7 +208,7 @@ function replacementHtml(input) {
   var routeHost=root.querySelector('.zoh-routes');worldlines.forEach(function(line){var route=make('div','zoh-route');route.append(make('strong','',line[2]||'未命名世界线'));var description=line.length>=5?line[3]:'';if(description)route.append(make('small','',description));routeHost.append(route);});if(!routeHost.children.length)routeHost.remove();
   async function applyWorldline(live,opening){if(!live?.executeSlashCommandsWithOptions||!worldlines.length)return;var selectedId=openingWorldline(opening);var desired=new Map();worldlines.forEach(function(line){worldlineEntries(line).forEach(function(item){desired.set(bindingKey(item),{item:item,enabled:line[1]===selectedId});});});for(var value of desired.values()){var item=value.item;if(!item.book&&item.uid===undefined)continue;await live.executeSlashCommandsWithOptions('/setentryfield file='+quote(item.book)+' uid='+Number(item.uid||0)+' field=disable '+(value.enabled?'false':'true'));}}
   async function jump(oneBased,opening){try{var live=topWindow.SillyTavern?.getContext?.();var message=live?.chat?.[0];var swipes=message?.swipes;if(!live?.swipe||!Array.isArray(swipes)||!swipes.length)throw new Error('当前聊天没有可跳转的备用开场白');await applyWorldline(live,opening);var target=Math.max(0,Math.min(swipes.length-1,Number(oneBased)-1));var now=Math.max(0,Math.min(swipes.length-1,Number(message.swipe_id||0)));var messageEl=topWindow.document.querySelector('#chat .mes[mesid="0"]');if(!messageEl)throw new Error('聊天第1条尚未加载');var direction=target>now?'right':'left';for(var step=0;step<Math.abs(target-now);step++){await live.swipe[direction].call(messageEl,null,{source:'zeya-opening-home',message:message});}topWindow.document.querySelector('#chat .mes[mesid="0"]')?.scrollIntoView({behavior:'smooth',block:'center'});}catch(error){notice.textContent=error?.message||'跳转失败';}}
-  openings.forEach(function(entry,index){var article=make('article','zoh-entry');var target=openingTarget(entry,index);if(target===current)article.append(make('span','zoh-current','当前'));article.append(make('div','zoh-number',entry[1]||String(index+1).padStart(2,'0')));var copy=make('div','zoh-entry-copy');copy.append(make('h3','zoh-entry-title',entry[2]||'未命名开场白'));var route=openingRoute(entry);if(route)copy.append(make('span','zoh-route-tag',route));copy.append(make('p','zoh-summary',openingSummary(entry)));var button=make('button','zoh-jump','进入');button.type='button';button.addEventListener('click',function(){jump(target,entry);});article.append(copy,button);host.append(article);});
+  var staticCards=host.querySelectorAll('.zoh-entry');openings.forEach(function(entry,index){var article=staticCards[index];if(!article)return;var target=openingTarget(entry,index);if(target===current)article.prepend(make('span','zoh-current','当前'));var button=article.querySelector('.zoh-jump');if(button)button.addEventListener('click',function(){jump(target,entry);});});
 })(document.currentScript);
 </script>`.trim();
 }
@@ -194,7 +217,7 @@ export function buildOpeningHomeRegex(input = {}) {
     const data = normalizeOpeningHomeSettings(input);
     return {
         id: data.ruleId,
-        scriptName: '久一 · 通用开场白主页',
+        scriptName: '九一 · 通用开场白主页',
         disabled: false,
         runOnEdit: true,
         findRegex: '/(?:【主页】\\s*(?:<opening_home>[\\s\\S]*?<\\/opening_home>)?|<opening_home>[\\s\\S]*?<\\/opening_home>)/i',

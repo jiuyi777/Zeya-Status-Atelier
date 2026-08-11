@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-dossier-v1",
-  "scriptName": "久一 · 通用状态栏17·特工卷宗",
+  "scriptName": "九一 · 通用状态栏17·特工卷宗",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_dossier>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_dossier>/i",

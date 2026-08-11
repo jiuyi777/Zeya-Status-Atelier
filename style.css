@@ -962,8 +962,20 @@ summary.status-atelier-section-heading {
 }
 
 .status-atelier-dialog-footer {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     border-top: 1px solid var(--SmartThemeBorderColor);
     border-bottom: 0;
+}
+
+.status-atelier-dialog-footer .menu_button {
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
+}
+
+.status-atelier-dialog-footer [data-status-atelier-close] {
+    grid-column: 1 / -1;
 }
 
 .status-atelier-dialog-header h3 {
@@ -1160,6 +1172,22 @@ summary.status-atelier-section-heading {
     padding: 8px 12px 0;
 }
 
+.status-atelier-greeting-binding {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 12px 0;
+    padding: 9px 10px;
+    border: 1px dashed color-mix(in srgb, var(--status-atelier-ui-accent) 45%, var(--SmartThemeBorderColor));
+    border-radius: 8px;
+}
+
+.status-atelier-greeting-binding small {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
 .status-atelier-greeting-original {
     margin: 8px 12px 11px;
     color: var(--SmartThemeBodyColor);
@@ -1316,10 +1344,6 @@ summary.status-atelier-section-heading {
         grid-column: 1 / -1;
     }
 
-    .status-atelier-dialog-footer .status-atelier-regenerate-all {
-        grid-column: 1 / -1;
-    }
-
     .status-atelier-greeting-card-heading {
         grid-template-columns: auto minmax(0, 1fr) auto;
     }
@@ -1341,6 +1365,10 @@ summary.status-atelier-section-heading {
     .status-atelier-greeting-actions {
         flex-direction: row;
         flex-wrap: wrap;
+    }
+
+    .status-atelier-greeting-binding {
+        grid-template-columns: 1fr;
     }
 
     .status-atelier-setting-actions .menu_button,

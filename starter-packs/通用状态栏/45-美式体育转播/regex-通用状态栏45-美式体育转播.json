@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-broadcast-sport-v1",
-  "scriptName": "久一 · 通用状态栏45·美式体育转播",
+  "scriptName": "九一 · 通用状态栏45·美式体育转播",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_broadcast-sport>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_broadcast-sport>/i",

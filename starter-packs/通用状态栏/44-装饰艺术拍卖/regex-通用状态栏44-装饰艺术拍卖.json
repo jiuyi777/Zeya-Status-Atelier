@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-deco-auction-v1",
-  "scriptName": "久一 · 通用状态栏44·装饰艺术拍卖",
+  "scriptName": "九一 · 通用状态栏44·装饰艺术拍卖",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_deco-auction>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_deco-auction>/i",

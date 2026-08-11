@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-classical-v1",
-  "scriptName": "久一 · 通用状态栏01·古典对称",
+  "scriptName": "九一 · 通用状态栏01·古典对称",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_classical>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_classical>/i",

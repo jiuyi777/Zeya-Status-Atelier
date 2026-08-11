@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-pixel-v1",
-  "scriptName": "久一 · 通用状态栏20·像素冒险",
+  "scriptName": "九一 · 通用状态栏20·像素冒险",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_pixel>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_pixel>/i",

@@ -6,6 +6,7 @@ import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
+    syncRouteCatalogWorldlines,
     worldbookRouteLabels,
 } from '../worldbook-routes.js';
 
@@ -43,4 +44,21 @@ test('works generically across cards, naming conventions and multiple linked boo
     assert.deepEqual(worldbookRouteLabels(catalog), ['青梅竹马线', '职场宿敌线', '旧案追查线']);
     assert.equal(constrainRouteToCatalog('职场宿敌线路', catalog), '职场宿敌线');
     assert.match(routeCatalogPrompt(catalog), /校园设定|青梅竹马路线/);
+});
+
+test('renames an existing generic line by overlapping UID and creates the remaining route bindings', () => {
+    const catalog = extractWorldbookRouteCatalog([{ name: '谈论爱之生', entries: [
+        { uid: 2, comment: '罪人线nsfw' },
+        { uid: 5, comment: '罪人线（恶魔）' },
+        { uid: 3, comment: '少年线nsfw' },
+        { uid: 10, comment: '神明线（着调派）' },
+    ] }]);
+    const worldlines = [{ id: 'old-line-1', name: '世界线 1', description: '保留说明', entries: [{ book: '谈论爱之生', uid: 2, title: '罪人线nsfw' }] }];
+    const ids = syncRouteCatalogWorldlines(worldlines, catalog);
+    assert.equal(worldlines.find(line => line.id === 'old-line-1').name, '罪人线');
+    assert.equal(worldlines.find(line => line.id === 'old-line-1').description, '保留说明');
+    assert.deepEqual(worldlines.find(line => line.name === '罪人线').entries.map(item => item.uid), [2, 5]);
+    assert.equal(ids['罪人线'], 'old-line-1');
+    assert.ok(worldlines.find(line => line.name === '少年线').entries.some(item => item.uid === 3));
+    assert.ok(worldlines.find(line => line.name === '神明线').entries.some(item => item.uid === 10));
 });

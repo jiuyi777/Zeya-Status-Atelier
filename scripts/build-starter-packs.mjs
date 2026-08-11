@@ -49,7 +49,7 @@ for (const pack of openingPacks) {
         ruleId: `zeya-opening-home-${pack.slug}-v1`,
         title: '作品导航',
         subtitle: 'STORY HOME',
-        author: '久一',
+        author: '九一',
         model: '填写推荐模型',
         preset: '填写推荐预设',
         intro: '这里填写整部作品的世界观、主要人物、故事背景与阅读提示。',
@@ -66,7 +66,7 @@ for (const pack of openingPacks) {
         .replace('<opening_home>', `<${tag}>`)
         .replace('</opening_home>', `</${tag}>`);
     const regex = buildOpeningHomeRegex(settings);
-    regex.scriptName = `久一 · 开场白主页${pack.code}·${pack.name}`;
+    regex.scriptName = `九一 · 开场白主页${pack.code}·${pack.name}`;
     regex.findRegex = `/<${tag}>\\s*([\\s\\S]*?)\\s*<\\/${tag}>/i`;
     await writeJson(join(folder, `regex-开场白主页${pack.code}-${pack.name}.json`), regex);
     await writeFile(join(folder, `开场白主页${pack.code}-可编辑模板.txt`), `${template}\n`, 'utf8');
