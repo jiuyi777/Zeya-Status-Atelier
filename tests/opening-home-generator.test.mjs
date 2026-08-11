@@ -9,6 +9,12 @@ import {
     normalizeOpeningHomeSettings,
 } from '../opening-home-generator.js';
 
+function embeddedPayload(replacement) {
+    const encoded = replacement.match(/JSON\.parse\(decodeURIComponent\('([^']+)'\)\)/)?.[1];
+    assert.ok(encoded, 'runtime payload is embedded in the exported regex');
+    return JSON.parse(decodeURIComponent(encoded));
+}
+
 test('adding a worldline appends without replacing existing edited routes', () => {
     const openingHome = {
         worldlines: [
@@ -34,8 +40,11 @@ test('opening homepage accepts any number of directory entries', () => {
         target: index + 2,
     }));
     const block = buildOpeningHomeBlock({ ...OPENING_HOME_DEFAULTS, entries });
-    assert.equal(block.match(/^\[Opening\|/gm)?.length, 10);
-    assert.match(block, /\[Opening\|10\|开场白 10\|线路 10 线\|简介 10\|11\|\]/);
+    const script = buildOpeningHomeRegex({ ...OPENING_HOME_DEFAULTS, entries });
+    assert.equal(block, '【主页】');
+    assert.equal(script.replaceString.match(/class="zoh-entry"/g)?.length, 10);
+    assert.equal(embeddedPayload(script.replaceString).entries.length, 10);
+    assert.equal(embeddedPayload(script.replaceString).entries[9].target, 11);
 });
 
 test('opening homepage keeps multiline recommendations and binds concrete worldbook entries', () => {
@@ -47,12 +56,12 @@ test('opening homepage keeps multiline recommendations and binds concrete worldb
         entries: [{ number: '01', title: '雨夜初遇', route: '旧城雨夜线', summary: '简介', target: 1, worldlineId: 'rain' }],
     };
     const normalized = normalizeOpeningHomeSettings(input);
-    const block = buildOpeningHomeBlock(input);
+    const payload = embeddedPayload(buildOpeningHomeRegex(input).replaceString);
     assert.equal(normalized.model, 'Gemini 3.1\nClaude 4.5');
     assert.equal(normalized.preset, '沉浸剧情预设\n长篇稳定预设');
-    assert.match(block, /\[Worldline\|rain\|雨夜线\|/);
-    assert.match(block, /\[Worldline\|rain\|雨夜线\|雨夜相遇路线。\|/);
-    assert.match(block, /\[Opening\|01\|雨夜初遇\|旧城雨夜线\|简介\|1\|rain\]/);
+    assert.deepEqual(payload.worldlines, normalizeOpeningHomeSettings(input).worldlines);
+    assert.equal(payload.entries[0].title, '雨夜初遇');
+    assert.equal(payload.entries[0].worldlineId, 'rain');
 });
 
 test('opening homepage normalizes editable theme, font, colors and jump targets', () => {
@@ -68,11 +77,9 @@ test('opening homepage normalizes editable theme, font, colors and jump targets'
     assert.equal(normalized.entries[0].target, 1);
 });
 
-test('opening homepage regex renders four selected themes and uses native swipe', () => {
+test('opening homepage regex directly replaces one marker and keeps real navigation APIs', () => {
     const script = buildOpeningHomeRegex(OPENING_HOME_DEFAULTS);
-    assert.match(script.findRegex, /【主页】/);
-    assert.match(script.findRegex, /opening_home/);
-    assert.match(script.replaceString, /classical','newspaper','timeline','minimal/);
+    assert.equal(script.findRegex, '/【主页】/s');
     assert.match(script.replaceString, /swipe\[direction\]\.call/);
     assert.match(script.replaceString, /setChatMessages/);
     assert.match(script.replaceString, /message_id:0,swipe_id:target/);
@@ -81,11 +88,11 @@ test('opening homepage regex renders four selected themes and uses native swipe'
     assert.match(script.replaceString, /textContent/);
     assert.match(script.replaceString, /openings\.forEach/);
     assert.match(script.replaceString, /zoh-intro-markdown/);
-    assert.match(script.replaceString, /function markdown/);
     assert.ok(script.replaceString.startsWith('<div class="zoh-root"'));
     assert.doesNotMatch(script.replaceString, /```html/);
     assert.doesNotMatch(script.replaceString, /\$1/);
-    assert.match(script.replaceString, /\[Meta\|作品导航\|STORY HOME\|九一\|/);
+    assert.doesNotMatch(script.replaceString, /opening_home|zoh-source|zoh-routes|zoh-route-tag/);
+    assert.match(script.replaceString, /JSON\.parse\(decodeURIComponent/);
 });
 
 test('generated opening homepage browser script is syntactically valid', () => {
@@ -124,15 +131,11 @@ test('enter button switches the greeting and applies the selected UID worldline 
     const button = node();
     const article = { ...node(), querySelector: selector => selector === '.zoh-jump' ? button : null };
     const list = { ...node(), querySelectorAll: selector => selector === '.zoh-entry' ? [article] : [] };
-    const routes = node();
-    const source = { ...node(), value: buildOpeningHomeBlock(input) };
     const generic = node();
     const root = {
         ...node(),
         querySelector(selector) {
-            if (selector === '.zoh-source') return source;
             if (selector === '.zoh-list') return list;
-            if (selector === '.zoh-routes') return routes;
             return generic;
         },
     };
@@ -177,15 +180,17 @@ test('downloaded opening regex embeds current edited content instead of an empty
     assert.match(script.replaceString, /gemini3\.1Pro/);
     assert.match(script.replaceString, /这里是已经填写的作品简介/);
     assert.match(script.replaceString, /雨夜重逢/);
-    assert.match(script.replaceString, /旧识重逢线/);
     assert.match(script.replaceString, /<h1 class="zoh-title">作品导航<\/h1>/);
     assert.match(script.replaceString, /<h3 class="zoh-entry-title">雨夜重逢<\/h3>/);
-    assert.match(script.replaceString, /\.zoh-source,.zoh-routes,.zoh-route-tag\{display:none!important\}/);
+    assert.doesNotMatch(script.replaceString, /opening_home|zoh-source|zoh-routes|zoh-route-tag/);
+    assert.equal(embeddedPayload(script.replaceString).entries[0].route, '旧识重逢线');
 });
 
-test('embedded opening data cannot break the textarea or html fence', () => {
+test('embedded opening data cannot break out of static html or executable payload', () => {
     const script = buildOpeningHomeRegex({ ...OPENING_HOME_DEFAULTS, intro: '```html\n</textarea><script>bad()</script>' });
-    assert.doesNotMatch(script.replaceString, /<textarea class="zoh-source" hidden>[\s\S]*<script>bad/);
+    assert.doesNotMatch(script.replaceString, /<script>bad\(\)<\/script>/);
     assert.match(script.replaceString, /&lt;\/textarea&gt;/);
+    assert.match(script.replaceString, /&lt;script&gt;bad\(\)&lt;\/script&gt;/);
+    assert.doesNotThrow(() => embeddedPayload(script.replaceString));
     assert.equal((script.replaceString.match(/```/g) || []).length, 0);
 });

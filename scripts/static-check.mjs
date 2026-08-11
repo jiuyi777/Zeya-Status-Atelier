@@ -108,8 +108,11 @@ for (const [code, name] of openingDefinitions) {
         const openingRegex = JSON.parse(await readFile(join(openingFolder, `regex-开场白主页${code}-${name}.json`), 'utf8'));
         const openingTemplate = await readFile(join(openingFolder, `开场白主页${code}-可编辑模板.txt`), 'utf8');
         openingIds.add(openingRegex.id);
-        if ((openingTemplate.match(/^\[Opening\|/gm) || []).length !== 8) {
-            errors.push(`开场白主页${code}示例必须证明可显示8条目录`);
+        if (openingTemplate.trim() !== '【主页】' || openingRegex.findRegex !== '/【主页】/s') {
+            errors.push(`开场白主页${code}必须只使用【主页】标记直接替换`);
+        }
+        if ((openingRegex.replaceString.match(/class="zoh-entry"/g) || []).length !== 8) {
+            errors.push(`开场白主页${code}正则必须内置8条目录`);
         }
         if (!openingRegex.replaceString.includes('openings.forEach') || !openingRegex.replaceString.includes('swipe[direction].call')) {
             errors.push(`开场白主页${code}缺少动态目录或原生跳转`);

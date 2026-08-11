@@ -61,13 +61,9 @@ for (const pack of openingPacks) {
         secondary: pack.secondary,
         entries: openingEntries,
     };
-    const tag = `opening_home_${pack.slug}`;
-    const template = buildOpeningHomeBlock(settings)
-        .replace('<opening_home>', `<${tag}>`)
-        .replace('</opening_home>', `</${tag}>`);
+    const template = buildOpeningHomeBlock(settings);
     const regex = buildOpeningHomeRegex(settings);
     regex.scriptName = `九一 · 开场白主页${pack.code}·${pack.name}`;
-    regex.findRegex = `/<${tag}>\\s*([\\s\\S]*?)\\s*<\\/${tag}>/i`;
     await writeJson(join(folder, `regex-开场白主页${pack.code}-${pack.name}.json`), regex);
     await writeFile(join(folder, `开场白主页${pack.code}-可编辑模板.txt`), `${template}\n`, 'utf8');
 }

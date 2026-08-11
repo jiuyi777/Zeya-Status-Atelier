@@ -6,14 +6,14 @@ import {
     makePreviewRecords,
     normalizeRule,
     parseFields,
-} from './rule-generator.js?v=0.8.6';
+} from './rule-generator.js?v=0.8.7';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.8.6';
+} from './opening-home-generator.js?v=0.8.7';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -25,14 +25,14 @@ import {
     parseSummaryResponse,
     responseText,
     usableGreetingRecords,
-} from './response-parser.js?v=0.8.6';
+} from './response-parser.js?v=0.8.7';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.8.6';
+} from './worldbook-routes.js?v=0.8.7';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -44,7 +44,7 @@ import { saveSettings } from '../../../../script.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.8.6';
+const VERSION = '0.8.7';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 
 const HOME_TEMPLATES = Object.freeze([
@@ -1441,7 +1441,7 @@ function buildGreetingModal() {
             <footer class="status-atelier-dialog-footer">
                 <button type="button" class="menu_button" id="status-atelier-read-current-card">补全缺失项</button>
                 <button type="button" class="menu_button status-atelier-regenerate-all" id="status-atelier-regenerate-all">全部重新生成</button>
-                <button type="button" class="menu_button" id="status-atelier-modal-copy-home">复制主页</button>
+                <button type="button" class="menu_button" id="status-atelier-modal-copy-home">复制主页标记</button>
                 <button type="button" class="menu_button" id="status-atelier-modal-download-regex">下载正则</button>
                 <button type="button" class="menu_button" id="status-atelier-open-full-workbench">样式与 UID</button>
                 <button type="button" class="menu_button" data-status-atelier-close>完成</button>
@@ -1456,7 +1456,7 @@ function buildGreetingModal() {
     });
     greetingModal.querySelector('#status-atelier-modal-copy-home').addEventListener('click', async () => {
         await copyText(buildOpeningHomeBlock(settings().openingHome));
-        notify('success', '已复制包含当前填写内容的主页模板');
+        notify('success', '已复制主页标记【主页】；请放进主开场白');
     });
     greetingModal.querySelector('#status-atelier-modal-download-regex').addEventListener('click', () => {
         downloadJson('regex-九一-通用开场白主页.json', buildOpeningHomeRegex(settings().openingHome));
@@ -1826,7 +1826,7 @@ async function addSettingsPanel() {
     field('status-atelier-entry-dialog-confirm').addEventListener('click', confirmEntryDialog);
     field('status-atelier-opening-copy-block').addEventListener('click', async () => {
         await copyText(buildOpeningHomeBlock(settings().openingHome));
-        notify('success', '开场白主页模板已复制');
+        notify('success', '已复制主页标记【主页】；请放进主开场白');
     });
     field('status-atelier-opening-download-regex').addEventListener('click', () => {
         downloadJson('regex-九一-通用开场白主页.json', buildOpeningHomeRegex(settings().openingHome));
