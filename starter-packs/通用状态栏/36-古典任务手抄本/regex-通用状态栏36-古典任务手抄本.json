@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-illuminated-quest-v1",
-  "scriptName": "Zeya · 通用状态栏36·古典任务手抄本",
+  "scriptName": "久一 · 通用状态栏36·古典任务手抄本",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_illuminated-quest>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_illuminated-quest>/i",

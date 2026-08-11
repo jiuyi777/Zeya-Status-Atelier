@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-brutal-paper-v1",
-  "scriptName": "Zeya · 通用状态栏42·粗野主义论文",
+  "scriptName": "久一 · 通用状态栏42·粗野主义论文",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_brutal-paper>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_brutal-paper>/i",

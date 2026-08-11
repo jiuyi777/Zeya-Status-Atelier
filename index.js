@@ -6,14 +6,14 @@ import {
     makePreviewRecords,
     normalizeRule,
     parseFields,
-} from './rule-generator.js?v=0.8.3';
+} from './rule-generator.js?v=0.8.4';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.8.3';
+} from './opening-home-generator.js?v=0.8.4';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -25,13 +25,13 @@ import {
     parseSummaryResponse,
     responseText,
     usableGreetingRecords,
-} from './response-parser.js?v=0.8.3';
+} from './response-parser.js?v=0.8.4';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.8.3';
+} from './worldbook-routes.js?v=0.8.4';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -43,7 +43,7 @@ import { saveSettings } from '../../../../script.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.8.3';
+const VERSION = '0.8.4';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 
 const HOME_TEMPLATES = Object.freeze([
@@ -143,14 +143,14 @@ function notify(level, message) {
     if (globalThis.toastr?.[level]) {
         globalThis.toastr[level](message);
     } else {
-        console[level === 'error' ? 'error' : 'log'](`[Zeya 正则状态工坊] ${message}`);
+        console[level === 'error' ? 'error' : 'log'](`[久一 正则状态工坊] ${message}`);
     }
 }
 
 function showOpeningReadProgress(message) {
     if (!globalThis.toastr?.info) return;
     if (openingReadToast) globalThis.toastr.clear?.(openingReadToast);
-    openingReadToast = globalThis.toastr.info(message, 'Zeya · AI 正在生成', {
+    openingReadToast = globalThis.toastr.info(message, '久一 · AI 正在生成', {
         timeOut: 0,
         extendedTimeOut: 0,
         tapToDismiss: false,
@@ -1085,7 +1085,7 @@ function exportProfile() {
 async function importProfile(fileToImport) {
     const data = JSON.parse(await fileToImport.text());
     if (data?.format !== 'zeya-regex-status-profile' || !data.settings || typeof data.settings !== 'object') {
-        throw new Error('这不是 Zeya 正则状态工坊配置');
+        throw new Error('这不是久一正则状态工坊配置');
     }
     const notes = settings().openingNotes;
     const apiKey = settings().openingSummary?.apiKey || '';
@@ -1407,7 +1407,7 @@ function buildGreetingModal() {
         notify('success', '已复制包含当前填写内容的主页模板');
     });
     greetingModal.querySelector('#status-atelier-modal-download-regex').addEventListener('click', () => {
-        downloadJson('regex-Zeya-通用开场白主页.json', buildOpeningHomeRegex(settings().openingHome));
+        downloadJson('regex-久一-通用开场白主页.json', buildOpeningHomeRegex(settings().openingHome));
         notify('success', '已下载包含当前填写内容的主页正则');
     });
     greetingModal.querySelector('#status-atelier-open-full-workbench').addEventListener('click', openFullWorkbench);
@@ -1635,7 +1635,7 @@ function addExtensionsMenuItem() {
     item.setAttribute('aria-label', '读取当前角色卡的额外问候语');
     const icon = makeElement('div', 'fa-solid fa-wand-magic-sparkles extensionsMenuExtensionButton');
     icon.setAttribute('aria-hidden', 'true');
-    item.append(icon, makeElement('span', '', '读取额外问候语 · Zeya'));
+    item.append(icon, makeElement('span', '', '读取额外问候语 · 久一'));
     item.addEventListener('click', openGreetingModal);
     item.addEventListener('keydown', event => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -1749,7 +1749,7 @@ async function addSettingsPanel() {
         notify('success', '开场白主页模板已复制');
     });
     field('status-atelier-opening-download-regex').addEventListener('click', () => {
-        downloadJson('regex-Zeya-通用开场白主页.json', buildOpeningHomeRegex(settings().openingHome));
+        downloadJson('regex-久一-通用开场白主页.json', buildOpeningHomeRegex(settings().openingHome));
         notify('success', '开场白主页正则 JSON 已生成');
     });
     field('status-atelier-opening-install-scoped').addEventListener('click', event => runInstallButton(event.currentTarget, installOpeningHomeRegex, 'scoped', '安装开场白主页正则失败'));
@@ -1781,7 +1781,7 @@ async function initialize() {
         if (document.querySelector('#status-atelier-menu-item')) break;
         await new Promise(resolve => setTimeout(resolve, 250));
     }
-    console.info(`[Zeya 正则状态工坊] v${VERSION} 已加载`);
+    console.info(`[久一 正则状态工坊] v${VERSION} 已加载`);
 }
 
 if (document.readyState === 'loading') {

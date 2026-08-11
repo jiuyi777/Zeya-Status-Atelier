@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-retro-bbs-v1",
-  "scriptName": "Zeya · 通用状态栏23·复古论坛",
+  "scriptName": "久一 · 通用状态栏23·复古论坛",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_retro-bbs>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_retro-bbs>/i",

@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-swiss-rail-v1",
-  "scriptName": "Zeya · 通用状态栏34·瑞士列车时刻",
+  "scriptName": "久一 · 通用状态栏34·瑞士列车时刻",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_swiss-rail>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_swiss-rail>/i",

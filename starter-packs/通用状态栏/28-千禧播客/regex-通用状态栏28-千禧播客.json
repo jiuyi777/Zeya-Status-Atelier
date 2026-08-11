@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-y2k-podcast-v1",
-  "scriptName": "Zeya · 通用状态栏28·千禧播客",
+  "scriptName": "久一 · 通用状态栏28·千禧播客",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_y2k-podcast>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_y2k-podcast>/i",

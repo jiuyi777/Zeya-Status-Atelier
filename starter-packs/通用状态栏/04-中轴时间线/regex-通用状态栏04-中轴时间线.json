@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-timeline-v1",
-  "scriptName": "Zeya · 通用状态栏04·中轴时间线",
+  "scriptName": "久一 · 通用状态栏04·中轴时间线",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_timeline>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_timeline>/i",

@@ -80,7 +80,7 @@ test('opening homepage regex renders four selected themes and uses native swipe'
     assert.ok(script.replaceString.startsWith('<div class="zoh-root">'));
     assert.doesNotMatch(script.replaceString, /```html/);
     assert.doesNotMatch(script.replaceString, /\$1/);
-    assert.match(script.replaceString, /\[Meta\|作品导航\|STORY HOME\|Zeya\|/);
+    assert.match(script.replaceString, /\[Meta\|作品导航\|STORY HOME\|久一\|/);
 });
 
 test('generated opening homepage browser script is syntactically valid', () => {

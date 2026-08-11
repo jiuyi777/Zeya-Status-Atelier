@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-sakura-v1",
-  "scriptName": "Zeya · 通用状态栏15·樱花便笺",
+  "scriptName": "久一 · 通用状态栏15·樱花便笺",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_sakura>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_sakura>/i",

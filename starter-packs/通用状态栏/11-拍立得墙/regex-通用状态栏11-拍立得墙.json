@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-polaroid-v1",
-  "scriptName": "Zeya · 通用状态栏11·拍立得墙",
+  "scriptName": "久一 · 通用状态栏11·拍立得墙",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_polaroid>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_polaroid>/i",

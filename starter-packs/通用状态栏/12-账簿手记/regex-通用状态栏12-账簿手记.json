@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-ledger-v1",
-  "scriptName": "Zeya · 通用状态栏12·账簿手记",
+  "scriptName": "久一 · 通用状态栏12·账簿手记",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_ledger>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_ledger>/i",

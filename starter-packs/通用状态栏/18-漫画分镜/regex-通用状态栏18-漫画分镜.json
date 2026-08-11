@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-comic-v1",
-  "scriptName": "Zeya · 通用状态栏18·漫画分镜",
+  "scriptName": "久一 · 通用状态栏18·漫画分镜",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_comic>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_comic>/i",

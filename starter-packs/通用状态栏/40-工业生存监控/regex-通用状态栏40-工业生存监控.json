@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-industrial-survival-v1",
-  "scriptName": "Zeya · 通用状态栏40·工业生存监控",
+  "scriptName": "久一 · 通用状态栏40·工业生存监控",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_industrial-survival>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_industrial-survival>/i",

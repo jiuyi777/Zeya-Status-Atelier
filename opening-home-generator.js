@@ -5,7 +5,7 @@ export const OPENING_HOME_DEFAULTS = Object.freeze({
     ruleId: 'zeya-opening-home-v1',
     title: '作品导航',
     subtitle: 'STORY HOME',
-    author: 'Zeya',
+    author: '久一',
     model: '填写模型名称',
     preset: '填写预设名称',
     intro: '这里填写整部作品的世界观、主要人物、故事背景与阅读提示。',
@@ -194,7 +194,7 @@ export function buildOpeningHomeRegex(input = {}) {
     const data = normalizeOpeningHomeSettings(input);
     return {
         id: data.ruleId,
-        scriptName: 'Zeya · 通用开场白主页',
+        scriptName: '久一 · 通用开场白主页',
         disabled: false,
         runOnEdit: true,
         findRegex: '/(?:【主页】\\s*(?:<opening_home>[\\s\\S]*?<\\/opening_home>)?|<opening_home>[\\s\\S]*?<\\/opening_home>)/i',

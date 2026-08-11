@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-minimal-v1",
-  "scriptName": "Zeya · 通用状态栏05·构成编辑",
+  "scriptName": "久一 · 通用状态栏05·构成编辑",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_minimal>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_minimal>/i",

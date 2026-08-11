@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-naturalist-specimen-v1",
-  "scriptName": "Zeya · 通用状态栏47·自然学家标本",
+  "scriptName": "久一 · 通用状态栏47·自然学家标本",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_naturalist-specimen>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_naturalist-specimen>/i",

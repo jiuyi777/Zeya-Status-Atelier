@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-pop-ticket-v1",
-  "scriptName": "Zeya · 通用状态栏49·波普电影票根",
+  "scriptName": "久一 · 通用状态栏49·波普电影票根",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_pop-ticket>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_pop-ticket>/i",

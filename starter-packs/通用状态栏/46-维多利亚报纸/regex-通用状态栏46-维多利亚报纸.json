@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-victorian-news-v1",
-  "scriptName": "Zeya · 通用状态栏46·维多利亚报纸",
+  "scriptName": "久一 · 通用状态栏46·维多利亚报纸",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_victorian-news>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_victorian-news>/i",

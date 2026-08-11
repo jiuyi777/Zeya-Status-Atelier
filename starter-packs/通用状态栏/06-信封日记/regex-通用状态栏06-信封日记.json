@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-envelope-v1",
-  "scriptName": "Zeya · 通用状态栏06·信封日记",
+  "scriptName": "久一 · 通用状态栏06·信封日记",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_envelope>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_envelope>/i",

@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-seed-note-v1",
-  "scriptName": "Zeya · 通用状态栏21·贴纸种草",
+  "scriptName": "久一 · 通用状态栏21·贴纸种草",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_seed-note>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_seed-note>/i",

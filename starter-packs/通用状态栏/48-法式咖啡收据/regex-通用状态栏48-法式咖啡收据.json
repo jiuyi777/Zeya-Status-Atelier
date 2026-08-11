@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-cafe-receipt-v1",
-  "scriptName": "Zeya · 通用状态栏48·法式咖啡收据",
+  "scriptName": "久一 · 通用状态栏48·法式咖啡收据",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_cafe-receipt>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_cafe-receipt>/i",

@@ -1,6 +1,6 @@
 {
   "id": "zeya-status-holo-terminal-v1",
-  "scriptName": "Zeya · 通用状态栏39·全息赛博终端",
+  "scriptName": "久一 · 通用状态栏39·全息赛博终端",
   "disabled": false,
   "runOnEdit": true,
   "findRegex": "/<zeya_status_holo-terminal>\\s*([\\s\\S]*?)\\s*<\\/zeya_status_holo-terminal>/i",

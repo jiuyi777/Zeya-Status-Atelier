@@ -321,7 +321,7 @@ export function buildWorldbookJson(input) {
                 uid: 0,
                 key: [],
                 keysecondary: [],
-                comment: `Zeya · ${rule.ruleName} · AI动态输出规则`,
+                comment: `久一 · ${rule.ruleName} · AI动态输出规则`,
                 content: buildAiInstruction(input),
                 constant: true,
                 vectorized: false,
@@ -511,7 +511,7 @@ export function buildRegexScript(input) {
     const rule = normalizeRule(input);
     return {
         id: rule.ruleId,
-        scriptName: `Zeya · ${rule.ruleName}`,
+        scriptName: `久一 · ${rule.ruleName}`,
         disabled: false,
         runOnEdit: true,
         findRegex: `/<${rule.tagName}>\\s*([\\s\\S]*?)\\s*<\\/${rule.tagName}>/i`,
