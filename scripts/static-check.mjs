@@ -111,6 +111,9 @@ for (const [code, name] of openingDefinitions) {
         if (openingTemplate.trim() !== '【主页】' || openingRegex.findRegex !== '/【主页】/s') {
             errors.push(`开场白主页${code}必须只使用【主页】标记直接替换`);
         }
+        if (!openingRegex.replaceString.startsWith('```html\n') || !openingRegex.replaceString.endsWith('\n```')) {
+            errors.push(`开场白主页${code}必须通过酒馆助手 HTML 代码块执行按钮脚本`);
+        }
         if ((openingRegex.replaceString.match(/class="zoh-entry"/g) || []).length !== 8) {
             errors.push(`开场白主页${code}正则必须内置8条目录`);
         }

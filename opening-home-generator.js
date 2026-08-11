@@ -137,7 +137,7 @@ function replacementHtml(input) {
         <div class="zoh-entry-copy"><h3 class="zoh-entry-title">${escapeHtmlText(entry.title)}</h3><p class="zoh-summary">${escapeHtmlText(entry.summary)}</p></div>
         <button class="zoh-jump" type="button">进入</button>
       </article>`).join('\n      ');
-    return `<div class="zoh-root" data-theme="${data.theme}" data-font="${data.font}" style="${rootStyle}">
+    const documentHtml = `<div class="zoh-root" data-theme="${data.theme}" data-font="${data.font}" style="${rootStyle}">
   <section class="zoh-page">
     <header class="zoh-header">
       <h1 class="zoh-title">${escapeHtmlText(data.title)}</h1>
@@ -177,6 +177,7 @@ function replacementHtml(input) {
   var staticCards=host.querySelectorAll('.zoh-entry');openings.forEach(function(entry,index){var article=staticCards[index];if(!article)return;var target=Math.max(1,Number(entry.target)||index+2);if(target===current)article.prepend(make('span','zoh-current','当前'));var button=article.querySelector('.zoh-jump');if(button)button.addEventListener('click',async function(){await jump(target,entry);});});
 })(document.currentScript);
 </script>`.trim();
+    return ['```html', documentHtml, '```'].join('\n');
 }
 
 export function buildOpeningHomeRegex(input = {}) {

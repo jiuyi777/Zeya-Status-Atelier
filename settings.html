@@ -38,10 +38,10 @@
 
             <div class="status-atelier-workspace-grid">
                 <main>
-                    <section class="status-atelier-setting-section">
-                        <div class="status-atelier-section-heading">
+                    <details class="status-atelier-setting-section status-atelier-collapsible">
+                        <summary class="status-atelier-section-heading">
                             <div><h4>作品固定资料</h4><small>作者、推荐模型和推荐预设可以保存后长期复用。</small></div>
-                        </div>
+                        </summary>
                         <div class="status-atelier-settings-grid">
                             <label>主页标题<input id="status-atelier-opening-home-title" class="text_pole" type="text" maxlength="80"></label>
                             <label>英文 / 小副标题<input id="status-atelier-opening-home-subtitle" class="text_pole" type="text" maxlength="100"></label>
@@ -56,7 +56,7 @@
                         </div>
                         <label class="status-atelier-wide-field">作品总简介<textarea id="status-atelier-opening-home-intro" class="text_pole" rows="4" maxlength="1600"></textarea></label>
                         <input id="status-atelier-opening-home-theme" type="hidden">
-                    </section>
+                    </details>
 
                     <section class="status-atelier-setting-section">
                         <div class="status-atelier-section-heading"><div><h4>推荐色卡</h4><small>点击一组，同时更换主页、卡片、文字、简介与按钮颜色。</small></div></div>
@@ -80,21 +80,21 @@
                         </details>
                     </section>
 
-                    <section class="status-atelier-setting-section">
-                        <div class="status-atelier-section-heading">
+                    <details class="status-atelier-setting-section status-atelier-collapsible">
+                        <summary class="status-atelier-section-heading">
                             <div><h4>世界线介绍（可选）</h4><small>单线作品可完全不添加；不绑定 UID 时只跳转开场白，不开关世界书。</small></div>
-                            <div class="status-atelier-worldline-heading-actions">
-                                <button id="status-atelier-opening-clear-worldlines" type="button" class="menu_button" hidden>清空全部</button>
-                                <button id="status-atelier-opening-add-worldline" type="button" class="menu_button">＋ 新增世界线</button>
-                            </div>
+                        </summary>
+                        <div class="status-atelier-worldline-heading-actions">
+                            <button id="status-atelier-opening-clear-worldlines" type="button" class="menu_button" hidden>清空全部</button>
+                            <button id="status-atelier-opening-add-worldline" type="button" class="menu_button">＋ 新增世界线</button>
                         </div>
                         <div id="status-atelier-opening-worldline-list" class="status-atelier-opening-worldline-list"></div>
-                    </section>
+                    </details>
 
-                    <section class="status-atelier-setting-section">
-                        <div class="status-atelier-section-heading">
+                    <details class="status-atelier-setting-section status-atelier-collapsible">
+                        <summary class="status-atelier-section-heading">
                             <div><h4>额外问候语目录</h4><small>主开场白留给主页；这里只读取额外问候语 #1、#2、#3……</small></div>
-                        </div>
+                        </summary>
                         <div class="status-atelier-summary-bar">
                             <label>缺少标题或简介时使用
                                 <select id="status-atelier-opening-summary-source" class="text_pole">
@@ -112,7 +112,7 @@
                             <label>模型<input id="status-atelier-opening-summary-model" class="text_pole" type="text" placeholder="填写模型名称"></label>
                         </div>
                         <div id="status-atelier-opening-entry-list" class="status-atelier-opening-entry-list"></div>
-                    </section>
+                    </details>
 
                     <section class="status-atelier-setting-section">
                         <div class="status-atelier-section-heading"><div><h4>保存开场白主页</h4><small>主开场白只需填写【主页】；正则负责显示与真实跳转。</small></div></div>

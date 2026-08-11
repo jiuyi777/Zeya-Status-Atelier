@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const source = fs.readFileSync(new URL('../index.js', import.meta.url), 'utf8');
+const settingsMarkup = fs.readFileSync(new URL('../settings.html', import.meta.url), 'utf8');
 
 test('greeting modal exposes explicit fill-missing and regenerate-all actions', () => {
     assert.match(source, /id="status-atelier-read-current-card">补全缺失项</);
@@ -39,4 +40,18 @@ test('regenerate all preserves written work intro and only fills missing homepag
     assert.match(source, /const makeHomepage = Boolean\(homepageFields\.length\)/);
     assert.match(source, /if \(batch\.workIntro && needsGeneratedWorkIntro\(\)\)/);
     assert.doesNotMatch(source, /overwrite \|\| needsGeneratedWorkIntro\(\)/);
+});
+
+test('home templates apply complete and visibly distinct visual settings', () => {
+    assert.match(source, /Object\.assign\(settings\(\)\.openingHome, template\.values\)/);
+    const backgrounds = [...source.matchAll(/values: \{ theme: '[^']+', font: '[^']+', background: '(#[0-9a-f]+)'/gi)].map(match => match[1]);
+    assert.equal(backgrounds.length, 4);
+    assert.equal(new Set(backgrounds).size, 4);
+});
+
+test('long mobile opening editors are collapsed independently', () => {
+    assert.equal((settingsMarkup.match(/status-atelier-collapsible/g) || []).length, 3);
+    for (const label of ['作品固定资料', '世界线介绍（可选）', '额外问候语目录']) {
+        assert.match(settingsMarkup, new RegExp(`<summary[^>]*>[\\s\\S]*?${label}[\\s\\S]*?<\\/summary>`));
+    }
 });

@@ -1605,6 +1605,43 @@ summary.status-atelier-section-heading {
     letter-spacing: .04em;
 }
 
+.status-atelier-collapsible > summary {
+    cursor: pointer;
+    list-style: none;
+    margin-bottom: 0;
+    border-bottom: 0;
+    user-select: none;
+}
+
+.status-atelier-collapsible > summary::-webkit-details-marker {
+    display: none;
+}
+
+.status-atelier-collapsible > summary::after {
+    content: "展开";
+    flex: 0 0 auto;
+    padding: 4px 8px;
+    border: 1px solid var(--saw-line);
+    color: var(--saw-accent);
+    background: var(--saw-paper);
+    font: 800 11px/1.2 "Cascadia Mono", monospace;
+}
+
+.status-atelier-collapsible[open] > summary {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--saw-line);
+}
+
+.status-atelier-collapsible[open] > summary::after {
+    content: "收起";
+}
+
+.status-atelier-collapsible > .status-atelier-worldline-heading-actions {
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
 .status-atelier-workbench .status-atelier-setting-section + .status-atelier-setting-section,
 .status-atelier-workbench details.status-atelier-setting-section + .status-atelier-setting-section {
     margin-top: 10px;

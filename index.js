@@ -6,14 +6,14 @@ import {
     makePreviewRecords,
     normalizeRule,
     parseFields,
-} from './rule-generator.js?v=0.8.8';
+} from './rule-generator.js?v=0.8.9';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.8.8';
+} from './opening-home-generator.js?v=0.8.9';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -25,14 +25,14 @@ import {
     parseSummaryResponse,
     responseText,
     usableGreetingRecords,
-} from './response-parser.js?v=0.8.8';
+} from './response-parser.js?v=0.8.9';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.8.8';
+} from './worldbook-routes.js?v=0.8.9';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -44,14 +44,26 @@ import { saveSettings } from '../../../../script.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.8.8';
+const VERSION = '0.8.9';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 
 const HOME_TEMPLATES = Object.freeze([
-    { id: 'classical', name: '01 古典徽章', description: '双层雕花框 · 海军蓝金箔' },
-    { id: 'newspaper', name: '03 复古报刊', description: '报头分栏 · 印章与粗细线' },
-    { id: 'timeline', name: '04 中轴时间线', description: '粉青节点 · 立体柔边卡片' },
-    { id: 'minimal', name: '05 构成编辑', description: '米白纸张 · 黑色网格 · 暗红索引' },
+    {
+        id: 'classical', name: '01 古典徽章', description: '双层雕花框 · 海军蓝金箔',
+        values: { theme: 'classical', font: 'serif', background: '#f5ead7', cardBackground: '#fffaf0', text: '#2f261e', accent: '#914538', secondary: '#7d6a56', introBackground: '#e8e0d0', buttonColor: '#1a3048' },
+    },
+    {
+        id: 'newspaper', name: '03 复古报刊', description: '报头分栏 · 印章与粗细线',
+        values: { theme: 'newspaper', font: 'serif', background: '#f3eddc', cardBackground: '#eee4ce', text: '#201d19', accent: '#8d2d23', secondary: '#5a5348', introBackground: '#e1d5b9', buttonColor: '#201d19' },
+    },
+    {
+        id: 'timeline', name: '04 中轴时间线', description: '粉青节点 · 立体柔边卡片',
+        values: { theme: 'timeline', font: 'kai', background: '#fffaf1', cardBackground: '#fffaf0', text: '#3c3330', accent: '#b46662', secondary: '#6d9799', introBackground: '#e6efeb', buttonColor: '#6d9799' },
+    },
+    {
+        id: 'minimal', name: '05 构成编辑', description: '米白纸张 · 黑色网格 · 暗红索引',
+        values: { theme: 'minimal', font: 'sans', background: '#f6f4ee', cardBackground: '#fffaf0', text: '#2c322f', accent: '#9b332c', secondary: '#a98763', introBackground: '#e8e0d0', buttonColor: '#171717' },
+    },
 ]);
 
 const STATUS_TEMPLATES = Object.freeze([
@@ -314,9 +326,8 @@ function makeTemplateCard(template, type, selected, favorites) {
     card.append(makeElement('strong', '', template.name), makeElement('small', '', template.description));
     card.addEventListener('click', () => {
         if (type === 'home') {
-            settings().openingHome.theme = template.id;
-            field('status-atelier-opening-home-theme').value = template.id;
-            renderTemplateLibraries();
+            Object.assign(settings().openingHome, template.values);
+            loadSettingsUI();
             updateOpeningHomePreview();
             saveSettingsSoon();
         } else {
