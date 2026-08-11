@@ -76,11 +76,11 @@ test('builds an importable constant worldbook entry containing the dynamic outpu
     assert.equal(Object.hasOwn(entry, 'affection'), false);
 });
 
-test('registers 20 editable mobile themes with unique codes and ids', () => {
-    assert.equal(STATUS_STYLE_PRESETS.length, 20);
-    assert.equal(new Set(STATUS_STYLE_PRESETS.map(style => style.code)).size, 20);
-    assert.equal(new Set(STATUS_STYLE_PRESETS.map(style => style.id)).size, 20);
-    assert.deepEqual(STATUS_STYLE_PRESETS.map(style => style.code), Array.from({ length: 20 }, (_, index) => String(index + 1).padStart(2, '0')));
+test('registers 50 editable mobile themes with unique codes and ids', () => {
+    assert.equal(STATUS_STYLE_PRESETS.length, 50);
+    assert.equal(new Set(STATUS_STYLE_PRESETS.map(style => style.code)).size, 50);
+    assert.equal(new Set(STATUS_STYLE_PRESETS.map(style => style.id)).size, 50);
+    assert.deepEqual(STATUS_STYLE_PRESETS.map(style => style.code), Array.from({ length: 50 }, (_, index) => String(index + 1).padStart(2, '0')));
 });
 
 test('editorial theme keeps the reference composition while consuming dynamic records', () => {
@@ -108,9 +108,27 @@ test('every status theme generates syntactically valid mobile renderer code', ()
             subtitle: style.subtitle,
         });
         assert.match(script.replaceString, new RegExp(`data-theme="${style.id}"`));
+        assert.match(script.replaceString, /zrs-chrome/);
         assert.match(script.replaceString, /@media\(max-width:520px\)/);
         const browserScript = script.replaceString.match(/<script>\n([\s\S]*?)\n<\/script>/);
         assert.ok(browserScript, `${style.code} ${style.name} includes browser script`);
         assert.doesNotThrow(() => new Function(browserScript[1]), `${style.code} ${style.name} browser script parses`);
+    }
+});
+
+test('30 mini-web themes have dedicated palettes, glyphs and editable schemas', () => {
+    const miniWebThemes = STATUS_STYLE_PRESETS.slice(20);
+    assert.equal(miniWebThemes.length, 30);
+    for (const style of miniWebThemes) {
+        assert.ok(style.glyph, `${style.code} ${style.name} has a visual glyph`);
+        assert.ok(style.shared?.length >= 3, `${style.code} ${style.name} has shared fields`);
+        assert.ok(style.fields?.length >= 4, `${style.code} ${style.name} has page fields`);
+        const script = buildRegexScript({
+            ...RULE_PRESETS.universalClassical,
+            theme: style.id,
+            title: style.title,
+            subtitle: style.subtitle,
+        });
+        assert.match(script.replaceString, new RegExp(`data-theme="${style.id}"\\]\\{--z-accent:`));
     }
 });

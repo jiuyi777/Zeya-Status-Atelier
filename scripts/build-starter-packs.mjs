@@ -24,6 +24,16 @@ const openingPacks = [
 
 const statusPacks = STATUS_STYLE_PRESETS;
 
+const fieldKind = label => {
+    if (/(进度|率|健康|饱食|水分|完整度|血氧|成长值|心情数值|CPU|内存|存储)/i.test(label)) return 'progress';
+    if (/(价格|当前价|实付|小计|优惠|营收|金币)/.test(label)) return 'currency';
+    if (/(正文|摘要|简介|日志|消息|公告|歌词|章节|清单|记录|任务|目标|笔记|证据|关系|线索|解读|牌义|告警|物资|地图|计划|病史|关键词|趋势|待办|订单|历史|数据|事件|形态|回忆)/.test(label)) return 'long';
+    if (/(数|量|温度|体感|湿度|风速|能见度|心率|血压|评分|睡眠|步数|专注)/.test(label)) return 'number';
+    return 'text';
+};
+
+const fieldsText = fields => fields.map((label, index) => `${label}|根据当前剧情填写${label}|${fieldKind(label)}|field_${index + 1}`).join('\n');
+
 async function writeJson(filePath, value) {
     await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
 }
@@ -75,6 +85,9 @@ for (const pack of statusPacks) {
         subtitle: pack.subtitle,
         theme: pack.id,
         layout: pack.layout,
+        pagesText: pack.fields ? '记录一|填写当前主要人物、项目或视角\n记录二|填写需要切换查看的第二人物、项目或视角' : RULE_PRESETS.universalClassical.pagesText,
+        sharedFieldsText: pack.shared ? fieldsText(pack.shared) : RULE_PRESETS.universalClassical.sharedFieldsText,
+        pageFieldsText: pack.fields ? fieldsText(pack.fields) : RULE_PRESETS.universalClassical.pageFieldsText,
     };
     const instruction = buildAiInstruction(settings);
     const regex = buildRegexScript(settings);

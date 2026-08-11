@@ -899,6 +899,13 @@ function updatePreview() {
     root.dataset.theme = rule.theme;
     root.dataset.layout = rule.layout;
 
+    const chrome = makeElement('div', 'status-atelier-preview-chrome');
+    chrome.append(
+        makeElement('span', 'status-atelier-preview-glyph', rule.glyph),
+        makeElement('span', 'status-atelier-preview-style-name', rule.styleName),
+    );
+    root.append(chrome);
+
     const header = makeElement('header', 'status-atelier-rule-preview-header');
     const heading = makeElement('div');
     heading.append(

@@ -100,6 +100,8 @@ const openingDefinitions = [
 ];
 const openingIds = new Set();
 const statusIds = new Set();
+const miniWebPalettes = new Set();
+const miniWebSchemas = new Set();
 for (const [code, name] of openingDefinitions) {
     const openingFolder = join(root, 'starter-packs', '开场白主页', `${code}-${name}`);
     try {
@@ -134,14 +136,30 @@ for (const style of STATUS_STYLE_PRESETS) {
         if (!statusRegex.replaceString.includes('textContent')) {
             errors.push(`通用状态栏${code}正则未安全写入动态数据`);
         }
+        if (Number(code) >= 21) {
+            const palettePattern = new RegExp(`data-theme="${id}"\\]\\{--z-accent:([^;}]+);--z-bg:([^;}]+);--z-card:([^;}]+);--z-text:([^;}]+);--z-muted:([^;}]+)\\}`);
+            const palette = statusRegex.replaceString.match(palettePattern)?.slice(1).join('|');
+            if (!palette) errors.push(`迷你网页${code}没有专属五色色卡`);
+            else miniWebPalettes.add(palette);
+            const schema = [...(style.shared || []), ...(style.fields || [])];
+            miniWebSchemas.add(schema.join('|'));
+            if (!style.glyph || !statusRegex.replaceString.includes('zrs-chrome')) {
+                errors.push(`迷你网页${code}缺少专属装饰 HTML`);
+            }
+            for (const label of schema) {
+                if (!entry?.content?.includes(label)) errors.push(`迷你网页${code}世界书缺少字段：${label}`);
+            }
+        }
     } catch (error) {
         errors.push(`通用状态栏${code}成品缺失或 JSON 无效：${error.message}`);
     }
 }
 if (openingIds.size !== 4) errors.push('四套开场白主页必须使用四个独立正则 ID');
-if (STATUS_STYLE_PRESETS.length !== 20) errors.push('状态栏主题注册表必须正好包含20套');
-if (new Set(STATUS_STYLE_PRESETS.map(style => style.id)).size !== 20) errors.push('20套状态栏必须使用20个独立主题 ID');
-if (statusIds.size !== 20) errors.push('20套通用状态栏必须使用20个独立正则 ID');
+if (STATUS_STYLE_PRESETS.length !== 50) errors.push('状态栏主题注册表必须正好包含50套');
+if (new Set(STATUS_STYLE_PRESETS.map(style => style.id)).size !== 50) errors.push('50套状态栏必须使用50个独立主题 ID');
+if (statusIds.size !== 50) errors.push('50套通用状态栏必须使用50个独立正则 ID');
+if (miniWebPalettes.size !== 30) errors.push('21-50 必须使用30套独立五色色卡');
+if (miniWebSchemas.size !== 30) errors.push('21-50 必须使用30套独立动态字段协议');
 
 if (errors.length) {
     console.error('STATIC_CHECK_FAILED');
