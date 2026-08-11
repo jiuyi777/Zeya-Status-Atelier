@@ -22,7 +22,7 @@ export const STATUS_STYLE_PRESETS = Object.freeze([
     { code: '02', id: 'glass', name: '水色玻璃', title: '水色人物档案', subtitle: 'AQUA GLASS', layout: 'grid' },
     { code: '03', id: 'newspaper', name: '复古报刊', title: '剧情人物档案', subtitle: 'DAILY CHARACTER FILE', layout: 'grid' },
     { code: '04', id: 'timeline', name: '中轴时间线', title: '人物轨迹', subtitle: 'CHARACTER TIMELINE', layout: 'stack' },
-    { code: '05', id: 'minimal', name: '极简留白', title: '当前状态', subtitle: 'CURRENT STATUS', layout: 'grid' },
+    { code: '05', id: 'minimal', name: '构成编辑', title: '当前状态', subtitle: 'STATUS / EDITION 05', layout: 'grid' },
     { code: '06', id: 'envelope', name: '信封日记', title: '私密近况', subtitle: 'PRIVATE LETTER', layout: 'stack' },
     { code: '07', id: 'obsidian', name: '黑银档案', title: '机密状态档案', subtitle: 'CLASSIFIED STATUS', layout: 'grid' },
     { code: '08', id: 'botanical', name: '植物标本', title: '人物观察手记', subtitle: 'BOTANICAL NOTES', layout: 'grid' },
@@ -121,7 +121,7 @@ export const RULE_PRESETS = Object.freeze({
         pageFieldsText: DEFAULT_PAGE_FIELDS.map(field => `${field.label}|${field.instruction}|${field.kind}`).join('\n'),
     },
     universalMinimal: {
-        ruleName: '通用状态栏05·极简留白',
+        ruleName: '通用状态栏05·构成编辑',
         tagName: 'zeya_status',
         title: '当前状态',
         subtitle: 'CURRENT STATUS',
@@ -342,7 +342,7 @@ const STATUS_THEME_CSS = `
 .zeya-regex-status[data-theme="glass"]{--z-accent:#6ec7d9;--z-bg:#102631;--z-card:#173844;--z-text:#e9f8fb;--z-muted:#9dbdc5}
 .zeya-regex-status[data-theme="newspaper"]{--z-accent:#842f26;--z-bg:#e8dfca;--z-card:#f3eddc;--z-text:#201d19;--z-muted:#5a5348}
 .zeya-regex-status[data-theme="timeline"]{--z-accent:#b46662;--z-bg:#fff6ed;--z-card:#fffaf1;--z-text:#3c3330;--z-muted:#6d9799}
-.zeya-regex-status[data-theme="minimal"]{--z-accent:#677f72;--z-bg:#efeee8;--z-card:#f6f4ee;--z-text:#2c322f;--z-muted:#8a755d}
+.zeya-regex-status[data-theme="minimal"]{--z-accent:#a7312e;--z-bg:#c9cac8;--z-card:#f4f1e8;--z-text:#1d1b19;--z-muted:#67645e}
 .zeya-regex-status[data-theme="envelope"]{--z-accent:#9b4b58;--z-bg:#4a566e;--z-card:#faf6ed;--z-text:#2a3242;--z-muted:#687185}
 .zeya-regex-status[data-theme="obsidian"]{--z-accent:#d7d7d7;--z-bg:#090909;--z-card:#141414;--z-text:#f3f3f3;--z-muted:#a7a7a7}
 .zeya-regex-status[data-theme="botanical"]{--z-accent:#55755b;--z-bg:#dfe7d8;--z-card:#f4f2e5;--z-text:#354234;--z-muted:#71806b}
@@ -360,6 +360,7 @@ const STATUS_THEME_CSS = `
 .zeya-regex-status[data-theme="pixel"]{--z-accent:#ffcb48;--z-bg:#20233b;--z-card:#303552;--z-text:#fff7dc;--z-muted:#aeb5d0}
 .zeya-regex-status[data-theme="classical"] .zrs-card{border:4px double var(--z-accent);border-radius:8px}.zeya-regex-status[data-theme="classical"] .zrs-header{text-align:center}.zeya-regex-status[data-theme="classical"] .zrs-header>div{flex:1}
 .zeya-regex-status[data-theme="glass"] .zrs-card{border-color:color-mix(in srgb,var(--z-accent) 65%,transparent);background:linear-gradient(135deg,rgba(255,255,255,.1),transparent 48%),color-mix(in srgb,var(--z-card) 84%,transparent);backdrop-filter:blur(12px)}
+.zeya-regex-status[data-theme="minimal"]{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.zeya-regex-status[data-theme="minimal"] .zrs-card{border:1px solid var(--z-text);border-radius:0;background:var(--z-card);box-shadow:6px 6px 0 color-mix(in srgb,var(--z-text) 18%,transparent)}.zeya-regex-status[data-theme="minimal"] .zrs-header{position:relative;padding:18px 15px 24px;border-bottom:6px solid var(--z-text);background:transparent}.zeya-regex-status[data-theme="minimal"] .zrs-header::after{content:"LIVE / WORLD INFO";position:absolute;left:15px;bottom:7px;color:var(--z-accent);font:800 8px/1 monospace;letter-spacing:.12em}.zeya-regex-status[data-theme="minimal"] .zrs-title{font:900 clamp(1.35em,7vw,2.4em)/.92 "Noto Serif SC","Songti SC",serif;letter-spacing:-.08em}.zeya-regex-status[data-theme="minimal"] .zrs-subtitle{color:var(--z-muted);font:700 .62em/1.2 monospace;letter-spacing:.12em}.zeya-regex-status[data-theme="minimal"] .zrs-collapse{border-color:var(--z-text);border-radius:0}.zeya-regex-status[data-theme="minimal"] .zrs-content{padding:1px;background:var(--z-text)}.zeya-regex-status[data-theme="minimal"] .zrs-shared,.zeya-regex-status[data-theme="minimal"] .zrs-fields{gap:1px;margin-bottom:1px}.zeya-regex-status[data-theme="minimal"] .zrs-shared-item,.zeya-regex-status[data-theme="minimal"] .zrs-field{min-height:72px;border:0;background:var(--z-card)}.zeya-regex-status[data-theme="minimal"] .zrs-label{color:var(--z-muted);font:700 .62em/1.3 monospace;letter-spacing:.1em}.zeya-regex-status[data-theme="minimal"] .zrs-value{font-family:"Noto Serif SC","Songti SC",serif}.zeya-regex-status[data-theme="minimal"] .zrs-tabs{gap:1px;margin:0 0 1px;background:var(--z-text)}.zeya-regex-status[data-theme="minimal"] .zrs-tab{border:0;border-radius:0;background:var(--z-card)}.zeya-regex-status[data-theme="minimal"] .zrs-tab.is-active{color:var(--z-card);background:var(--z-text)}.zeya-regex-status[data-theme="minimal"] .zrs-meter{height:5px;border-radius:0;background:color-mix(in srgb,var(--z-text) 14%,transparent)}
 .zeya-regex-status[data-theme="envelope"] .zrs-card{border-radius:3px;border-width:1px}.zeya-regex-status[data-theme="envelope"] .zrs-header{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--z-accent) 18%,var(--z-card)) 0 12px,var(--z-card) 12px 24px)}
 .zeya-regex-status[data-theme="obsidian"] .zrs-card{border-radius:0;box-shadow:8px 8px 0 #000}.zeya-regex-status[data-theme="obsidian"] .zrs-field,.zeya-regex-status[data-theme="obsidian"] .zrs-shared-item{border-left:3px solid var(--z-accent)}
 .zeya-regex-status[data-theme="botanical"] .zrs-card{border-radius:30px 8px}.zeya-regex-status[data-theme="botanical"] .zrs-header{background:linear-gradient(110deg,color-mix(in srgb,var(--z-accent) 22%,var(--z-card)),var(--z-card))}.zeya-regex-status[data-theme="botanical"] .zrs-field{border-radius:16px 4px}

@@ -6,21 +6,21 @@ import {
     makePreviewRecords,
     normalizeRule,
     parseFields,
-} from './rule-generator.js?v=0.6.0';
+} from './rule-generator.js?v=0.7.0';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.6.0';
+} from './opening-home-generator.js?v=0.7.0';
 import {
     SUMMARY_RESPONSE_LENGTH,
     generationErrorMessage,
     parseBatchSummaryResponse,
     parseSummaryResponse,
     usableGreetingRecords,
-} from './response-parser.js?v=0.6.0';
+} from './response-parser.js?v=0.7.0';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -32,14 +32,14 @@ import { saveSettings } from '../../../../script.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.6.0';
+const VERSION = '0.7.0';
 const OPENING_HOME_SCHEMA_VERSION = 1;
 
 const HOME_TEMPLATES = Object.freeze([
     { id: 'classical', name: '01 古典徽章', description: '双层雕花框 · 海军蓝金箔' },
     { id: 'newspaper', name: '03 复古报刊', description: '报头分栏 · 印章与粗细线' },
     { id: 'timeline', name: '04 中轴时间线', description: '粉青节点 · 立体柔边卡片' },
-    { id: 'minimal', name: '05 编辑部留白', description: '橄榄绿 · 陶土橙 · 杂志感' },
+    { id: 'minimal', name: '05 构成编辑', description: '米白纸张 · 黑色网格 · 暗红索引' },
 ]);
 
 const STATUS_TEMPLATES = Object.freeze([

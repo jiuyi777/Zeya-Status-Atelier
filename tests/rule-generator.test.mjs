@@ -83,6 +83,21 @@ test('registers 20 editable mobile themes with unique codes and ids', () => {
     assert.deepEqual(STATUS_STYLE_PRESETS.map(style => style.code), Array.from({ length: 20 }, (_, index) => String(index + 1).padStart(2, '0')));
 });
 
+test('editorial theme keeps the reference composition while consuming dynamic records', () => {
+    const style = STATUS_STYLE_PRESETS.find(item => item.id === 'minimal');
+    assert.equal(style?.name, '构成编辑');
+    const script = buildRegexScript({
+        ...RULE_PRESETS.universalClassical,
+        theme: style.id,
+        title: style.title,
+        subtitle: style.subtitle,
+    });
+    assert.match(script.replaceString, /LIVE \/ WORLD INFO/);
+    assert.match(script.replaceString, /--z-accent:#a7312e/);
+    assert.match(script.replaceString, /var records=\{\}/);
+    assert.doesNotMatch(script.replaceString, /参考人物|示例人物/);
+});
+
 test('every status theme generates syntactically valid mobile renderer code', () => {
     for (const style of STATUS_STYLE_PRESETS) {
         const script = buildRegexScript({
