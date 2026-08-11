@@ -6,7 +6,7 @@
   "js": "index.js",
   "css": "style.css",
   "author": "Zeya",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "生成可填空的动态状态栏与配对世界书规则，并制作能读取开场白、绑定具体世界书条目、换整套色卡的跳转主页。",
   "minimum_client_version": "1.14.0",
   "auto_update": false

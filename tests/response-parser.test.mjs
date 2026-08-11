@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+    BATCH_SUMMARY_JSON_SCHEMA,
     SUMMARY_RESPONSE_LENGTH,
+    SINGLE_SUMMARY_JSON_SCHEMA,
     generationErrorMessage,
     greetingPreview,
     jsonObjectsFromResponse,
@@ -11,6 +13,12 @@ import {
     stripReasoningBlocks,
     usableGreetingRecords,
 } from '../response-parser.js';
+
+test('provides SillyTavern-compatible JSON schemas for single and batch summaries', () => {
+    assert.deepEqual(SINGLE_SUMMARY_JSON_SCHEMA.value.required, ['title', 'summary']);
+    assert.deepEqual(BATCH_SUMMARY_JSON_SCHEMA.value.required, ['workIntro', 'entries']);
+    assert.deepEqual(BATCH_SUMMARY_JSON_SCHEMA.value.properties.entries.items.required, ['index', 'title', 'summary']);
+});
 
 test('extracts balanced JSON when braces and escapes appear inside strings', () => {
     const objects = jsonObjectsFromResponse('prefix {"title":"雨夜 {重逢}","summary":"他说：\\"回来吧\\""} suffix');
@@ -62,6 +70,7 @@ test('distinguishes a generic 502 from an actual 524 timeout', () => {
     assert.match(generationErrorMessage(new Error('Gateway 524 timed out')), /超时或 524/);
     assert.match(generationErrorMessage(new Error('Gateway 524 timed out')), /4096/);
     assert.match(generationErrorMessage(new Error('Got response status 502')), /502 不一定是超时/);
+    assert.match(generationErrorMessage(new Error('No message generated')), /本地摘要补全/);
     assert.equal(generationErrorMessage(new Error('permission denied')), '');
 });
 

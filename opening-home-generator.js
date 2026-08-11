@@ -136,8 +136,7 @@ export function buildOpeningHomeBlock(input) {
 
 function replacementHtml(input) {
     const embeddedSource = escapeHtmlText(buildOpeningHomeBlock(input));
-    return `\`\`\`html
-<div class="zoh-root">
+    return `<div class="zoh-root">
   <textarea class="zoh-source" hidden>${embeddedSource}</textarea>
   <section class="zoh-page">
     <header class="zoh-header">
@@ -187,8 +186,7 @@ function replacementHtml(input) {
   async function jump(oneBased,opening){try{var live=topWindow.SillyTavern?.getContext?.();var message=live?.chat?.[0];var swipes=message?.swipes;if(!live?.swipe||!Array.isArray(swipes)||!swipes.length)throw new Error('当前聊天没有可跳转的备用开场白');await applyWorldline(live,opening);var target=Math.max(0,Math.min(swipes.length-1,Number(oneBased)-1));var now=Math.max(0,Math.min(swipes.length-1,Number(message.swipe_id||0)));var messageEl=topWindow.document.querySelector('#chat .mes[mesid="0"]');if(!messageEl)throw new Error('聊天第1条尚未加载');var direction=target>now?'right':'left';for(var step=0;step<Math.abs(target-now);step++){await live.swipe[direction].call(messageEl,null,{source:'zeya-opening-home',message:message});}topWindow.document.querySelector('#chat .mes[mesid="0"]')?.scrollIntoView({behavior:'smooth',block:'center'});}catch(error){notice.textContent=error?.message||'跳转失败';}}
   openings.forEach(function(entry,index){var article=make('article','zoh-entry');var legacy=oldOpening(entry);var target=openingTarget(entry,index);var summary=entry[legacy?4:3]||'未填写简介';if(target===current)article.append(make('span','zoh-current','当前'));article.append(make('div','zoh-number',entry[1]||String(index+1).padStart(2,'0')));var copy=make('div','zoh-entry-copy');copy.append(make('h3','zoh-entry-title',entry[2]||'未命名开场白'),make('p','zoh-summary',summary));var button=make('button','zoh-jump','进入');button.type='button';button.addEventListener('click',function(){jump(target,entry);});article.append(copy,button);host.append(article);});
 })(document.currentScript);
-</script>
-\`\`\``;
+</script>`.trim();
 }
 
 export function buildOpeningHomeRegex(input = {}) {

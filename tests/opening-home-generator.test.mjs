@@ -76,7 +76,8 @@ test('opening homepage regex renders four selected themes and uses native swipe'
     assert.match(script.replaceString, /openings\.forEach/);
     assert.match(script.replaceString, /zoh-intro-markdown/);
     assert.match(script.replaceString, /function markdown/);
-    assert.ok(script.replaceString.startsWith('```html'));
+    assert.ok(script.replaceString.startsWith('<div class="zoh-root">'));
+    assert.doesNotMatch(script.replaceString, /```html/);
     assert.doesNotMatch(script.replaceString, /\$1/);
     assert.match(script.replaceString, /\[Meta\|作品导航\|STORY HOME\|Zeya\|/);
 });
@@ -108,5 +109,5 @@ test('embedded opening data cannot break the textarea or html fence', () => {
     const script = buildOpeningHomeRegex({ ...OPENING_HOME_DEFAULTS, intro: '```html\n</textarea><script>bad()</script>' });
     assert.doesNotMatch(script.replaceString, /<textarea class="zoh-source" hidden>[\s\S]*<script>bad/);
     assert.match(script.replaceString, /&lt;\/textarea&gt;/);
-    assert.equal((script.replaceString.match(/```/g) || []).length, 2);
+    assert.equal((script.replaceString.match(/```/g) || []).length, 0);
 });

@@ -6,23 +6,25 @@ import {
     makePreviewRecords,
     normalizeRule,
     parseFields,
-} from './rule-generator.js?v=0.8.1';
+} from './rule-generator.js?v=0.8.2';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.8.1';
+} from './opening-home-generator.js?v=0.8.2';
 import {
+    BATCH_SUMMARY_JSON_SCHEMA,
     SUMMARY_RESPONSE_LENGTH,
+    SINGLE_SUMMARY_JSON_SCHEMA,
     generationErrorMessage,
     greetingPreview,
     parseBatchSummaryResponse,
     parseSummaryResponse,
     responseText,
     usableGreetingRecords,
-} from './response-parser.js?v=0.8.1';
+} from './response-parser.js?v=0.8.2';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -34,7 +36,7 @@ import { saveSettings } from '../../../../script.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.8.1';
+const VERSION = '0.8.2';
 const OPENING_HOME_SCHEMA_VERSION = 1;
 
 const HOME_TEMPLATES = Object.freeze([
@@ -1104,30 +1106,37 @@ function greetingData() {
     return { ...data, current };
 }
 
-async function generateWithCurrentPreset(prompt) {
+async function generateWithCurrentPreset(prompt, jsonSchema = null) {
     const ctx = context();
-    const completion = ctx?.chatCompletionSettings;
-    if (ctx?.mainApi === 'openai' && completion?.chat_completion_source === 'custom' && !String(completion?.custom_url || '').trim()) {
-        throw new Error('当前主 API 使用“自定义（兼容 OpenAI）”，但接口地址为空；请先在酒馆 API 连接设置中填写并连接真实接口');
+    const rawGenerator = ctx?.generateRaw;
+    const quietGenerator = ctx?.generateQuietPrompt;
+    if (typeof rawGenerator !== 'function' && typeof quietGenerator !== 'function') {
+        throw new Error('当前酒馆版本没有提供携带当前模型与预设的后台生成接口');
     }
-    const generator = ctx?.generateQuietPrompt;
-    if (typeof generator !== 'function') throw new Error('当前酒馆版本没有提供携带当前预设的后台生成接口');
     let response;
     try {
-        response = await generator({
-            quietPrompt: prompt,
-            quietToLoud: false,
-            // The current character and preset are still used. World Info and
-            // Author's Note are unrelated to a short greeting index and can
-            // otherwise inflate this request enough to trigger a 524.
-            skipWIAN: true,
-            // Preserve the selected model and complete preset, but do not let a
-            // short directory task inherit a 32k reply budget and hit a 524.
-            responseLength: SUMMARY_RESPONSE_LENGTH,
-            // Keep the full response; tag names vary by model and preset, so the
-            // plugin removes common reasoning blocks and extracts JSON itself.
-            removeReasoning: false,
-        });
+        if (typeof rawGenerator === 'function') {
+            // Keep the active model, provider, proxy and generation preset, but
+            // send only the directory task. A quiet generation also injects the
+            // full character, chat, World Info and Author's Note; large cards can
+            // exhaust a reasoning model before it produces visible JSON.
+            response = await rawGenerator({
+                prompt: [{ role: 'user', content: prompt }],
+                responseLength: SUMMARY_RESPONSE_LENGTH,
+                trimNames: false,
+                jsonSchema,
+            });
+        } else {
+            // Compatibility fallback for older SillyTavern builds.
+            response = await quietGenerator({
+                quietPrompt: prompt,
+                quietToLoud: false,
+                skipWIAN: true,
+                responseLength: SUMMARY_RESPONSE_LENGTH,
+                removeReasoning: true,
+                jsonSchema,
+            });
+        }
     } catch (error) {
         const friendlyMessage = generationErrorMessage(error);
         if (friendlyMessage) throw new Error(friendlyMessage);
@@ -1172,7 +1181,7 @@ async function summarizeGreeting(raw, entry, index) {
     if (config.source === 'manual') return { title: entry.title, summary: entry.summary };
     const prompt = `请为下面的角色卡开场白生成目录信息。只输出JSON：{"title":"20字以内标题","summary":"40字左右线路简介"}。不要剧透，不要Markdown。\n\n开场白：\n${String(raw).slice(0, 6000)}`;
     if (config.source === 'main') {
-        const response = await generateWithCurrentPreset(prompt);
+        const response = await generateWithCurrentPreset(prompt, SINGLE_SUMMARY_JSON_SCHEMA);
         return parseSummaryResponse(response, entry.title || `开场白 ${index + 1}`, entry.summary);
     }
     return parseSummaryResponse(await requestExternalSummary(prompt, 4096), entry.title || `开场白 ${index + 1}`, entry.summary);
@@ -1206,18 +1215,27 @@ async function summarizeGreetingsBatch(entries) {
     const source = sourceEntries.map(entry => `--- 额外问候语 #${entry.index + 1} ---\n${String(entry.raw).slice(0, 1600)}`).join('\n\n').slice(0, 12000);
     const prompt = `你正在为当前角色卡制作作品主页和开场白目录。请结合当前角色卡设定、当前聊天上下文和当前预设生成简短资料。\n\n严格只输出 JSON，不要 Markdown：\n{"workIntro":"80到120个汉字的作品总简介","entries":[{"index":1,"title":"20个汉字以内标题","summary":"30到50个汉字的线路简介"}]}\n\n要求：每个输入编号都必须返回；index 必须使用输入中的数字；不要剧透；标题不要写“开场白1”这类占位词；作品简介概括世界观、人物关系与阅读提示。\n\n${source}`;
     let responseText = '';
-    if (config.source === 'main') {
-        responseText = await generateWithCurrentPreset(prompt);
-    } else {
-        responseText = await requestExternalSummary(prompt, Math.max(4096, 512 + requested.length * 220));
+    let generationWarning = '';
+    try {
+        if (config.source === 'main') {
+            responseText = await generateWithCurrentPreset(prompt, BATCH_SUMMARY_JSON_SCHEMA);
+        } else {
+            responseText = await requestExternalSummary(prompt, Math.max(4096, 512 + requested.length * 220));
+        }
+    } catch (error) {
+        generationWarning = generationErrorMessage(error) || error?.message || '模型没有返回可用正文';
     }
     let parsed;
-    let formatWarning = '';
-    try {
-        parsed = parseBatchSummaryResponse(responseText, sourceEntries);
-    } catch (error) {
+    let formatWarning = generationWarning;
+    if (responseText) {
+        try {
+            parsed = parseBatchSummaryResponse(responseText, sourceEntries);
+        } catch (error) {
+            parsed = { entries: new Map(), workIntro: '' };
+            formatWarning = error?.message || '模型返回格式无法识别';
+        }
+    } else {
         parsed = { entries: new Map(), workIntro: '' };
-        formatWarning = error?.message || '模型返回格式无法识别';
     }
     const missing = requested.filter(entry => !parsed.entries.has(entry.index));
     missing.forEach(entry => parsed.entries.set(entry.index, fallbackGreetingMetadata(entry)));
@@ -1259,7 +1277,7 @@ async function readGreetingsIntoOpeningHome() {
         renderGreetingList();
     }
     saveSettingsSoon();
-    const fallbackNotice = batch.fallbackCount ? `；其中 ${batch.fallbackCount} 条因模型格式不规范，已用原文摘要补全` : '';
+    const fallbackNotice = batch.fallbackCount ? `；其中 ${batch.fallbackCount} 条未取得有效 AI 目录，已用原文摘要补全` : '';
     notify(batch.fallbackCount ? 'warning' : 'success', `已读取 ${data.entries.length} 条额外问候语${batch.entries.size ? `，补全 ${batch.entries.size} 组标题与简介` : ''}${batch.workIntro ? '，作品简介也已补全' : ''}${fallbackNotice}`);
     return batch;
 }

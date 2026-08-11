@@ -1,5 +1,42 @@
 export const SUMMARY_RESPONSE_LENGTH = 4096;
 
+export const SINGLE_SUMMARY_JSON_SCHEMA = Object.freeze({
+    name: 'opening_home_entry',
+    strict: true,
+    value: {
+        type: 'object',
+        properties: {
+            title: { type: 'string' },
+            summary: { type: 'string' },
+        },
+        required: ['title', 'summary'],
+    },
+});
+
+export const BATCH_SUMMARY_JSON_SCHEMA = Object.freeze({
+    name: 'opening_home_directory',
+    strict: true,
+    value: {
+        type: 'object',
+        properties: {
+            workIntro: { type: 'string' },
+            entries: {
+                type: 'array',
+                items: {
+                    type: 'object',
+                    properties: {
+                        index: { type: 'integer' },
+                        title: { type: 'string' },
+                        summary: { type: 'string' },
+                    },
+                    required: ['index', 'title', 'summary'],
+                },
+            },
+        },
+        required: ['workIntro', 'entries'],
+    },
+});
+
 const REASONING_LABELS = 'think|thinking|reasoning|analysis|plan|thought';
 
 export function responseText(value) {
@@ -144,6 +181,9 @@ export function generationErrorMessage(error) {
     }
     if (/\b502\b/i.test(message)) {
         return '酒馆生成接口返回 502；502 不一定是超时，请先检查当前接口地址、反向代理和上游服务状态';
+    }
+    if (/no message generated|empty (?:message|response)|空正文|没有给出可用正文/i.test(message)) {
+        return '模型没有返回可用正文；已读取的开场白会保留，并自动使用本地摘要补全目录';
     }
     return '';
 }
