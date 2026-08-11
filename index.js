@@ -6,21 +6,23 @@ import {
     makePreviewRecords,
     normalizeRule,
     parseFields,
-} from './rule-generator.js?v=0.7.0';
+} from './rule-generator.js?v=0.8.1';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.7.0';
+} from './opening-home-generator.js?v=0.8.1';
 import {
     SUMMARY_RESPONSE_LENGTH,
     generationErrorMessage,
+    greetingPreview,
     parseBatchSummaryResponse,
     parseSummaryResponse,
+    responseText,
     usableGreetingRecords,
-} from './response-parser.js?v=0.7.0';
+} from './response-parser.js?v=0.8.1';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -32,7 +34,7 @@ import { saveSettings } from '../../../../script.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.7.0';
+const VERSION = '0.8.1';
 const OPENING_HOME_SCHEMA_VERSION = 1;
 
 const HOME_TEMPLATES = Object.freeze([
@@ -1131,7 +1133,8 @@ async function generateWithCurrentPreset(prompt) {
         if (friendlyMessage) throw new Error(friendlyMessage);
         throw error;
     }
-    if (String(response || '').trim()) return response;
+    const unwrapped = responseText(response).trim();
+    if (unwrapped) return unwrapped;
     throw new Error('酒馆已经发出请求，但模型没有给出可用正文；请检查当前预设的最大回复长度与推理设置');
 }
 
@@ -1154,7 +1157,7 @@ async function requestExternalSummary(prompt, maxTokens) {
         });
         if (response.ok) {
             const responseData = await response.json();
-            const content = responseData?.choices?.[0]?.message?.content || '';
+            const content = responseText(responseData);
             if (!String(content).trim()) throw new Error('API 已连通，但模型只返回了空正文；请提高模型回复上限或换用非纯推理模型');
             return content;
         }
@@ -1180,6 +1183,20 @@ function needsGeneratedWorkIntro() {
     return !intro || intro === OPENING_HOME_DEFAULTS.intro;
 }
 
+function fallbackGreetingMetadata(entry) {
+    const preview = greetingPreview(entry?.raw || entry?.preview || '').replace(/^[-—–·、，。！？：:；;\s]+/, '');
+    const firstSentence = preview.split(/[。！？!?；;\n]/).find(Boolean)?.trim() || preview;
+    const titleSource = firstSentence.replace(/[“”"'《》【】]/g, '').trim();
+    const title = titleSource ? `${titleSource.slice(0, 18)}${titleSource.length > 18 ? '…' : ''}` : `开场白 ${(entry?.index ?? 0) + 1}`;
+    const summary = preview ? `${preview.slice(0, 72)}${preview.length > 72 ? '…' : ''}` : '请展开后手动填写这一条线路简介。';
+    return { title, summary };
+}
+
+function fallbackWorkIntro(entries) {
+    const combined = entries.map(entry => greetingPreview(entry.raw)).filter(Boolean).join('；');
+    return combined ? `${combined.slice(0, 110)}${combined.length > 110 ? '…' : ''}` : '';
+}
+
 async function summarizeGreetingsBatch(entries) {
     const config = settings().openingSummary;
     const requested = entries.filter(entry => !entry.title || !entry.summary);
@@ -1187,17 +1204,25 @@ async function summarizeGreetingsBatch(entries) {
     if (!requested.length && !makeWorkIntro) return { entries: new Map(), workIntro: '' };
     const sourceEntries = makeWorkIntro ? entries : requested;
     const source = sourceEntries.map(entry => `--- 额外问候语 #${entry.index + 1} ---\n${String(entry.raw).slice(0, 1600)}`).join('\n\n').slice(0, 12000);
-    const prompt = `你正在为当前角色卡制作作品主页和开场白目录。请结合当前角色卡设定、当前聊天上下文和当前预设生成简短资料。\n\n严格只输出 JSON，不要 Markdown：\n{"workIntro":"80到120个汉字的作品总简介","entries":[{"index":1,"title":"20个汉字以内标题","summary":"30到50个汉字的线路简介"}]}\n\n要求：每个输入编号都必须返回；不要剧透；标题不要写“开场白1”这类占位词；作品简介概括世界观、人物关系与阅读提示。\n\n${source}`;
+    const prompt = `你正在为当前角色卡制作作品主页和开场白目录。请结合当前角色卡设定、当前聊天上下文和当前预设生成简短资料。\n\n严格只输出 JSON，不要 Markdown：\n{"workIntro":"80到120个汉字的作品总简介","entries":[{"index":1,"title":"20个汉字以内标题","summary":"30到50个汉字的线路简介"}]}\n\n要求：每个输入编号都必须返回；index 必须使用输入中的数字；不要剧透；标题不要写“开场白1”这类占位词；作品简介概括世界观、人物关系与阅读提示。\n\n${source}`;
     let responseText = '';
     if (config.source === 'main') {
         responseText = await generateWithCurrentPreset(prompt);
     } else {
         responseText = await requestExternalSummary(prompt, Math.max(4096, 512 + requested.length * 220));
     }
-    const parsed = parseBatchSummaryResponse(responseText, sourceEntries);
+    let parsed;
+    let formatWarning = '';
+    try {
+        parsed = parseBatchSummaryResponse(responseText, sourceEntries);
+    } catch (error) {
+        parsed = { entries: new Map(), workIntro: '' };
+        formatWarning = error?.message || '模型返回格式无法识别';
+    }
     const missing = requested.filter(entry => !parsed.entries.has(entry.index));
-    if (missing.length) throw new Error(`AI 少返回了 ${missing.length} 条标题或简介，请点击重新补全`);
-    return parsed;
+    missing.forEach(entry => parsed.entries.set(entry.index, fallbackGreetingMetadata(entry)));
+    if (makeWorkIntro && !parsed.workIntro) parsed.workIntro = fallbackWorkIntro(entries);
+    return { ...parsed, fallbackCount: missing.length, formatWarning };
 }
 
 async function readGreetingsIntoOpeningHome() {
@@ -1234,7 +1259,9 @@ async function readGreetingsIntoOpeningHome() {
         renderGreetingList();
     }
     saveSettingsSoon();
-    notify('success', `已读取 ${data.entries.length} 条额外问候语${batch.entries.size ? `，并一次补全 ${batch.entries.size} 组标题与简介` : ''}${batch.workIntro ? '，作品简介也已补全' : ''}`);
+    const fallbackNotice = batch.fallbackCount ? `；其中 ${batch.fallbackCount} 条因模型格式不规范，已用原文摘要补全` : '';
+    notify(batch.fallbackCount ? 'warning' : 'success', `已读取 ${data.entries.length} 条额外问候语${batch.entries.size ? `，补全 ${batch.entries.size} 组标题与简介` : ''}${batch.workIntro ? '，作品简介也已补全' : ''}${fallbackNotice}`);
+    return batch;
 }
 
 async function regenerateOpeningEntry(index) {
@@ -1263,20 +1290,30 @@ function buildGreetingModal() {
             <div class="status-atelier-dialog-body">
                 <details class="status-atelier-dialog-note">
                     <summary>读取说明</summary>
-                    <p>主开场白保留给作品主页；这里只读取额外问候语。有标题与简介注释就直接使用，没有才调用工坊选择的 AI。</p>
+                    <p>不需要填写角色卡路径。插件自动定位酒馆当前打开的单人角色聊天；主开场白保留给作品主页，这里只读取该角色卡的额外问候语。有标题与简介注释就直接使用，没有才调用工坊选择的 AI。</p>
                 </details>
                 <div class="status-atelier-greeting-read-status" role="status" aria-live="polite"></div>
                 <div class="status-atelier-greeting-list"></div>
             </div>
             <footer class="status-atelier-dialog-footer">
                 <button type="button" class="menu_button" id="status-atelier-read-current-card">重新读取并补全</button>
-                <button type="button" class="menu_button" id="status-atelier-open-full-workbench">打开完整主页工坊</button>
+                <button type="button" class="menu_button" id="status-atelier-modal-copy-home">复制主页模板</button>
+                <button type="button" class="menu_button" id="status-atelier-modal-download-regex">下载正则</button>
+                <button type="button" class="menu_button" id="status-atelier-open-full-workbench">更多样式与世界线</button>
                 <button type="button" class="menu_button" data-status-atelier-close>完成</button>
             </footer>
         </section>`;
     greetingModal.querySelectorAll('[data-status-atelier-close]').forEach(button => button.addEventListener('click', closeGreetingModal));
     greetingModal.querySelector('#status-atelier-read-current-card').addEventListener('click', event => {
         refreshGreetingModal(event.currentTarget);
+    });
+    greetingModal.querySelector('#status-atelier-modal-copy-home').addEventListener('click', async () => {
+        await copyText(buildOpeningHomeBlock(settings().openingHome));
+        notify('success', '已复制包含当前填写内容的主页模板');
+    });
+    greetingModal.querySelector('#status-atelier-modal-download-regex').addEventListener('click', () => {
+        downloadJson('regex-Zeya-通用开场白主页.json', buildOpeningHomeRegex(settings().openingHome));
+        notify('success', '已下载包含当前填写内容的主页正则');
     });
     greetingModal.querySelector('#status-atelier-open-full-workbench').addEventListener('click', openFullWorkbench);
     document.body.append(greetingModal);
@@ -1318,6 +1355,38 @@ function labeledInput(labelText, value, { multiline = false, maxLength = 160 } =
     return { label, input };
 }
 
+function updateOpeningHomeContent(key, value) {
+    settings().openingHome[key] = value;
+    const controlId = Object.entries(OPENING_HOME_FIELDS).find(([, fieldKey]) => fieldKey === key)?.[0];
+    const control = controlId ? field(controlId) : null;
+    if (control && control.value !== value) control.value = value;
+    updateOpeningHomePreview();
+    saveSettingsSoon();
+}
+
+function buildGreetingHomeQuickEditor() {
+    const panel = makeElement('details', 'status-atelier-dialog-note status-atelier-home-quick-editor');
+    panel.open = true;
+    panel.append(makeElement('summary', '', '主页资料（可直接编辑）'));
+    const grid = makeElement('div', 'status-atelier-home-quick-grid');
+    const definitions = [
+        ['主页标题', 'title', false, 80],
+        ['小副标题', 'subtitle', false, 100],
+        ['作者', 'author', false, 80],
+        ['推荐模型（每行一个）', 'model', true, 400],
+        ['推荐预设（每行一个）', 'preset', true, 400],
+        ['作品总简介', 'intro', true, 1600],
+    ];
+    definitions.forEach(([labelText, key, multiline, maxLength]) => {
+        const { label, input } = labeledInput(labelText, settings().openingHome[key] || '', { multiline, maxLength });
+        label.classList.add(`status-atelier-home-quick-${key}`);
+        input.addEventListener('input', () => updateOpeningHomeContent(key, input.value));
+        grid.append(label);
+    });
+    panel.append(grid);
+    return panel;
+}
+
 function renderGreetingList() {
     if (!greetingModal) return;
     const list = greetingModal.querySelector('.status-atelier-greeting-list');
@@ -1327,24 +1396,56 @@ function renderGreetingList() {
     const character = ctx?.characters?.[ctx?.characterId];
     const characterName = character?.name || character?.data?.name || '当前角色卡';
     list.replaceChildren();
+    list.append(buildGreetingHomeQuickEditor());
     if (!data.entries.length) {
-        status.textContent = `${characterName}：没有读取到额外问候语。请确认当前是单人角色聊天，并已在角色卡“额外问候语”中添加内容。`;
+        status.textContent = `已定位当前角色卡：${characterName}。但没有读取到额外问候语；请确认当前是单人角色聊天，并已在角色卡“额外问候语”中添加内容。`;
         list.append(makeElement('div', 'status-atelier-empty', '主开场白不会计入目录；需要至少一条额外问候语。'));
         return;
     }
-    status.textContent = `${characterName}：已读取 ${data.entries.length} 条额外问候语。`;
+    status.textContent = `已定位当前角色卡：${characterName}（单人聊天），读取到 ${data.entries.length} 条额外问候语。`;
     data.entries.forEach(entry => {
         const card = makeElement('details', 'status-atelier-greeting-card');
+        card.dataset.current = String(entry.index === data.current);
         const generated = settings().openingHome.entries[entry.index];
         const heading = makeElement('summary', 'status-atelier-greeting-card-heading');
+        const headingTitle = makeElement('strong', '', entry.title || generated?.title || `开场白 ${entry.index + 1}`);
+        const headingState = makeElement('span', '', entry.hasMetadata ? '已有注释' : generated?.summary && generated.summary !== '待 AI 补全' ? '已补全' : '待生成');
         heading.append(
             makeElement('b', '', `#${entry.index + 1}`),
-            makeElement('strong', '', entry.title || generated?.title || `开场白 ${entry.index + 1}`),
-            makeElement('span', '', entry.hasMetadata ? '已有注释' : generated?.summary && generated.summary !== '待 AI 补全' ? '已补全' : '待生成'),
+            headingTitle,
+            headingState,
         );
+        const titleField = labeledInput('目录标题', entry.title || generated?.title || `开场白 ${entry.index + 1}`, { maxLength: 80 });
+        const summaryField = labeledInput('线路简介', entry.summary || generated?.summary || '', { multiline: true, maxLength: 600 });
+        const fields = makeElement('div', 'status-atelier-greeting-fields');
+        fields.append(titleField.label, summaryField.label);
+        const actions = makeElement('div', 'status-atelier-greeting-actions');
+        const regenerate = makeElement('button', 'menu_button', '让 AI 重写本条');
+        regenerate.type = 'button';
+        regenerate.addEventListener('click', async () => {
+            regenerate.disabled = true;
+            try { await regenerateOpeningEntry(entry.index); renderGreetingList(); }
+            catch (error) { notify('error', error?.message || '生成标题与简介失败'); }
+            finally { regenerate.disabled = false; }
+        });
+        actions.append(regenerate);
+        const updateEntry = () => {
+            const target = settings().openingHome.entries[entry.index];
+            if (!target) return;
+            target.title = titleField.input.value.trim() || `开场白 ${entry.index + 1}`;
+            target.summary = summaryField.input.value.trim();
+            headingTitle.textContent = target.title;
+            headingState.textContent = target.summary ? '已编辑' : '待生成';
+            saveGreetingNote(data.key, entry.sourceIndex ?? entry.index, { title: target.title, summary: target.summary });
+            renderOpeningHomeEntries();
+            saveSettingsSoon();
+        };
+        titleField.input.addEventListener('input', updateEntry);
+        summaryField.input.addEventListener('input', updateEntry);
         card.append(
             heading,
-            makeElement('p', 'status-atelier-greeting-summary', entry.summary || generated?.summary || '待 AI 补全'),
+            fields,
+            actions,
             makeElement('small', 'status-atelier-greeting-preview', `原文预览：${entry.preview || '（空）'}`),
         );
         list.append(card);
@@ -1365,9 +1466,10 @@ async function refreshGreetingModal(button) {
     setOpeningReadStatus(`已读取 ${alternateGreetingData().entries.length} 条，AI 正在生成标题与简介……`, 'loading');
     showOpeningReadProgress('已读取角色卡内容，正在生成作品简介、标题和线路简介。返回聊天页也可以继续等待。');
     try {
-        await readGreetingsIntoOpeningHome();
+        const result = await readGreetingsIntoOpeningHome();
         renderGreetingList();
-        await setOpeningReadStatus(`完成：已读取 ${alternateGreetingData().entries.length} 条额外问候语并生成目录资料。`, 'success', true);
+        const fallbackStatus = result?.fallbackCount ? `；其中 ${result.fallbackCount} 条使用原文摘要兜底，可展开后手动修改` : '';
+        await setOpeningReadStatus(`完成：已读取 ${alternateGreetingData().entries.length} 条额外问候语并生成目录资料${fallbackStatus}。`, 'success', true);
     } catch (error) {
         renderGreetingList();
         if (status) status.textContent = error?.message || '读取或补全失败';

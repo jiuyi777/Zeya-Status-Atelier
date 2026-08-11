@@ -67,6 +67,14 @@ function escapeMultilineValue(value) {
         .replace(/\]/g, '\\]');
 }
 
+function escapeHtmlText(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/```/g, '&#96;&#96;&#96;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
 export function normalizeOpeningHomeSettings(input = {}) {
     const defaults = clone(OPENING_HOME_DEFAULTS);
     const entries = Array.isArray(input.entries) ? input.entries : defaults.entries;
@@ -126,10 +134,11 @@ export function buildOpeningHomeBlock(input) {
     return lines.join('\n');
 }
 
-function replacementHtml() {
+function replacementHtml(input) {
+    const embeddedSource = escapeHtmlText(buildOpeningHomeBlock(input));
     return `\`\`\`html
 <div class="zoh-root">
-  <textarea class="zoh-source" hidden>$1</textarea>
+  <textarea class="zoh-source" hidden>${embeddedSource}</textarea>
   <section class="zoh-page">
     <header class="zoh-header">
       <h1 class="zoh-title"></h1>
@@ -189,9 +198,9 @@ export function buildOpeningHomeRegex(input = {}) {
         scriptName: 'Zeya · 通用开场白主页',
         disabled: false,
         runOnEdit: true,
-        findRegex: '/<opening_home>\\s*([\\s\\S]*?)\\s*<\\/opening_home>/i',
+        findRegex: '/(?:【主页】\\s*(?:<opening_home>[\\s\\S]*?<\\/opening_home>)?|<opening_home>[\\s\\S]*?<\\/opening_home>)/i',
         trimStrings: [],
-        replaceString: replacementHtml(),
+        replaceString: replacementHtml(data),
         placement: [2],
         substituteRegex: 0,
         minDepth: null,

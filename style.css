@@ -978,6 +978,33 @@ summary.status-atelier-section-heading {
     margin: 8px 0 0;
 }
 
+.status-atelier-home-quick-editor {
+    border-left-color: #6d9799;
+}
+
+.status-atelier-home-quick-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    margin-top: 10px;
+}
+
+.status-atelier-home-quick-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.status-atelier-home-quick-grid textarea {
+    min-height: 66px;
+    resize: vertical;
+}
+
+.status-atelier-home-quick-intro {
+    grid-column: 1 / -1;
+}
+
 .status-atelier-greeting-list {
     display: grid;
     gap: 11px;
@@ -1084,6 +1111,8 @@ summary.status-atelier-section-heading {
     display: grid;
     gap: 8px;
     min-width: 0;
+    padding: 10px 12px 0;
+    border-top: 1px solid color-mix(in srgb, var(--SmartThemeBorderColor) 70%, transparent);
 }
 
 .status-atelier-greeting-actions {
@@ -1091,6 +1120,7 @@ summary.status-atelier-section-heading {
     flex-direction: column;
     gap: 8px;
     align-items: stretch;
+    padding: 8px 12px 0;
 }
 
 .status-atelier-greeting-preview {
@@ -1221,6 +1251,14 @@ summary.status-atelier-section-heading {
     .status-atelier-dialog-footer {
         display: grid;
         grid-template-columns: 1fr 1fr;
+    }
+
+    .status-atelier-home-quick-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .status-atelier-home-quick-intro {
+        grid-column: 1;
     }
 
     .status-atelier-dialog-footer [data-status-atelier-close] {

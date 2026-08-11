@@ -68,13 +68,17 @@ test('opening homepage normalizes editable theme, font, colors and jump targets'
 
 test('opening homepage regex renders four selected themes and uses native swipe', () => {
     const script = buildOpeningHomeRegex(OPENING_HOME_DEFAULTS);
-    assert.equal(script.findRegex, '/<opening_home>\\s*([\\s\\S]*?)\\s*<\\/opening_home>/i');
+    assert.match(script.findRegex, /【主页】/);
+    assert.match(script.findRegex, /opening_home/);
     assert.match(script.replaceString, /classical','newspaper','timeline','minimal/);
     assert.match(script.replaceString, /swipe\[direction\]\.call/);
     assert.match(script.replaceString, /textContent/);
     assert.match(script.replaceString, /openings\.forEach/);
     assert.match(script.replaceString, /zoh-intro-markdown/);
     assert.match(script.replaceString, /function markdown/);
+    assert.ok(script.replaceString.startsWith('```html'));
+    assert.doesNotMatch(script.replaceString, /\$1/);
+    assert.match(script.replaceString, /\[Meta\|作品导航\|STORY HOME\|Zeya\|/);
 });
 
 test('generated opening homepage browser script is syntactically valid', () => {
@@ -82,4 +86,27 @@ test('generated opening homepage browser script is syntactically valid', () => {
     const match = replacement.match(/<script>\n([\s\S]*?)\n<\/script>/);
     assert.ok(match, 'generated script block is present');
     assert.doesNotThrow(() => new Function(match[1]));
+});
+
+test('downloaded opening regex embeds current edited content instead of an empty capture', () => {
+    const script = buildOpeningHomeRegex({
+        ...OPENING_HOME_DEFAULTS,
+        author: '酒疫',
+        model: 'gemini3.1Pro\nClaude4.6',
+        preset: '弥生春\n蛇果',
+        intro: '这里是已经填写的作品简介。',
+        entries: [{ number: '01', title: '雨夜重逢', summary: '一条已经编辑的线路简介。', target: 2 }],
+    });
+    assert.doesNotMatch(script.replaceString, /\$1/);
+    assert.match(script.replaceString, /酒疫/);
+    assert.match(script.replaceString, /gemini3\.1Pro/);
+    assert.match(script.replaceString, /这里是已经填写的作品简介/);
+    assert.match(script.replaceString, /雨夜重逢/);
+});
+
+test('embedded opening data cannot break the textarea or html fence', () => {
+    const script = buildOpeningHomeRegex({ ...OPENING_HOME_DEFAULTS, intro: '```html\n</textarea><script>bad()</script>' });
+    assert.doesNotMatch(script.replaceString, /<textarea class="zoh-source" hidden>[\s\S]*<script>bad/);
+    assert.match(script.replaceString, /&lt;\/textarea&gt;/);
+    assert.equal((script.replaceString.match(/```/g) || []).length, 2);
 });

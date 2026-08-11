@@ -2,6 +2,30 @@ export const SUMMARY_RESPONSE_LENGTH = 4096;
 
 const REASONING_LABELS = 'think|thinking|reasoning|analysis|plan|thought';
 
+export function responseText(value) {
+    if (typeof value === 'string') return value;
+    if (value === null || value === undefined) return '';
+    if (Array.isArray(value)) return value.map(responseText).filter(Boolean).join('\n');
+    if (typeof value !== 'object') return String(value);
+    if (value.entries || value.workIntro || value.title || value.summary) {
+        try { return JSON.stringify(value); } catch { /* fall through */ }
+    }
+    const candidates = [
+        value.choices?.[0]?.message?.content,
+        value.message?.content,
+        value.content,
+        value.response,
+        value.output_text,
+        value.text,
+        value.data,
+    ];
+    for (const candidate of candidates) {
+        const unwrapped = responseText(candidate).trim();
+        if (unwrapped && unwrapped !== '[object Object]') return unwrapped;
+    }
+    try { return JSON.stringify(value); } catch { return ''; }
+}
+
 export function greetingPreview(value) {
     return String(value ?? '')
         .replace(/```[\s\S]*?```/g, ' ')
@@ -18,7 +42,7 @@ export function usableGreetingRecords(values) {
 }
 
 export function jsonObjectsFromResponse(value) {
-    const text = String(value || '').trim();
+    const text = responseText(value).trim();
     const objects = [];
     for (let start = 0; start < text.length; start += 1) {
         if (text[start] !== '{') continue;
@@ -54,7 +78,7 @@ export function jsonObjectsFromResponse(value) {
 export function stripReasoningBlocks(value) {
     const fencePattern = new RegExp('```\\s*(?:' + REASONING_LABELS + ')\\b[\\s\\S]*?```', 'gi');
     const tagPattern = new RegExp(`<(${REASONING_LABELS})\\b[^>]*>[\\s\\S]*?<\\/\\1\\s*>`, 'gi');
-    return String(value || '').replace(fencePattern, ' ').replace(tagPattern, ' ').trim();
+    return responseText(value).replace(fencePattern, ' ').replace(tagPattern, ' ').trim();
 }
 
 export function lastMatchingJson(value, predicate) {
@@ -65,7 +89,7 @@ export function lastMatchingJson(value, predicate) {
 }
 
 export function parseSummaryResponse(value, fallbackTitle, fallbackSummary) {
-    const text = String(value || '').trim();
+    const text = responseText(value).trim();
     const parsed = lastMatchingJson(text, item => item && (item.title || item.summary));
     if (parsed) {
         return {
@@ -78,10 +102,10 @@ export function parseSummaryResponse(value, fallbackTitle, fallbackSummary) {
 }
 
 export function parseBatchSummaryResponse(value, requestedEntries) {
-    const parsed = lastMatchingJson(value, item => item && (Array.isArray(item.entries) || item.workIntro));
-    if (!parsed) throw new Error('模型有返回内容，但其中没有可识别的标题与简介 JSON');
-    const rows = Array.isArray(parsed.entries) ? parsed.entries : [];
-    const workIntro = String(parsed.workIntro || '').trim();
+    const text = responseText(value);
+    const parsed = lastMatchingJson(text, item => item && (Array.isArray(item.entries) || item.workIntro));
+    const rows = Array.isArray(parsed?.entries) ? parsed.entries : [];
+    let workIntro = String(parsed?.workIntro || '').trim();
     const requestedIndexes = new Set(requestedEntries.map(entry => entry.index));
     const entries = new Map();
     rows.forEach(row => {
@@ -90,6 +114,25 @@ export function parseBatchSummaryResponse(value, requestedEntries) {
         const summary = String(row?.summary || '').trim();
         if (requestedIndexes.has(index) && title && summary) entries.set(index, { title, summary });
     });
+
+    const cleaned = stripReasoningBlocks(text).replace(/```(?:json)?/gi, '').trim();
+    if (!workIntro) {
+        workIntro = cleaned.match(/\[(?:WorkIntro|作品简介)\s*\|\s*([^\]\n]+)\]/i)?.[1]?.trim()
+            || cleaned.match(/(?:作品简介|总简介)\s*[:：]\s*([^\n]+)/i)?.[1]?.trim()
+            || '';
+    }
+    const addEntry = (rawIndex, rawTitle, rawSummary) => {
+        const index = Math.trunc(Number(rawIndex)) - 1;
+        const title = String(rawTitle || '').trim();
+        const summary = String(rawSummary || '').trim();
+        if (requestedIndexes.has(index) && title && summary && !entries.has(index)) entries.set(index, { title, summary });
+    };
+    for (const match of cleaned.matchAll(/\[(?:Entry|Opening|条目)\s*\|\s*(\d+)\s*\|\s*([^|\]\n]+)\s*\|\s*([^\]\n]+)\]/gi)) {
+        addEntry(match[1], match[2], match[3]);
+    }
+    for (const match of cleaned.matchAll(/(?:^|\n)\s*#?(\d+)\s*[.、)）-]\s*(?:标题\s*[:：]\s*)?([^\n]+)\n\s*(?:简介|摘要|线路简介)\s*[:：]\s*([^\n]+)/gi)) {
+        addEntry(match[1], match[2], match[3]);
+    }
     if (!entries.size && !workIntro) throw new Error('AI 返回了内容，但没有生成任何有效简介');
     return { entries, workIntro };
 }
