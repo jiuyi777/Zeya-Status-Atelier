@@ -90,8 +90,10 @@ test('opening homepage regex directly replaces one marker and keeps real navigat
     assert.match(script.replaceString, /textContent/);
     assert.match(script.replaceString, /openings\.forEach/);
     assert.match(script.replaceString, /zoh-intro-markdown/);
-    assert.ok(script.replaceString.startsWith('```html\n<div class="zoh-root"'));
+    assert.ok(script.replaceString.startsWith('```html\n<!DOCTYPE html>\n<html lang="zh-CN">'));
     assert.ok(script.replaceString.endsWith('\n```'));
+    assert.match(script.replaceString, /<body>[\s\S]*<\/body>/);
+    assert.deepEqual(script.placement, [1, 2]);
     assert.doesNotMatch(script.replaceString, /\$1/);
     assert.doesNotMatch(script.replaceString, /opening_home|zoh-source|zoh-routes|zoh-route-tag/);
     assert.match(script.replaceString, /JSON\.parse\(decodeURIComponent/);

@@ -137,7 +137,15 @@ function replacementHtml(input) {
         <div class="zoh-entry-copy"><h3 class="zoh-entry-title">${escapeHtmlText(entry.title)}</h3><p class="zoh-summary">${escapeHtmlText(entry.summary)}</p></div>
         <button class="zoh-jump" type="button">进入</button>
       </article>`).join('\n      ');
-    const documentHtml = `<div class="zoh-root" data-theme="${data.theme}" data-font="${data.font}" style="${rootStyle}">
+    const documentHtml = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHtmlText(data.title)}</title>
+</head>
+<body>
+<div class="zoh-root" data-theme="${data.theme}" data-font="${data.font}" style="${rootStyle}">
   <section class="zoh-page">
     <header class="zoh-header">
       <h1 class="zoh-title">${escapeHtmlText(data.title)}</h1>
@@ -176,7 +184,9 @@ function replacementHtml(input) {
   async function jump(oneBased,opening){try{notice.textContent='正在切换开场白…';var live=topWindow.SillyTavern?.getContext?.();var target=Math.max(0,Number(oneBased)-1);var getMessages=api('getChatMessages');if(getMessages){var rows=await getMessages('0',{include_swipes:true});var helperSwipes=rows?.[0]?.swipes;if(Array.isArray(helperSwipes)&&helperSwipes.length)target=Math.min(helperSwipes.length-1,target);}try{await applyWorldline(live,opening);}catch(bindingError){console.warn('世界书线路绑定失败，继续切换开场白:',bindingError);}var setMessages=api('setChatMessages');if(setMessages){await setMessages([{message_id:0,swipe_id:target}]);}else{var message=live?.chat?.[0];var swipes=message?.swipes;if(!live?.swipe||!Array.isArray(swipes)||!swipes.length)throw new Error('当前环境没有可用的开场白切换接口');target=Math.min(swipes.length-1,target);var now=Math.max(0,Math.min(swipes.length-1,Number(message.swipe_id||0)));var messageEl=topWindow.document.querySelector('#chat .mes[mesid="0"]');if(!messageEl)throw new Error('聊天第1条尚未加载');var direction=target>now?'right':'left';for(var step=0;step<Math.abs(target-now);step++){await live.swipe[direction].call(messageEl,null,{source:'jiuyi-opening-home',message:message});}}topWindow.document.querySelector('#chat .mes[mesid="0"]')?.scrollIntoView({behavior:'smooth',block:'center'});}catch(error){notice.textContent=error?.message||'跳转失败';}}
   var staticCards=host.querySelectorAll('.zoh-entry');openings.forEach(function(entry,index){var article=staticCards[index];if(!article)return;var target=Math.max(1,Number(entry.target)||index+2);if(target===current)article.prepend(make('span','zoh-current','当前'));var button=article.querySelector('.zoh-jump');if(button)button.addEventListener('click',async function(){await jump(target,entry);});});
 })(document.currentScript);
-</script>`.trim();
+</script>
+</body>
+</html>`.trim();
     return ['```html', documentHtml, '```'].join('\n');
 }
 
@@ -190,7 +200,7 @@ export function buildOpeningHomeRegex(input = {}) {
         findRegex: '/【主页】/s',
         trimStrings: [],
         replaceString: replacementHtml(data),
-        placement: [2],
+        placement: [1, 2],
         substituteRegex: 0,
         minDepth: null,
         maxDepth: null,
