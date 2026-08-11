@@ -28,12 +28,13 @@ test('opening homepage accepts any number of directory entries', () => {
     const entries = Array.from({ length: 10 }, (_, index) => ({
         number: String(index + 1).padStart(2, '0'),
         title: `开场白 ${index + 1}`,
+        route: `线路 ${index + 1} 线`,
         summary: `简介 ${index + 1}`,
         target: index + 2,
     }));
     const block = buildOpeningHomeBlock({ ...OPENING_HOME_DEFAULTS, entries });
     assert.equal(block.match(/^\[Opening\|/gm)?.length, 10);
-    assert.match(block, /\[Opening\|10\|开场白 10\|简介 10\|11\|\]/);
+    assert.match(block, /\[Opening\|10\|开场白 10\|线路 10 线\|简介 10\|11\|\]/);
 });
 
 test('opening homepage keeps multiline recommendations and binds concrete worldbook entries', () => {
@@ -42,7 +43,7 @@ test('opening homepage keeps multiline recommendations and binds concrete worldb
         model: 'Gemini 3.1\nClaude 4.5',
         preset: '沉浸剧情预设\n长篇稳定预设',
         worldlines: [{ id: 'rain', name: '雨夜线', description: '雨夜相遇路线。', entries: [{ book: '旧城总设', uid: 12, title: '雨夜规则' }] }],
-        entries: [{ number: '01', title: '雨夜初遇', summary: '简介', target: 1, worldlineId: 'rain' }],
+        entries: [{ number: '01', title: '雨夜初遇', route: '旧城雨夜线', summary: '简介', target: 1, worldlineId: 'rain' }],
     };
     const normalized = normalizeOpeningHomeSettings(input);
     const block = buildOpeningHomeBlock(input);
@@ -50,7 +51,7 @@ test('opening homepage keeps multiline recommendations and binds concrete worldb
     assert.equal(normalized.preset, '沉浸剧情预设\n长篇稳定预设');
     assert.match(block, /\[Worldline\|rain\|雨夜线\|/);
     assert.match(block, /\[Worldline\|rain\|雨夜线\|雨夜相遇路线。\|/);
-    assert.match(block, /\[Opening\|01\|雨夜初遇\|简介\|1\|rain\]/);
+    assert.match(block, /\[Opening\|01\|雨夜初遇\|旧城雨夜线\|简介\|1\|rain\]/);
 });
 
 test('opening homepage normalizes editable theme, font, colors and jump targets', () => {
@@ -96,13 +97,14 @@ test('downloaded opening regex embeds current edited content instead of an empty
         model: 'gemini3.1Pro\nClaude4.6',
         preset: '弥生春\n蛇果',
         intro: '这里是已经填写的作品简介。',
-        entries: [{ number: '01', title: '雨夜重逢', summary: '一条已经编辑的线路简介。', target: 2 }],
+        entries: [{ number: '01', title: '雨夜重逢', route: '旧识重逢线', summary: '一条已经编辑的线路简介。', target: 2 }],
     });
     assert.doesNotMatch(script.replaceString, /\$1/);
     assert.match(script.replaceString, /酒疫/);
     assert.match(script.replaceString, /gemini3\.1Pro/);
     assert.match(script.replaceString, /这里是已经填写的作品简介/);
     assert.match(script.replaceString, /雨夜重逢/);
+    assert.match(script.replaceString, /旧识重逢线/);
 });
 
 test('embedded opening data cannot break the textarea or html fence', () => {

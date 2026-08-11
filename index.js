@@ -6,16 +6,17 @@ import {
     makePreviewRecords,
     normalizeRule,
     parseFields,
-} from './rule-generator.js?v=0.8.2';
+} from './rule-generator.js?v=0.8.3';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.8.2';
+} from './opening-home-generator.js?v=0.8.3';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
+    ENTRY_BATCH_JSON_SCHEMA,
     SUMMARY_RESPONSE_LENGTH,
     SINGLE_SUMMARY_JSON_SCHEMA,
     generationErrorMessage,
@@ -24,7 +25,13 @@ import {
     parseSummaryResponse,
     responseText,
     usableGreetingRecords,
-} from './response-parser.js?v=0.8.2';
+} from './response-parser.js?v=0.8.3';
+import {
+    constrainRouteToCatalog,
+    extractWorldbookRouteCatalog,
+    routeCatalogPrompt,
+    worldbookRouteLabels,
+} from './worldbook-routes.js?v=0.8.3';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -36,8 +43,8 @@ import { saveSettings } from '../../../../script.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.8.2';
-const OPENING_HOME_SCHEMA_VERSION = 1;
+const VERSION = '0.8.3';
+const OPENING_HOME_SCHEMA_VERSION = 2;
 
 const HOME_TEMPLATES = Object.freeze([
     { id: 'classical', name: '01 古典徽章', description: '双层雕花框 · 海军蓝金箔' },
@@ -593,7 +600,9 @@ function updateOpeningHomePreview() {
         const item = makeElement('div', 'status-atelier-opening-live-entry');
         item.append(makeElement('b', '', entry.number || String(index + 1).padStart(2, '0')));
         const copy = makeElement('div');
-        copy.append(makeElement('strong', '', entry.title), makeElement('small', '', entry.summary));
+        const heading = makeElement('div', 'status-atelier-opening-live-entry-heading');
+        heading.append(makeElement('strong', '', entry.title), makeElement('span', 'status-atelier-opening-live-route', entry.route));
+        copy.append(heading, makeElement('small', '', entry.summary));
         item.append(copy, makeElement('span', '', '进入'));
         directory.append(item);
     });
@@ -698,6 +707,37 @@ function currentLinkedWorldbooks() {
     const data = character?.data || character || {};
     const candidates = [data?.extensions?.world, character?.extensions?.world, data?.world, character?.world].flatMap(value => Array.isArray(value) ? value : [value]);
     return [...new Set(candidates.map(value => String(value || '').trim()).filter(value => value && (world_names || []).includes(value)))];
+}
+
+function currentEmbeddedWorldbooks() {
+    const ctx = context();
+    const character = ctx?.characters?.[ctx?.characterId];
+    const data = character?.data || character || {};
+    const candidates = [data?.character_book, data?.data?.character_book, character?.character_book, ctx?.character?.data?.character_book];
+    return candidates.filter(book => book && (Array.isArray(book.entries) || book.entries));
+}
+
+async function currentWorldbookRouteCatalog() {
+    const books = currentEmbeddedWorldbooks().map(book => ({ name: book.name || '当前角色卡世界书', data: book }));
+    for (const bookName of currentLinkedWorldbooks()) {
+        try {
+            books.push({ name: bookName, data: await loadWorldInfo(bookName) });
+        } catch (error) {
+            console.warn(`[${MODULE_NAME}] 读取世界书线路失败：${bookName}`, error);
+        }
+    }
+    return extractWorldbookRouteCatalog(books);
+}
+
+function schemaWithRouteCatalog(schema, catalog, batch = false) {
+    const copy = JSON.parse(JSON.stringify(schema));
+    const labels = worldbookRouteLabels(catalog);
+    const allowed = labels.length ? labels : ['未分类线'];
+    const routeSchema = batch
+        ? copy?.value?.properties?.entries?.items?.properties?.route
+        : copy?.value?.properties?.route;
+    if (routeSchema) routeSchema.enum = allowed;
+    return copy;
 }
 
 async function renderEntryDialogOptions() {
@@ -825,6 +865,12 @@ function renderOpeningHomeEntries() {
         title.placeholder = '标题';
         title.dataset.openingEntryKey = 'title';
         title.dataset.openingEntryIndex = String(index);
+        const route = makeElement('input', 'text_pole status-atelier-entry-route');
+        route.value = entry.route || '';
+        route.placeholder = '线路标签（如：密室线）';
+        route.maxLength = 10;
+        route.dataset.openingEntryKey = 'route';
+        route.dataset.openingEntryIndex = String(index);
         const summary = makeElement('input', 'text_pole status-atelier-entry-summary');
         summary.value = entry.summary;
         summary.placeholder = '简介';
@@ -834,14 +880,14 @@ function renderOpeningHomeEntries() {
         worldline.classList.add('status-atelier-entry-worldline');
         const regenerate = makeElement('button', 'menu_button status-atelier-entry-regenerate', 'AI');
         regenerate.type = 'button';
-        regenerate.title = '重新生成本条标题与简介';
+        regenerate.title = '重新生成本条标题、线路标签与简介';
         regenerate.addEventListener('click', async () => {
             regenerate.disabled = true;
             try { await regenerateOpeningEntry(index); }
             catch (error) { notify('error', error?.message || '生成标题与简介失败'); }
             finally { regenerate.disabled = false; }
         });
-        card.append(title, summary, worldline, regenerate);
+        card.append(title, route, summary, worldline, regenerate);
         host.append(card);
     });
     if (!host.children.length) {
@@ -1065,8 +1111,9 @@ function characterStorageKey(ctx = context()) {
 function parseGreetingMetadata(raw) {
     const source = String(raw || '');
     const title = source.match(/<!--\s*(?:title|标题)\s*[:：]\s*([\s\S]*?)-->/i)?.[1]?.trim() || '';
+    const route = source.match(/<!--\s*(?:route|line|路线|线路)\s*[:：]\s*([\s\S]*?)-->/i)?.[1]?.trim() || '';
     const summary = source.match(/<!--\s*(?:desc|description|summary|简介)\s*[:：]\s*([\s\S]*?)-->/i)?.[1]?.trim() || '';
-    return { title, summary };
+    return { title, route, summary };
 }
 
 function alternateGreetingData() {
@@ -1091,10 +1138,11 @@ function alternateGreetingData() {
                 sourceIndex,
                 raw: String(raw || ''),
                 title: saved.title || metadata.title,
+                route: saved.route || metadata.route,
                 summary: saved.summary || metadata.summary,
                 preview: preview.length > 220 ? `${preview.slice(0, 220)}…` : preview,
                 target: sourceIndex + 2,
-                hasMetadata: Boolean(metadata.title && metadata.summary),
+                hasMetadata: Boolean(metadata.title && metadata.route && metadata.summary),
             };
         });
     return { key, entries };
@@ -1178,13 +1226,18 @@ async function requestExternalSummary(prompt, maxTokens) {
 
 async function summarizeGreeting(raw, entry, index) {
     const config = settings().openingSummary;
-    if (config.source === 'manual') return { title: entry.title, summary: entry.summary };
-    const prompt = `请为下面的角色卡开场白生成目录信息。只输出JSON：{"title":"20字以内标题","summary":"40字左右线路简介"}。不要剧透，不要Markdown。\n\n开场白：\n${String(raw).slice(0, 6000)}`;
+    if (config.source === 'manual') return { title: entry.title, route: entry.route, summary: entry.summary };
+    const routeCatalog = await currentWorldbookRouteCatalog();
+    const prompt = `你是互动故事的目录编辑。请阅读下面的开场白，只输出一个 JSON 对象：{"title":"短标题","route":"世界书线路名","summary":"路线简介"}。\n\n世界书线路：\n${routeCatalogPrompt(routeCatalog)}\n\n写作标准：\n1. title 是 4 到 12 个汉字的文学化短标题，只概括这一开局的基调或核心事件，禁止照抄正文长句；\n2. route 只能选择上面世界书中已经存在的线路名，同一线路允许对应多条开场；\n3. summary 只写 28 到 50 个汉字，用一句话说明“谁处于什么情境、正在做什么、发生了什么”，不抄原文，不剧透后续；\n4. 不要 Markdown，不要引号外的解释。\n\n开场白：\n${String(raw).slice(0, 6000)}`;
+    let generated;
     if (config.source === 'main') {
-        const response = await generateWithCurrentPreset(prompt, SINGLE_SUMMARY_JSON_SCHEMA);
-        return parseSummaryResponse(response, entry.title || `开场白 ${index + 1}`, entry.summary);
+        const response = await generateWithCurrentPreset(prompt, schemaWithRouteCatalog(SINGLE_SUMMARY_JSON_SCHEMA, routeCatalog));
+        generated = parseSummaryResponse(response, entry.title || `未命名开局 ${index + 1}`, entry.summary, entry.route);
+    } else {
+        generated = parseSummaryResponse(await requestExternalSummary(prompt, 4096), entry.title || `未命名开局 ${index + 1}`, entry.summary, entry.route);
     }
-    return parseSummaryResponse(await requestExternalSummary(prompt, 4096), entry.title || `开场白 ${index + 1}`, entry.summary);
+    generated.route = constrainRouteToCatalog(generated.route, routeCatalog) || '未分类线';
+    return generated;
 }
 
 function needsGeneratedWorkIntro() {
@@ -1193,73 +1246,88 @@ function needsGeneratedWorkIntro() {
 }
 
 function fallbackGreetingMetadata(entry) {
-    const preview = greetingPreview(entry?.raw || entry?.preview || '').replace(/^[-—–·、，。！？：:；;\s]+/, '');
-    const firstSentence = preview.split(/[。！？!?；;\n]/).find(Boolean)?.trim() || preview;
-    const titleSource = firstSentence.replace(/[“”"'《》【】]/g, '').trim();
-    const title = titleSource ? `${titleSource.slice(0, 18)}${titleSource.length > 18 ? '…' : ''}` : `开场白 ${(entry?.index ?? 0) + 1}`;
-    const summary = preview ? `${preview.slice(0, 72)}${preview.length > 72 ? '…' : ''}` : '请展开后手动填写这一条线路简介。';
-    return { title, summary };
+    const number = (entry?.index ?? 0) + 1;
+    return {
+        title: `未命名开局 ${number}`,
+        route: '未分类线',
+        summary: 'AI 未返回有效路线简介，请重写本条或手动填写。',
+    };
 }
 
-function fallbackWorkIntro(entries) {
-    const combined = entries.map(entry => greetingPreview(entry.raw)).filter(Boolean).join('；');
-    return combined ? `${combined.slice(0, 110)}${combined.length > 110 ? '…' : ''}` : '';
-}
-
-async function summarizeGreetingsBatch(entries) {
+async function summarizeGreetingsBatch(entries, { overwrite = false } = {}) {
     const config = settings().openingSummary;
-    const requested = entries.filter(entry => !entry.title || !entry.summary);
-    const makeWorkIntro = needsGeneratedWorkIntro();
+    const routeCatalog = await currentWorldbookRouteCatalog();
+    const requested = overwrite ? entries : entries.filter(entry => !entry.title || !entry.route || !entry.summary);
+    const makeWorkIntro = overwrite || needsGeneratedWorkIntro();
     if (!requested.length && !makeWorkIntro) return { entries: new Map(), workIntro: '' };
     const sourceEntries = makeWorkIntro ? entries : requested;
-    const source = sourceEntries.map(entry => `--- 额外问候语 #${entry.index + 1} ---\n${String(entry.raw).slice(0, 1600)}`).join('\n\n').slice(0, 12000);
-    const prompt = `你正在为当前角色卡制作作品主页和开场白目录。请结合当前角色卡设定、当前聊天上下文和当前预设生成简短资料。\n\n严格只输出 JSON，不要 Markdown：\n{"workIntro":"80到120个汉字的作品总简介","entries":[{"index":1,"title":"20个汉字以内标题","summary":"30到50个汉字的线路简介"}]}\n\n要求：每个输入编号都必须返回；index 必须使用输入中的数字；不要剧透；标题不要写“开场白1”这类占位词；作品简介概括世界观、人物关系与阅读提示。\n\n${source}`;
-    let responseText = '';
-    let generationWarning = '';
-    try {
-        if (config.source === 'main') {
-            responseText = await generateWithCurrentPreset(prompt, BATCH_SUMMARY_JSON_SCHEMA);
-        } else {
-            responseText = await requestExternalSummary(prompt, Math.max(4096, 512 + requested.length * 220));
-        }
-    } catch (error) {
-        generationWarning = generationErrorMessage(error) || error?.message || '模型没有返回可用正文';
-    }
-    let parsed;
-    let formatWarning = generationWarning;
-    if (responseText) {
+    const chunks = [];
+    for (let index = 0; index < sourceEntries.length; index += 4) chunks.push(sourceEntries.slice(index, index + 4));
+    const parsed = { entries: new Map(), workIntro: '' };
+    const warnings = [];
+    for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex += 1) {
+        const chunk = chunks[chunkIndex];
+        const includeIntro = makeWorkIntro && chunkIndex === 0;
+        const source = chunk.map(entry => `--- 额外问候语 #${entry.index + 1} ---\n${String(entry.raw).slice(0, 900)}`).join('\n\n');
+        const introContext = includeIntro
+            ? `\n\n全篇开局线索（只用于作品总简介）：\n${sourceEntries.map(entry => `#${entry.index + 1} ${String(entry.raw).slice(0, 260)}`).join('\n').slice(0, 2600)}`
+            : '';
+        const outputExample = includeIntro
+            ? '{"workIntro":"作品总简介","entries":[{"index":1,"title":"短标题","route":"世界书线路名","summary":"路线简介"}]}'
+            : '{"entries":[{"index":1,"title":"短标题","route":"世界书线路名","summary":"路线简介"}]}';
+        const introRule = includeIntro
+            ? '1. workIntro 为 60 到 100 个汉字，只介绍核心背景、主要人物关系与互动故事的总体开局，不堆砌使用说明，不照抄任一开场正文；\n'
+            : '';
+        const prompt = `你是互动故事的目录编辑。请制作${includeIntro ? '“作品简介 + ' : '“'}开局路线目录”。\n\n严格只输出 JSON，不要 Markdown，不要思考过程：\n${outputExample}\n\n世界书线路：\n${routeCatalogPrompt(routeCatalog)}\n\n写作标准：\n${introRule}2. title 为 4 到 12 个汉字的文学化短标题，体现该开局的基调或核心事件，禁止把正文第一句截断后当标题；\n3. route 只能逐字选择上面世界书中已经存在的线路名；同一线路允许对应多条开场，禁止自创或为了避免重复而改名；\n4. summary 为 28 到 50 个汉字的一句话，明确写出“谁处于什么情境、正在做什么、发生了什么”，只介绍本开局，不剧透后续；\n5. 本批每个输入编号都必须返回，index 必须使用输入中的数字；短标题不能重复。\n\n${source}${introContext}`;
+        let responseText = '';
         try {
-            parsed = parseBatchSummaryResponse(responseText, sourceEntries);
+            if (config.source === 'main') {
+                responseText = await generateWithCurrentPreset(prompt, schemaWithRouteCatalog(includeIntro ? BATCH_SUMMARY_JSON_SCHEMA : ENTRY_BATCH_JSON_SCHEMA, routeCatalog, true));
+            } else {
+                responseText = await requestExternalSummary(prompt, 4096);
+            }
         } catch (error) {
-            parsed = { entries: new Map(), workIntro: '' };
-            formatWarning = error?.message || '模型返回格式无法识别';
+            warnings.push(generationErrorMessage(error) || error?.message || `第 ${chunkIndex + 1} 批没有返回可用正文`);
         }
-    } else {
-        parsed = { entries: new Map(), workIntro: '' };
+        if (!responseText) continue;
+        try {
+            const chunkParsed = parseBatchSummaryResponse(responseText, chunk);
+            if (!parsed.workIntro && chunkParsed.workIntro) parsed.workIntro = chunkParsed.workIntro;
+            chunkParsed.entries.forEach((value, key) => {
+                value.route = constrainRouteToCatalog(value.route, routeCatalog) || '未分类线';
+                parsed.entries.set(key, value);
+            });
+        } catch (error) {
+            warnings.push(error?.message || `第 ${chunkIndex + 1} 批返回格式无法识别`);
+        }
     }
     const missing = requested.filter(entry => !parsed.entries.has(entry.index));
     missing.forEach(entry => parsed.entries.set(entry.index, fallbackGreetingMetadata(entry)));
-    if (makeWorkIntro && !parsed.workIntro) parsed.workIntro = fallbackWorkIntro(entries);
-    return { ...parsed, fallbackCount: missing.length, formatWarning };
+    return { ...parsed, routeLabels: worldbookRouteLabels(routeCatalog), fallbackCount: missing.length, formatWarning: warnings.join('；') };
 }
 
-async function readGreetingsIntoOpeningHome() {
+async function readGreetingsIntoOpeningHome({ overwrite = false } = {}) {
     const data = alternateGreetingData();
     if (!data.entries.length) throw new Error('当前角色卡没有额外问候语；主开场白会保留给作品主页');
-    const generated = data.entries.map((entry, index) => ({
-        number: String(index + 1).padStart(2, '0'),
-        title: entry.title || `开场白 ${index + 1}`,
-        summary: entry.summary || '待 AI 补全',
-        target: entry.target,
-        worldlineId: settings().openingHome.entries[index]?.worldlineId || '',
-    }));
+    const previousEntries = settings().openingHome.entries || [];
+    const generated = data.entries.map((entry, index) => {
+        const previous = previousEntries[index] || {};
+        return {
+            number: String(index + 1).padStart(2, '0'),
+            title: overwrite ? `未命名开局 ${index + 1}` : entry.title || previous.title || `未命名开局 ${index + 1}`,
+            route: overwrite ? '' : entry.route || previous.route || '',
+            summary: overwrite ? '等待 AI 重新生成。' : entry.summary || previous.summary || '等待 AI 补全。',
+            target: entry.target,
+            worldlineId: previous.worldlineId || '',
+        };
+    });
     settings().openingHome.entries = generated;
     renderOpeningHomeEntries();
     renderGreetingList();
     saveSettingsSoon();
 
-    const batch = await summarizeGreetingsBatch(data.entries);
-    if (batch.workIntro && needsGeneratedWorkIntro()) {
+    const batch = await summarizeGreetingsBatch(data.entries, { overwrite });
+    if (batch.workIntro && (overwrite || needsGeneratedWorkIntro())) {
         settings().openingHome.intro = batch.workIntro;
         const introControl = field('status-atelier-opening-home-intro');
         if (introControl) introControl.value = batch.workIntro;
@@ -1267,18 +1335,20 @@ async function readGreetingsIntoOpeningHome() {
     for (let index = 0; index < data.entries.length; index += 1) {
         const entry = data.entries[index];
         const ai = batch.entries.get(index);
-        generated[index].title = entry.title || ai?.title || generated[index].title;
-        generated[index].summary = entry.summary || ai?.summary || generated[index].summary;
+        generated[index].title = overwrite ? ai?.title || generated[index].title : entry.title || ai?.title || generated[index].title;
+        generated[index].route = overwrite ? ai?.route || generated[index].route : entry.route || ai?.route || generated[index].route;
+        generated[index].summary = overwrite ? ai?.summary || generated[index].summary : entry.summary || ai?.summary || generated[index].summary;
         if (data.key) {
             settings().openingNotes[data.key] ??= {};
-            settings().openingNotes[data.key][entry.sourceIndex ?? index] = { title: generated[index].title, summary: generated[index].summary };
+            settings().openingNotes[data.key][entry.sourceIndex ?? index] = { title: generated[index].title, route: generated[index].route, summary: generated[index].summary };
         }
         renderOpeningHomeEntries();
         renderGreetingList();
     }
     saveSettingsSoon();
-    const fallbackNotice = batch.fallbackCount ? `；其中 ${batch.fallbackCount} 条未取得有效 AI 目录，已用原文摘要补全` : '';
-    notify(batch.fallbackCount ? 'warning' : 'success', `已读取 ${data.entries.length} 条额外问候语${batch.entries.size ? `，补全 ${batch.entries.size} 组标题与简介` : ''}${batch.workIntro ? '，作品简介也已补全' : ''}${fallbackNotice}`);
+    const fallbackNotice = batch.fallbackCount ? `；其中 ${batch.fallbackCount} 条未取得有效 AI 目录，已保留为明确的待编辑项` : '';
+    const routeNotice = batch.routeLabels?.length ? `；线路取自世界书：${batch.routeLabels.join('、')}` : '；世界书中未识别到线路条目';
+    notify(batch.fallbackCount ? 'warning' : 'success', `已读取 ${data.entries.length} 条额外问候语${batch.entries.size ? `，生成 ${batch.entries.size} 组标题、线路标签与简介` : ''}${batch.workIntro ? '，作品简介也已生成' : ''}${routeNotice}${fallbackNotice}`);
     return batch;
 }
 
@@ -1286,12 +1356,15 @@ async function regenerateOpeningEntry(index) {
     const source = alternateGreetingData().entries[index];
     const target = settings().openingHome.entries[index];
     if (!source || !target) throw new Error('找不到对应的额外问候语，请重新读取');
-    const generated = await summarizeGreeting(source.raw, { title: `开场白 ${index + 1}`, summary: '' }, index);
+    const generated = await summarizeGreeting(source.raw, { title: `未命名开局 ${index + 1}`, route: target.route || '未分类线', summary: '' }, index);
     target.title = generated.title;
+    target.route = generated.route;
     target.summary = generated.summary;
     renderOpeningHomeEntries();
     saveSettingsSoon();
-    notify('success', `已重新生成第 ${index + 1} 条标题与简介`);
+    const data = alternateGreetingData();
+    saveGreetingNote(data.key, source.sourceIndex ?? index, { title: target.title, route: target.route, summary: target.summary });
+    notify('success', `已重新生成第 ${index + 1} 条标题、线路标签与简介`);
 }
 
 function buildGreetingModal() {
@@ -1314,7 +1387,8 @@ function buildGreetingModal() {
                 <div class="status-atelier-greeting-list"></div>
             </div>
             <footer class="status-atelier-dialog-footer">
-                <button type="button" class="menu_button" id="status-atelier-read-current-card">重新读取并补全</button>
+                <button type="button" class="menu_button" id="status-atelier-read-current-card">补全缺失项</button>
+                <button type="button" class="menu_button status-atelier-regenerate-all" id="status-atelier-regenerate-all">全部重新生成</button>
                 <button type="button" class="menu_button" id="status-atelier-modal-copy-home">复制主页模板</button>
                 <button type="button" class="menu_button" id="status-atelier-modal-download-regex">下载正则</button>
                 <button type="button" class="menu_button" id="status-atelier-open-full-workbench">更多样式与世界线</button>
@@ -1323,7 +1397,10 @@ function buildGreetingModal() {
         </section>`;
     greetingModal.querySelectorAll('[data-status-atelier-close]').forEach(button => button.addEventListener('click', closeGreetingModal));
     greetingModal.querySelector('#status-atelier-read-current-card').addEventListener('click', event => {
-        refreshGreetingModal(event.currentTarget);
+        refreshGreetingModal(event.currentTarget, false);
+    });
+    greetingModal.querySelector('#status-atelier-regenerate-all').addEventListener('click', event => {
+        refreshGreetingModal(event.currentTarget, true);
     });
     greetingModal.querySelector('#status-atelier-modal-copy-home').addEventListener('click', async () => {
         await copyText(buildOpeningHomeBlock(settings().openingHome));
@@ -1426,17 +1503,21 @@ function renderGreetingList() {
         card.dataset.current = String(entry.index === data.current);
         const generated = settings().openingHome.entries[entry.index];
         const heading = makeElement('summary', 'status-atelier-greeting-card-heading');
-        const headingTitle = makeElement('strong', '', entry.title || generated?.title || `开场白 ${entry.index + 1}`);
-        const headingState = makeElement('span', '', entry.hasMetadata ? '已有注释' : generated?.summary && generated.summary !== '待 AI 补全' ? '已补全' : '待生成');
+        const headingCopy = makeElement('div', 'status-atelier-greeting-heading-copy');
+        const headingTitle = makeElement('strong', '', entry.title || generated?.title || `未命名开局 ${entry.index + 1}`);
+        const headingRoute = makeElement('small', 'status-atelier-greeting-route', entry.route || generated?.route || '未分类线');
+        headingCopy.append(headingTitle, headingRoute);
+        const headingState = makeElement('span', '', entry.hasMetadata ? '已有注释' : generated?.summary && !/^等待 AI/.test(generated.summary) ? '已生成' : '待生成');
         heading.append(
             makeElement('b', '', `#${entry.index + 1}`),
-            headingTitle,
+            headingCopy,
             headingState,
         );
-        const titleField = labeledInput('目录标题', entry.title || generated?.title || `开场白 ${entry.index + 1}`, { maxLength: 80 });
-        const summaryField = labeledInput('线路简介', entry.summary || generated?.summary || '', { multiline: true, maxLength: 600 });
+        const titleField = labeledInput('短标题（4–12字）', entry.title || generated?.title || `未命名开局 ${entry.index + 1}`, { maxLength: 14 });
+        const routeField = labeledInput('线路标签（从角色卡世界书读取，如：罪人线）', entry.route || generated?.route || '', { maxLength: 10 });
+        const summaryField = labeledInput('路线简介（1句话，谁在做什么、发生了什么）', entry.summary || generated?.summary || '', { multiline: true, maxLength: 56 });
         const fields = makeElement('div', 'status-atelier-greeting-fields');
-        fields.append(titleField.label, summaryField.label);
+        fields.append(titleField.label, routeField.label, summaryField.label);
         const actions = makeElement('div', 'status-atelier-greeting-actions');
         const regenerate = makeElement('button', 'menu_button', '让 AI 重写本条');
         regenerate.type = 'button';
@@ -1450,43 +1531,53 @@ function renderGreetingList() {
         const updateEntry = () => {
             const target = settings().openingHome.entries[entry.index];
             if (!target) return;
-            target.title = titleField.input.value.trim() || `开场白 ${entry.index + 1}`;
+            target.title = titleField.input.value.trim() || `未命名开局 ${entry.index + 1}`;
+            target.route = routeField.input.value.trim() || '未分类线';
             target.summary = summaryField.input.value.trim();
             headingTitle.textContent = target.title;
+            headingRoute.textContent = target.route;
             headingState.textContent = target.summary ? '已编辑' : '待生成';
-            saveGreetingNote(data.key, entry.sourceIndex ?? entry.index, { title: target.title, summary: target.summary });
+            saveGreetingNote(data.key, entry.sourceIndex ?? entry.index, { title: target.title, route: target.route, summary: target.summary });
             renderOpeningHomeEntries();
             saveSettingsSoon();
         };
         titleField.input.addEventListener('input', updateEntry);
+        routeField.input.addEventListener('input', updateEntry);
         summaryField.input.addEventListener('input', updateEntry);
+        const original = makeElement('details', 'status-atelier-greeting-original');
+        original.append(
+            makeElement('summary', '', '查看原文预览'),
+            makeElement('small', 'status-atelier-greeting-preview', entry.preview || '（空）'),
+        );
         card.append(
             heading,
             fields,
             actions,
-            makeElement('small', 'status-atelier-greeting-preview', `原文预览：${entry.preview || '（空）'}`),
+            original,
         );
         list.append(card);
     });
 }
 
-async function refreshGreetingModal(button) {
+async function refreshGreetingModal(button, overwrite = false) {
     renderGreetingList();
     const status = greetingModal?.querySelector('.status-atelier-greeting-read-status');
+    const generationButtons = greetingModal?.querySelectorAll('#status-atelier-read-current-card, #status-atelier-regenerate-all') || [];
     if (!alternateGreetingData().entries.length) {
         await setOpeningReadStatus('失败：当前角色卡没有读取到额外问候语。', 'error', true);
         return;
     }
-    if (button) button.disabled = true;
+    generationButtons.forEach(item => { item.disabled = true; });
     const originalLabel = button?.textContent || '';
-    if (button) button.textContent = '正在读取并生成…';
-    if (status) status.textContent = `已读取 ${alternateGreetingData().entries.length} 条，正在补全缺少的标题与简介……`;
-    setOpeningReadStatus(`已读取 ${alternateGreetingData().entries.length} 条，AI 正在生成标题与简介……`, 'loading');
-    showOpeningReadProgress('已读取角色卡内容，正在生成作品简介、标题和线路简介。返回聊天页也可以继续等待。');
+    if (button) button.textContent = overwrite ? '正在全部重写…' : '正在补全缺失项…';
+    const actionText = overwrite ? '覆盖生成全部短标题、线路标签、路线简介与作品简介' : '补全缺少的短标题、线路标签与路线简介';
+    if (status) status.textContent = `已读取 ${alternateGreetingData().entries.length} 条，AI 正在${actionText}……`;
+    setOpeningReadStatus(`已读取 ${alternateGreetingData().entries.length} 条，AI 正在${actionText}……`, 'loading');
+    showOpeningReadProgress(`已读取角色卡内容，正在${actionText}。返回聊天页也可以继续等待。`);
     try {
-        const result = await readGreetingsIntoOpeningHome();
+        const result = await readGreetingsIntoOpeningHome({ overwrite });
         renderGreetingList();
-        const fallbackStatus = result?.fallbackCount ? `；其中 ${result.fallbackCount} 条使用原文摘要兜底，可展开后手动修改` : '';
+        const fallbackStatus = result?.fallbackCount ? `；其中 ${result.fallbackCount} 条没有取得有效 AI 结果，已标为待编辑` : '';
         await setOpeningReadStatus(`完成：已读取 ${alternateGreetingData().entries.length} 条额外问候语并生成目录资料${fallbackStatus}。`, 'success', true);
     } catch (error) {
         renderGreetingList();
@@ -1495,7 +1586,7 @@ async function refreshGreetingModal(button) {
         notify('error', error?.message || '读取或补全失败');
     } finally {
         hideOpeningReadProgress();
-        if (button) button.disabled = false;
+        generationButtons.forEach(item => { item.disabled = false; });
         if (button) button.textContent = originalLabel;
     }
 }
@@ -1505,7 +1596,6 @@ function openGreetingModal() {
     renderGreetingList();
     greetingModal.classList.add('status-atelier-modal-open');
     greetingModal.setAttribute('aria-hidden', 'false');
-    refreshGreetingModal(greetingModal.querySelector('#status-atelier-read-current-card'));
 }
 
 function closeGreetingModal() {
