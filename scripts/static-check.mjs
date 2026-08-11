@@ -7,6 +7,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const requiredFiles = [
     'manifest.json',
     'index.js',
+    'entry-dialog.js',
+    'greeting-workflow.js',
     'rule-generator.js',
     'opening-home-generator.js',
     'response-parser.js',
@@ -125,6 +127,12 @@ for (const [code, name] of openingDefinitions) {
         }
         if (!openingRegex.replaceString.includes('openings.forEach') || !openingRegex.replaceString.includes('swipe[direction].call')) {
             errors.push(`开场白主页${code}缺少动态目录或原生跳转`);
+        }
+        if (!openingRegex.replaceString.includes('updateWorldbookWith') || !openingRegex.replaceString.includes('setLorebookEntries')) {
+            errors.push(`开场白主页${code}必须优先使用现行 Worldbook API 并保留旧 Lorebook API 回退`);
+        }
+        if (!openingRegex.replaceString.includes('!selectedLine.entries.length)return')) {
+            errors.push(`开场白主页${code}不得用空绑定线路关闭其他世界书条目`);
         }
     } catch (error) {
         errors.push(`开场白主页${code}成品缺失或 JSON 无效：${error.message}`);

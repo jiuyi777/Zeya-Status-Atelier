@@ -72,6 +72,141 @@ export const STATUS_STYLE_PRESETS = Object.freeze([
 
 const STATUS_STYLE_IDS = new Set(STATUS_STYLE_PRESETS.map(style => style.id));
 
+export const STATUS_STRUCTURE_PRESETS = Object.freeze([
+    {
+        id: 'profile', name: '人物名片', description: '角色头像、身份签名、关系与内心动态',
+        title: '人物状态记录', subtitle: 'CHARACTER PROFILE', layout: 'grid',
+        pagesText: '当前角色|填写当前主要角色的姓名与身份',
+        fields: [
+            ['身份 / 称谓', '填写角色当前身份或对用户的称谓', 'text', 'identity'],
+            ['所在地点', '填写角色当前所在地点', 'text', 'location'],
+            ['关系阶段', '填写双方当前关系阶段', 'text', 'relation'],
+            ['好感度', '填写0到100之间的整数，只写数字', 'progress', 'affection'],
+            ['当前状态', '填写角色当前身体与情绪状态', 'text', 'state'],
+            ['内心独白', '第一人称填写角色没有说出口的真实想法', 'long', 'inner_voice'],
+        ],
+    },
+    {
+        id: 'social', name: '种草笔记 / 动态', description: '头像、正文、标签与互动数据',
+        title: '今日动态', subtitle: 'SOCIAL NOTE', layout: 'stack',
+        pagesText: '最新动态|填写本轮最值得发布的一条动态',
+        fields: [
+            ['发布者', '填写发布这条动态的角色名', 'text', 'author'],
+            ['笔记标题', '填写简短有吸引力的动态标题', 'text', 'post_title'],
+            ['正文', '以发布者口吻概括动态内容', 'long', 'post_body'],
+            ['标签', '填写2到4个与本轮剧情有关的标签', 'text', 'tags'],
+            ['点赞', '填写合理的点赞数', 'number', 'likes'],
+            ['收藏 / 评论', '填写收藏数与评论数', 'text', 'engagement'],
+        ],
+    },
+    {
+        id: 'forum', name: '论坛主题帖', description: '板块、楼层、引用和回帖式组件',
+        title: '主题讨论中', subtitle: 'FORUM THREAD', layout: 'stack',
+        pagesText: '主题帖|填写当前讨论主题',
+        fields: [
+            ['板块', '填写帖子所在板块', 'text', 'board'],
+            ['主题', '填写帖子主题标题', 'text', 'thread_title'],
+            ['楼层 / 用户', '填写当前楼层与发帖人', 'text', 'floor_user'],
+            ['帖子正文', '以论坛帖子口吻填写本轮正文', 'long', 'post_body'],
+            ['引用', '填写本楼引用的短句，没有则写无', 'long', 'quote'],
+            ['回复 / 点赞', '填写合理的回复与点赞数量', 'text', 'replies'],
+        ],
+    },
+    {
+        id: 'chat', name: '聊天会话', description: '对话气泡、在线状态与附件提示',
+        title: '会话窗口', subtitle: 'CHAT / ONLINE', layout: 'stack',
+        pagesText: '当前会话|填写聊天对象或群组名称',
+        fields: [
+            ['会话名', '填写聊天对象或群组名称', 'text', 'chat_name'],
+            ['在线状态', '填写在线、离线或正在输入等状态', 'text', 'online'],
+            ['对方消息', '概括对方本轮最重要的一句话', 'long', 'their_message'],
+            ['我的消息', '概括用户本轮最重要的一句话', 'long', 'user_message'],
+            ['附件', '填写本轮出现的图片、文件或语音，没有则写无', 'text', 'attachment'],
+            ['已读状态', '填写已读、未读或送达状态', 'text', 'read_state'],
+        ],
+    },
+    {
+        id: 'collage', name: '影像拼贴', description: '主图、贴纸注释、记忆碎片和印章',
+        title: '影像拼贴册', subtitle: 'CUT / PASTE / MEMORY', layout: 'grid',
+        pagesText: '本页拼贴|填写本轮影像主题',
+        fields: [
+            ['胶卷编号', '填写简短胶卷编号', 'text', 'roll'],
+            ['地点 / 日期', '填写画面地点与日期', 'text', 'place_date'],
+            ['照片标题', '填写本轮主画面的短标题', 'text', 'photo_title'],
+            ['画面描述', '概括这张照片会拍到的内容', 'long', 'visual'],
+            ['手写短注', '填写一句手写感的记忆短注', 'long', 'caption'],
+            ['印章 / 情绪', '填写一个印章词与当前情绪', 'text', 'stamp'],
+        ],
+    },
+    {
+        id: 'music', name: '音乐播放页', description: '封面、曲目信息、歌词和可选音频链接',
+        title: '此刻播放', subtitle: 'NOW PLAYING', layout: 'stack',
+        pagesText: '当前曲目|填写最符合本轮剧情的曲目主题',
+        fields: [
+            ['曲名', '填写符合本轮剧情的曲名', 'text', 'track'],
+            ['演唱 / 专辑', '填写演唱者与专辑名', 'text', 'artist_album'],
+            ['播放进度', '填写0到100之间的整数，只写数字', 'progress', 'play_progress'],
+            ['氛围', '填写歌曲与当前场景的氛围', 'text', 'mood'],
+            ['歌词摘句', '原创一句与剧情呼应的歌词式短句，不引用真实歌词', 'long', 'lyrics'],
+            ['收听备注', '填写角色为何在此刻播放它', 'long', 'listening_note'],
+        ],
+    },
+    {
+        id: 'quest', name: '任务地图', description: '区域、任务轨迹、资源和行动节点',
+        title: '冒险任务簿', subtitle: 'QUEST MAP', layout: 'stack',
+        pagesText: '当前任务|填写当前主任务或探索区域',
+        fields: [
+            ['区域 / 天气', '填写当前区域与天气', 'text', 'region_weather'],
+            ['当前任务', '填写当前主要任务目标', 'long', 'objective'],
+            ['任务进度', '填写0到100之间的整数，只写数字', 'progress', 'quest_progress'],
+            ['下一节点', '填写下一步要前往或触发的地点', 'text', 'next_node'],
+            ['关键物资', '列出当前最重要的物资', 'long', 'inventory'],
+            ['风险提示', '填写当前最需要警惕的风险', 'long', 'risk'],
+        ],
+    },
+    {
+        id: 'casefile', name: '案件卷宗', description: '案件编号、证据卡、嫌疑人与推理结论',
+        title: '案件调查档案', subtitle: 'CONFIDENTIAL / CASE FILE', layout: 'grid',
+        pagesText: '当前案件|填写当前调查案件或谜团',
+        fields: [
+            ['案件编号', '填写简短案件编号', 'text', 'case_id'],
+            ['案件标题', '填写案件或谜团标题', 'text', 'case_title'],
+            ['调查进度', '填写0到100之间的整数，只写数字', 'progress', 'investigation'],
+            ['关键证据', '列出本轮新增或最关键的证据', 'long', 'evidence'],
+            ['人物关系', '概括相关人物和嫌疑关系', 'long', 'suspects'],
+            ['当前推论', '填写目前最合理但尚未证实的推论', 'long', 'theory'],
+        ],
+    },
+    {
+        id: 'custom', name: '自由组件板', description: '保留完全可编辑的通用字段容器',
+        title: '自定义状态面板', subtitle: 'CUSTOM COMPONENTS', layout: 'grid',
+        pagesText: '当前页面|填写页面对象或视角',
+        fields: [
+            ['标题字段', '根据当前剧情动态填写', 'text', 'custom_title'],
+            ['主要内容', '根据当前剧情动态填写', 'long', 'custom_body'],
+            ['动态数值', '填写0到100之间的整数，只写数字', 'progress', 'custom_progress'],
+        ],
+    },
+]);
+
+export const STATUS_PALETTE_PRESETS = Object.freeze([
+    { id: 'cream-navy', name: '奶油海军蓝', accent: '#1f4268', background: '#e8ddc7', card: '#fff9ed', text: '#2d2924', muted: '#786b5d' },
+    { id: 'lotus-ink', name: '荷塘墨绿', accent: '#49634d', background: '#bdc6aa', card: '#efe5cf', text: '#243126', muted: '#84685c' },
+    { id: 'berry-milk', name: '莓果奶霜', accent: '#a14f6b', background: '#e8c9cf', card: '#fff4ed', text: '#4a3038', muted: '#876b73' },
+    { id: 'aqua-mist', name: '水色薄雾', accent: '#318c97', background: '#b9e0df', card: '#f0fbf7', text: '#214951', muted: '#638389' },
+    { id: 'newsprint', name: '报纸红黑', accent: '#9a2821', background: '#c8b894', card: '#eee3c6', text: '#1d1a16', muted: '#62594c' },
+    { id: 'porcelain', name: '青花瓷蓝', accent: '#2458a6', background: '#d7e9e4', card: '#f8f7ee', text: '#183a69', muted: '#43836d' },
+    { id: 'neon-night', name: '午夜霓虹', accent: '#ff4fc8', background: '#0e1027', card: '#21133b', text: '#fff2fc', muted: '#79dff1' },
+    { id: 'black-silver', name: '黑银档案', accent: '#d7d7d7', background: '#090909', card: '#151515', text: '#f3f3f3', muted: '#9f9f9f' },
+    { id: 'sunset-pop', name: '落日波普', accent: '#e73767', background: '#f2b84b', card: '#fff06a', text: '#142c52', muted: '#7f3c62' },
+    { id: 'lavender-glass', name: '薰衣草玻璃', accent: '#8068d8', background: '#c8c3ef', card: '#f3f0ff', text: '#312c55', muted: '#716a91' },
+    { id: 'jade-gold', name: '翡翠描金', accent: '#c9a54c', background: '#0b2f29', card: '#123f36', text: '#fff1cf', muted: '#b7c7b5' },
+    { id: 'sakura-paper', name: '樱纸青黛', accent: '#bd6981', background: '#efdae0', card: '#fff8f3', text: '#443a44', muted: '#687b83' },
+]);
+
+const STATUS_STRUCTURE_IDS = new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id));
+const STATUS_PALETTE_IDS = new Set(STATUS_PALETTE_PRESETS.map(item => item.id));
+
 export const RULE_PRESETS = Object.freeze({
     relationship: {
         ruleName: '攻略关系状态栏',
@@ -254,11 +389,48 @@ export function sanitizeTagName(value) {
     return cleaned || 'zeya_status';
 }
 
+function safeMediaUrl(value, kind = 'image') {
+    const url = String(value || '').trim();
+    if (!url) return '';
+    if (/^https?:\/\//i.test(url) || /^\/(?!\/)/.test(url)) return url;
+    if (kind === 'image' && /^data:image\/(?:png|jpe?g|gif|webp|avif);base64,/i.test(url)) return url;
+    return '';
+}
+
+function normalizePalette(input = {}) {
+    const preset = STATUS_PALETTE_PRESETS.find(item => item.id === input.paletteId);
+    const source = preset || input.palette || {};
+    const color = (key, fallback) => /^#[0-9a-f]{6}$/i.test(String(source[key] || '')) ? String(source[key]) : fallback;
+    if (!preset && !input.palette) return null;
+    return {
+        id: preset?.id || (STATUS_PALETTE_IDS.has(input.paletteId) ? input.paletteId : 'custom'),
+        name: preset?.name || '自定义色卡',
+        accent: color('accent', '#9b6849'),
+        background: color('background', '#f2e5c5'),
+        card: color('card', '#f8efd7'),
+        text: color('text', '#493a2b'),
+        muted: color('muted', '#7a6954'),
+    };
+}
+
+function normalizeMedia(input = {}) {
+    const media = input.media && typeof input.media === 'object' ? input.media : {};
+    const avatarSource = ['none', 'character', 'user', 'url'].includes(media.avatarSource) ? media.avatarSource : 'none';
+    return {
+        avatarSource,
+        avatarUrl: safeMediaUrl(media.avatarUrl, 'image'),
+        imageUrl: safeMediaUrl(media.imageUrl, 'image'),
+        audioUrl: safeMediaUrl(media.audioUrl, 'audio'),
+        imageAlt: String(media.imageAlt || '状态栏配图').slice(0, 80),
+    };
+}
+
 export function normalizeRule(input = {}) {
     const pages = parsePages(input.pagesText);
     const sharedFields = parseFields(input.sharedFieldsText);
     const pageFields = parseFields(input.pageFieldsText);
     const style = STATUS_STYLE_PRESETS.find(item => item.id === input.theme);
+    const structure = STATUS_STRUCTURE_IDS.has(input.structure) ? input.structure : 'profile';
     return {
         ruleId: String(input.ruleId || 'zeya-status-rule'),
         ruleName: String(input.ruleName || '双页剧情状态').trim() || '双页剧情状态',
@@ -268,6 +440,10 @@ export function normalizeRule(input = {}) {
         theme: style?.id || 'newspaper',
         styleName: style?.name || '复古报刊',
         glyph: style?.glyph || '✦',
+        structure,
+        structureName: STATUS_STRUCTURE_PRESETS.find(item => item.id === structure)?.name || '人物名片',
+        palette: normalizePalette(input),
+        media: normalizeMedia(input),
         layout: input.layout === 'stack' ? 'stack' : 'grid',
         pages: pages.length ? pages : parsePages(RULE_PRESETS.relationship.pagesText),
         sharedFields,
@@ -311,6 +487,32 @@ export function buildAiInstruction(input) {
         `</${rule.tagName}>`,
         `</${rule.tagName}_rules>`,
     ].join('\n');
+}
+
+export function parseStatusOutput(input, rawOutput) {
+    const rule = normalizeRule(input);
+    const source = String(rawOutput || '');
+    const block = source.match(new RegExp(`<${rule.tagName}>\\s*([\\s\\S]*?)\\s*<\\/${rule.tagName}>`, 'i'))?.[1] || source;
+    const records = {};
+    for (const rawLine of block.split(/\r?\n/)) {
+        const line = rawLine.trim();
+        if (!line.startsWith('[') || !line.endsWith(']')) continue;
+        const parts = line.slice(1, -1).split('|').map(value => value.trim());
+        const key = parts.shift();
+        if (key) records[key] = parts;
+    }
+    const missing = [];
+    if (rule.sharedFields.length && (records.Shared?.length || 0) < rule.sharedFields.length) missing.push('Shared');
+    for (const page of rule.pages) {
+        if ((records[page.id]?.length || 0) < rule.pageFields.length) missing.push(page.id);
+    }
+    if (missing.length) throw new Error(`AI 状态区块缺少完整记录：${missing.join('、')}`);
+    return {
+        rule,
+        shared: rule.sharedFields.map((_, index) => records.Shared?.[index] || ''),
+        pages: rule.pages.map(page => ({ page, values: rule.pageFields.map((_, index) => records[page.id]?.[index] || '') })),
+        raw: source,
+    };
 }
 
 export function buildWorldbookJson(input) {
@@ -450,13 +652,20 @@ function generatedReplacement(rule) {
         styleName: rule.styleName,
         glyph: rule.glyph,
         layout: rule.layout,
+        structure: rule.structure,
+        structureName: rule.structureName,
+        palette: rule.palette,
+        media: rule.media,
         pages: rule.pages,
         sharedFields: rule.sharedFields,
         pageFields: rule.pageFields,
     };
     const configJson = safeJsonForScript(renderConfig);
+    const paletteStyle = rule.palette
+        ? `--z-accent:${rule.palette.accent};--z-bg:${rule.palette.background};--z-card:${rule.palette.card};--z-text:${rule.palette.text};--z-muted:${rule.palette.muted};`
+        : '';
     return `\`\`\`html
-<div class="zeya-regex-status" data-theme="${rule.theme}" data-layout="${rule.layout}">
+<div class="zeya-regex-status" data-theme="${rule.theme}" data-structure="${rule.structure}" data-layout="${rule.layout}" style="${paletteStyle}">
   <textarea class="zrs-source" hidden>$1</textarea>
   <section class="zrs-card">
     <div class="zrs-chrome" aria-hidden="true"><span class="zrs-glyph"></span><span class="zrs-style-name"></span><i></i><i></i><i></i></div>
@@ -465,6 +674,7 @@ function generatedReplacement(rule) {
       <button class="zrs-collapse" type="button" aria-label="展开或收起">⌄</button>
     </header>
     <div class="zrs-content">
+      <div class="zrs-structure-head"></div>
       <div class="zrs-shared"></div>
       <nav class="zrs-tabs" aria-label="状态页切换"></nav>
       <div class="zrs-fields"></div>
@@ -472,7 +682,7 @@ function generatedReplacement(rule) {
   </section>
 </div>
 <style>
-.zeya-regex-status,.zeya-regex-status *{box-sizing:border-box}.zeya-regex-status{--z-accent:#9b6849;--z-bg:#f2e5c5;--z-card:#f8efd7;--z-text:#493a2b;--z-muted:#7a6954;width:min(100%,620px);margin:14px auto;color:var(--z-text);font-family:"Noto Serif SC","Songti SC",serif}.zeya-regex-status[data-theme="envelope"]{--z-accent:#9b4b58;--z-bg:#4a566e;--z-card:#faf6ed;--z-text:#2a3242;--z-muted:#687185}.zeya-regex-status[data-theme="glass"]{--z-accent:#6ec7d9;--z-bg:#102631;--z-card:#173844;--z-text:#e9f8fb;--z-muted:#9dbdc5}.zeya-regex-status[data-theme="obsidian"]{--z-accent:#d7d7d7;--z-bg:#090909;--z-card:#141414;--z-text:#f3f3f3;--z-muted:#a7a7a7}.zrs-card{position:relative;overflow:hidden;border:2px solid var(--z-accent);border-radius:14px;background:linear-gradient(145deg,color-mix(in srgb,var(--z-accent) 8%,transparent),transparent 44%),var(--z-card);box-shadow:0 12px 28px rgba(0,0,0,.22)}.zrs-chrome{display:flex;align-items:center;gap:7px;min-height:25px;padding:5px 12px;color:var(--z-card);background:var(--z-accent);font:800 9px/1.2 sans-serif;letter-spacing:.12em;text-transform:uppercase}.zrs-glyph{font-size:14px}.zrs-style-name{margin-right:auto}.zrs-chrome i{width:7px;height:7px;border:1px solid currentColor;border-radius:50%}.zeya-regex-status[data-theme="newspaper"] .zrs-card{border:4px double var(--z-accent);border-radius:2px}.zeya-regex-status[data-theme="timeline"] .zrs-card{border-radius:22px;border-color:color-mix(in srgb,var(--z-muted) 60%,transparent)}.zeya-regex-status[data-theme="timeline"] .zrs-content{margin-left:18px;border-left:1px solid var(--z-muted)}.zeya-regex-status[data-theme="timeline"] .zrs-shared-item,.zeya-regex-status[data-theme="timeline"] .zrs-field{position:relative;border-radius:12px}.zeya-regex-status[data-theme="timeline"] .zrs-shared-item::before,.zeya-regex-status[data-theme="timeline"] .zrs-field::before{content:"";position:absolute;left:-20px;top:17px;width:7px;height:7px;border:2px solid var(--z-card);border-radius:50%;background:var(--z-accent)}.zeya-regex-status[data-theme="minimal"] .zrs-card{border:0;border-radius:0;box-shadow:none}.zeya-regex-status[data-theme="minimal"] .zrs-header{padding-inline:0;background:transparent}.zeya-regex-status[data-theme="minimal"] .zrs-content{padding-inline:0}.zeya-regex-status[data-theme="minimal"] .zrs-shared-item,.zeya-regex-status[data-theme="minimal"] .zrs-field{border-width:0 0 1px;background:transparent}.zeya-regex-status[data-theme="minimal"] .zrs-tab{border-width:0 0 1px;border-radius:0}.zrs-header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid color-mix(in srgb,var(--z-accent) 45%,transparent);background:color-mix(in srgb,var(--z-bg) 18%,var(--z-card))}.zrs-title{margin:0;font-size:1.12em;letter-spacing:.16em}.zrs-subtitle{margin:3px 0 0;color:var(--z-muted);font:600 .68em/1.2 sans-serif;letter-spacing:.2em}.zrs-collapse{min-width:36px;min-height:36px;border:1px solid color-mix(in srgb,var(--z-accent) 50%,transparent);border-radius:50%;color:var(--z-text);background:transparent;cursor:pointer}.zrs-content{padding:13px}.zrs-shared{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:7px;margin-bottom:11px}.zrs-shared-item,.zrs-field{min-width:0;padding:9px 10px;border:1px solid color-mix(in srgb,var(--z-accent) 26%,transparent);background:color-mix(in srgb,var(--z-bg) 7%,transparent)}.zrs-label{display:block;margin-bottom:3px;color:var(--z-muted);font:600 .72em/1.35 sans-serif;letter-spacing:.08em}.zrs-value{display:block;white-space:pre-wrap;overflow-wrap:anywhere}.zrs-tabs{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 11px}.zrs-tab{flex:1 1 90px;padding:8px 10px;border:1px solid color-mix(in srgb,var(--z-accent) 38%,transparent);border-radius:999px;color:var(--z-text);background:transparent;cursor:pointer}.zrs-tab.is-active{color:var(--z-card);background:var(--z-accent)}.zrs-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.zeya-regex-status[data-layout="stack"] .zrs-fields{grid-template-columns:1fr}.zrs-field[data-kind="long"]{grid-column:1/-1}.zrs-meter{height:7px;margin-top:7px;overflow:hidden;border-radius:999px;background:color-mix(in srgb,var(--z-accent) 16%,transparent)}.zrs-meter>i{display:block;width:0;height:100%;background:var(--z-accent);transition:width .35s ease}.zeya-regex-status.is-collapsed .zrs-content{display:none}.zeya-regex-status.is-collapsed .zrs-collapse{transform:rotate(-90deg)}@media(max-width:520px){.zrs-fields{grid-template-columns:1fr}.zrs-field{grid-column:1}.zrs-header{padding:12px}.zrs-content{padding:10px}}
+.zeya-regex-status,.zeya-regex-status *{box-sizing:border-box}.zeya-regex-status{--z-accent:#9b6849;--z-bg:#f2e5c5;--z-card:#f8efd7;--z-text:#493a2b;--z-muted:#7a6954;width:min(100%,620px);margin:14px auto;color:var(--z-text);font-family:"Noto Serif SC","Songti SC",serif}.zeya-regex-status[data-theme="envelope"]{--z-accent:#9b4b58;--z-bg:#4a566e;--z-card:#faf6ed;--z-text:#2a3242;--z-muted:#687185}.zeya-regex-status[data-theme="glass"]{--z-accent:#6ec7d9;--z-bg:#102631;--z-card:#173844;--z-text:#e9f8fb;--z-muted:#9dbdc5}.zeya-regex-status[data-theme="obsidian"]{--z-accent:#d7d7d7;--z-bg:#090909;--z-card:#141414;--z-text:#f3f3f3;--z-muted:#a7a7a7}.zrs-card{position:relative;overflow:hidden;border:2px solid var(--z-accent);border-radius:14px;background:linear-gradient(145deg,color-mix(in srgb,var(--z-accent) 8%,transparent),transparent 44%),var(--z-card);box-shadow:0 12px 28px rgba(0,0,0,.22)}.zrs-chrome{display:flex;align-items:center;gap:7px;min-height:25px;padding:5px 12px;color:var(--z-card);background:var(--z-accent);font:800 9px/1.2 sans-serif;letter-spacing:.12em;text-transform:uppercase}.zrs-glyph{font-size:14px}.zrs-style-name{margin-right:auto}.zrs-chrome i{width:7px;height:7px;border:1px solid currentColor;border-radius:50%}.zeya-regex-status[data-theme="newspaper"] .zrs-card{border:4px double var(--z-accent);border-radius:2px}.zeya-regex-status[data-theme="timeline"] .zrs-card{border-radius:22px;border-color:color-mix(in srgb,var(--z-muted) 60%,transparent)}.zeya-regex-status[data-theme="timeline"] .zrs-content{margin-left:18px;border-left:1px solid var(--z-muted)}.zeya-regex-status[data-theme="timeline"] .zrs-shared-item,.zeya-regex-status[data-theme="timeline"] .zrs-field{position:relative;border-radius:12px}.zeya-regex-status[data-theme="timeline"] .zrs-shared-item::before,.zeya-regex-status[data-theme="timeline"] .zrs-field::before{content:"";position:absolute;left:-20px;top:17px;width:7px;height:7px;border:2px solid var(--z-card);border-radius:50%;background:var(--z-accent)}.zeya-regex-status[data-theme="minimal"] .zrs-card{border:0;border-radius:0;box-shadow:none}.zeya-regex-status[data-theme="minimal"] .zrs-header{padding-inline:0;background:transparent}.zeya-regex-status[data-theme="minimal"] .zrs-content{padding-inline:0}.zeya-regex-status[data-theme="minimal"] .zrs-shared-item,.zeya-regex-status[data-theme="minimal"] .zrs-field{border-width:0 0 1px;background:transparent}.zeya-regex-status[data-theme="minimal"] .zrs-tab{border-width:0 0 1px;border-radius:0}.zrs-header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid color-mix(in srgb,var(--z-accent) 45%,transparent);background:color-mix(in srgb,var(--z-bg) 18%,var(--z-card))}.zrs-title{margin:0;font-size:1.12em;letter-spacing:.16em}.zrs-subtitle{margin:3px 0 0;color:var(--z-muted);font:600 .68em/1.2 sans-serif;letter-spacing:.2em}.zrs-collapse{min-width:36px;min-height:36px;border:1px solid color-mix(in srgb,var(--z-accent) 50%,transparent);border-radius:50%;color:var(--z-text);background:transparent;cursor:pointer}.zrs-content{padding:13px}.zrs-structure-head{display:flex;gap:10px;align-items:center;margin:0 0 11px}.zrs-avatar{width:64px;height:64px;flex:0 0 64px;border:2px solid var(--z-accent);border-radius:50%;object-fit:cover;background:color-mix(in srgb,var(--z-bg) 30%,var(--z-card))}.zrs-cover{display:block;width:100%;max-height:220px;object-fit:cover;border:1px solid color-mix(in srgb,var(--z-accent) 34%,transparent)}.zrs-media-copy{min-width:0}.zrs-media-copy b,.zrs-media-copy small{display:block}.zrs-media-copy small{margin-top:4px;color:var(--z-muted)}.zrs-audio{width:100%;min-height:40px;margin-top:9px}.zrs-shared{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:7px;margin-bottom:11px}.zrs-shared-item,.zrs-field{min-width:0;padding:9px 10px;border:1px solid color-mix(in srgb,var(--z-accent) 26%,transparent);background:color-mix(in srgb,var(--z-bg) 7%,transparent)}.zrs-label{display:block;margin-bottom:3px;color:var(--z-muted);font:600 .72em/1.35 sans-serif;letter-spacing:.08em}.zrs-value{display:block;white-space:pre-wrap;overflow-wrap:anywhere}.zrs-tabs{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 11px}.zrs-tab{flex:1 1 90px;padding:8px 10px;border:1px solid color-mix(in srgb,var(--z-accent) 38%,transparent);border-radius:999px;color:var(--z-text);background:transparent;cursor:pointer}.zrs-tab.is-active{color:var(--z-card);background:var(--z-accent)}.zrs-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.zeya-regex-status[data-layout="stack"] .zrs-fields{grid-template-columns:1fr}.zrs-field[data-kind="long"]{grid-column:1/-1}.zrs-meter{height:7px;margin-top:7px;overflow:hidden;border-radius:999px;background:color-mix(in srgb,var(--z-accent) 16%,transparent)}.zrs-meter>i{display:block;width:0;height:100%;background:var(--z-accent);transition:width .35s ease}.zeya-regex-status[data-structure="social"] .zrs-fields{display:flex;flex-wrap:wrap}.zeya-regex-status[data-structure="social"] .zrs-field{flex:1 1 120px;border-radius:16px}.zeya-regex-status[data-structure="social"] .zrs-field:nth-child(2),.zeya-regex-status[data-structure="social"] .zrs-field:nth-child(3){flex-basis:100%}.zeya-regex-status[data-structure="forum"] .zrs-fields{counter-reset:floor}.zeya-regex-status[data-structure="forum"] .zrs-field{position:relative;padding-left:45px;border-width:0 0 1px}.zeya-regex-status[data-structure="forum"] .zrs-field::before{counter-increment:floor;content:"#" counter(floor);position:absolute;left:9px;color:var(--z-accent);font-weight:800}.zeya-regex-status[data-structure="chat"] .zrs-field{max-width:88%;border-radius:18px 18px 18px 4px}.zeya-regex-status[data-structure="chat"] .zrs-field:nth-child(even){margin-left:auto;border-radius:18px 18px 4px 18px;color:var(--z-card);background:var(--z-accent)}.zeya-regex-status[data-structure="chat"] .zrs-field:nth-child(even) .zrs-label{color:inherit;opacity:.75}.zeya-regex-status[data-structure="collage"] .zrs-fields{padding:10px;background:color-mix(in srgb,var(--z-bg) 36%,transparent)}.zeya-regex-status[data-structure="collage"] .zrs-field{border-radius:2px;box-shadow:3px 4px 0 color-mix(in srgb,var(--z-text) 15%,transparent)}.zeya-regex-status[data-structure="collage"] .zrs-field:nth-child(3n+1){transform:rotate(-1deg)}.zeya-regex-status[data-structure="collage"] .zrs-field:nth-child(3n){transform:rotate(1deg)}.zeya-regex-status[data-structure="music"] .zrs-structure-head{display:block}.zeya-regex-status[data-structure="music"] .zrs-cover{aspect-ratio:1;max-height:280px}.zeya-regex-status[data-structure="quest"] .zrs-field{position:relative;margin-left:16px;border-left:4px solid var(--z-accent)}.zeya-regex-status[data-structure="casefile"] .zrs-field{border-radius:0;border-width:0 0 2px}.zeya-regex-status.is-collapsed .zrs-content{display:none}.zeya-regex-status.is-collapsed .zrs-collapse{transform:rotate(-90deg)}@media(max-width:520px){.zrs-fields{grid-template-columns:1fr}.zrs-field{grid-column:1}.zrs-header{padding:12px}.zrs-content{padding:10px}.zrs-avatar{width:54px;height:54px;flex-basis:54px}.zeya-regex-status[data-structure="collage"] .zrs-field{transform:none!important}}
 ${STATUS_THEME_CSS}
 </style>
 <script>
@@ -493,6 +703,12 @@ ${STATUS_THEME_CSS}
   title.textContent=config.title;subtitle.textContent=config.subtitle;
   root.querySelector('.zrs-glyph').textContent=config.glyph;root.querySelector('.zrs-style-name').textContent=config.styleName;
   function make(tag,className,text){var el=document.createElement(tag);if(className)el.className=className;if(text!==undefined)el.textContent=String(text);return el;}
+  var mediaHost=root.querySelector('.zrs-structure-head');
+  function addImage(url,className,alt){if(!url)return null;var img=make('img',className);img.src=url;img.alt=alt||'';img.loading='lazy';img.referrerPolicy='no-referrer';img.addEventListener('error',function(){img.remove();});mediaHost.append(img);return img;}
+  if(config.media.avatarUrl){addImage(config.media.avatarUrl,'zrs-avatar',config.media.imageAlt);var copy=make('div','zrs-media-copy');copy.append(make('b','',config.structureName),make('small','',config.media.avatarSource==='character'?'当前角色头像':config.media.avatarSource==='user'?'当前 user 头像':'自定义头像'));mediaHost.append(copy);}
+  if(config.media.imageUrl)addImage(config.media.imageUrl,'zrs-cover',config.media.imageAlt);
+  if(config.media.audioUrl){var audio=make('audio','zrs-audio');audio.controls=true;audio.preload='metadata';audio.src=config.media.audioUrl;mediaHost.append(audio);}
+  if(!mediaHost.children.length)mediaHost.remove();
   function addValue(host,field,value){var item=make('div',host.classList.contains('zrs-shared')?'zrs-shared-item':'zrs-field');item.dataset.kind=field.kind;item.append(make('span','zrs-label',field.label),make('span','zrs-value',value||'—'));if(field.kind==='progress'){var n=Number(String(value||'').match(/-?\\d+(?:\\.\\d+)?/)?.[0]);if(!Number.isFinite(n))n=0;n=Math.max(0,Math.min(100,n));var meter=make('span','zrs-meter');var fill=make('i');fill.style.width=n+'%';meter.append(fill);item.append(meter);}host.append(item);}
   var shared=root.querySelector('.zrs-shared');var sharedValues=records.Shared||[];
   config.sharedFields.forEach(function(field,index){addValue(shared,field,sharedValues[index]);});

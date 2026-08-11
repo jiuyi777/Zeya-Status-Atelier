@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const source = fs.readFileSync(new URL('../index.js', import.meta.url), 'utf8');
 const settingsMarkup = fs.readFileSync(new URL('../settings.html', import.meta.url), 'utf8');
+const styleSource = fs.readFileSync(new URL('../style.css', import.meta.url), 'utf8');
 
 test('greeting modal exposes explicit fill-missing and regenerate-all actions', () => {
     assert.match(source, /id="status-atelier-read-current-card">补全缺失项</);
@@ -18,7 +19,7 @@ test('opening the greeting modal does not automatically call the model', () => {
 });
 
 test('greeting editor keeps title, route and summary as separate editable fields', () => {
-    assert.match(source, /线路标签（从角色卡世界书读取，如：罪人线）/);
+    assert.match(source, /线路标签（通常会自动匹配）/);
     assert.match(source, /路线简介（1句话，谁在做什么、发生了什么）/);
     assert.match(source, /target\.route = routeField\.input\.value/);
 });
@@ -32,8 +33,8 @@ test('AI routes are constrained by the current character worldbook catalog', () 
 test('worldbook route prefixes create UID bindings and connect each opening', () => {
     assert.match(source, /syncWorldbookRouteBindings\(routeCatalog\)/);
     assert.match(source, /routeWorldlineIds\?\.\[generated\[index\]\.route\]/);
-    assert.match(source, /查看\/调整绑定 UID/);
-    assert.match(source, /已自动绑定/);
+    assert.match(source, /greetingBindingSummary\(boundWorldline\)/);
+    assert.match(source, /手动调整绑定/);
 });
 
 test('regenerate all preserves written work intro and only fills missing homepage fields', () => {
@@ -50,8 +51,53 @@ test('home templates apply complete and visibly distinct visual settings', () =>
 });
 
 test('long mobile opening editors are collapsed independently', () => {
-    assert.equal((settingsMarkup.match(/status-atelier-collapsible/g) || []).length, 3);
+    const openingWorkspace = settingsMarkup.match(/data-status-workspace-panel="opening"([\s\S]*?)data-status-workspace-panel="status"/)?.[1] || '';
+    assert.equal((openingWorkspace.match(/status-atelier-collapsible/g) || []).length, 3);
     for (const label of ['作品固定资料', '世界线介绍（可选）', '额外问候语目录']) {
         assert.match(settingsMarkup, new RegExp(`<summary[^>]*>[\\s\\S]*?${label}[\\s\\S]*?<\\/summary>`));
     }
+});
+
+test('status workspace exposes component, palette, real avatar and audio controls', () => {
+    for (const id of ['status-atelier-structure', 'status-atelier-status-palettes', 'status-atelier-avatar-source', 'status-atelier-avatar-url', 'status-atelier-image-url', 'status-atelier-audio-url', 'status-atelier-test-ai']) {
+        assert.match(settingsMarkup, new RegExp(`id="${id}"`));
+    }
+    assert.match(source, /thumbnail\('avatar', avatar\)/);
+    assert.match(source, /thumbnail\('persona', user_avatar\)/);
+    assert.match(source, /parseStatusOutput\(input, response\)/);
+});
+
+test('mobile workbench keeps bottom sheets inside safe areas with touch-sized controls', () => {
+    assert.match(styleSource, /env\(safe-area-inset-bottom\)/);
+    assert.match(styleSource, /\.status-atelier-palette-toolbar button\s*\{[\s\S]*?min-height:\s*44px/);
+});
+
+test('simple greeting flow keeps one primary footer action and moves secondary actions into more', () => {
+    const footer = source.match(/<footer class="status-atelier-dialog-footer">([\s\S]*?)<\/footer>/)?.[1] || '';
+    assert.match(footer, /id="status-atelier-modal-apply"/);
+    assert.equal((footer.match(/<button/g) || []).length, 1);
+    assert.doesNotMatch(footer, /modal-copy-home|modal-download-regex|open-full-workbench|regenerate-all/);
+    assert.match(source, /class="status-atelier-greeting-more"/);
+    for (const id of ['status-atelier-regenerate-all', 'status-atelier-modal-copy-home', 'status-atelier-modal-download-regex', 'status-atelier-open-full-workbench']) {
+        assert.match(source, new RegExp(`id="${id}"`));
+    }
+});
+
+test('greeting flow includes in-place theme selection and live preview without another modal', () => {
+    assert.match(source, /status-atelier-greeting-theme-list/);
+    assert.match(source, /status-atelier-greeting-live-preview/);
+    assert.match(source, /renderGreetingThemeChooser\(\)/);
+    assert.doesNotMatch(source, /status-atelier-greeting-theme-dialog/);
+});
+
+test('manual UID editing is progressive disclosure while cards stay collapsed by default', () => {
+    assert.match(source, /高级：调整世界书绑定/);
+    assert.match(source, /keepOnlyOpenGreetingCard/);
+    assert.doesNotMatch(source, /card\.open\s*=\s*true/);
+});
+
+test('primary apply waits for automatic worldbook binding before installing', () => {
+    const block = source.match(/async function applyGreetingModal\(button\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    assert.match(block, /await greetingBindingPromise/);
+    assert.ok(block.indexOf('await greetingBindingPromise') < block.indexOf("await installOpeningHomeRegex('scoped')"));
 });

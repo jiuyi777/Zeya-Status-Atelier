@@ -34,8 +34,12 @@ export function extractWorldbookRouteCatalog(books) {
                 const title = routeEntryTitle(entry) || (uid !== '' ? `UID ${uid}` : label);
                 const content = clean(entry?.content).slice(0, 900);
                 const key = `${bookName}\u0000${uid}\u0000${title}`;
-                if (!record.variants.some(variant => variant.key === key)) {
-                    record.variants.push({ key, book: bookName, uid, title, content });
+                const existing = record.variants.find(variant => variant.key === key);
+                if (existing) {
+                    existing.switchable ||= book?.switchable !== false;
+                    existing.content ||= content;
+                } else {
+                    record.variants.push({ key, book: bookName, uid, title, content, switchable: book?.switchable !== false });
                 }
                 catalog.set(label, record);
             }
@@ -59,7 +63,7 @@ export function routeCatalogPrompt(catalog) {
         }).join('\n');
         return `【${record.label}】\n${variants}`;
     });
-    return `以下线路来自当前角色卡绑定的世界书条目。route 必须逐字选择其中一个方括号内的线路名；同一线路可以对应多条开场，禁止自创、改写或为了避免重复而换名。\n${lines.join('\n')}`;
+    return `以下线路来自当前角色卡绑定或内嵌的世界书条目。route 必须逐字选择其中一个方括号内的线路名；同一线路可以对应多条开场，禁止自创、改写或为了避免重复而换名。\n${lines.join('\n')}`;
 }
 
 export function constrainRouteToCatalog(value, catalog) {
@@ -79,7 +83,7 @@ export function syncRouteCatalogWorldlines(worldlines, catalog) {
     const lines = Array.isArray(worldlines) ? worldlines : [];
     const ids = {};
     for (const record of Array.isArray(catalog) ? catalog : []) {
-        const bindings = record.variants.map(variant => ({
+        const bindings = record.variants.filter(variant => variant.switchable !== false).map(variant => ({
             book: String(variant.book || '').trim(),
             uid: Math.max(0, Math.trunc(Number(variant.uid) || 0)),
             title: String(variant.title || `UID ${variant.uid}`).trim(),

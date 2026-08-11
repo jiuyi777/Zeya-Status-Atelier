@@ -62,3 +62,21 @@ test('renames an existing generic line by overlapping UID and creates the remain
     assert.ok(worldlines.find(line => line.name === '少年线').entries.some(item => item.uid === 3));
     assert.ok(worldlines.find(line => line.name === '神明线').entries.some(item => item.uid === 10));
 });
+
+test('uses embedded lore for route labels without claiming its UIDs are switchable', () => {
+    const embeddedOnly = extractWorldbookRouteCatalog([{ name: '卡内设定', switchable: false, entries: [
+        { uid: 2, comment: '罪人线nsfw', content: '只存在于角色卡内嵌 lorebook' },
+    ] }]);
+    const embeddedLines = [];
+    const embeddedIds = syncRouteCatalogWorldlines(embeddedLines, embeddedOnly);
+    assert.deepEqual(worldbookRouteLabels(embeddedOnly), ['罪人线']);
+    assert.equal(embeddedLines.find(line => line.id === embeddedIds['罪人线']).entries.length, 0);
+
+    const importedCopy = extractWorldbookRouteCatalog([
+        { name: '卡内设定', switchable: false, entries: [{ uid: 2, comment: '罪人线nsfw' }] },
+        { name: '卡内设定', switchable: true, entries: [{ uid: 2, comment: '罪人线nsfw' }] },
+    ]);
+    const importedLines = [];
+    syncRouteCatalogWorldlines(importedLines, importedCopy);
+    assert.deepEqual(importedLines[0].entries.map(item => ({ book: item.book, uid: item.uid })), [{ book: '卡内设定', uid: 2 }]);
+});

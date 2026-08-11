@@ -2,11 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     RULE_PRESETS,
+    STATUS_PALETTE_PRESETS,
+    STATUS_STRUCTURE_PRESETS,
     STATUS_STYLE_PRESETS,
     buildAiInstruction,
     buildRegexScript,
     buildWorldbookJson,
     normalizeRule,
+    parseStatusOutput,
     parseFields,
     parsePages,
 } from '../rule-generator.js';
@@ -15,6 +18,69 @@ test('parses any number of switch pages without storing story values', () => {
     const pages = parsePages('喻生|谨慎克制\n喻黎|老城区生活\n旁观者|第三视角');
     assert.deepEqual(pages.map(page => page.id), ['View1', 'View2', 'View3']);
     assert.deepEqual(pages.map(page => page.label), ['喻生', '喻黎', '旁观者']);
+});
+
+test('registers genuinely different component structures and composable palettes', () => {
+    assert.equal(STATUS_STRUCTURE_PRESETS.length, 9);
+    assert.equal(new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id)).size, 9);
+    assert.equal(STATUS_PALETTE_PRESETS.length, 12);
+    assert.equal(new Set(STATUS_PALETTE_PRESETS.map(item => item.id)).size, 12);
+    for (const structure of STATUS_STRUCTURE_PRESETS) {
+        assert.ok(structure.fields.length >= 3, `${structure.name} has an editable schema`);
+        assert.ok(structure.fields.every(field => field.length === 4), `${structure.name} keeps stable field keys`);
+    }
+});
+
+test('normalizes safe media and rejects executable URLs', () => {
+    const rule = normalizeRule({
+        ...RULE_PRESETS.universalClassical,
+        structure: 'music',
+        paletteId: 'porcelain',
+        media: {
+            avatarSource: 'url',
+            avatarUrl: 'javascript:alert(1)',
+            imageUrl: 'https://example.com/cover.jpg',
+            audioUrl: 'https://example.com/theme.mp3',
+        },
+    });
+    assert.equal(rule.structure, 'music');
+    assert.equal(rule.palette.id, 'porcelain');
+    assert.equal(rule.media.avatarUrl, '');
+    assert.equal(rule.media.imageUrl, 'https://example.com/cover.jpg');
+    assert.equal(rule.media.audioUrl, 'https://example.com/theme.mp3');
+});
+
+test('generated renderer contains real media components without autoplay', () => {
+    const script = buildRegexScript({
+        ...RULE_PRESETS.universalClassical,
+        structure: 'music',
+        paletteId: 'jade-gold',
+        media: {
+            avatarSource: 'character',
+            avatarUrl: '/thumbnail?type=avatar&file=character.png',
+            imageUrl: 'https://example.com/cover.jpg',
+            audioUrl: 'https://example.com/theme.mp3',
+            imageAlt: '剧情配图',
+        },
+    });
+    assert.match(script.replaceString, /data-structure="music"/);
+    assert.match(script.replaceString, /class="zrs-structure-head"/);
+    assert.match(script.replaceString, /make\('audio','zrs-audio'\)/);
+    assert.match(script.replaceString, /audio\.controls=true/);
+    assert.doesNotMatch(script.replaceString, /autoplay/i);
+    assert.match(script.replaceString, /--z-accent:#c9a54c/);
+});
+
+test('parses a complete AI status block and rejects incomplete output', () => {
+    const input = {
+        ...RULE_PRESETS.relationship,
+        pagesText: '当前角色|测试角色',
+        sharedFieldsText: '',
+        pageFieldsText: '地点|填写地点|text|location\n好感度|填写数值|progress|affection',
+    };
+    const parsed = parseStatusOutput(input, '<zeya_relationship>\n[View1|图书馆|72]\n</zeya_relationship>');
+    assert.deepEqual(parsed.pages[0].values, ['图书馆', '72']);
+    assert.throws(() => parseStatusOutput(input, '<zeya_relationship>\n[View1|图书馆]\n</zeya_relationship>'), /缺少完整记录/);
 });
 
 test('parses editable field names, AI instructions and display kinds', () => {

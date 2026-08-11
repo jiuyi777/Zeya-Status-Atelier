@@ -85,6 +85,7 @@ test('opening homepage regex directly replaces one marker and keeps real navigat
     assert.match(script.replaceString, /typeof setChatMessages==='function'/);
     assert.match(script.replaceString, /message_id:0,swipe_id:target/);
     assert.match(script.replaceString, /setLorebookEntries/);
+    assert.match(script.replaceString, /selectedLine[\s\S]*?!selectedLine\.entries\.length\)return/);
     assert.match(script.replaceString, /enabled:value\.enabled/);
     assert.match(script.replaceString, /世界书线路绑定失败，继续切换开场白/);
     assert.match(script.replaceString, /textContent/);
@@ -146,6 +147,7 @@ test('enter button switches the greeting and applies the selected UID worldline 
     const style = { previousElementSibling: root };
     const currentScript = { previousElementSibling: style };
     const worldbookCalls = [];
+    const legacyWorldbookCalls = [];
     const chatCalls = [];
     const document = {
         currentScript,
@@ -156,21 +158,43 @@ test('enter button switches the greeting and applies the selected UID worldline 
     let rejectWorldbook = false;
     const getChatMessages = async () => [{ swipe_id: 0, swipes: ['主页', '罪人线开场', '神明线开场'] }];
     const setChatMessages = async (...args) => chatCalls.push(args);
-    const setLorebookEntries = async (book, entries) => {
+    const updateWorldbookWith = async (book, updater) => {
         if (rejectWorldbook) throw new Error('模拟旧版世界书接口失败');
+        const entries = await updater([
+            { uid: 2, name: '罪人线', enabled: false },
+            { uid: 10, name: '神明线', enabled: true },
+            { uid: 99, name: '其他条目', enabled: true },
+        ]);
         worldbookCalls.push({ book, entries });
     };
+    const setLorebookEntries = async (book, entries) => legacyWorldbookCalls.push({ book, entries });
     const window = { document, parent: null };
     window.parent = window;
-    vm.runInNewContext(scriptSource, { window, document, Map, JSON, Number, String, Array, Math, decodeURIComponent, console: { warn() {} }, getChatMessages, setChatMessages, setLorebookEntries });
+    const sandbox = { window, document, Map, JSON, Number, String, Array, Math, decodeURIComponent, console: { warn() {} }, getChatMessages, setChatMessages, updateWorldbookWith, setLorebookEntries };
+    vm.runInNewContext(scriptSource, sandbox);
 
     await button.listeners.click();
     assert.deepEqual(JSON.parse(JSON.stringify(chatCalls)), [[[ { message_id: 0, swipe_id: 1 } ]]]);
     assert.deepEqual(JSON.parse(JSON.stringify(worldbookCalls)), [{
         book: '谈论爱之生',
-        entries: [{ uid: 2, enabled: true }, { uid: 10, enabled: false }],
+        entries: [
+            { uid: 2, name: '罪人线', enabled: true },
+            { uid: 10, name: '神明线', enabled: false },
+            { uid: 99, name: '其他条目', enabled: true },
+        ],
     }]);
+    assert.deepEqual(legacyWorldbookCalls, [], 'current Worldbook API must be preferred over the deprecated Lorebook API');
 
+    sandbox.updateWorldbookWith = undefined;
+    chatCalls.length = 0;
+    await button.listeners.click();
+    assert.deepEqual(JSON.parse(JSON.stringify(legacyWorldbookCalls)), [{
+        book: '谈论爱之生',
+        entries: [{ uid: 2, enabled: true }, { uid: 10, enabled: false }],
+    }], 'deprecated Lorebook API remains available for older TavernHelper versions');
+    assert.deepEqual(JSON.parse(JSON.stringify(chatCalls)), [[[ { message_id: 0, swipe_id: 1 } ]]]);
+
+    sandbox.updateWorldbookWith = updateWorldbookWith;
     rejectWorldbook = true;
     chatCalls.length = 0;
     await button.listeners.click();
