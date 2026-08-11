@@ -82,9 +82,11 @@ test('opening homepage regex directly replaces one marker and keeps real navigat
     assert.equal(script.findRegex, '/【主页】/s');
     assert.match(script.replaceString, /swipe\[direction\]\.call/);
     assert.match(script.replaceString, /setChatMessages/);
+    assert.match(script.replaceString, /typeof setChatMessages==='function'/);
     assert.match(script.replaceString, /message_id:0,swipe_id:target/);
     assert.match(script.replaceString, /setLorebookEntries/);
     assert.match(script.replaceString, /enabled:value\.enabled/);
+    assert.match(script.replaceString, /世界书线路绑定失败，继续切换开场白/);
     assert.match(script.replaceString, /textContent/);
     assert.match(script.replaceString, /openings\.forEach/);
     assert.match(script.replaceString, /zoh-intro-markdown/);
@@ -149,21 +151,28 @@ test('enter button switches the greeting and applies the selected UID worldline 
         createTextNode: value => ({ textContent: value }),
         querySelector: () => generic,
     };
-    const TavernHelper = {
-        getChatMessages: async () => [{ swipe_id: 0, swipes: ['主页', '罪人线开场', '神明线开场'] }],
-        setChatMessages: async (messages, options) => chatCalls.push({ messages, options }),
-        setLorebookEntries: async (book, entries) => worldbookCalls.push({ book, entries }),
+    let rejectWorldbook = false;
+    const getChatMessages = async () => [{ swipe_id: 0, swipes: ['主页', '罪人线开场', '神明线开场'] }];
+    const setChatMessages = async (...args) => chatCalls.push(args);
+    const setLorebookEntries = async (book, entries) => {
+        if (rejectWorldbook) throw new Error('模拟旧版世界书接口失败');
+        worldbookCalls.push({ book, entries });
     };
-    const window = { document, TavernHelper, parent: null };
+    const window = { document, parent: null };
     window.parent = window;
-    vm.runInNewContext(scriptSource, { window, document, Map, JSON, Number, String, Array, Math, decodeURIComponent, console });
+    vm.runInNewContext(scriptSource, { window, document, Map, JSON, Number, String, Array, Math, decodeURIComponent, console: { warn() {} }, getChatMessages, setChatMessages, setLorebookEntries });
 
     await button.listeners.click();
-    assert.deepEqual(JSON.parse(JSON.stringify(chatCalls)), [{ messages: [{ message_id: 0, swipe_id: 1 }], options: { refresh: 'affected' } }]);
+    assert.deepEqual(JSON.parse(JSON.stringify(chatCalls)), [[[ { message_id: 0, swipe_id: 1 } ]]]);
     assert.deepEqual(JSON.parse(JSON.stringify(worldbookCalls)), [{
         book: '谈论爱之生',
         entries: [{ uid: 2, enabled: true }, { uid: 10, enabled: false }],
     }]);
+
+    rejectWorldbook = true;
+    chatCalls.length = 0;
+    await button.listeners.click();
+    assert.deepEqual(JSON.parse(JSON.stringify(chatCalls)), [[[ { message_id: 0, swipe_id: 1 } ]]], 'UID binding failure must not block greeting navigation');
 });
 
 test('downloaded opening regex embeds current edited content instead of an empty capture', () => {
