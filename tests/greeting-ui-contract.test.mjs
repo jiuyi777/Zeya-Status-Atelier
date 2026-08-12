@@ -110,6 +110,9 @@ test('status appearance controls update in place and preserve readable selected 
     assert.match(source, /style\.textContent = STATUS_THEME_CSS/);
     assert.match(source, /status-atelier-preview-card zrs-card/);
     assert.match(source, /status-atelier-preview-field zrs-field/);
+    assert.match(source, /status-atelier-preview-meter-marker zrs-meter-marker/);
+    assert.match(source, /marker\.style\.left = `\$\{percent\}%`/);
+    assert.doesNotMatch(styleSource, /status-atelier-preview-flow/);
     const appliesCheck = source.match(/function statusRegexAppliesToCurrentContext\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.doesNotMatch(appliesCheck, /buildRegexScript/);
     const resolvedInput = source.match(/function resolvedStatusInput\(source = settings\(\)\) \{([\s\S]*?)\n\}/)?.[1] || '';
@@ -154,6 +157,9 @@ test('mobile greeting modal offers a stateless copy-only overview and directly i
     assert.match(source, /id="status-atelier-modal-status-logos"/);
     assert.match(source, /id="status-atelier-modal-status-palettes"/);
     assert.match(source, /id="status-atelier-modal-apply-status"/);
+    assert.match(source, /id="status-atelier-modal-add-field"/);
+    assert.match(source, /id="status-atelier-modal-status-schema"/);
+    assert.match(source, /字段与 AI 动态数值/);
     const statusBlock = source.match(/async function applyModalStatus\(button\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(statusBlock, /await installRegex\('scoped'\)/);
     assert.doesNotMatch(statusBlock, /title: style\.title|subtitle: style\.subtitle/);
@@ -162,14 +168,29 @@ test('mobile greeting modal offers a stateless copy-only overview and directly i
 });
 
 test('wand exposes separate opening and status actions and quick theme choices are collapsible favorites first', () => {
-    assert.match(source, /直接制作开场白 · 九一/);
-    assert.match(source, /直接制作状态栏 · 九一/);
+    assert.match(source, /制作开场白 · 九一/);
+    assert.match(source, /制作状态栏 · 九一/);
     assert.match(source, /status-atelier-greeting-theme-favorites/);
     assert.match(source, /展开未收藏主页外观/);
     assert.match(source, /function openGreetingModal\(target = 'opening'\)/);
-    assert.match(source, /setGreetingModalWorkspace\(target\)/);
     assert.match(source, /target === 'status'/);
     assert.match(styleSource, /#status-atelier-modal\[data-workspace="status"\] \.status-atelier-opening-only/);
+    assert.doesNotMatch(source, /data-greeting-workspace=/);
+    const openBlock = source.match(/function openGreetingModal\(target = 'opening'\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    const statusFastPath = openBlock.match(/if \(target === 'status'\) \{([\s\S]*?)\n    \}/)?.[1] || '';
+    assert.match(statusFastPath, /setGreetingModalWorkspace\('status'\)/);
+    assert.match(statusFastPath, /return;/);
+    assert.doesNotMatch(statusFastPath, /ensureLocalGreetingDrafts|renderGreetingList|renderGreetingThemeChooser|updateOpeningHomePreview/);
+});
+
+test('status quick editor updates fields without reloading the whole opening-home workbench', () => {
+    const structureBlock = source.match(/function applyStatusStructure\(structureId\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    assert.doesNotMatch(structureBlock, /loadSettingsUI/);
+    assert.match(structureBlock, /renderModalStatusSchema\(\)/);
+    assert.match(structureBlock, /scheduleStatusPreviewUpdate\(\)/);
+    assert.match(source, /function renderModalStatusSchema\(\)/);
+    assert.match(source, /function scheduleStatusPreviewUpdate\(\)/);
+    assert.match(source, /requestAnimationFrame/);
 });
 
 test('modal and palettes stay inside mobile viewport and palette library is collapsible', () => {
@@ -214,7 +235,7 @@ test('status workspace exposes a short one-click path and hides customization by
     assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?更多外观与配色/);
     assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-advanced">[\s\S]*?可选：头像、配图与音乐/);
     const block = source.match(/async function installRegex\(scope\) \{([\s\S]*?)\n\}/)?.[1] || '';
-    assert.match(block, /settings\(\)\.promptEnabled = true/);
+    assert.match(block, /settings\(\)\.promptEnabled = scope !== 'scoped'/);
     assert.match(block, /updatePrompt\(\)/);
 });
 
@@ -224,4 +245,17 @@ test('status prompt only runs where the generated status regex is installed', ()
     assert.match(gate, /getScriptsByType\(SCRIPT_TYPES\.GLOBAL\)/);
     const prompt = source.match(/function updatePrompt\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(prompt, /stored\.promptEnabled && statusRegexAppliesToCurrentContext\(\)/);
+});
+
+test('one-click scoped status installs and verifies a character-bound worldbook rule before the regex', () => {
+    assert.match(source, /async function installStatusWorldbookRule\(\)/);
+    assert.match(source, /createNewWorldInfo\(bookName, \{ interactive: false \}\)/);
+    assert.match(source, /saveWorldInfo\(bookName, result\.data, true\)/);
+    assert.match(source, /charUpdateAddAuxWorld\(character\.avatar, bookName\)/);
+    assert.match(source, /世界书输出规则已保存，但没有绑定到当前角色/);
+    assert.match(source, /世界书没有确认状态栏输出规则已保存/);
+    const scopedInstall = source.match(/async function installRegex\(scope\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    assert.match(scopedInstall, /installStatusWorldbookRule\(\)/);
+    assert.match(scopedInstall, /installGeneratedRegex/);
+    assert.ok(scopedInstall.indexOf('installStatusWorldbookRule()') < scopedInstall.indexOf('installGeneratedRegex'));
 });
