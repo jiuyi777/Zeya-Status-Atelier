@@ -2,9 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     RULE_PRESETS,
+    STATUS_LOGO_PRESETS,
     STATUS_PALETTE_PRESETS,
     STATUS_STRUCTURE_PRESETS,
     STATUS_STYLE_PRESETS,
+    STATUS_THEME_CSS,
     buildAiInstruction,
     buildRegexScript,
     buildWorldbookJson,
@@ -30,6 +32,25 @@ test('registers genuinely different component structures and composable palettes
         assert.ok(structure.fields.length >= 3, `${structure.name} has an editable schema`);
         assert.ok(structure.fields.every(field => field.length === 4), `${structure.name} keeps stable field keys`);
     }
+});
+
+test('decorative logos are independent from appearance and survive into generated renderer', () => {
+    assert.equal(STATUS_LOGO_PRESETS.length, 16);
+    assert.ok(STATUS_LOGO_PRESETS.some(item => item.id === 'leaf' && item.glyph === '🍃'));
+    assert.ok(STATUS_LOGO_PRESETS.some(item => item.id === 'apple' && item.glyph === '🍎'));
+    const apple = normalizeRule({ ...RULE_PRESETS.universalClassical, theme: 'vinyl-mag', logoId: 'apple' });
+    const automatic = normalizeRule({ ...RULE_PRESETS.universalClassical, theme: 'vinyl-mag', logoId: 'auto' });
+    assert.equal(apple.glyph, '🍎');
+    assert.equal(automatic.glyph, '♪');
+    assert.match(buildRegexScript({ ...RULE_PRESETS.universalClassical, logoId: 'leaf' }).replaceString, /"glyph":"🍃"/);
+});
+
+test('the workbench can reuse every exported theme instead of showing a color-only mockup', () => {
+    for (const style of STATUS_STYLE_PRESETS) {
+        assert.match(STATUS_THEME_CSS, new RegExp(`data-theme="${style.id}"`), `${style.name} has exported theme CSS`);
+    }
+    assert.match(STATUS_THEME_CSS, /data-theme="vinyl-mag"[^}]*[\s\S]*?\.zrs-header::before/);
+    assert.match(STATUS_THEME_CSS, /data-theme="cafe-receipt"[^}]*[\s\S]*?clip-path:polygon/);
 });
 
 test('normalizes safe media and rejects executable URLs', () => {

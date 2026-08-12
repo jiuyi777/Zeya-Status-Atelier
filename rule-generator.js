@@ -70,6 +70,25 @@ export const STATUS_STYLE_PRESETS = Object.freeze([
     { code: '50', id: 'porcelain-memory', name: '青花关系纪念册', title: '岁月纪念册', subtitle: 'OUR DAYS TOGETHER', layout: 'stack', glyph: '囍', shared: ['相识天数', '纪念日', '当前状态'], fields: ['心情数值', '重要事件', '共同回忆', '下一次纪念'] },
 ]);
 
+export const STATUS_LOGO_PRESETS = Object.freeze([
+    { id: 'auto', name: '跟随外观', glyph: '' },
+    { id: 'spark', name: '星芒', glyph: '✦' },
+    { id: 'leaf', name: '叶片', glyph: '🍃' },
+    { id: 'apple', name: '苹果', glyph: '🍎' },
+    { id: 'clover', name: '四叶草', glyph: '☘' },
+    { id: 'moon', name: '月亮', glyph: '☾' },
+    { id: 'heart', name: '爱心', glyph: '♥' },
+    { id: 'butterfly', name: '蝴蝶', glyph: '🦋' },
+    { id: 'paw', name: '爪印', glyph: '🐾' },
+    { id: 'flower', name: '花枝', glyph: '❀' },
+    { id: 'music', name: '音符', glyph: '♪' },
+    { id: 'sun', name: '太阳', glyph: '☼' },
+    { id: 'key', name: '钥匙', glyph: '⚿' },
+    { id: 'candle', name: '烛火', glyph: '🕯' },
+    { id: 'diamond', name: '菱形', glyph: '◆' },
+    { id: 'seal', name: '印章', glyph: '印' },
+]);
+
 const STATUS_STYLE_IDS = new Set(STATUS_STYLE_PRESETS.map(style => style.id));
 
 export const STATUS_STRUCTURE_PRESETS = Object.freeze([
@@ -442,6 +461,7 @@ export function normalizeRule(input = {}) {
     const sharedFields = parseFields(input.sharedFieldsText);
     const pageFields = parseFields(input.pageFieldsText);
     const style = STATUS_STYLE_PRESETS.find(item => item.id === input.theme);
+    const logo = STATUS_LOGO_PRESETS.find(item => item.id === input.logoId) || STATUS_LOGO_PRESETS[0];
     const structure = STATUS_STRUCTURE_IDS.has(input.structure) ? input.structure : 'profile';
     return {
         ruleId: String(input.ruleId || 'zeya-status-rule'),
@@ -451,7 +471,8 @@ export function normalizeRule(input = {}) {
         subtitle: String(input.subtitle || 'STORY STATUS'),
         theme: style?.id || 'newspaper',
         styleName: style?.name || '复古报刊',
-        glyph: style?.glyph || '✦',
+        logoId: logo.id,
+        glyph: logo.glyph || style?.glyph || '✦',
         structure,
         structureName: STATUS_STRUCTURE_PRESETS.find(item => item.id === structure)?.name || '人物名片',
         palette: normalizePalette(input),
@@ -584,7 +605,7 @@ function safeJsonForScript(value) {
         .replace(/&/g, '\\u0026');
 }
 
-const STATUS_THEME_CSS = `
+export const STATUS_THEME_CSS = `
 .zeya-regex-status[data-theme="classical"]{--z-accent:#9b6849;--z-bg:#f2e5c5;--z-card:#f8efd7;--z-text:#493a2b;--z-muted:#7a6954}
 .zeya-regex-status[data-theme="glass"]{--z-accent:#6ec7d9;--z-bg:#102631;--z-card:#173844;--z-text:#e9f8fb;--z-muted:#9dbdc5}
 .zeya-regex-status[data-theme="newspaper"]{--z-accent:#842f26;--z-bg:#e8dfca;--z-card:#f3eddc;--z-text:#201d19;--z-muted:#5a5348}

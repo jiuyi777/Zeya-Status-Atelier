@@ -74,6 +74,12 @@ test('batch parser keeps only requested complete entries and work intro', () => 
     assert.equal(parsed.entries.has(8), false);
 });
 
+test('homepage work intro keeps enough room for worldbuilding context', () => {
+    const workIntro = '蒸汽都市正因码头命案陷入不安，灰烬议会与审判机关在暗处争夺情报。温瑟既是玩家最亲近的归处，也是调查名单上的危险嫌疑人；多个开局从雨夜归家、审讯余波与秘密追查展开，围绕信任、身份和彼此试探推进。';
+    const parsed = parseBatchSummaryResponse(JSON.stringify({ workIntro, entries: [] }), []);
+    assert.equal(parsed.workIntro, workIntro);
+});
+
 test('unwraps common gateway response objects before parsing', () => {
     const wrapped = { choices: [{ message: { content: '{"title":"被包装的标题","route":"旧识线","summary":"被包装的简介"}' } }] };
     assert.match(responseText(wrapped), /被包装的标题/);

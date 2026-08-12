@@ -76,6 +76,15 @@ test('downloaded homepage visibly renders worldline names, descriptions and rout
     assert.match(script.replaceString, /class="zoh-route">罪人线<\/span>/);
 });
 
+test('blank optional worldline descriptions do not render fake placeholder copy', () => {
+    const script = buildOpeningHomeRegex({
+        worldlines: [{ id: 'single', name: '单线', description: '', entries: [] }],
+        entries: [{ number: '01', title: '唯一开局', route: '单线', summary: '故事从这里开始。', target: 2, worldlineId: 'single' }],
+    });
+    assert.doesNotMatch(script.replaceString, /<h3>单线<\/h3>|世界线介绍/);
+    assert.doesNotMatch(script.replaceString, /这条线路尚未填写介绍|尚未填写线路简介/);
+});
+
 test('opening homepage normalizes editable theme, font, colors and jump targets', () => {
     const normalized = normalizeOpeningHomeSettings({
         theme: 'timeline',
