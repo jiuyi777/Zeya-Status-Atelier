@@ -1304,20 +1304,46 @@
 }
 
 .status-atelier-preview-meter {
+    position: relative;
     display: block;
-    height: 7px;
+    height: 20px !important;
     margin-top: 7px;
-    overflow: hidden;
+    overflow: visible;
+    background: transparent !important;
+}
+
+.status-atelier-preview-meter::before {
+    content: "";
+    position: absolute;
+    inset: 7px 0;
     border-radius: 999px;
     background: color-mix(in srgb, var(--sap-accent) 16%, transparent);
 }
 
 .status-atelier-preview-meter > i {
+    position: absolute;
+    left: 0;
+    top: 7px;
     display: block;
-    width: 48%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, var(--sap-accent), transparent);
-    animation: status-atelier-preview-flow 1.8s linear infinite;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--sap-accent);
+    transition: width .2s ease;
+}
+
+.status-atelier-preview-meter-marker {
+    position: absolute;
+    top: 50%;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    min-width: 22px;
+    height: 22px;
+    transform: translate(-50%, -50%);
+    font-size: 17px;
+    line-height: 1;
+    filter: drop-shadow(0 1px 1px color-mix(in srgb, var(--sap-text) 35%, transparent));
+    transition: left .2s ease;
 }
 
 .status-atelier-status-palettes {
@@ -1472,11 +1498,6 @@
 .status-atelier-ai-test-status[data-state="success"] { border-left-color: #48a36d; }
 .status-atelier-ai-test-status[data-state="error"] { border-left-color: #c95c55; }
 .status-atelier-ai-test-status[data-state="loading"] { border-left-color: var(--status-atelier-ui-accent); }
-
-@keyframes status-atelier-preview-flow {
-    from { transform: translateX(-100%); }
-    to { transform: translateX(210%); }
-}
 
 .status-atelier-panel,
 .status-atelier-panel * {
@@ -1741,20 +1762,6 @@ summary.status-atelier-section-heading {
     box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
 }
 
-.status-atelier-dialog-workspaces {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1px;
-    padding: 8px 14px;
-    border-bottom: 1px solid var(--SmartThemeBorderColor);
-    background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 88%, #102631);
-}
-
-.status-atelier-dialog-workspaces .menu_button[aria-pressed="true"] {
-    color: #fff;
-    background: var(--status-atelier-ui-accent);
-}
-
 #status-atelier-modal[data-workspace="opening"] .status-atelier-greeting-status-step,
 #status-atelier-modal[data-workspace="status"] .status-atelier-opening-only {
     display: none;
@@ -1764,6 +1771,69 @@ summary.status-atelier-section-heading {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
+}
+
+.status-atelier-modal-schema-editor {
+    margin: 11px 0;
+    padding: 10px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 80%, transparent);
+}
+
+.status-atelier-modal-schema-editor > summary {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.status-atelier-modal-schema-editor > summary small {
+    opacity: .72;
+}
+
+#status-atelier-modal-add-field {
+    width: 100%;
+    min-height: 42px;
+    margin: 10px 0 8px;
+}
+
+.status-atelier-modal-schema-list {
+    display: grid;
+    gap: 8px;
+}
+
+.status-atelier-modal-schema-row {
+    padding: 8px;
+    border: 1px solid color-mix(in srgb, var(--status-atelier-ui-accent) 30%, var(--SmartThemeBorderColor));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--status-atelier-ui-accent) 5%, transparent);
+}
+
+.status-atelier-modal-schema-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(110px, .7fr) auto;
+    gap: 7px;
+}
+
+.status-atelier-modal-schema-remove {
+    min-width: 54px;
+}
+
+.status-atelier-modal-schema-instruction {
+    margin-top: 7px;
+}
+
+.status-atelier-modal-schema-instruction > summary {
+    cursor: pointer;
+    font-size: .8em;
+    opacity: .78;
+}
+
+.status-atelier-modal-schema-instruction textarea {
+    min-height: 58px;
+    margin-top: 6px;
 }
 
 .status-atelier-modal-status-preview-wrap {
@@ -2411,13 +2481,21 @@ summary.status-atelier-section-heading {
         border-radius: 16px 16px 10px 10px;
     }
 
-    .status-atelier-dialog-header,
-    .status-atelier-dialog-workspaces {
+    .status-atelier-dialog-header {
         flex: 0 0 auto;
     }
 
     .status-atelier-modal-status-controls {
         grid-template-columns: 1fr;
+    }
+
+    .status-atelier-modal-schema-main {
+        grid-template-columns: minmax(0, 1fr) minmax(96px, .72fr) auto;
+    }
+
+    .status-atelier-modal-schema-remove {
+        min-width: 48px;
+        padding-inline: 7px;
     }
 
     .status-atelier-status-logos {

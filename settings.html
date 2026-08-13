@@ -152,12 +152,12 @@
                     </section>
 
                     <section class="status-atelier-setting-section status-atelier-quick-apply">
-                        <div class="status-atelier-section-heading"><div><h4>一键启用状态栏</h4><small>自动启用 AI 输出规则，并更新当前角色的局部正则。</small></div></div>
+                        <div class="status-atelier-section-heading"><div><h4>一键启用状态栏</h4><small>把 AI 输出规则写进当前角色世界书，并更新当前角色的局部正则。</small></div></div>
                         <div class="status-atelier-setting-actions">
                             <button id="status-atelier-install-scoped" type="button" class="menu_button status-atelier-primary-action">一键应用到当前角色</button>
                             <button id="status-atelier-test-ai" type="button" class="menu_button">先测试当前 AI</button>
                         </div>
-                        <p id="status-atelier-ai-test-status" class="status-atelier-ai-test-status" role="status" aria-live="polite">无需先测试；应用后，下一条回复会按当前结构生成状态栏。</p>
+                        <p id="status-atelier-ai-test-status" class="status-atelier-ai-test-status" role="status" aria-live="polite">无需先测试；一键应用会同时写入世界书输出规则和局部正则。</p>
                         <details class="status-atelier-advanced">
                             <summary>手动下载与全局安装</summary>
                             <div class="status-atelier-setting-actions">
@@ -214,7 +214,7 @@
 
                     <details class="status-atelier-setting-section status-atelier-advanced">
                         <summary>高级规则与备份</summary>
-                        <label class="checkbox_label"><input id="status-atelier-prompt-enabled" type="checkbox"><span>自动把 AI 输出规则接入当前聊天</span></label>
+                        <label class="checkbox_label"><input id="status-atelier-prompt-enabled" type="checkbox"><span>兼容模式：不用角色世界书时，由插件临时接入输出规则</span></label>
                         <div class="status-atelier-settings-grid">
                             <label>规则名称<input id="status-atelier-rule-name" class="text_pole" type="text" maxlength="80"></label>
                             <label>锁定的输出标签<input id="status-atelier-tag-name" class="text_pole" type="text" maxlength="60" readonly></label>
@@ -249,7 +249,7 @@
 
                 </main>
                 <aside class="status-atelier-preview-shell">
-                    <div class="status-atelier-preview-heading"><small>状态栏实时预览</small><span>示例值仅用于看排版</span></div>
+                    <div class="status-atelier-preview-heading"><small>AI 动态数值实时预览</small><span>数值由 AI 随剧情填写</span></div>
                     <div id="status-atelier-preview"></div>
                 </aside>
             </div>

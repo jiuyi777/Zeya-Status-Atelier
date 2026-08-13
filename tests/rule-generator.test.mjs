@@ -42,7 +42,11 @@ test('decorative logos are independent from appearance and survive into generate
     const automatic = normalizeRule({ ...RULE_PRESETS.universalClassical, theme: 'vinyl-mag', logoId: 'auto' });
     assert.equal(apple.glyph, '🍎');
     assert.equal(automatic.glyph, '♪');
-    assert.match(buildRegexScript({ ...RULE_PRESETS.universalClassical, logoId: 'leaf' }).replaceString, /"glyph":"🍃"/);
+    const generated = buildRegexScript({ ...RULE_PRESETS.universalClassical, logoId: 'leaf' }).replaceString;
+    assert.match(generated, /"glyph":"🍃"/);
+    assert.match(generated, /zrs-meter-marker/);
+    assert.match(generated, /marker\.style\.left=n\+'%'/);
+    assert.match(generated, /AI 动态数值位置/);
 });
 
 test('the workbench can reuse every exported theme instead of showing a color-only mockup', () => {
@@ -102,6 +106,8 @@ test('parses a complete AI status block and rejects incomplete output', () => {
     };
     const parsed = parseStatusOutput(input, '<zeya_relationship>\n[View1|图书馆|72]\n</zeya_relationship>');
     assert.deepEqual(parsed.pages[0].values, ['图书馆', '72']);
+    const fullWidth = parseStatusOutput(input, '<zeya_relationship>【View1｜钟楼｜86】</zeya_relationship>');
+    assert.deepEqual(fullWidth.pages[0].values, ['钟楼', '86']);
     assert.throws(() => parseStatusOutput(input, '<zeya_relationship>\n[View1|图书馆]\n</zeya_relationship>'), /缺少完整记录/);
 });
 
