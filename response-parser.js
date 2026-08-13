@@ -193,7 +193,7 @@ export function parseBatchSummaryResponse(value, requestedEntries) {
     const rows = Array.isArray(parsed?.entries) ? parsed.entries : [];
     let homeTitle = compactText(parsed?.homeTitle, 18);
     let homeSubtitle = compactText(parsed?.homeSubtitle, 30);
-    let workIntro = compactText(parsed?.workIntro, 110);
+    let workIntro = compactText(parsed?.workIntro, 160);
     const requestedIndexes = new Set(requestedEntries.map(entry => entry.index));
     const entries = new Map();
     rows.forEach(row => {
@@ -212,7 +212,7 @@ export function parseBatchSummaryResponse(value, requestedEntries) {
             || cleaned.match(/(?:作品简介|总简介)\s*[:：]\s*([^\n]+)/i)?.[1]?.trim()
             || '';
     }
-    workIntro = compactText(workIntro, 110);
+    workIntro = compactText(workIntro, 160);
     homeTitle = compactText(homeTitle, 18);
     homeSubtitle = compactText(homeSubtitle, 30);
     const addEntry = (rawIndex, rawTitle, rawRoute, rawSummary) => {

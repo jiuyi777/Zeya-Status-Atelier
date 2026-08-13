@@ -13,7 +13,7 @@ test('greeting modal exposes explicit fill-missing and regenerate-all actions', 
 });
 
 test('opening the greeting modal does not automatically call the model', () => {
-    const block = source.match(/function openGreetingModal\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    const block = source.match(/function openGreetingModal\(target = 'opening'\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(block, /renderGreetingList\(\)/);
     assert.doesNotMatch(block, /refreshGreetingModal/);
 });
@@ -28,7 +28,8 @@ test('simple editor exposes work intro and editable worldline descriptions witho
     const block = source.match(/function buildGreetingHomeQuickEditor\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(block, /panel\.open = true/);
     assert.match(block, /作品简介与线路介绍（可编辑）/);
-    assert.match(block, /世界线介绍/);
+    assert.match(block, /作品总简介（含世界观 \/ 背景）/);
+    assert.match(block, /世界线介绍（可选）/);
     assert.match(block, /线路介绍/);
     assert.match(block, /worldline\.description = descriptionField\.input\.value/);
 });
@@ -37,7 +38,7 @@ test('opening-home drafts switch by current character instead of leaking routes 
     assert.match(source, /openingProfiles: \{\}/);
     assert.match(source, /function switchOpeningProfileForCurrentCharacter\(\)/);
     assert.match(source, /switchOpeningHomeProfile\(\{/);
-    const openBlock = source.match(/function openGreetingModal\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    const openBlock = source.match(/function openGreetingModal\(target = 'opening'\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(openBlock, /switchOpeningProfileForCurrentCharacter\(\)/);
     const bindBlock = source.match(/function bindEvents\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(bindBlock, /events\.CHAT_CHANGED/);
@@ -99,8 +100,22 @@ test('status workspace exposes component, palette, real avatar and audio control
 test('status appearance controls update in place and preserve readable selected text', () => {
     assert.match(source, /styleHost\.children\.length !== STATUS_STYLE_PRESETS\.length/);
     assert.match(source, /paletteHost\.children\.length !== STATUS_PALETTE_PRESETS\.length/);
+    assert.match(source, /logoHost\.children\.length !== STATUS_LOGO_PRESETS\.length/);
     const paletteClick = source.match(/const statusPaletteButton = event\.target\.closest\('\[data-status-palette\]'\);([\s\S]*?)const statusStyleButton/)?.[1] || '';
     assert.doesNotMatch(paletteClick, /renderStatusDesignControls\(\)/);
+    assert.match(paletteClick, /refreshStatusPalettePreview\(\)/);
+    const styleClick = source.match(/const statusStyleButton = event\.target\.closest\('\[data-status-style\]'\);([\s\S]*?)field\('status-atelier-test-ai'\)/)?.[1] || '';
+    assert.match(styleClick, /refreshStatusAppearancePreview\(\)/);
+    assert.doesNotMatch(styleClick, /updatePreview\(\)/);
+    assert.match(source, /style\.textContent = STATUS_THEME_CSS/);
+    assert.match(source, /status-atelier-preview-card zrs-card/);
+    assert.match(source, /status-atelier-preview-field zrs-field/);
+    const appliesCheck = source.match(/function statusRegexAppliesToCurrentContext\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    assert.doesNotMatch(appliesCheck, /buildRegexScript/);
+    const resolvedInput = source.match(/function resolvedStatusInput\(source = settings\(\)\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    assert.doesNotMatch(resolvedInput, /clone\(source\)/);
+    assert.doesNotMatch(resolvedInput, /openingProfiles|openingNotes|openingHome/);
+    assert.match(resolvedInput, /media: \{ \.\.\.DEFAULT_SETTINGS\.media, \.\.\.\(source\.media \|\| \{\}\) \}/);
     const mediaRead = source.match(/function readStatusMediaControl\(control\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.doesNotMatch(mediaRead, /renderStatusDesignControls\(\)/);
     assert.match(styleSource, /status-atelier-template-card\.is-active :is\(strong, small\) \{\s*color: inherit;/);
@@ -113,11 +128,11 @@ test('mobile workbench keeps bottom sheets inside safe areas with touch-sized co
 });
 
 test('simple greeting flow keeps one primary footer action and moves secondary actions into more', () => {
-    const footer = source.match(/<footer class="status-atelier-dialog-footer">([\s\S]*?)<\/footer>/)?.[1] || '';
+    const footer = source.match(/<footer class="status-atelier-dialog-footer[^"]*">([\s\S]*?)<\/footer>/)?.[1] || '';
     assert.match(footer, /id="status-atelier-modal-apply"/);
     assert.equal((footer.match(/<button/g) || []).length, 1);
     assert.doesNotMatch(footer, /modal-copy-home|modal-download-regex|open-full-workbench|regenerate-all/);
-    assert.match(source, /class="status-atelier-greeting-more"/);
+    assert.match(source, /class="status-atelier-greeting-more status-atelier-opening-only"/);
     for (const id of ['status-atelier-regenerate-all', 'status-atelier-modal-copy-home', 'status-atelier-open-full-workbench']) {
         assert.match(source, new RegExp(`id="${id}"`));
     }
@@ -125,16 +140,43 @@ test('simple greeting flow keeps one primary footer action and moves secondary a
 
 test('mobile greeting modal offers a stateless copy-only overview and directly installs a status regex', () => {
     assert.match(source, /id="status-atelier-generate-overview"/);
-    assert.match(source, /buildOpeningOverview\(data\.entries, generated/);
+    assert.match(source, /mergeOpeningOverviewMetadata\(data\.entries, settings\(\)\.openingHome\.entries\)/);
+    assert.match(source, /buildOpeningOverview\(prepared, generated/);
+    assert.match(source, /includeHomepage: true/);
     const overviewBlock = source.match(/async function generateOpeningOverview\(button\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(overviewBlock, /syncBindings: false/);
-    assert.doesNotMatch(overviewBlock, /settings\(\)\.openingHome|saveSettingsNow|renderGreetingList/);
+    assert.match(overviewBlock, /overwrite: false/);
+    assert.doesNotMatch(overviewBlock, /settings\(\)\.openingHome\s*=|saveSettingsNow|renderGreetingList/);
     assert.doesNotMatch(source, /status-atelier-greeting-overview-preview/);
     assert.match(source, /id="status-atelier-modal-status-style"/);
+    assert.match(source, /id="status-atelier-modal-status-structure"/);
+    assert.match(source, /id="status-atelier-modal-status-preview"/);
+    assert.match(source, /id="status-atelier-modal-status-logos"/);
+    assert.match(source, /id="status-atelier-modal-status-palettes"/);
     assert.match(source, /id="status-atelier-modal-apply-status"/);
     const statusBlock = source.match(/async function applyModalStatus\(button\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(statusBlock, /await installRegex\('scoped'\)/);
+    assert.doesNotMatch(statusBlock, /title: style\.title|subtitle: style\.subtitle/);
+    assert.match(source, /logoId: stored\.logoId/);
     assert.doesNotMatch(source, /id="status-atelier-modal-download-regex"/);
+});
+
+test('wand exposes separate opening and status actions and quick theme choices are collapsible favorites first', () => {
+    assert.match(source, /直接制作开场白 · 九一/);
+    assert.match(source, /直接制作状态栏 · 九一/);
+    assert.match(source, /status-atelier-greeting-theme-favorites/);
+    assert.match(source, /展开未收藏主页外观/);
+    assert.match(source, /function openGreetingModal\(target = 'opening'\)/);
+    assert.match(source, /setGreetingModalWorkspace\(target\)/);
+    assert.match(source, /target === 'status'/);
+    assert.match(styleSource, /#status-atelier-modal\[data-workspace="status"\] \.status-atelier-opening-only/);
+});
+
+test('modal and palettes stay inside mobile viewport and palette library is collapsible', () => {
+    assert.match(settingsMarkup, /status-atelier-status-palette-library/);
+    assert.match(settingsMarkup, /24 套色卡（可折叠）/);
+    assert.match(styleSource, /max-height:\s*calc\(100dvh - 12px - env\(safe-area-inset-top\) - env\(safe-area-inset-bottom\)\)/);
+    assert.match(styleSource, /\.status-atelier-dialog-body\s*\{[\s\S]*?overflow-y:\s*auto;[\s\S]*?overscroll-behavior:\s*contain;/);
 });
 
 test('greeting flow includes in-place theme selection and live preview without another modal', () => {

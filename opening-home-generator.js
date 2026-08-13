@@ -132,12 +132,13 @@ function replacementHtml(input) {
     const data = normalizeOpeningHomeSettings(input);
     const runtimePayload = encodeURIComponent(JSON.stringify({ entries: data.entries, worldlines: data.worldlines })).replace(/'/g, '%27');
     const rootStyle = `--zoh-accent:${data.accent};--zoh-bg:${data.background};--zoh-text:${data.text};--zoh-secondary:${data.secondary};--zoh-card:${data.cardBackground};--zoh-intro:${data.introBackground};--zoh-intro-text:${contrastColor(data.introBackground)};--zoh-button:${data.buttonColor}`;
-    const staticWorldlines = data.worldlines.map(worldline => `<article class="zoh-worldline">
+    const describedWorldlines = data.worldlines.filter(worldline => worldline.description);
+    const staticWorldlines = describedWorldlines.map(worldline => `<article class="zoh-worldline">
         <h3>${escapeHtmlText(worldline.name)}</h3>
-        <p>${escapeHtmlText(worldline.description || '这条线路尚未填写介绍。')}</p>
+        <p>${escapeHtmlText(worldline.description)}</p>
       </article>`).join('\n      ');
     const worldlineSection = staticWorldlines ? `<section class="zoh-worldlines">
-      <div class="zoh-worldlines-head"><h2>世界线介绍</h2><span>${data.worldlines.length} 条线路</span></div>
+      <div class="zoh-worldlines-head"><h2>世界线介绍</h2><span>${describedWorldlines.length} 条线路</span></div>
       <div class="zoh-worldline-list">${staticWorldlines}</div>
     </section>` : '';
     const staticEntries = data.entries.map((entry, index) => `<article class="zoh-entry" data-opening-index="${index}">
