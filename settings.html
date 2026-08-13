@@ -61,10 +61,10 @@
                     <section class="status-atelier-setting-section">
                         <div class="status-atelier-section-heading"><div><h4>推荐色卡</h4><small>点击一组，同时更换主页、卡片、文字、简介与按钮颜色。</small></div></div>
                         <div id="status-atelier-palette-toolbar" class="status-atelier-palette-toolbar">
-                            <button type="button" data-opening-palette="navy"></button>
-                            <button type="button" data-opening-palette="sage"></button>
-                            <button type="button" data-opening-palette="berry"></button>
-                            <button type="button" data-opening-palette="aqua"></button>
+                            <button type="button" data-opening-palette="navy">奶油海军蓝</button>
+                            <button type="button" data-opening-palette="sage">秋杏染青</button>
+                            <button type="button" data-opening-palette="berry">燕麦莓果</button>
+                            <button type="button" data-opening-palette="aqua">雾灰水色</button>
                         </div>
                         <details class="status-atelier-advanced">
                             <summary>自定义单个颜色</summary>
@@ -115,13 +115,19 @@
                     </details>
 
                     <section class="status-atelier-setting-section">
-                        <div class="status-atelier-section-heading"><div><h4>保存开场白主页</h4><small>主开场白只需填写【主页】；正则负责显示与真实跳转。</small></div></div>
+                        <div class="status-atelier-section-heading"><div><h4>一键完成开场白主页</h4><small>自动读取、补全、更新当前角色局部正则，并把主开场白设为【主页】。</small></div></div>
                         <div class="status-atelier-setting-actions">
-                            <button id="status-atelier-opening-copy-block" type="button" class="menu_button">复制主页标记</button>
-                            <button id="status-atelier-opening-download-regex" type="button" class="menu_button">下载主页正则</button>
-                            <button id="status-atelier-opening-install-scoped" type="button" class="menu_button">应用到当前角色卡</button>
-                            <button id="status-atelier-opening-install-global" type="button" class="menu_button">应用到全局</button>
+                            <button id="status-atelier-opening-install-scoped" type="button" class="menu_button status-atelier-primary-action">一键生成并应用</button>
                         </div>
+                        <small>原主开场白会自动移入额外问候语，不会丢失；已有本插件主页正则会直接更新，不会重复新增。</small>
+                        <details class="status-atelier-advanced">
+                            <summary>手动导出与全局安装</summary>
+                            <div class="status-atelier-setting-actions">
+                                <button id="status-atelier-opening-copy-block" type="button" class="menu_button">复制主页标记</button>
+                                <button id="status-atelier-opening-download-regex" type="button" class="menu_button">下载主页正则</button>
+                                <button id="status-atelier-opening-install-global" type="button" class="menu_button">应用到全局</button>
+                            </div>
+                        </details>
                     </section>
                 </main>
                 <aside class="status-atelier-preview-shell">
@@ -145,21 +151,39 @@
                         <small>切换结构会载入一套真正不同的组件和字段；之后仍可逐项改名、改类型、增删和排序。</small>
                     </section>
 
-                    <section class="status-atelier-setting-section">
-                        <div class="status-atelier-section-heading">
-                            <div><h4 id="status-atelier-status-editor-title">状态栏字段</h4><small>改显示名称和类型；真实数值始终由 AI 填写。</small></div>
-                            <button id="status-atelier-add-field" type="button" class="menu_button">＋ 新增字段</button>
+                    <section class="status-atelier-setting-section status-atelier-quick-apply">
+                        <div class="status-atelier-section-heading"><div><h4>一键启用状态栏</h4><small>自动启用 AI 输出规则，并更新当前角色的局部正则。</small></div></div>
+                        <div class="status-atelier-setting-actions">
+                            <button id="status-atelier-install-scoped" type="button" class="menu_button status-atelier-primary-action">一键应用到当前角色</button>
+                            <button id="status-atelier-test-ai" type="button" class="menu_button">先测试当前 AI</button>
                         </div>
+                        <p id="status-atelier-ai-test-status" class="status-atelier-ai-test-status" role="status" aria-live="polite">无需先测试；应用后，下一条回复会按当前结构生成状态栏。</p>
+                        <details class="status-atelier-advanced">
+                            <summary>手动下载与全局安装</summary>
+                            <div class="status-atelier-setting-actions">
+                                <button id="status-atelier-copy-prompt" type="button" class="menu_button">复制 AI 输出规则</button>
+                                <button id="status-atelier-download-worldbook" type="button" class="menu_button">下载世界书</button>
+                                <button id="status-atelier-download-regex" type="button" class="menu_button">下载正则</button>
+                                <button id="status-atelier-install-global" type="button" class="menu_button">应用到全局</button>
+                            </div>
+                        </details>
+                    </section>
+
+                    <details class="status-atelier-setting-section status-atelier-collapsible">
+                        <summary class="status-atelier-section-heading">
+                            <div><h4 id="status-atelier-status-editor-title">状态栏字段</h4><small>改显示名称和类型；真实数值始终由 AI 填写。</small></div>
+                        </summary>
+                        <button id="status-atelier-add-field" type="button" class="menu_button">＋ 新增字段</button>
                         <div class="status-atelier-edit-legend">
                             <span><b>可修改</b> 名称、类型、填写要求和顺序</span>
                             <span><b>AI 填写</b> 好感度、生命值、地点、独白等动态内容</span>
                             <span><b>自动锁定</b> 字段 key、标签和捕获结构</span>
                         </div>
                         <div id="status-atelier-status-schema" class="status-atelier-schema-list"></div>
-                    </section>
+                    </details>
 
-                    <section class="status-atelier-setting-section">
-                        <div class="status-atelier-section-heading"><div><h4>更多外观与配色</h4><small>结构、50 套外观和色卡可独立组装，不再把不同名字套在同一骨架上。</small></div></div>
+                    <details class="status-atelier-setting-section status-atelier-collapsible">
+                        <summary class="status-atelier-section-heading"><div><h4>更多外观与配色</h4><small>结构、50 套外观和色卡可独立组装。</small></div></summary>
                         <div id="status-atelier-status-palettes" class="status-atelier-status-palettes" aria-label="状态栏色卡"></div>
                         <input id="status-atelier-palette" type="hidden">
                         <div class="status-atelier-settings-grid">
@@ -179,23 +203,6 @@
                                 <option value="victorian-news">46 维多利亚报纸</option><option value="naturalist-specimen">47 自然学家标本</option><option value="cafe-receipt">48 法式咖啡收据</option><option value="pop-ticket">49 波普电影票根</option><option value="porcelain-memory">50 青花关系纪念册</option>
                             </select></label>
                         </div>
-                    </section>
-
-                    <details class="status-atelier-setting-section status-atelier-collapsible" open>
-                        <summary class="status-atelier-section-heading"><div><h4>头像、配图与音乐</h4><small>媒体只负责展示；AI 填写文字和数值。音频不会自动播放。</small></div></summary>
-                        <div class="status-atelier-settings-grid">
-                            <label>头像来源<select id="status-atelier-avatar-source" class="text_pole">
-                                <option value="character">当前角色头像</option>
-                                <option value="user">当前 user 头像</option>
-                                <option value="url">直接 URL</option>
-                                <option value="none">不显示头像</option>
-                            </select></label>
-                            <label id="status-atelier-avatar-url-wrap" hidden>头像 URL<input id="status-atelier-avatar-url" class="text_pole" type="url" placeholder="https://example.com/avatar.png"></label>
-                            <label>主图 / 封面 URL<input id="status-atelier-image-url" class="text_pole" type="url" placeholder="可留空；适合拼贴、笔记或音乐封面"></label>
-                            <label>音乐 URL<input id="status-atelier-audio-url" class="text_pole" type="url" placeholder="https://example.com/audio.mp3"></label>
-                            <label>图片替代文字<input id="status-atelier-image-alt" class="text_pole" type="text" maxlength="80" placeholder="用于图片加载失败和无障碍阅读"></label>
-                        </div>
-                        <small>角色 / user 头像会在生成或应用正则时绑定当前酒馆里的真实头像；直接 URL 只接受 http(s) 或站内路径。</small>
                     </details>
 
                     <details class="status-atelier-setting-section status-atelier-advanced">
@@ -205,6 +212,22 @@
                             <label>规则名称<input id="status-atelier-rule-name" class="text_pole" type="text" maxlength="80"></label>
                             <label>锁定的输出标签<input id="status-atelier-tag-name" class="text_pole" type="text" maxlength="60" readonly></label>
                         </div>
+                        <details class="status-atelier-media-advanced">
+                            <summary>可选：头像、配图与音乐</summary>
+                            <div class="status-atelier-settings-grid">
+                                <label>头像来源<select id="status-atelier-avatar-source" class="text_pole">
+                                    <option value="character">当前角色头像</option>
+                                    <option value="user">当前 user 头像</option>
+                                    <option value="url">直接 URL</option>
+                                    <option value="none">不显示头像</option>
+                                </select></label>
+                                <label id="status-atelier-avatar-url-wrap" hidden>头像 URL<input id="status-atelier-avatar-url" class="text_pole" type="url" placeholder="https://example.com/avatar.png"></label>
+                                <label>主图 / 封面 URL<input id="status-atelier-image-url" class="text_pole" type="url" placeholder="可留空；适合拼贴、笔记或音乐封面"></label>
+                                <label>音乐 URL<input id="status-atelier-audio-url" class="text_pole" type="url" placeholder="https://example.com/audio.mp3"></label>
+                                <label>图片替代文字<input id="status-atelier-image-alt" class="text_pole" type="text" maxlength="80" placeholder="用于图片加载失败和无障碍阅读"></label>
+                            </div>
+                            <small>完全可选。角色 / user 头像会绑定酒馆中的真实头像；音频不会自动播放。</small>
+                        </details>
                         <input id="status-atelier-preset" type="hidden">
                         <textarea id="status-atelier-pages" hidden></textarea>
                         <textarea id="status-atelier-shared-fields" hidden></textarea>
@@ -217,18 +240,6 @@
                         </div>
                     </details>
 
-                    <section class="status-atelier-setting-section">
-                        <div class="status-atelier-section-heading"><div><h4>生成与应用</h4><small>世界书负责让 AI 输出，正则负责显示。</small></div></div>
-                        <div class="status-atelier-setting-actions">
-                            <button id="status-atelier-test-ai" type="button" class="menu_button">测试当前 AI 生成</button>
-                            <button id="status-atelier-copy-prompt" type="button" class="menu_button">复制 AI 输出规则</button>
-                            <button id="status-atelier-download-worldbook" type="button" class="menu_button">下载世界书</button>
-                            <button id="status-atelier-download-regex" type="button" class="menu_button">下载正则</button>
-                            <button id="status-atelier-install-scoped" type="button" class="menu_button">生成并应用到当前角色卡</button>
-                            <button id="status-atelier-install-global" type="button" class="menu_button">生成并应用到全局</button>
-                        </div>
-                        <p id="status-atelier-ai-test-status" class="status-atelier-ai-test-status" role="status" aria-live="polite">尚未测试；测试会使用酒馆当前模型、Key 与预设。</p>
-                    </section>
                 </main>
                 <aside class="status-atelier-preview-shell">
                     <div class="status-atelier-preview-heading"><small>状态栏实时预览</small><span>示例值仅用于看排版</span></div>

@@ -2,6 +2,15 @@ function clean(value) {
     return String(value ?? '').replace(/\s+/g, ' ').trim();
 }
 
+function clone(value) {
+    return JSON.parse(JSON.stringify(value));
+}
+
+const REUSABLE_HOME_KEYS = [
+    'ruleId', 'author', 'model', 'preset', 'theme', 'font', 'accent', 'background',
+    'cardBackground', 'text', 'secondary', 'introBackground', 'buttonColor',
+];
+
 export function keepOnlyOpenGreetingCard(openedCard, cards) {
     if (!openedCard?.open) return;
     for (const card of cards || []) {
@@ -45,4 +54,52 @@ export function mergeLocalGreetingEntries(entries, previousEntries) {
             worldlineId: clean(saved.worldlineId || ''),
         };
     });
+}
+
+export function planOpeningHomeCharacterUpdate(firstMessage, alternateGreetings, marker = '【主页】') {
+    const primary = String(firstMessage ?? '');
+    const targetMarker = String(marker || '【主页】').trim() || '【主页】';
+    const existing = Array.isArray(alternateGreetings) ? alternateGreetings.map(value => String(value ?? '')) : [];
+    const alreadyPrepared = primary.trim() === targetMarker;
+    const hasPrimaryCopy = existing.some(value => value.trim() === primary.trim());
+    const shouldPreservePrimary = !alreadyPrepared && Boolean(primary.trim()) && !hasPrimaryCopy;
+    return {
+        marker: targetMarker,
+        originalFirstMessage: primary,
+        alternateGreetings: shouldPreservePrimary ? [primary, ...existing] : existing,
+        movedPrimary: shouldPreservePrimary,
+        alreadyPrepared,
+    };
+}
+
+export function shouldReplaceCurrentChatGreeting(message, originalFirstMessage, marker = '【主页】') {
+    if (!message || message.is_user || message.is_system) return false;
+    const current = String(message.mes ?? '').trim();
+    const original = String(originalFirstMessage ?? '').trim();
+    const targetMarker = String(marker || '【主页】').trim();
+    return current === targetMarker || (Boolean(original) && current === original);
+}
+
+export function freshOpeningHomeForCharacter(defaultHome, previousHome = {}) {
+    const fresh = clone(defaultHome || {});
+    for (const key of REUSABLE_HOME_KEYS) {
+        if (previousHome?.[key] !== undefined) fresh[key] = clone(previousHome[key]);
+    }
+    fresh.title = '';
+    fresh.subtitle = '';
+    fresh.intro = '';
+    fresh.worldlines = [];
+    fresh.entries = [];
+    return fresh;
+}
+
+export function switchOpeningHomeProfile({ profiles, previousKey, nextKey, currentHome, defaultHome }) {
+    const nextProfiles = clone(profiles || {});
+    if (previousKey) nextProfiles[previousKey] = clone(currentHome || defaultHome || {});
+    const existing = nextKey && nextProfiles[nextKey];
+    const home = existing
+        ? clone(existing)
+        : freshOpeningHomeForCharacter(defaultHome, currentHome);
+    if (nextKey && !existing) nextProfiles[nextKey] = clone(home);
+    return { profiles: nextProfiles, home };
 }

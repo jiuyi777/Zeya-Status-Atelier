@@ -64,6 +64,18 @@ test('opening homepage keeps multiline recommendations and binds concrete worldb
     assert.equal(payload.entries[0].worldlineId, 'rain');
 });
 
+test('downloaded homepage visibly renders worldline names, descriptions and route labels', () => {
+    const script = buildOpeningHomeRegex({
+        ...OPENING_HOME_DEFAULTS,
+        worldlines: [{ id: 'sinner', name: '罪人线', description: '在审判与赦免之间作出选择。', entries: [] }],
+        entries: [{ number: '01', title: '银庭审判', route: '罪人线', summary: '审判已经开始。', target: 2, worldlineId: 'sinner' }],
+    });
+    assert.match(script.replaceString, /<h2>世界线介绍<\/h2>/);
+    assert.match(script.replaceString, /<h3>罪人线<\/h3>/);
+    assert.match(script.replaceString, /在审判与赦免之间作出选择。/);
+    assert.match(script.replaceString, /class="zoh-route">罪人线<\/span>/);
+});
+
 test('opening homepage normalizes editable theme, font, colors and jump targets', () => {
     const normalized = normalizeOpeningHomeSettings({
         theme: 'timeline',
@@ -88,6 +100,10 @@ test('opening homepage regex directly replaces one marker and keeps real navigat
     assert.match(script.replaceString, /selectedLine[\s\S]*?!selectedLine\.entries\.length\)return/);
     assert.match(script.replaceString, /enabled:value\.enabled/);
     assert.match(script.replaceString, /世界书线路绑定失败，继续切换开场白/);
+    assert.match(script.replaceString, /已切换“/);
+    assert.match(script.replaceString, /启用：/);
+    assert.match(script.replaceString, /关闭：/);
+    assert.match(script.replaceString, /class="zoh-switch-toast"/);
     assert.match(script.replaceString, /textContent/);
     assert.match(script.replaceString, /openings\.forEach/);
     assert.match(script.replaceString, /zoh-intro-markdown/);
@@ -222,10 +238,16 @@ test('downloaded opening regex embeds current edited content instead of an empty
 });
 
 test('embedded opening data cannot break out of static html or executable payload', () => {
-    const script = buildOpeningHomeRegex({ ...OPENING_HOME_DEFAULTS, intro: '```html\n</textarea><script>bad()</script>' });
+    const script = buildOpeningHomeRegex({
+        ...OPENING_HOME_DEFAULTS,
+        intro: '```html\n</textarea><script>bad()</script>',
+        worldlines: [{ id: "route'one", name: "审判'线", description: "不能打断'运行数据", entries: [] }],
+    });
     assert.doesNotMatch(script.replaceString, /<script>bad\(\)<\/script>/);
     assert.match(script.replaceString, /&lt;\/textarea&gt;/);
     assert.match(script.replaceString, /&lt;script&gt;bad\(\)&lt;\/script&gt;/);
     assert.doesNotThrow(() => embeddedPayload(script.replaceString));
+    const scriptSource = script.replaceString.match(/<script>\n([\s\S]*?)\n<\/script>/)?.[1];
+    assert.doesNotThrow(() => new Function(scriptSource));
     assert.equal((script.replaceString.match(/```/g) || []).length, 2);
 });

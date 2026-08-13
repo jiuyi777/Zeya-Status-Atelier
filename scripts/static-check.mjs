@@ -9,6 +9,8 @@ const requiredFiles = [
     'index.js',
     'entry-dialog.js',
     'greeting-workflow.js',
+    'opening-overview.js',
+    'worldbook-routes.js',
     'rule-generator.js',
     'opening-home-generator.js',
     'response-parser.js',
