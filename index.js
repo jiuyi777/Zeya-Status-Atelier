@@ -10,14 +10,14 @@ import {
     normalizeRule,
     parseStatusOutput,
     parseFields,
-} from './rule-generator.js?v=0.9.1';
+} from './rule-generator.js?v=0.9.2';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.9.1';
+} from './opening-home-generator.js?v=0.9.2';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -29,19 +29,19 @@ import {
     parseSummaryResponse,
     responseText,
     usableGreetingRecords,
-} from './response-parser.js?v=0.9.1';
+} from './response-parser.js?v=0.9.2';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.9.1';
+} from './worldbook-routes.js?v=0.9.2';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.9.1';
+} from './entry-dialog.js?v=0.9.2';
 import {
     greetingBindingSummary,
     keepOnlyOpenGreetingCard,
@@ -50,8 +50,8 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.9.1';
-import { buildOpeningOverview } from './opening-overview.js?v=0.9.1';
+} from './greeting-workflow.js?v=0.9.2';
+import { buildOpeningOverview } from './opening-overview.js?v=0.9.2';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -63,7 +63,7 @@ import { createOrEditCharacter, getThumbnailUrl, saveSettings, user_avatar } fro
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.9.1';
+const VERSION = '0.9.2';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 
 const HOME_TEMPLATES = Object.freeze([
@@ -82,6 +82,38 @@ const HOME_TEMPLATES = Object.freeze([
     {
         id: 'minimal', name: '05 构成编辑', description: '米白纸张 · 黑色网格 · 暗红索引',
         values: { theme: 'minimal', font: 'sans', background: '#f6f4ee', cardBackground: '#fffaf0', text: '#2c322f', accent: '#9b332c', secondary: '#a98763', introBackground: '#e8e0d0', buttonColor: '#171717' },
+    },
+    {
+        id: 'scroll', name: '06 古风卷轴', description: '宣纸卷轴 · 朱印题签 · 竖线笺格',
+        values: { theme: 'scroll', font: 'kai', background: '#ead9b8', cardBackground: '#f7edcf', text: '#3f2d20', accent: '#9a3e2f', secondary: '#6f7251', introBackground: '#dfc99e', buttonColor: '#8a3329' },
+    },
+    {
+        id: 'editorial', name: '07 美式杂志', description: '超大报头 · 不对称分栏 · 黑红索引',
+        values: { theme: 'editorial', font: 'sans', background: '#f4ead5', cardBackground: '#fffaf0', text: '#162c3a', accent: '#b32d25', secondary: '#d29b35', introBackground: '#e9d4ad', buttonColor: '#162c3a' },
+    },
+    {
+        id: 'collage', name: '08 拼贴手账', description: '胶带便签 · 错位卡片 · 手作纸纹',
+        values: { theme: 'collage', font: 'kai', background: '#efe6d7', cardBackground: '#fff8ea', text: '#31302c', accent: '#d55445', secondary: '#3d8190', introBackground: '#f2cc63', buttonColor: '#3d8190' },
+    },
+    {
+        id: 'dossier', name: '09 黑银档案', description: '机密卷宗 · 红色标签 · 工业编号',
+        values: { theme: 'dossier', font: 'mono', background: '#1b1d1f', cardBackground: '#292d31', text: '#f0eadf', accent: '#c6aa68', secondary: '#a9afb3', introBackground: '#34383d', buttonColor: '#8e2631' },
+    },
+    {
+        id: 'glass', name: '10 水色玻璃', description: '雾面玻璃 · 漂浮胶囊 · 柔光渐变',
+        values: { theme: 'glass', font: 'sans', background: '#dbecef', cardBackground: '#f1f8f7', text: '#24444d', accent: '#45999b', secondary: '#667ca0', introBackground: '#c8e2df', buttonColor: '#397f83' },
+    },
+    {
+        id: 'kinetic', name: '11 动态字构', description: '斜向超大字 · 蓝白动势 · 竖排侧题',
+        values: { theme: 'kinetic', font: 'sans', background: '#f1f1ef', cardBackground: '#ffffff', text: '#102c9e', accent: '#1438c2', secondary: '#7187df', introBackground: '#dce3ff', buttonColor: '#1438c2' },
+    },
+    {
+        id: 'noir-poster', name: '12 赤黑电影海报', description: '红黑切片 · 巨型编号 · 纵向标题',
+        values: { theme: 'noir-poster', font: 'sans', background: '#e72d24', cardBackground: '#161313', text: '#f3e9dd', accent: '#ff4035', secondary: '#a39a91', introBackground: '#302825', buttonColor: '#f3e9dd' },
+    },
+    {
+        id: 'negative-space', name: '13 留白构成', description: '大面积留白 · 错位黑块 · 建筑网格',
+        values: { theme: 'negative-space', font: 'sans', background: '#f7f7f4', cardBackground: '#1d1717', text: '#201b1b', accent: '#1d1717', secondary: '#a7a5a2', introBackground: '#d6d5d1', buttonColor: '#1d1717' },
     },
 ]);
 
@@ -379,6 +411,8 @@ function makeTemplateCard(template, type, selected, favorites) {
     const wrap = makeElement('div', 'status-atelier-template-wrap');
     const card = makeElement('button', 'status-atelier-template-card');
     card.type = 'button';
+    card.dataset.templateId = template.id;
+    card.dataset.templateType = type;
     card.setAttribute('aria-pressed', String(template.id === selected));
     card.append(makeElement('strong', '', template.name), makeElement('small', '', template.description));
     card.addEventListener('click', () => {
@@ -452,8 +486,27 @@ function renderStatusDesignControls() {
         });
     }
     if (structureSelect) structureSelect.value = settings().structure || 'profile';
+    const styleHost = field('status-atelier-status-styles');
+    if (styleHost && styleHost.children.length !== STATUS_STYLE_PRESETS.length) {
+        styleHost.replaceChildren();
+        STATUS_STYLE_PRESETS.forEach(style => {
+            const button = makeElement('button', 'status-atelier-status-style');
+            button.type = 'button';
+            button.dataset.statusStyle = style.id;
+            button.title = `${style.code} ${style.name}`;
+            button.append(
+                makeElement('b', '', style.code),
+                makeElement('span', 'status-atelier-status-style-glyph', style.glyph || '✦'),
+                makeElement('small', '', style.name),
+            );
+            styleHost.append(button);
+        });
+    }
+    styleHost?.querySelectorAll('[data-status-style]').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.statusStyle === settings().theme));
+    });
     const paletteHost = field('status-atelier-status-palettes');
-    if (paletteHost) {
+    if (paletteHost && paletteHost.children.length !== STATUS_PALETTE_PRESETS.length) {
         paletteHost.replaceChildren();
         STATUS_PALETTE_PRESETS.forEach(palette => {
             const button = makeElement('button', 'status-atelier-status-palette');
@@ -471,6 +524,9 @@ function renderStatusDesignControls() {
             paletteHost.append(button);
         });
     }
+    paletteHost?.querySelectorAll('[data-status-palette]').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.statusPalette === settings().paletteId));
+    });
     const media = settings().media || DEFAULT_SETTINGS.media;
     for (const [id, key] of Object.entries(STATUS_MEDIA_FIELDS)) {
         const control = field(id);
@@ -1210,6 +1266,11 @@ function readSettingsControl(control) {
         field('status-atelier-preset').value = 'custom';
     }
     updatePrompt();
+    if (key === 'theme') {
+        field('status-atelier-status-styles')?.querySelectorAll('[data-status-style]').forEach(button => {
+            button.setAttribute('aria-pressed', String(button.dataset.statusStyle === settings().theme));
+        });
+    }
     updatePreview();
     saveSettingsSoon();
 }
@@ -1220,7 +1281,10 @@ function readStatusMediaControl(control) {
     settings().media ??= clone(DEFAULT_SETTINGS.media);
     settings().media[key] = control.value;
     statusAiTestRecords = null;
-    renderStatusDesignControls();
+    if (key === 'avatarSource') {
+        const avatarUrlLabel = field('status-atelier-avatar-url-wrap');
+        if (avatarUrlLabel) avatarUrlLabel.hidden = control.value !== 'url';
+    }
     updatePreview();
     saveSettingsSoon();
 }
@@ -1962,6 +2026,7 @@ function renderGreetingThemeChooser() {
         const button = makeElement('button', 'menu_button status-atelier-greeting-theme-button');
         button.type = 'button';
         button.dataset.greetingTheme = template.id;
+        button.dataset.templateId = template.id;
         button.setAttribute('aria-pressed', String(settings().openingHome.theme === template.id));
         button.append(makeElement('strong', '', template.name), makeElement('small', '', template.description));
         button.addEventListener('click', () => {
@@ -2540,7 +2605,25 @@ async function addSettingsPanel() {
             if (!palette) return;
             settings().paletteId = palette.id;
             statusAiTestRecords = null;
-            renderStatusDesignControls();
+            field('status-atelier-status-palettes')?.querySelectorAll('[data-status-palette]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button === statusPaletteButton));
+            });
+            updatePreview();
+            saveSettingsSoon();
+            return;
+        }
+        const statusStyleButton = event.target.closest('[data-status-style]');
+        if (statusStyleButton) {
+            const style = STATUS_STYLE_PRESETS.find(item => item.id === statusStyleButton.dataset.statusStyle);
+            if (!style) return;
+            settings().theme = style.id;
+            field('status-atelier-theme').value = style.id;
+            settings().preset = 'custom';
+            field('status-atelier-preset').value = 'custom';
+            statusAiTestRecords = null;
+            field('status-atelier-status-styles')?.querySelectorAll('[data-status-style]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button === statusStyleButton));
+            });
             updatePreview();
             saveSettingsSoon();
         }

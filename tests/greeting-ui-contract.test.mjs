@@ -66,8 +66,15 @@ test('regenerate all preserves written work intro and only fills missing homepag
 test('home templates apply complete and visibly distinct visual settings', () => {
     assert.match(source, /Object\.assign\(settings\(\)\.openingHome, template\.values\)/);
     const backgrounds = [...source.matchAll(/values: \{ theme: '[^']+', font: '[^']+', background: '(#[0-9a-f]+)'/gi)].map(match => match[1]);
-    assert.equal(backgrounds.length, 4);
-    assert.equal(new Set(backgrounds).size, 4);
+    assert.equal(backgrounds.length, 12);
+    assert.equal(new Set(backgrounds).size, 12);
+    for (const theme of ['scroll', 'editorial', 'collage', 'dossier', 'glass', 'kinetic', 'noir-poster', 'negative-space']) {
+        assert.match(source, new RegExp(`id: '${theme}'`));
+        assert.match(styleSource, new RegExp(`status-atelier-opening-live\\[data-theme="${theme}"\\]`));
+    }
+    assert.match(styleSource, /writing-mode: vertical-rl/);
+    assert.match(styleSource, /grid-template-columns: 86px minmax\(0, 1fr\)/);
+    assert.match(styleSource, /LAYOUT \/ DESIGN/);
 });
 
 test('long mobile opening editors are collapsed independently', () => {
@@ -79,12 +86,25 @@ test('long mobile opening editors are collapsed independently', () => {
 });
 
 test('status workspace exposes component, palette, real avatar and audio controls', () => {
-    for (const id of ['status-atelier-structure', 'status-atelier-status-palettes', 'status-atelier-avatar-source', 'status-atelier-avatar-url', 'status-atelier-image-url', 'status-atelier-audio-url', 'status-atelier-test-ai']) {
+    for (const id of ['status-atelier-structure', 'status-atelier-status-styles', 'status-atelier-status-palettes', 'status-atelier-avatar-source', 'status-atelier-avatar-url', 'status-atelier-image-url', 'status-atelier-audio-url', 'status-atelier-test-ai']) {
         assert.match(settingsMarkup, new RegExp(`id="${id}"`));
     }
+    assert.match(settingsMarkup, /50 套外观/);
+    assert.match(settingsMarkup, /24 套色卡/);
     assert.match(source, /thumbnail\('avatar', avatar\)/);
     assert.match(source, /thumbnail\('persona', user_avatar\)/);
     assert.match(source, /parseStatusOutput\(input, response\)/);
+});
+
+test('status appearance controls update in place and preserve readable selected text', () => {
+    assert.match(source, /styleHost\.children\.length !== STATUS_STYLE_PRESETS\.length/);
+    assert.match(source, /paletteHost\.children\.length !== STATUS_PALETTE_PRESETS\.length/);
+    const paletteClick = source.match(/const statusPaletteButton = event\.target\.closest\('\[data-status-palette\]'\);([\s\S]*?)const statusStyleButton/)?.[1] || '';
+    assert.doesNotMatch(paletteClick, /renderStatusDesignControls\(\)/);
+    const mediaRead = source.match(/function readStatusMediaControl\(control\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    assert.doesNotMatch(mediaRead, /renderStatusDesignControls\(\)/);
+    assert.match(styleSource, /status-atelier-template-card\.is-active :is\(strong, small\) \{\s*color: inherit;/);
+    assert.match(styleSource, /data-theme="vinyl-mag"\][\s\S]*?status-atelier-rule-preview-header::before/);
 });
 
 test('mobile workbench keeps bottom sheets inside safe areas with touch-sized controls', () => {

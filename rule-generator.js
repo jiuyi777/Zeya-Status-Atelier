@@ -202,6 +202,18 @@ export const STATUS_PALETTE_PRESETS = Object.freeze([
     { id: 'lavender-glass', name: '薰衣草玻璃', accent: '#8068d8', background: '#c8c3ef', card: '#f3f0ff', text: '#312c55', muted: '#716a91' },
     { id: 'jade-gold', name: '翡翠描金', accent: '#c9a54c', background: '#0b2f29', card: '#123f36', text: '#fff1cf', muted: '#b7c7b5' },
     { id: 'sakura-paper', name: '樱纸青黛', accent: '#bd6981', background: '#efdae0', card: '#fff8f3', text: '#443a44', muted: '#687b83' },
+    { id: 'imperial-red', name: '宫墙朱砂', accent: '#b52d27', background: '#d9bd91', card: '#f5ead2', text: '#3f251c', muted: '#79604f' },
+    { id: 'cornflower', name: '矢车菊蓝', accent: '#315fc4', background: '#c7d8f2', card: '#f5f8ff', text: '#1d315c', muted: '#61749a' },
+    { id: 'apricot-lilac', name: '杏桃丁香', accent: '#bb6d72', background: '#ead0bf', card: '#fff2e8', text: '#50363b', muted: '#8e7185' },
+    { id: 'moss-copper', name: '苔藓铜绿', accent: '#b16f52', background: '#aab094', card: '#eef0dc', text: '#344035', muted: '#6d735f' },
+    { id: 'cobalt-lime', name: '钴蓝酸橙', accent: '#3151d5', background: '#cdea49', card: '#f7ffd9', text: '#121c4d', muted: '#526b77' },
+    { id: 'rust-cream', name: '铁锈奶油', accent: '#b74f32', background: '#cc9b69', card: '#fff0d4', text: '#4a2b20', muted: '#7d614e' },
+    { id: 'coffee-mint', name: '咖啡薄荷', accent: '#5c8878', background: '#b9c9b9', card: '#f3ebd9', text: '#3b3029', muted: '#7a685b' },
+    { id: 'plum-gold', name: '梅紫鎏金', accent: '#c5a04a', background: '#4c294d', card: '#6a3b62', text: '#fff0d0', muted: '#d0aebd' },
+    { id: 'mint-coral', name: '薄荷珊瑚', accent: '#ef786b', background: '#a9d9cf', card: '#f5fff6', text: '#294a47', muted: '#648b83' },
+    { id: 'ice-blue', name: '冰川浅蓝', accent: '#3f8fb2', background: '#c9e6ef', card: '#f5fcff', text: '#244653', muted: '#668593' },
+    { id: 'lemon-pink', name: '柠檬樱粉', accent: '#df6e93', background: '#f3df77', card: '#fff9dc', text: '#4a3341', muted: '#8b6f68' },
+    { id: 'oxblood-gray', name: '牛血石灰', accent: '#8e2631', background: '#a7a39d', card: '#ece8df', text: '#2f2927', muted: '#706865' },
 ]);
 
 const STATUS_STRUCTURE_IDS = new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id));

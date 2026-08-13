@@ -89,6 +89,24 @@ test('opening homepage normalizes editable theme, font, colors and jump targets'
     assert.equal(normalized.entries[0].target, 1);
 });
 
+test('all twelve homepage templates produce genuinely themed exported HTML', () => {
+    const themes = ['classical', 'newspaper', 'timeline', 'minimal', 'scroll', 'editorial', 'collage', 'dossier', 'glass', 'kinetic', 'noir-poster', 'negative-space'];
+    for (const theme of themes) {
+        const script = buildOpeningHomeRegex({ ...OPENING_HOME_DEFAULTS, theme });
+        assert.match(script.replaceString, new RegExp(`data-theme="${theme}"`));
+        if (theme !== 'classical') assert.match(script.replaceString, new RegExp(`zoh-root\\[data-theme="${theme}"\\]`));
+    }
+    const kinetic = buildOpeningHomeRegex({ ...OPENING_HOME_DEFAULTS, theme: 'kinetic' }).replaceString;
+    const noir = buildOpeningHomeRegex({ ...OPENING_HOME_DEFAULTS, theme: 'noir-poster' }).replaceString;
+    const negativeSpace = buildOpeningHomeRegex({ ...OPENING_HOME_DEFAULTS, theme: 'negative-space' }).replaceString;
+    assert.match(kinetic, /writing-mode:vertical-rl/);
+    assert.match(kinetic, /transform:rotate\(-7deg\)/);
+    assert.match(noir, /grid-template-columns:112px minmax\(0,1fr\)/);
+    assert.match(noir, /background:linear-gradient\(148deg/);
+    assert.match(negativeSpace, /grid-template-columns:1fr 1fr minmax\(150px,.65fr\)/);
+    assert.match(negativeSpace, /content:"LAYOUT \/ DESIGN"/);
+});
+
 test('opening homepage regex directly replaces one marker and keeps real navigation APIs', () => {
     const script = buildOpeningHomeRegex(OPENING_HOME_DEFAULTS);
     assert.equal(script.findRegex, '/【主页】/s');
