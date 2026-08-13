@@ -1,6 +1,7 @@
 import {
     RULE_PRESETS,
     STATUS_PALETTE_PRESETS,
+    STATUS_STYLE_PRESETS,
     STATUS_STRUCTURE_PRESETS,
     buildAiInstruction,
     buildRegexScript,
@@ -9,14 +10,14 @@ import {
     normalizeRule,
     parseStatusOutput,
     parseFields,
-} from './rule-generator.js?v=0.9.0';
+} from './rule-generator.js?v=0.9.2';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.9.0';
+} from './opening-home-generator.js?v=0.9.2';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -28,24 +29,29 @@ import {
     parseSummaryResponse,
     responseText,
     usableGreetingRecords,
-} from './response-parser.js?v=0.9.0';
+} from './response-parser.js?v=0.9.2';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.9.0';
+} from './worldbook-routes.js?v=0.9.2';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.9.0';
+} from './entry-dialog.js?v=0.9.2';
 import {
     greetingBindingSummary,
     keepOnlyOpenGreetingCard,
     mergeLocalGreetingEntries,
-} from './greeting-workflow.js?v=0.9.0';
+    planOpeningHomeCharacterUpdate,
+    shouldReplaceCurrentChatGreeting,
+    freshOpeningHomeForCharacter,
+    switchOpeningHomeProfile,
+} from './greeting-workflow.js?v=0.9.2';
+import { buildOpeningOverview } from './opening-overview.js?v=0.9.2';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -53,11 +59,11 @@ import {
     saveScriptsByType,
 } from '../../regex/engine.js';
 import { loadWorldInfo, world_names } from '../../../world-info.js';
-import { getThumbnailUrl, saveSettings, user_avatar } from '../../../../script.js';
+import { createOrEditCharacter, getThumbnailUrl, saveSettings, user_avatar } from '../../../../script.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.9.0';
+const VERSION = '0.9.2';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 
 const HOME_TEMPLATES = Object.freeze([
@@ -76,6 +82,38 @@ const HOME_TEMPLATES = Object.freeze([
     {
         id: 'minimal', name: '05 构成编辑', description: '米白纸张 · 黑色网格 · 暗红索引',
         values: { theme: 'minimal', font: 'sans', background: '#f6f4ee', cardBackground: '#fffaf0', text: '#2c322f', accent: '#9b332c', secondary: '#a98763', introBackground: '#e8e0d0', buttonColor: '#171717' },
+    },
+    {
+        id: 'scroll', name: '06 古风卷轴', description: '宣纸卷轴 · 朱印题签 · 竖线笺格',
+        values: { theme: 'scroll', font: 'kai', background: '#ead9b8', cardBackground: '#f7edcf', text: '#3f2d20', accent: '#9a3e2f', secondary: '#6f7251', introBackground: '#dfc99e', buttonColor: '#8a3329' },
+    },
+    {
+        id: 'editorial', name: '07 美式杂志', description: '超大报头 · 不对称分栏 · 黑红索引',
+        values: { theme: 'editorial', font: 'sans', background: '#f4ead5', cardBackground: '#fffaf0', text: '#162c3a', accent: '#b32d25', secondary: '#d29b35', introBackground: '#e9d4ad', buttonColor: '#162c3a' },
+    },
+    {
+        id: 'collage', name: '08 拼贴手账', description: '胶带便签 · 错位卡片 · 手作纸纹',
+        values: { theme: 'collage', font: 'kai', background: '#efe6d7', cardBackground: '#fff8ea', text: '#31302c', accent: '#d55445', secondary: '#3d8190', introBackground: '#f2cc63', buttonColor: '#3d8190' },
+    },
+    {
+        id: 'dossier', name: '09 黑银档案', description: '机密卷宗 · 红色标签 · 工业编号',
+        values: { theme: 'dossier', font: 'mono', background: '#1b1d1f', cardBackground: '#292d31', text: '#f0eadf', accent: '#c6aa68', secondary: '#a9afb3', introBackground: '#34383d', buttonColor: '#8e2631' },
+    },
+    {
+        id: 'glass', name: '10 水色玻璃', description: '雾面玻璃 · 漂浮胶囊 · 柔光渐变',
+        values: { theme: 'glass', font: 'sans', background: '#dbecef', cardBackground: '#f1f8f7', text: '#24444d', accent: '#45999b', secondary: '#667ca0', introBackground: '#c8e2df', buttonColor: '#397f83' },
+    },
+    {
+        id: 'kinetic', name: '11 动态字构', description: '斜向超大字 · 蓝白动势 · 竖排侧题',
+        values: { theme: 'kinetic', font: 'sans', background: '#f1f1ef', cardBackground: '#ffffff', text: '#102c9e', accent: '#1438c2', secondary: '#7187df', introBackground: '#dce3ff', buttonColor: '#1438c2' },
+    },
+    {
+        id: 'noir-poster', name: '12 赤黑电影海报', description: '红黑切片 · 巨型编号 · 纵向标题',
+        values: { theme: 'noir-poster', font: 'sans', background: '#e72d24', cardBackground: '#161313', text: '#f3e9dd', accent: '#ff4035', secondary: '#a39a91', introBackground: '#302825', buttonColor: '#f3e9dd' },
+    },
+    {
+        id: 'negative-space', name: '13 留白构成', description: '大面积留白 · 错位黑块 · 建筑网格',
+        values: { theme: 'negative-space', font: 'sans', background: '#f7f7f4', cardBackground: '#1d1717', text: '#201b1b', accent: '#1d1717', secondary: '#a7a5a2', introBackground: '#d6d5d1', buttonColor: '#1d1717' },
     },
 ]);
 
@@ -109,6 +147,8 @@ const DEFAULT_SETTINGS = Object.freeze({
     paletteId: 'cream-navy',
     media: { avatarSource: 'character', avatarUrl: '', imageUrl: '', audioUrl: '', imageAlt: '状态栏配图' },
     openingNotes: {},
+    openingProfiles: {},
+    openingProfilesMigrated: false,
     openingReadStatus: '',
     openingReadState: '',
     openingHome: OPENING_HOME_DEFAULTS,
@@ -176,6 +216,7 @@ let entryDialogDraftSelections = new Map();
 let greetingBindingPromise = null;
 let openingReadToast = null;
 let statusAiTestRecords = null;
+let activeOpeningProfileKey = '';
 
 function context() {
     return globalThis.SillyTavern?.getContext?.();
@@ -219,6 +260,15 @@ function settings() {
     }
     if (!stored.openingNotes || typeof stored.openingNotes !== 'object' || Array.isArray(stored.openingNotes)) {
         stored.openingNotes = {};
+    }
+    if (!stored.openingProfiles || typeof stored.openingProfiles !== 'object' || Array.isArray(stored.openingProfiles)) {
+        stored.openingProfiles = {};
+    }
+    if (stored.openingProfilesMigrated !== true) {
+        stored.openingLegacyBackup = clone(stored.openingHome || OPENING_HOME_DEFAULTS);
+        stored.openingHome = freshOpeningHomeForCharacter(OPENING_HOME_DEFAULTS, stored.openingHome);
+        stored.openingProfiles = {};
+        stored.openingProfilesMigrated = true;
     }
     if (!stored.openingSummary || typeof stored.openingSummary !== 'object' || Array.isArray(stored.openingSummary)) {
         stored.openingSummary = clone(DEFAULT_SETTINGS.openingSummary);
@@ -264,11 +314,13 @@ function settings() {
 }
 
 function saveSettingsSoon() {
+    snapshotCurrentOpeningProfile();
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => context()?.saveSettingsDebounced?.(), 120);
 }
 
 async function saveSettingsNow() {
+    snapshotCurrentOpeningProfile();
     clearTimeout(saveTimer);
     saveTimer = null;
     await saveSettings();
@@ -359,6 +411,8 @@ function makeTemplateCard(template, type, selected, favorites) {
     const wrap = makeElement('div', 'status-atelier-template-wrap');
     const card = makeElement('button', 'status-atelier-template-card');
     card.type = 'button';
+    card.dataset.templateId = template.id;
+    card.dataset.templateType = type;
     card.setAttribute('aria-pressed', String(template.id === selected));
     card.append(makeElement('strong', '', template.name), makeElement('small', '', template.description));
     card.addEventListener('click', () => {
@@ -432,8 +486,27 @@ function renderStatusDesignControls() {
         });
     }
     if (structureSelect) structureSelect.value = settings().structure || 'profile';
+    const styleHost = field('status-atelier-status-styles');
+    if (styleHost && styleHost.children.length !== STATUS_STYLE_PRESETS.length) {
+        styleHost.replaceChildren();
+        STATUS_STYLE_PRESETS.forEach(style => {
+            const button = makeElement('button', 'status-atelier-status-style');
+            button.type = 'button';
+            button.dataset.statusStyle = style.id;
+            button.title = `${style.code} ${style.name}`;
+            button.append(
+                makeElement('b', '', style.code),
+                makeElement('span', 'status-atelier-status-style-glyph', style.glyph || '✦'),
+                makeElement('small', '', style.name),
+            );
+            styleHost.append(button);
+        });
+    }
+    styleHost?.querySelectorAll('[data-status-style]').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.statusStyle === settings().theme));
+    });
     const paletteHost = field('status-atelier-status-palettes');
-    if (paletteHost) {
+    if (paletteHost && paletteHost.children.length !== STATUS_PALETTE_PRESETS.length) {
         paletteHost.replaceChildren();
         STATUS_PALETTE_PRESETS.forEach(palette => {
             const button = makeElement('button', 'status-atelier-status-palette');
@@ -451,6 +524,9 @@ function renderStatusDesignControls() {
             paletteHost.append(button);
         });
     }
+    paletteHost?.querySelectorAll('[data-status-palette]').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.statusPalette === settings().paletteId));
+    });
     const media = settings().media || DEFAULT_SETTINGS.media;
     for (const [id, key] of Object.entries(STATUS_MEDIA_FIELDS)) {
         const control = field(id);
@@ -567,13 +643,25 @@ function updateSummarySourceVisibility() {
     if (host) host.hidden = settings().openingSummary.source !== 'extra';
 }
 
+function statusRegexAppliesToCurrentContext() {
+    const target = buildRegexScript(resolvedStatusInput());
+    const matches = script => script?.id === target.id || script?.scriptName === target.scriptName;
+    try {
+        return getScriptsByType(SCRIPT_TYPES.SCOPED).some(matches)
+            || getScriptsByType(SCRIPT_TYPES.GLOBAL).some(matches);
+    } catch (error) {
+        console.warn(`[${MODULE_NAME}] 无法确认当前角色的状态栏正则`, error);
+        return false;
+    }
+}
+
 function updatePrompt() {
     const ctx = context();
     if (!ctx?.setExtensionPrompt) return;
     const stored = settings();
     ctx.setExtensionPrompt(
         PROMPT_KEY,
-        stored.promptEnabled ? buildAiInstruction(stored) : '',
+        stored.promptEnabled && statusRegexAppliesToCurrentContext() ? buildAiInstruction(stored) : '',
         1,
         0,
         false,
@@ -1051,6 +1139,17 @@ function confirmEntryDialog() {
     saveSettingsSoon();
 }
 
+function updateOpeningWorldlineName(worldline, nextName) {
+    const previousName = String(worldline.name || '');
+    worldline.name = nextName;
+    settings().openingHome.entries.forEach(entry => {
+        if (entry.worldlineId === worldline.id || entry.route === previousName) {
+            entry.route = nextName;
+            entry.worldlineId = worldline.id;
+        }
+    });
+}
+
 function renderOpeningWorldlines() {
     const host = field('status-atelier-opening-worldline-list');
     if (!host) return;
@@ -1082,7 +1181,7 @@ function renderOpeningWorldlines() {
         pick.addEventListener('click', () => openEntryDialog(index).catch(error => notify('error', error?.message || '读取世界书条目失败')));
         remove.addEventListener('click', () => { lines.splice(index, 1); renderOpeningWorldlines(); saveSettingsSoon(); });
         actions.append(pick, remove);
-        name.addEventListener('input', () => { worldline.name = name.value; renderOpeningHomeEntries(); saveSettingsSoon(); });
+        name.addEventListener('input', () => { updateOpeningWorldlineName(worldline, name.value); renderOpeningHomeEntries(); saveSettingsSoon(); });
         description.addEventListener('input', () => { worldline.description = description.value; updateOpeningHomePreview(); saveSettingsSoon(); });
         main.append(name, description, actions);
         const chips = makeElement('div', 'status-atelier-opening-worldline-chips');
@@ -1167,6 +1266,11 @@ function readSettingsControl(control) {
         field('status-atelier-preset').value = 'custom';
     }
     updatePrompt();
+    if (key === 'theme') {
+        field('status-atelier-status-styles')?.querySelectorAll('[data-status-style]').forEach(button => {
+            button.setAttribute('aria-pressed', String(button.dataset.statusStyle === settings().theme));
+        });
+    }
     updatePreview();
     saveSettingsSoon();
 }
@@ -1177,7 +1281,10 @@ function readStatusMediaControl(control) {
     settings().media ??= clone(DEFAULT_SETTINGS.media);
     settings().media[key] = control.value;
     statusAiTestRecords = null;
-    renderStatusDesignControls();
+    if (key === 'avatarSource') {
+        const avatarUrlLabel = field('status-atelier-avatar-url-wrap');
+        if (avatarUrlLabel) avatarUrlLabel.hidden = control.value !== 'url';
+    }
     updatePreview();
     saveSettingsSoon();
 }
@@ -1334,7 +1441,7 @@ function downloadJson(fileName, data) {
 }
 
 function safeFileName(value) {
-    return String(value || 'zeya-status').replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').trim() || 'zeya-status';
+    return String(value || 'jiuyi-status').replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').trim() || 'jiuyi-status';
 }
 
 function downloadRegex() {
@@ -1369,6 +1476,13 @@ async function installGeneratedRegex(script, requestedScope = settings().install
 
 async function installRegex(scope) {
     await installGeneratedRegex(buildRegexScript(resolvedStatusInput()), scope);
+    settings().promptEnabled = true;
+    const promptToggle = field('status-atelier-prompt-enabled');
+    if (promptToggle) promptToggle.checked = true;
+    updatePrompt();
+    notify('success', scope === 'scoped'
+        ? '当前角色的状态栏已启用；下一条 AI 回复会按当前结构输出'
+        : '全局状态栏已启用；下一条 AI 回复会按当前结构输出');
 }
 
 async function installOpeningHomeRegex(scope) {
@@ -1391,19 +1505,29 @@ async function runInstallButton(button, installer, scope, errorMessage) {
 function exportProfile() {
     const exported = clone(settings());
     delete exported.openingNotes;
+    delete exported.openingProfiles;
+    delete exported.openingLegacyBackup;
     if (exported.openingSummary) delete exported.openingSummary.apiKey;
-    downloadJson('zeya-regex-status-profile.json', { format: 'zeya-regex-status-profile', version: 2, settings: exported });
+    downloadJson('jiuyi-regex-status-profile.json', { format: 'jiuyi-regex-status-profile', version: 2, settings: exported });
 }
 
 async function importProfile(fileToImport) {
     const data = JSON.parse(await fileToImport.text());
-    if (data?.format !== 'zeya-regex-status-profile' || !data.settings || typeof data.settings !== 'object') {
+    if (!['jiuyi-regex-status-profile', 'zeya-regex-status-profile'].includes(data?.format) || !data.settings || typeof data.settings !== 'object') {
         throw new Error('这不是九一正则状态工坊配置');
     }
     const notes = settings().openingNotes;
+    const profiles = settings().openingProfiles;
+    const legacyBackup = settings().openingLegacyBackup;
     const apiKey = settings().openingSummary?.apiKey || '';
     const stored = settings();
-    Object.assign(stored, clone(DEFAULT_SETTINGS), data.settings, { openingNotes: notes, preset: 'custom' });
+    Object.assign(stored, clone(DEFAULT_SETTINGS), data.settings, {
+        openingNotes: notes,
+        openingProfiles: profiles,
+        openingLegacyBackup: legacyBackup,
+        openingProfilesMigrated: true,
+        preset: 'custom',
+    });
     stored.openingHome = normalizeOpeningHomeSettings(stored.openingHome);
     stored.openingHomeSchemaVersion = OPENING_HOME_SCHEMA_VERSION;
     stored.openingSummary ??= clone(DEFAULT_SETTINGS.openingSummary);
@@ -1421,6 +1545,31 @@ function characterStorageKey(ctx = context()) {
     return `character:${character.avatar || character.name || ctx.characterId}`;
 }
 
+function snapshotCurrentOpeningProfile() {
+    if (!activeOpeningProfileKey) return;
+    const stored = settings();
+    stored.openingProfiles[activeOpeningProfileKey] = clone(stored.openingHome);
+}
+
+function switchOpeningProfileForCurrentCharacter() {
+    const nextKey = characterStorageKey();
+    if (nextKey === activeOpeningProfileKey) return false;
+    const stored = settings();
+    const switched = switchOpeningHomeProfile({
+        profiles: stored.openingProfiles,
+        previousKey: activeOpeningProfileKey,
+        nextKey,
+        currentHome: stored.openingHome,
+        defaultHome: OPENING_HOME_DEFAULTS,
+    });
+    stored.openingProfiles = switched.profiles;
+    stored.openingHome = switched.home;
+    stored.openingReadStatus = nextKey ? '已切换到当前角色的独立主页草稿。' : '请先打开一个单人角色聊天。';
+    stored.openingReadState = 'idle';
+    activeOpeningProfileKey = nextKey;
+    return true;
+}
+
 function parseGreetingMetadata(raw) {
     const source = String(raw || '');
     const title = source.match(/<!--\s*(?:title|标题)\s*[:：]\s*([\s\S]*?)-->/i)?.[1]?.trim() || '';
@@ -1429,18 +1578,20 @@ function parseGreetingMetadata(raw) {
     return { title, route, summary };
 }
 
-function alternateGreetingData() {
+function alternateGreetingData(rawEntriesOverride = null) {
     const ctx = context();
     const key = characterStorageKey(ctx);
     const character = ctx?.characters?.[ctx?.characterId];
     const data = character?.data || character || {};
-    const rawEntries = [
-        data?.alternate_greetings,
-        data?.data?.alternate_greetings,
-        character?.alternate_greetings,
-        ctx?.character?.data?.alternate_greetings,
-        ctx?.character?.alternate_greetings,
-    ].find(Array.isArray) || [];
+    const rawEntries = Array.isArray(rawEntriesOverride)
+        ? rawEntriesOverride
+        : [
+            data?.alternate_greetings,
+            data?.data?.alternate_greetings,
+            character?.alternate_greetings,
+            ctx?.character?.data?.alternate_greetings,
+            ctx?.character?.alternate_greetings,
+        ].find(Array.isArray) || [];
     const notes = settings().openingNotes[key] || {};
     const entries = usableGreetingRecords(rawEntries)
         .map(({ raw, sourceIndex, preview }, index) => {
@@ -1459,6 +1610,79 @@ function alternateGreetingData() {
             };
         });
     return { key, entries };
+}
+
+function currentOpeningHomeCharacterPlan() {
+    switchOpeningProfileForCurrentCharacter();
+    const ctx = context();
+    if (!ctx || ctx.groupId || ctx.characterId === undefined || ctx.characterId === null) {
+        throw new Error('请先打开一个单人角色聊天');
+    }
+    const character = ctx.characters?.[ctx.characterId];
+    if (!character) throw new Error('没有找到当前角色卡');
+    const data = character.data || character;
+    const alternateGreetings = [
+        data?.alternate_greetings,
+        character?.alternate_greetings,
+    ].find(Array.isArray) || [];
+    return planOpeningHomeCharacterUpdate(
+        character.first_mes ?? data?.first_mes ?? '',
+        alternateGreetings,
+        buildOpeningHomeBlock(settings().openingHome),
+    );
+}
+
+async function applyOpeningHomeCharacterPlan(plan) {
+    const ctx = context();
+    const characterId = ctx?.characterId;
+    const character = ctx?.characters?.[characterId];
+    if (!ctx || ctx.groupId || characterId === undefined || characterId === null || !character) {
+        throw new Error('请先打开一个单人角色聊天');
+    }
+    const form = document.querySelector('#form_create');
+    const firstMessageField = document.querySelector('#firstmessage_textarea');
+    if (!form || form.getAttribute('actiontype') !== 'editcharacter' || !firstMessageField) {
+        throw new Error('当前角色编辑器尚未准备好，请重新打开角色聊天后再试');
+    }
+    const alternateControl = document.querySelector('.open_alternate_greetings');
+    const jq = globalThis.jQuery || globalThis.$;
+    const boundCharacterId = jq && alternateControl ? jq(alternateControl).data('chid') : alternateControl?.dataset?.chid;
+    if (String(boundCharacterId) !== String(characterId)) {
+        throw new Error('角色编辑器与当前聊天不是同一角色，请重新打开当前角色后再试');
+    }
+
+    character.data ??= {};
+    const originalAlternateGreetings = Array.isArray(character.data.alternate_greetings) ? [...character.data.alternate_greetings] : [];
+    const hadLegacyAlternateGreetings = Object.hasOwn(character, 'alternate_greetings');
+    const originalLegacyAlternateGreetings = hadLegacyAlternateGreetings && Array.isArray(character.alternate_greetings)
+        ? [...character.alternate_greetings]
+        : [];
+    character.data.alternate_greetings = [...plan.alternateGreetings];
+    if (hadLegacyAlternateGreetings) character.alternate_greetings = [...plan.alternateGreetings];
+    firstMessageField.value = plan.marker;
+
+    await createOrEditCharacter(new Event('submit'));
+    const updatedCharacter = context()?.characters?.[characterId];
+    const savedFirstMessage = String(updatedCharacter?.first_mes ?? updatedCharacter?.data?.first_mes ?? '').trim();
+    const savedAlternateGreetings = updatedCharacter?.data?.alternate_greetings ?? updatedCharacter?.alternate_greetings;
+    const alternateGreetingsConfirmed = Array.isArray(savedAlternateGreetings)
+        && savedAlternateGreetings.length === plan.alternateGreetings.length
+        && savedAlternateGreetings.every((value, index) => String(value) === plan.alternateGreetings[index]);
+    if (savedFirstMessage !== plan.marker || !alternateGreetingsConfirmed) {
+        character.data.alternate_greetings = originalAlternateGreetings;
+        if (hadLegacyAlternateGreetings) character.alternate_greetings = originalLegacyAlternateGreetings;
+        firstMessageField.value = plan.originalFirstMessage;
+        throw new Error('酒馆没有确认主开场白已保存；请重新打开角色卡核对，插件不会自动重试');
+    }
+
+    const currentContext = context();
+    const currentGreeting = currentContext?.chat?.[0];
+    if (shouldReplaceCurrentChatGreeting(currentGreeting, plan.originalFirstMessage, plan.marker)) {
+        currentGreeting.mes = plan.marker;
+        if (currentGreeting.extra && Object.hasOwn(currentGreeting.extra, 'display_text')) delete currentGreeting.extra.display_text;
+        currentContext.updateMessageBlock?.(0, currentGreeting);
+        await currentContext.saveChat?.();
+    }
 }
 
 function greetingData() {
@@ -1616,16 +1840,16 @@ function fallbackGreetingMetadata(entry) {
     };
 }
 
-async function summarizeGreetingsBatch(entries, { overwrite = false } = {}) {
+async function summarizeGreetingsBatch(entries, { overwrite = false, includeHomepage = true, syncBindings = true } = {}) {
     const config = settings().openingSummary;
     const routeCatalog = await currentWorldbookRouteCatalog();
-    const routeWorldlineIds = syncWorldbookRouteBindings(routeCatalog);
+    const routeWorldlineIds = syncBindings ? syncWorldbookRouteBindings(routeCatalog) : {};
     const requested = overwrite ? entries : entries.filter(entry => !entry.title || !entry.route || !entry.summary);
-    const homepageFields = [
+    const homepageFields = includeHomepage ? [
         ...(needsGeneratedHomeTitle() ? ['homeTitle'] : []),
         ...(needsGeneratedHomeSubtitle() ? ['homeSubtitle'] : []),
         ...(needsGeneratedWorkIntro() ? ['workIntro'] : []),
-    ];
+    ] : [];
     const makeHomepage = Boolean(homepageFields.length);
     if (!requested.length && !makeHomepage) return { entries: new Map(), homeTitle: '', homeSubtitle: '', workIntro: '', routeLabels: worldbookRouteLabels(routeCatalog), routeWorldlineIds };
     const sourceEntries = makeHomepage ? entries : requested;
@@ -1679,8 +1903,8 @@ async function summarizeGreetingsBatch(entries, { overwrite = false } = {}) {
     return { ...parsed, routeLabels: worldbookRouteLabels(routeCatalog), routeWorldlineIds, fallbackCount: missing.length, formatWarning: warnings.join('；') };
 }
 
-async function readGreetingsIntoOpeningHome({ overwrite = false } = {}) {
-    const data = alternateGreetingData();
+async function readGreetingsIntoOpeningHome({ overwrite = false, rawEntries = null, includeHomepage = true } = {}) {
+    const data = alternateGreetingData(rawEntries);
     if (!data.entries.length) throw new Error('当前角色卡没有额外问候语；主开场白会保留给作品主页');
     const previousEntries = settings().openingHome.entries || [];
     const generated = data.entries.map((entry, index) => {
@@ -1699,7 +1923,7 @@ async function readGreetingsIntoOpeningHome({ overwrite = false } = {}) {
     renderGreetingList();
     saveSettingsSoon();
 
-    const batch = await summarizeGreetingsBatch(data.entries, { overwrite });
+    const batch = await summarizeGreetingsBatch(data.entries, { overwrite, includeHomepage });
     if (batch.homeTitle && needsGeneratedHomeTitle()) {
         settings().openingHome.title = batch.homeTitle;
         const titleControl = field('status-atelier-opening-home-title');
@@ -1738,6 +1962,34 @@ async function readGreetingsIntoOpeningHome({ overwrite = false } = {}) {
     return batch;
 }
 
+async function generateOpeningOverview(button) {
+    const data = alternateGreetingData();
+    if (!data.entries.length) {
+        notify('warning', '当前角色卡没有可制作一览的额外问候语');
+        return;
+    }
+    const originalLabel = button.textContent;
+    button.disabled = true;
+    button.textContent = '正在生成一览…';
+    await setOpeningReadStatus(`正在为 ${data.entries.length} 条开场白生成标题、简介并摘录原文……`, 'loading');
+    showOpeningReadProgress('AI 只生成标题与简介；摘录段落由插件从角色卡原文中逐字选取，不会改写。');
+    try {
+        const batch = await summarizeGreetingsBatch(data.entries, { overwrite: true, includeHomepage: false, syncBindings: false });
+        const generated = data.entries.map((entry, index) => batch.entries.get(index) || fallbackGreetingMetadata(entry));
+        const overview = buildOpeningOverview(data.entries, generated, { excerptsPerOpening: 2 });
+        await copyText(overview);
+        await setOpeningReadStatus(`完成：已生成 ${data.entries.length} 条开场白一览并复制；没有写入主页、正则或角色卡。`, 'success', true);
+        notify('success', '开场白一览已生成并复制，摘录原文未改写');
+    } catch (error) {
+        await setOpeningReadStatus(`生成一览失败：${error?.message || '请稍后重试'}`, 'error', true);
+        notify('error', error?.message || '生成开场白一览失败');
+    } finally {
+        hideOpeningReadProgress();
+        button.disabled = false;
+        button.textContent = originalLabel;
+    }
+}
+
 async function regenerateOpeningEntry(index) {
     const source = alternateGreetingData().entries[index];
     const target = settings().openingHome.entries[index];
@@ -1774,6 +2026,7 @@ function renderGreetingThemeChooser() {
         const button = makeElement('button', 'menu_button status-atelier-greeting-theme-button');
         button.type = 'button';
         button.dataset.greetingTheme = template.id;
+        button.dataset.templateId = template.id;
         button.setAttribute('aria-pressed', String(settings().openingHome.theme === template.id));
         button.append(makeElement('strong', '', template.name), makeElement('small', '', template.description));
         button.addEventListener('click', () => {
@@ -1788,46 +2041,90 @@ function renderGreetingThemeChooser() {
     });
 }
 
-async function applyGreetingModal(button) {
-    if (!settings().openingHome.entries.length) {
-        setGreetingModalStatus('无法应用：请先读取至少一条额外问候语。', 'error', 'apply');
-        return;
+function renderGreetingStatusChooser() {
+    const select = greetingModal?.querySelector('#status-atelier-modal-status-style');
+    const state = greetingModal?.querySelector('.status-atelier-modal-status-state');
+    if (!select) return;
+    if (!select.options.length) {
+        STATUS_STYLE_PRESETS.forEach(style => {
+            const option = makeElement('option', '', `${style.code} · ${style.name}`);
+            option.value = style.id;
+            select.append(option);
+        });
     }
+    select.value = settings().theme || 'classical';
+    if (state) {
+        const active = STATUS_STYLE_PRESETS.find(style => style.id === select.value);
+        state.textContent = statusRegexAppliesToCurrentContext()
+            ? `当前角色已启用状态栏；再次点击会直接覆盖更新为“${active?.name || select.value}”。`
+            : `当前角色尚未安装状态栏；点击后直接写入局部正则，不需要下载。`;
+        state.dataset.state = statusRegexAppliesToCurrentContext() ? 'success' : 'idle';
+    }
+}
+
+async function applyModalStatus(button) {
+    const select = greetingModal?.querySelector('#status-atelier-modal-status-style');
+    const style = STATUS_STYLE_PRESETS.find(item => item.id === select?.value);
+    if (!style) return notify('warning', '请选择一个状态栏外观');
     const originalLabel = button.textContent;
     button.disabled = true;
-    button.textContent = '正在保存…';
+    button.textContent = '正在写入当前角色…';
     try {
+        Object.assign(settings(), {
+            theme: style.id,
+            title: style.title,
+            subtitle: style.subtitle,
+            layout: style.layout,
+            preset: 'custom',
+            statusTemplate: 'custom',
+        });
+        await installRegex('scoped');
+        await saveSettingsNow();
+        loadSettingsUI();
+        renderGreetingStatusChooser();
+        notify('success', `已直接覆盖当前角色的局部状态栏正则：${style.name}`);
+    } catch (error) {
+        notify('error', error?.message || '状态栏写入失败');
+    } finally {
+        button.disabled = false;
+        button.textContent = originalLabel;
+    }
+}
+
+async function applyGreetingModal(button) {
+    const originalLabel = button.textContent;
+    button.disabled = true;
+    button.textContent = '正在生成…';
+    showOpeningReadProgress('正在读取当前角色卡、生成目录并应用局部正则。');
+    try {
+        const plan = currentOpeningHomeCharacterPlan();
+        if (!plan.alternateGreetings.length) {
+            throw new Error('当前角色卡没有可制作目录的开场白');
+        }
+        await setOpeningReadStatus(`已读取 ${plan.alternateGreetings.length} 条开场白，AI 正在补全缺失资料……`, 'loading');
+        await readGreetingsIntoOpeningHome({ rawEntries: plan.alternateGreetings });
         if (greetingBindingPromise) {
             button.textContent = '正在完成匹配…';
-            setGreetingModalStatus('正在完成世界书自动匹配，完成后会继续保存和应用…', 'loading', 'apply');
+            await setOpeningReadStatus('正在完成世界书自动匹配……', 'loading');
             await greetingBindingPromise;
         }
         button.textContent = '正在保存…';
-        setGreetingModalStatus('正在保存当前编辑内容…', 'loading', 'apply');
+        await setOpeningReadStatus('目录已生成，正在保存并更新当前角色的局部正则……', 'loading');
         await saveSettingsNow();
-        button.textContent = '正在应用…';
-        setGreetingModalStatus('编辑内容已保存，正在应用到当前角色卡…', 'loading', 'apply');
         settings().installScope = 'scoped';
         await installOpeningHomeRegex('scoped');
+        button.textContent = '正在写入角色卡…';
+        await setOpeningReadStatus('局部正则已更新，正在把主开场白设为【主页】……', 'loading');
+        await applyOpeningHomeCharacterPlan(plan);
         await saveSettingsNow();
-        let markerCopied = false;
-        try {
-            await copyText(buildOpeningHomeBlock(settings().openingHome));
-            markerCopied = true;
-        } catch (error) {
-            console.warn(`[${MODULE_NAME}] 主页标记复制失败`, error);
-        }
-        setGreetingModalStatus(
-            markerCopied
-                ? '完成：已保存并应用到当前角色卡，同时复制了【主页】标记；主开场白尚未放置标记时请粘贴一次。'
-                : '完成：已保存并应用到当前角色卡。若主开场白还没有【主页】标记，请在“更多操作”中手动复制。',
-            'success',
-            'apply',
-        );
+        const preservedNotice = plan.movedPrimary ? '；原主开场白已保留到额外问候语' : '';
+        await setOpeningReadStatus(`完成：主页已生成，当前角色局部正则已更新，主开场白已设为【主页】${preservedNotice}。`, 'success', true);
+        notify('success', '开场白主页已一键生成并应用到当前角色');
     } catch (error) {
-        setGreetingModalStatus(`应用失败：${error?.message || '请确认当前是单人角色聊天后重试'}`, 'error', 'apply');
-        notify('error', error?.message || '应用开场白主页失败');
+        await setOpeningReadStatus(`失败：${error?.message || '请确认当前是单人角色聊天后重试'}`, 'error', true);
+        notify('error', error?.message || '一键生成开场白主页失败');
     } finally {
+        hideOpeningReadProgress();
         button.disabled = false;
         button.textContent = originalLabel;
     }
@@ -1841,7 +2138,7 @@ function buildGreetingModal() {
         <div class="status-atelier-modal-backdrop" data-status-atelier-close></div>
         <section class="status-atelier-dialog" role="dialog" aria-modal="true" aria-labelledby="status-atelier-dialog-title">
             <header class="status-atelier-dialog-header">
-                <h3 id="status-atelier-dialog-title">制作当前角色卡的开场白主页</h3>
+                <h3 id="status-atelier-dialog-title">制作开场白主页与状态栏</h3>
                 <button type="button" class="menu_button" data-status-atelier-close aria-label="关闭">×</button>
             </header>
             <div class="status-atelier-dialog-body">
@@ -1851,8 +2148,11 @@ function buildGreetingModal() {
                 </details>
                 <div class="status-atelier-greeting-read-status" role="status" aria-live="polite"></div>
                 <div class="status-atelier-greeting-generate-step">
-                    <button type="button" class="menu_button" id="status-atelier-read-current-card">补全缺失项</button>
-                    <small>已有标题和简介会保留；只为缺失内容调用当前工坊选择的 AI。</small>
+                    <div class="status-atelier-greeting-quick-actions">
+                        <button type="button" class="menu_button" id="status-atelier-read-current-card">补全缺失项</button>
+                        <button type="button" class="menu_button" id="status-atelier-generate-overview">生成并复制开场白一览</button>
+                    </div>
+                    <small>补全会写入当前主页草稿；“生成并复制”只是临时工具，不保存、不改角色卡。</small>
                 </div>
                 <div class="status-atelier-greeting-list"></div>
                 <section class="status-atelier-greeting-theme-step" aria-labelledby="status-atelier-greeting-theme-title">
@@ -1863,19 +2163,24 @@ function buildGreetingModal() {
                         <div class="status-atelier-greeting-live-preview"></div>
                     </details>
                 </section>
+                <section class="status-atelier-greeting-status-step">
+                    <div class="status-atelier-greeting-step-heading"><strong>同时制作状态栏</strong><small>50 套外观都在这里；直接写入当前角色局部正则。</small></div>
+                    <label>状态栏外观<select id="status-atelier-modal-status-style" class="text_pole"></select></label>
+                    <button type="button" class="menu_button" id="status-atelier-modal-apply-status">直接启用 / 覆盖当前角色状态栏</button>
+                    <p class="status-atelier-modal-status-state" role="status" aria-live="polite"></p>
+                </section>
                 <details class="status-atelier-greeting-more">
                     <summary>更多操作</summary>
                     <div class="status-atelier-greeting-more-actions">
                         <button type="button" class="menu_button status-atelier-regenerate-all" id="status-atelier-regenerate-all">全部重新生成</button>
                         <button type="button" class="menu_button" id="status-atelier-modal-copy-home">复制主页标记</button>
-                        <button type="button" class="menu_button" id="status-atelier-modal-download-regex">下载正则</button>
                         <button type="button" class="menu_button" id="status-atelier-open-full-workbench">打开完整工坊</button>
                     </div>
                     <small>高级工坊会保留 API、世界线、颜色和现有编辑内容。</small>
                 </details>
             </div>
             <footer class="status-atelier-dialog-footer">
-                <button type="button" class="menu_button status-atelier-primary-action" id="status-atelier-modal-apply">保存并应用到当前角色卡</button>
+                <button type="button" class="menu_button status-atelier-primary-action" id="status-atelier-modal-apply">一键生成并应用</button>
             </footer>
         </section>`;
     greetingModal.querySelectorAll('[data-status-atelier-close]').forEach(button => button.addEventListener('click', closeGreetingModal));
@@ -1885,20 +2190,28 @@ function buildGreetingModal() {
     greetingModal.querySelector('#status-atelier-regenerate-all').addEventListener('click', event => {
         refreshGreetingModal(event.currentTarget, true);
     });
+    greetingModal.querySelector('#status-atelier-generate-overview').addEventListener('click', event => {
+        generateOpeningOverview(event.currentTarget);
+    });
     greetingModal.querySelector('#status-atelier-modal-copy-home').addEventListener('click', async () => {
         await copyText(buildOpeningHomeBlock(settings().openingHome));
         setGreetingModalStatus('已复制主页标记【主页】；可以粘贴到主开场白。', 'success', 'copy');
         notify('success', '已复制主页标记【主页】；请放进主开场白');
     });
-    greetingModal.querySelector('#status-atelier-modal-download-regex').addEventListener('click', () => {
-        downloadJson('regex-九一-通用开场白主页.json', buildOpeningHomeRegex(settings().openingHome));
-        setGreetingModalStatus('已下载包含当前编辑内容的主页正则。', 'success', 'download');
-        notify('success', '已下载包含当前填写内容的主页正则');
-    });
     greetingModal.querySelector('#status-atelier-open-full-workbench').addEventListener('click', openFullWorkbench);
+    greetingModal.querySelector('#status-atelier-modal-status-style').addEventListener('change', event => {
+        const style = STATUS_STYLE_PRESETS.find(item => item.id === event.currentTarget.value);
+        if (!style) return;
+        Object.assign(settings(), { theme: style.id, title: style.title, subtitle: style.subtitle, layout: style.layout, preset: 'custom', statusTemplate: 'custom' });
+        updatePreview();
+        saveSettingsSoon();
+        renderGreetingStatusChooser();
+    });
+    greetingModal.querySelector('#status-atelier-modal-apply-status').addEventListener('click', event => applyModalStatus(event.currentTarget));
     greetingModal.querySelector('#status-atelier-modal-apply').addEventListener('click', event => applyGreetingModal(event.currentTarget));
     document.body.append(greetingModal);
     renderGreetingThemeChooser();
+    renderGreetingStatusChooser();
     updateOpeningHomePreview();
 }
 
@@ -1949,7 +2262,8 @@ function updateOpeningHomeContent(key, value) {
 
 function buildGreetingHomeQuickEditor() {
     const panel = makeElement('details', 'status-atelier-dialog-note status-atelier-home-quick-editor');
-    panel.append(makeElement('summary', '', '主页资料（可选，已填写内容会保留）'));
+    panel.open = true;
+    panel.append(makeElement('summary', '', '作品简介与线路介绍（可编辑）'));
     const grid = makeElement('div', 'status-atelier-home-quick-grid');
     const definitions = [
         ['主页标题', 'title', false, 80],
@@ -1966,6 +2280,30 @@ function buildGreetingHomeQuickEditor() {
         grid.append(label);
     });
     panel.append(grid);
+    const routeEditor = makeElement('div', 'status-atelier-home-quick-routes');
+    routeEditor.append(makeElement('h4', '', '世界线介绍'));
+    const worldlines = settings().openingHome.worldlines;
+    if (!worldlines.length) {
+        routeEditor.append(makeElement('small', 'status-atelier-hint', '尚未从当前角色世界书识别到线路；点击补全后会显示在这里。'));
+    }
+    worldlines.forEach(worldline => {
+        const row = makeElement('div', 'status-atelier-home-quick-route');
+        const nameField = labeledInput('线路名称', worldline.name || '', { maxLength: 80 });
+        const descriptionField = labeledInput('线路介绍', worldline.description || '', { multiline: true, maxLength: 600 });
+        nameField.input.addEventListener('input', () => {
+            updateOpeningWorldlineName(worldline, nameField.input.value);
+            updateOpeningHomePreview();
+            saveSettingsSoon();
+        });
+        descriptionField.input.addEventListener('input', () => {
+            worldline.description = descriptionField.input.value;
+            updateOpeningHomePreview();
+            saveSettingsSoon();
+        });
+        row.append(nameField.label, descriptionField.label);
+        routeEditor.append(row);
+    });
+    panel.append(routeEditor);
     return panel;
 }
 
@@ -2003,17 +2341,6 @@ function renderGreetingBindingBox(bindingBox, entry, generated) {
     });
     advanced.append(detail, action);
     bindingBox.append(overview, advanced);
-}
-
-function refreshGreetingBindingBoxes() {
-    if (!greetingModal) return;
-    const entries = greetingData().entries;
-    greetingModal.querySelectorAll('.status-atelier-greeting-card[data-entry-index]').forEach(card => {
-        const index = Number(card.dataset.entryIndex);
-        const entry = entries.find(item => item.index === index);
-        const bindingBox = card.querySelector('.status-atelier-greeting-binding');
-        if (entry && bindingBox) renderGreetingBindingBox(bindingBox, entry, settings().openingHome.entries[index]);
-    });
 }
 
 function renderGreetingList() {
@@ -2142,11 +2469,13 @@ async function refreshGreetingModal(button, overwrite = false) {
 }
 
 function openGreetingModal() {
+    switchOpeningProfileForCurrentCharacter();
     if (!greetingModal) buildGreetingModal();
     const localData = ensureLocalGreetingDrafts();
     setGreetingModalStatus('', 'idle', '');
     renderGreetingList();
     renderGreetingThemeChooser();
+    renderGreetingStatusChooser();
     updateOpeningHomePreview();
     greetingModal.classList.add('status-atelier-modal-open');
     greetingModal.setAttribute('aria-hidden', 'false');
@@ -2159,7 +2488,7 @@ function openGreetingModal() {
             entry.worldlineId = routeWorldlineIds[entry.route] || entry.worldlineId || '';
         });
         renderOpeningWorldlines();
-        refreshGreetingBindingBoxes();
+        renderGreetingList();
         updateOpeningHomePreview();
         saveSettingsSoon();
         const status = greetingModal?.querySelector('.status-atelier-greeting-read-status');
@@ -2213,10 +2542,10 @@ function addExtensionsMenuItem() {
     item.id = 'status-atelier-menu-item';
     item.tabIndex = 0;
     item.setAttribute('role', 'button');
-    item.setAttribute('aria-label', '读取当前角色卡的额外问候语');
+    item.setAttribute('aria-label', '制作当前角色卡的开场白主页与状态栏');
     const icon = makeElement('div', 'fa-solid fa-wand-magic-sparkles extensionsMenuExtensionButton');
     icon.setAttribute('aria-hidden', 'true');
-    item.append(icon, makeElement('span', '', '制作开场白主页 · 九一'));
+    item.append(icon, makeElement('span', '', '制作开场白主页 / 状态栏 · 九一'));
     item.addEventListener('click', openGreetingModal);
     item.addEventListener('keydown', event => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -2276,7 +2605,25 @@ async function addSettingsPanel() {
             if (!palette) return;
             settings().paletteId = palette.id;
             statusAiTestRecords = null;
-            renderStatusDesignControls();
+            field('status-atelier-status-palettes')?.querySelectorAll('[data-status-palette]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button === statusPaletteButton));
+            });
+            updatePreview();
+            saveSettingsSoon();
+            return;
+        }
+        const statusStyleButton = event.target.closest('[data-status-style]');
+        if (statusStyleButton) {
+            const style = STATUS_STYLE_PRESETS.find(item => item.id === statusStyleButton.dataset.statusStyle);
+            if (!style) return;
+            settings().theme = style.id;
+            field('status-atelier-theme').value = style.id;
+            settings().preset = 'custom';
+            field('status-atelier-preset').value = 'custom';
+            statusAiTestRecords = null;
+            field('status-atelier-status-styles')?.querySelectorAll('[data-status-style]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button === statusStyleButton));
+            });
             updatePreview();
             saveSettingsSoon();
         }
@@ -2367,7 +2714,7 @@ async function addSettingsPanel() {
         downloadJson('regex-九一-通用开场白主页.json', buildOpeningHomeRegex(settings().openingHome));
         notify('success', '开场白主页正则 JSON 已生成');
     });
-    field('status-atelier-opening-install-scoped').addEventListener('click', event => runInstallButton(event.currentTarget, installOpeningHomeRegex, 'scoped', '安装开场白主页正则失败'));
+    field('status-atelier-opening-install-scoped').addEventListener('click', event => applyGreetingModal(event.currentTarget));
     field('status-atelier-opening-install-global').addEventListener('click', event => runInstallButton(event.currentTarget, installOpeningHomeRegex, 'global', '安装开场白主页正则失败'));
     loadSettingsUI();
     updatePreview();
@@ -2379,13 +2726,24 @@ function bindEvents() {
     const events = ctx?.eventTypes || ctx?.event_types;
     const source = ctx?.eventSource;
     if (!events || !source?.on) return;
-    [events.CHAT_CHANGED, events.MESSAGE_SWIPED].filter(Boolean).forEach(eventName => source.on(eventName, () => {
+    if (events.CHAT_CHANGED) source.on(events.CHAT_CHANGED, () => {
+        const switched = switchOpeningProfileForCurrentCharacter();
+        if (switched) {
+            loadSettingsUI();
+            updateOpeningHomePreview();
+            saveSettingsSoon();
+        }
+        updatePrompt();
         if (greetingModal?.classList.contains('status-atelier-modal-open')) renderGreetingList();
-    }));
+    });
+    if (events.MESSAGE_SWIPED) source.on(events.MESSAGE_SWIPED, () => {
+        if (greetingModal?.classList.contains('status-atelier-modal-open')) renderGreetingList();
+    });
 }
 
 async function initialize() {
     settings();
+    switchOpeningProfileForCurrentCharacter();
     updatePrompt();
     for (let attempt = 0; attempt < 20; attempt += 1) {
         if (await addSettingsPanel()) break;

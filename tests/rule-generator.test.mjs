@@ -23,8 +23,9 @@ test('parses any number of switch pages without storing story values', () => {
 test('registers genuinely different component structures and composable palettes', () => {
     assert.equal(STATUS_STRUCTURE_PRESETS.length, 9);
     assert.equal(new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id)).size, 9);
-    assert.equal(STATUS_PALETTE_PRESETS.length, 12);
-    assert.equal(new Set(STATUS_PALETTE_PRESETS.map(item => item.id)).size, 12);
+    assert.equal(STATUS_PALETTE_PRESETS.length, 24);
+    assert.equal(new Set(STATUS_PALETTE_PRESETS.map(item => item.id)).size, 24);
+    assert.ok(STATUS_PALETTE_PRESETS.every(item => ['accent', 'background', 'card', 'text', 'muted'].every(key => /^#[0-9a-f]{6}$/i.test(item[key]))));
     for (const structure of STATUS_STRUCTURE_PRESETS) {
         assert.ok(structure.fields.length >= 3, `${structure.name} has an editable schema`);
         assert.ok(structure.fields.every(field => field.length === 4), `${structure.name} keeps stable field keys`);
