@@ -2,7 +2,16 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildOpeningHomeBlock, buildOpeningHomeRegex } from '../opening-home-generator.js';
-import { RULE_PRESETS, STATUS_STYLE_PRESETS, buildAiInstruction, buildRegexScript, buildWorldbookJson } from '../rule-generator.js';
+import {
+    RULE_PRESETS,
+    STATUS_CUSTOM_VARIANTS,
+    STATUS_RECIPE_PRESETS,
+    STATUS_STRUCTURE_PRESETS,
+    STATUS_STYLE_PRESETS,
+    buildAiInstruction,
+    buildRegexScript,
+    buildWorldbookJson,
+} from '../rule-generator.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const outputRoot = join(root, 'starter-packs');
@@ -41,6 +50,7 @@ async function writeJson(filePath, value) {
 await rm(outputRoot, { recursive: true, force: true });
 await mkdir(join(outputRoot, '开场白主页'), { recursive: true });
 await mkdir(join(outputRoot, '通用状态栏'), { recursive: true });
+await mkdir(join(outputRoot, '状态栏一键配方'), { recursive: true });
 
 for (const pack of openingPacks) {
     const folder = join(outputRoot, '开场白主页', `${pack.code}-${pack.name}`);
@@ -90,6 +100,35 @@ for (const pack of statusPacks) {
     await writeJson(join(folder, `regex-通用状态栏${pack.code}-${pack.name}.json`), regex);
     await writeJson(join(folder, `世界书-通用状态栏${pack.code}-${pack.name}.json`), buildWorldbookJson(settings));
     await writeFile(join(folder, `世界书正文-通用状态栏${pack.code}-${pack.name}.txt`), `${instruction}\n`, 'utf8');
+}
+
+for (const [index, recipe] of STATUS_RECIPE_PRESETS.entries()) {
+    const structure = STATUS_STRUCTURE_PRESETS.find(item => item.id === recipe.structure);
+    const variant = recipe.group === 'custom' ? STATUS_CUSTOM_VARIANTS.find(item => item.id === recipe.variant) : null;
+    const recipeFields = variant?.fields || structure.fields;
+    const code = String(index + 1).padStart(2, '0');
+    const folder = join(outputRoot, '状态栏一键配方', `${code}-${recipe.name}`);
+    await mkdir(folder, { recursive: true });
+    const settings = {
+        ...RULE_PRESETS.universalClassical,
+        ruleId: `jiuyi-status-recipe-${recipe.id}-v1`,
+        tagName: `jiuyi_status_${recipe.id.replace(/-/g, '_')}`,
+        ruleName: `状态栏配方${code}·${recipe.name}`,
+        title: recipe.title || recipe.name,
+        subtitle: recipe.subtitle || (recipe.group === 'custom' ? `CUSTOM PANEL / ${code}` : structure.subtitle),
+        theme: recipe.theme,
+        paletteId: recipe.paletteId,
+        logoId: recipe.logoId,
+        structure: recipe.structure,
+        variant: recipe.variant,
+        layout: recipe.layout,
+        pagesText: structure.pagesText,
+        sharedFieldsText: '',
+        pageFieldsText: recipeFields.map(field => field.join('|')).join('\n'),
+    };
+    await writeJson(join(folder, `regex-状态栏配方${code}-${recipe.name}.json`), buildRegexScript(settings));
+    await writeJson(join(folder, `世界书-状态栏配方${code}-${recipe.name}.json`), buildWorldbookJson(settings));
+    await writeFile(join(folder, `世界书正文-状态栏配方${code}-${recipe.name}.txt`), `${buildAiInstruction(settings)}\n`, 'utf8');
 }
 
 console.log(`STARTER_PACKS_BUILT ${outputRoot}`);

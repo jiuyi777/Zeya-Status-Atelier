@@ -4,6 +4,8 @@ import {
     STATUS_PALETTE_PRESETS,
     STATUS_STYLE_PRESETS,
     STATUS_STRUCTURE_PRESETS,
+    STATUS_CUSTOM_VARIANTS,
+    STATUS_RECIPE_PRESETS,
     STATUS_THEME_CSS,
     buildAiInstruction,
     buildRegexScript,
@@ -12,14 +14,14 @@ import {
     normalizeRule,
     parseStatusOutput,
     parseFields,
-} from './rule-generator.js?v=0.9.5';
+} from './rule-generator.js?v=0.10.0';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.9.5';
+} from './opening-home-generator.js?v=0.10.0';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -31,19 +33,19 @@ import {
     parseSummaryResponse,
     responseText,
     usableGreetingRecords,
-} from './response-parser.js?v=0.9.5';
+} from './response-parser.js?v=0.10.0';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.9.5';
+} from './worldbook-routes.js?v=0.10.0';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.9.5';
+} from './entry-dialog.js?v=0.10.0';
 import {
     greetingBindingSummary,
     keepOnlyOpenGreetingCard,
@@ -52,14 +54,14 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.9.5';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.9.5';
-import { buildCharacterHomepageContext } from './opening-context.js?v=0.9.5';
+} from './greeting-workflow.js?v=0.10.0';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.10.0';
+import { buildCharacterHomepageContext } from './opening-context.js?v=0.10.0';
 import {
     STATUS_WORLDBOOK_ENTRY_ID,
     buildStatusWorldbookName,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.9.5';
+} from './status-worldbook.js?v=0.10.0';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -79,7 +81,7 @@ import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.9.5';
+const VERSION = '0.10.0';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 
 const HOME_TEMPLATES = Object.freeze([
@@ -134,6 +136,7 @@ const HOME_TEMPLATES = Object.freeze([
 ]);
 
 const STATUS_TEMPLATES = Object.freeze([
+    { id: 'custom', name: '自由组件版', description: '默认空白画布，自由增加字段、数值和组件' },
     { id: 'relationship', name: '攻略关系型', description: '关系阶段、好感度、变化原因与内心独白' },
     { id: 'openingInfo', name: '开局信息型', description: '时间、地点、身份、世界前提与目标' },
     { id: 'worldNpc', name: '大世界 NPC 型', description: '地区、事件、阵营、NPC、声望与威胁' },
@@ -150,16 +153,18 @@ const OPENING_PALETTES = Object.freeze({
 });
 
 const DEFAULT_SETTINGS = Object.freeze({
-    ...RULE_PRESETS.relationship,
-    preset: 'relationship',
-    statusTemplate: 'relationship',
+    ...RULE_PRESETS.custom,
+    preset: 'custom',
+    statusTemplate: 'custom',
     promptEnabled: false,
     installScope: 'scoped',
     ruleId: 'zeya-status-rule-v2',
     activeWorkspace: 'opening',
     favoriteHomeTemplates: ['classical', 'newspaper', 'timeline'],
     favoriteStatusTemplates: ['relationship', 'worldNpc'],
-    structure: 'profile',
+    structure: 'custom',
+    variant: 'cream-inset',
+    recipeId: 'custom-01',
     logoId: 'auto',
     paletteId: 'cream-navy',
     media: { avatarSource: 'character', avatarUrl: '', imageUrl: '', audioUrl: '', imageAlt: '状态栏配图' },
@@ -490,7 +495,43 @@ function renderTemplateLibraries() {
     if (!settingsRoot) return;
     const stored = settings();
     fillTemplateLibrary(HOME_TEMPLATES, stored.favoriteHomeTemplates, stored.openingHome.theme, 'home', field('status-atelier-home-favorites'), field('status-atelier-home-others'));
-    fillTemplateLibrary(STATUS_TEMPLATES, stored.favoriteStatusTemplates, stored.statusTemplate || stored.preset, 'status', field('status-atelier-status-favorites'), field('status-atelier-status-others'));
+    renderStatusRecipeLibrary();
+}
+
+function statusRecipe(recipeId = settings().recipeId) {
+    return STATUS_RECIPE_PRESETS.find(item => item.id === recipeId) || STATUS_RECIPE_PRESETS[0];
+}
+
+function makeStatusRecipeCard(recipe) {
+    const button = makeElement('button', 'status-atelier-template-card status-atelier-recipe-card');
+    button.type = 'button';
+    button.dataset.statusRecipe = recipe.id;
+    button.setAttribute('aria-pressed', String(settings().recipeId === recipe.id));
+    button.append(makeElement('strong', '', recipe.name), makeElement('small', '', recipe.description));
+    button.addEventListener('click', () => applyStatusRecipe(recipe.id));
+    return button;
+}
+
+function renderStatusRecipeLibrary() {
+    if (!settingsRoot) return;
+    const current = statusRecipe();
+    const name = field('status-atelier-current-recipe-name');
+    const description = field('status-atelier-current-recipe-description');
+    if (name) name.textContent = current.name;
+    if (description) description.textContent = current.description;
+    const customHost = field('status-atelier-status-custom-recipes');
+    const typeHost = field('status-atelier-status-type-recipes');
+    if (!customHost || !typeHost) return;
+    if (customHost.children.length !== 20 || typeHost.children.length !== 20) {
+        customHost.replaceChildren();
+        typeHost.replaceChildren();
+        STATUS_RECIPE_PRESETS.forEach(recipe => {
+            (recipe.group === 'custom' ? customHost : typeHost).append(makeStatusRecipeCard(recipe));
+        });
+    }
+    settingsRoot.querySelectorAll('[data-status-recipe]').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.statusRecipe === current.id));
+    });
 }
 
 function renderPaletteButtons() {
@@ -517,7 +558,7 @@ function renderStatusDesignControls() {
             structureSelect.append(option);
         });
     }
-    if (structureSelect) structureSelect.value = settings().structure || 'profile';
+    if (structureSelect) structureSelect.value = settings().structure || 'custom';
     const styleHost = field('status-atelier-status-styles');
     if (styleHost && styleHost.children.length !== STATUS_STYLE_PRESETS.length) {
         styleHost.replaceChildren();
@@ -544,16 +585,19 @@ function renderStatusDesignControls() {
             const button = makeElement('button', 'status-atelier-status-logo');
             button.type = 'button';
             button.dataset.statusLogo = logo.id;
+            button.dataset.logoFamily = logo.family || 'auto';
+            button.dataset.logoEffect = logo.effect || 'plain';
             button.title = logo.name;
             button.append(
-                makeElement('span', '', logo.glyph || 'AUTO'),
+                makeElement('span', 'status-atelier-logo-art', logo.glyph || 'AUTO'),
                 makeElement('small', '', logo.name),
             );
             logoHost.append(button);
         });
     }
+    const activeLogoId = normalizeRule(resolvedStatusInput()).logoId;
     logoHost?.querySelectorAll('[data-status-logo]').forEach(button => {
-        button.setAttribute('aria-pressed', String(button.dataset.statusLogo === (settings().logoId || 'auto')));
+        button.setAttribute('aria-pressed', String(button.dataset.statusLogo === activeLogoId));
     });
     const paletteHost = field('status-atelier-status-palettes');
     if (paletteHost && paletteHost.children.length !== STATUS_PALETTE_PRESETS.length) {
@@ -591,6 +635,7 @@ function applyStatusStructure(structureId) {
     if (!structure) return;
     const stored = settings();
     stored.structure = structure.id;
+    stored.variant = structure.id === 'custom' ? (stored.variant || 'cream-inset') : 'auto';
     stored.title = structure.title;
     stored.subtitle = structure.subtitle;
     stored.layout = structure.layout;
@@ -617,6 +662,53 @@ function applyStatusStructure(structureId) {
     renderStatusSchema();
     renderModalStatusSchema();
     scheduleStatusPreviewUpdate();
+}
+
+function applyStatusRecipe(recipeId, { announce = true } = {}) {
+    const recipe = STATUS_RECIPE_PRESETS.find(item => item.id === recipeId);
+    if (!recipe) return null;
+    const structure = STATUS_STRUCTURE_PRESETS.find(item => item.id === recipe.structure);
+    if (!structure) return null;
+    const variant = recipe.group === 'custom'
+        ? STATUS_CUSTOM_VARIANTS.find(item => item.id === recipe.variant)
+        : null;
+    const fields = variant?.fields || structure.fields;
+    Object.assign(settings(), {
+        recipeId: recipe.id,
+        theme: recipe.theme,
+        paletteId: recipe.paletteId,
+        logoId: recipe.logoId,
+        structure: recipe.structure,
+        variant: recipe.variant,
+        layout: recipe.layout,
+        title: recipe.title || variant?.name || structure.title,
+        subtitle: recipe.subtitle || (recipe.group === 'custom' ? `CUSTOM PANEL / ${recipe.id.slice(-2)}` : structure.subtitle),
+        pagesText: structure.pagesText,
+        sharedFieldsText: '',
+        pageFieldsText: fields.map(field => field.join('|')).join('\n'),
+        preset: 'custom',
+        statusTemplate: 'custom',
+    });
+    statusAiTestRecords = null;
+    for (const [id, key] of Object.entries(SETTING_FIELDS)) {
+        const control = field(id);
+        if (control) control.type === 'checkbox' ? control.checked = Boolean(settings()[key]) : control.value = String(settings()[key] ?? '');
+    }
+    renderStatusRecipeLibrary();
+    renderStatusDesignControls();
+    renderStatusSchema();
+    renderGreetingStatusChooser();
+    updatePrompt();
+    updatePreview();
+    saveSettingsSoon({ snapshotOpening: false });
+    if (announce) notify('success', `已换成“${recipe.name}”；点击一键生成并应用即可写入当前角色`);
+    return recipe;
+}
+
+function shuffleStatusRecipe({ announce = true } = {}) {
+    const currentIndex = STATUS_RECIPE_PRESETS.findIndex(item => item.id === settings().recipeId);
+    const next = STATUS_RECIPE_PRESETS[(currentIndex + 1 + STATUS_RECIPE_PRESETS.length) % STATUS_RECIPE_PRESETS.length];
+    return applyStatusRecipe(next.id, { announce });
 }
 
 function fieldDefinitions() {
@@ -1386,6 +1478,7 @@ function resolvedStatusInput(source = settings()) {
         subtitle: source.subtitle,
         theme: source.theme,
         structure: source.structure,
+        variant: source.variant,
         logoId: source.logoId,
         paletteId: source.paletteId,
         palette: source.palette && typeof source.palette === 'object' ? { ...source.palette } : undefined,
@@ -1419,9 +1512,26 @@ function previewValue(fieldDefinition) {
     return 'AI动态填写';
 }
 
-function appendPreviewField(host, definition, value, shared = false, glyph = '✦') {
+function appendPreviewField(host, definition, value, shared = false, glyph = '✦', rule = null) {
     const item = makeElement('div', shared ? 'status-atelier-preview-shared-item zrs-shared-item' : 'status-atelier-preview-field zrs-field');
     item.dataset.kind = definition.kind;
+    item.dataset.field = definition.id || '';
+    if (rule?.structure === 'forum' && definition.id === 'floor_user') {
+        const avatar = rule.media.avatarUrl
+            ? makeElement('img', 'status-atelier-preview-forum-avatar zrs-forum-avatar')
+            : makeElement('span', 'status-atelier-preview-forum-avatar zrs-forum-avatar is-placeholder', glyph);
+        if (rule.media.avatarUrl) {
+            avatar.src = rule.media.avatarUrl;
+            avatar.alt = rule.media.imageAlt || '当前角色头像';
+            avatar.loading = 'lazy';
+            avatar.addEventListener('error', () => {
+                avatar.removeAttribute('src');
+                avatar.classList.add('is-placeholder');
+                avatar.textContent = glyph;
+            });
+        }
+        item.append(avatar);
+    }
     item.append(
         makeElement('span', 'status-atelier-preview-label zrs-label', definition.label),
         makeElement('span', 'status-atelier-preview-value zrs-value', value),
@@ -1455,7 +1565,11 @@ function renderStatusPreview(host) {
     const root = makeElement('section', 'status-atelier-rule-preview zeya-regex-status');
     root.dataset.theme = rule.theme;
     root.dataset.structure = rule.structure;
+    root.dataset.variant = rule.variant;
     root.dataset.layout = rule.layout;
+    root.dataset.logo = rule.logoId;
+    root.dataset.logoFamily = rule.logoFamily;
+    root.dataset.logoEffect = rule.logoEffect;
     if (rule.palette) {
         root.style.setProperty('--sap-accent', rule.palette.accent);
         root.style.setProperty('--sap-layer', rule.palette.background);
@@ -1490,6 +1604,10 @@ function renderStatusPreview(host) {
     card.append(header);
 
     const body = makeElement('div', 'status-atelier-rule-preview-body zrs-content');
+    const structureArt = makeElement('div', 'status-atelier-preview-structure-art zrs-structure-art');
+    structureArt.setAttribute('aria-hidden', 'true');
+    structureArt.append(makeElement('i'), makeElement('i'), makeElement('i'));
+    body.append(structureArt);
     const mediaHost = makeElement('div', 'status-atelier-preview-media zrs-structure-head');
     const addPreviewImage = (url, className, alt) => {
         if (!url) return;
@@ -1500,7 +1618,7 @@ function renderStatusPreview(host) {
         image.addEventListener('error', () => image.remove());
         mediaHost.append(image);
     };
-    addPreviewImage(rule.media.avatarUrl, 'status-atelier-preview-avatar zrs-avatar', rule.media.imageAlt);
+    if (rule.structure !== 'forum') addPreviewImage(rule.media.avatarUrl, 'status-atelier-preview-avatar zrs-avatar', rule.media.imageAlt);
     addPreviewImage(rule.media.imageUrl, 'status-atelier-preview-cover zrs-cover', rule.media.imageAlt);
     if (rule.media.audioUrl) {
         const audio = makeElement('audio', 'status-atelier-preview-audio zrs-audio');
@@ -1512,7 +1630,7 @@ function renderStatusPreview(host) {
     if (mediaHost.children.length) body.append(mediaHost);
     if (rule.sharedFields.length) {
         const sharedHost = makeElement('div', 'status-atelier-preview-shared zrs-shared');
-        rule.sharedFields.forEach((definition, index) => appendPreviewField(sharedHost, definition, shared[index], true, rule.glyph));
+        rule.sharedFields.forEach((definition, index) => appendPreviewField(sharedHost, definition, shared[index], true, rule.glyph, rule));
         body.append(sharedHost);
     }
 
@@ -1521,7 +1639,7 @@ function renderStatusPreview(host) {
     const showPage = index => {
         pageHost.replaceChildren();
         rule.pageFields.forEach((definition, fieldIndex) => {
-            appendPreviewField(pageHost, definition, pages[index]?.values[fieldIndex] || previewValue(definition), false, rule.glyph);
+            appendPreviewField(pageHost, definition, pages[index]?.values[fieldIndex] || previewValue(definition), false, rule.glyph, rule);
         });
         [...tabs.children].forEach((button, buttonIndex) => button.classList.toggle('is-active', buttonIndex === index));
     };
@@ -1554,6 +1672,9 @@ function refreshStatusAppearancePreview() {
     roots.forEach(root => {
         root.dataset.theme = rule.theme;
         root.dataset.layout = rule.layout;
+        root.dataset.logo = rule.logoId;
+        root.dataset.logoFamily = rule.logoFamily;
+        root.dataset.logoEffect = rule.logoEffect;
         root.querySelector('.status-atelier-preview-glyph')?.replaceChildren(document.createTextNode(rule.glyph));
         root.querySelector('.status-atelier-preview-style-name')?.replaceChildren(document.createTextNode(rule.styleName));
         root.querySelectorAll('.status-atelier-preview-meter-marker').forEach(marker => {
@@ -2277,6 +2398,8 @@ function renderGreetingStatusChooser() {
     const logoHost = greetingModal?.querySelector('#status-atelier-modal-status-logos');
     const paletteHost = greetingModal?.querySelector('#status-atelier-modal-status-palettes');
     const state = greetingModal?.querySelector('.status-atelier-modal-status-state');
+    const recipeName = greetingModal?.querySelector('#status-atelier-modal-current-recipe-name');
+    const recipeDescription = greetingModal?.querySelector('#status-atelier-modal-current-recipe-description');
     if (!select) return;
     if (!select.options.length) {
         STATUS_STYLE_PRESETS.forEach(style => {
@@ -2293,19 +2416,25 @@ function renderGreetingStatusChooser() {
             structureSelect.append(option);
         });
     }
-    if (structureSelect) structureSelect.value = settings().structure || 'profile';
+    if (structureSelect) structureSelect.value = settings().structure || 'custom';
+    const activeRecipe = statusRecipe();
+    if (recipeName) recipeName.textContent = activeRecipe.name;
+    if (recipeDescription) recipeDescription.textContent = activeRecipe.description;
     if (logoHost && logoHost.children.length !== STATUS_LOGO_PRESETS.length) {
         logoHost.replaceChildren();
         STATUS_LOGO_PRESETS.forEach(logo => {
             const button = makeElement('button', 'status-atelier-status-logo');
             button.type = 'button';
             button.dataset.modalStatusLogo = logo.id;
-            button.append(makeElement('span', '', logo.glyph || 'AUTO'), makeElement('small', '', logo.name));
+            button.dataset.logoFamily = logo.family || 'auto';
+            button.dataset.logoEffect = logo.effect || 'plain';
+            button.append(makeElement('span', 'status-atelier-logo-art', logo.glyph || 'AUTO'), makeElement('small', '', logo.name));
             logoHost.append(button);
         });
     }
+    const activeLogoId = normalizeRule(resolvedStatusInput()).logoId;
     logoHost?.querySelectorAll('[data-modal-status-logo]').forEach(button => {
-        button.setAttribute('aria-pressed', String(button.dataset.modalStatusLogo === (settings().logoId || 'auto')));
+        button.setAttribute('aria-pressed', String(button.dataset.modalStatusLogo === activeLogoId));
     });
     if (paletteHost && paletteHost.children.length !== STATUS_PALETTE_PRESETS.length) {
         paletteHost.replaceChildren();
@@ -2327,10 +2456,9 @@ function renderGreetingStatusChooser() {
         button.setAttribute('aria-pressed', String(button.dataset.modalStatusPalette === settings().paletteId));
     });
     if (state) {
-        const active = STATUS_STYLE_PRESETS.find(style => style.id === select.value);
         const installed = statusRegexAppliesToCurrentContext();
         state.textContent = installed
-            ? `当前角色已启用状态栏；再次点击会直接覆盖更新为“${active?.name || select.value}”。`
+            ? `当前角色已启用状态栏；再次点击会直接覆盖更新为“${activeRecipe.name}”。`
             : `当前角色尚未安装状态栏；点击后直接写入局部正则，不需要下载。`;
         state.dataset.state = installed ? 'success' : 'idle';
     }
@@ -2422,8 +2550,9 @@ async function applyModalStatus(button) {
         loadSettingsUI();
         renderGreetingStatusChooser();
         const state = greetingModal?.querySelector('.status-atelier-modal-status-state');
-        if (state) state.textContent = `已完成：世界书“${worldbook.bookName}”已写入 AI 输出规则，局部正则已更新为“${style.name}”。`;
-        notify('success', `已完整启用当前角色状态栏：世界书输出规则 + ${style.name} 局部正则`);
+        const recipe = statusRecipe();
+        if (state) state.textContent = `已完成：世界书“${worldbook.bookName}”已写入 AI 输出规则，局部正则已更新为“${recipe.name}”。`;
+        notify('success', `已完整启用当前角色状态栏：世界书输出规则 + ${recipe.name} 局部正则`);
     } catch (error) {
         notify('error', error?.message || '状态栏写入失败');
     } finally {
@@ -2509,27 +2638,36 @@ function buildGreetingModal() {
                     </details>
                 </details>
                 <section class="status-atelier-greeting-status-step">
-                    <div class="status-atelier-greeting-step-heading"><strong>直接制作状态栏</strong><small>结构决定组件，外观决定形状，色卡只改变颜色。</small></div>
-                    <div class="status-atelier-modal-status-controls">
-                        <label>组件结构<select id="status-atelier-modal-status-structure" class="text_pole"></select></label>
-                        <label>外观版式<select id="status-atelier-modal-status-style" class="text_pole"></select></label>
+                    <div class="status-atelier-greeting-step-heading"><strong>一键状态栏</strong><small>先看结果；不满意就换一套。</small></div>
+                    <div class="status-atelier-current-recipe status-atelier-modal-current-recipe">
+                        <div><strong id="status-atelier-modal-current-recipe-name"></strong><span id="status-atelier-modal-current-recipe-description"></span></div>
+                        <button type="button" class="menu_button" id="status-atelier-modal-shuffle-recipe">换一套</button>
                     </div>
-                    <details class="status-atelier-modal-schema-editor" open>
-                        <summary><strong>字段与 AI 动态数值</strong><small>这里直接增加、改名、改类型或删除。</small></summary>
-                        <button type="button" class="menu_button" id="status-atelier-modal-add-field">＋ 新增字段</button>
-                        <div id="status-atelier-modal-status-schema" class="status-atelier-modal-schema-list"></div>
-                    </details>
-                    <div class="status-atelier-appearance-heading"><strong>装饰 Logo</strong><small>可选叶片、苹果、月亮等。</small></div>
-                    <div id="status-atelier-modal-status-logos" class="status-atelier-status-logos"></div>
-                    <details class="status-atelier-status-palette-library">
-                        <summary><strong>色卡（可折叠）</strong><small>只改变颜色</small></summary>
-                        <div id="status-atelier-modal-status-palettes" class="status-atelier-status-palettes"></div>
+                    <details class="status-atelier-modal-status-advanced">
+                        <summary><strong>想自己调整再展开</strong><small>结构、字段、外观、Logo 与色卡</small></summary>
+                        <div class="status-atelier-modal-status-controls">
+                            <label>组件结构<select id="status-atelier-modal-status-structure" class="text_pole"></select></label>
+                            <label>外观版式<select id="status-atelier-modal-status-style" class="text_pole"></select></label>
+                        </div>
+                        <details class="status-atelier-modal-schema-editor">
+                            <summary><strong>字段与 AI 动态数值</strong><small>增加、改名、改类型或删除</small></summary>
+                            <button type="button" class="menu_button" id="status-atelier-modal-add-field">＋ 新增字段</button>
+                            <div id="status-atelier-modal-status-schema" class="status-atelier-modal-schema-list"></div>
+                        </details>
+                        <details class="status-atelier-status-logo-library">
+                            <summary><strong>装饰 Logo</strong><small>网点、切片、像素与拖影</small></summary>
+                            <div id="status-atelier-modal-status-logos" class="status-atelier-status-logos"></div>
+                        </details>
+                        <details class="status-atelier-status-palette-library">
+                            <summary><strong>色卡</strong><small>只改变颜色</small></summary>
+                            <div id="status-atelier-modal-status-palettes" class="status-atelier-status-palettes"></div>
+                        </details>
                     </details>
                     <div class="status-atelier-modal-status-preview-wrap">
-                        <small>AI 动态数值实时预览</small>
+                        <small>当前方案预览</small>
                         <div id="status-atelier-modal-status-preview"></div>
                     </div>
-                    <button type="button" class="menu_button" id="status-atelier-modal-apply-status">直接启用 / 覆盖当前角色状态栏</button>
+                    <button type="button" class="menu_button status-atelier-primary-action" id="status-atelier-modal-apply-status">一键生成并应用</button>
                     <p class="status-atelier-modal-status-state" role="status" aria-live="polite"></p>
                 </section>
                 <details class="status-atelier-greeting-more status-atelier-opening-only">
@@ -2562,6 +2700,7 @@ function buildGreetingModal() {
         notify('success', '已复制主页标记【主页】；请放进主开场白');
     });
     greetingModal.querySelector('#status-atelier-open-full-workbench').addEventListener('click', openFullWorkbench);
+    greetingModal.querySelector('#status-atelier-modal-shuffle-recipe').addEventListener('click', () => shuffleStatusRecipe());
     greetingModal.querySelector('#status-atelier-modal-status-structure').addEventListener('change', event => {
         applyStatusStructure(event.currentTarget.value);
     });
@@ -2971,6 +3110,7 @@ async function addSettingsPanel() {
     host.append(settingsRoot);
 
     settingsRoot.querySelectorAll('[data-status-workspace]').forEach(button => button.addEventListener('click', () => setWorkspace(button.dataset.statusWorkspace)));
+    field('status-atelier-shuffle-recipe')?.addEventListener('click', () => shuffleStatusRecipe());
 
     field('status-atelier-preset').addEventListener('change', event => {
         if (event.target.value !== 'custom') applyPreset(event.target.value);
@@ -3072,7 +3212,7 @@ async function addSettingsPanel() {
             notify('error', error?.message || '导入失败');
         }
     });
-    field('status-atelier-reset').addEventListener('click', () => applyPreset(settings().statusTemplate || 'relationship'));
+    field('status-atelier-reset').addEventListener('click', () => applyPreset(settings().statusTemplate || 'custom'));
     field('status-atelier-add-field').addEventListener('click', addStatusField);
     field('status-atelier-opening-add-worldline').addEventListener('click', () => {
         appendOpeningWorldline(settings().openingHome);

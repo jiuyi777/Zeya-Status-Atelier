@@ -2,8 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     RULE_PRESETS,
+    STATUS_CUSTOM_VARIANTS,
     STATUS_LOGO_PRESETS,
     STATUS_PALETTE_PRESETS,
+    STATUS_RECIPE_PRESETS,
     STATUS_STRUCTURE_PRESETS,
     STATUS_STYLE_PRESETS,
     STATUS_THEME_CSS,
@@ -23,8 +25,8 @@ test('parses any number of switch pages without storing story values', () => {
 });
 
 test('registers genuinely different component structures and composable palettes', () => {
-    assert.equal(STATUS_STRUCTURE_PRESETS.length, 9);
-    assert.equal(new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id)).size, 9);
+    assert.equal(STATUS_STRUCTURE_PRESETS.length, 29);
+    assert.equal(new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id)).size, 29);
     assert.equal(STATUS_PALETTE_PRESETS.length, 24);
     assert.equal(new Set(STATUS_PALETTE_PRESETS.map(item => item.id)).size, 24);
     assert.ok(STATUS_PALETTE_PRESETS.every(item => ['accent', 'background', 'card', 'text', 'muted'].every(key => /^#[0-9a-f]{6}$/i.test(item[key]))));
@@ -35,15 +37,18 @@ test('registers genuinely different component structures and composable palettes
 });
 
 test('decorative logos are independent from appearance and survive into generated renderer', () => {
-    assert.equal(STATUS_LOGO_PRESETS.length, 16);
-    assert.ok(STATUS_LOGO_PRESETS.some(item => item.id === 'leaf' && item.glyph === '🍃'));
-    assert.ok(STATUS_LOGO_PRESETS.some(item => item.id === 'apple' && item.glyph === '🍎'));
-    const apple = normalizeRule({ ...RULE_PRESETS.universalClassical, theme: 'vinyl-mag', logoId: 'apple' });
+    assert.ok(STATUS_LOGO_PRESETS.length >= 18);
+    assert.ok(STATUS_LOGO_PRESETS.some(item => item.id === 'leaf-cut' && item.effect === 'slice'));
+    assert.equal(STATUS_LOGO_PRESETS.filter(item => item.family === 'apple').length, 5);
+    assert.ok(new Set(STATUS_LOGO_PRESETS.filter(item => item.family === 'apple').map(item => item.effect)).size >= 5);
+    const apple = normalizeRule({ ...RULE_PRESETS.universalClassical, theme: 'vinyl-mag', logoId: 'apple-halftone' });
     const automatic = normalizeRule({ ...RULE_PRESETS.universalClassical, theme: 'vinyl-mag', logoId: 'auto' });
-    assert.equal(apple.glyph, '🍎');
+    assert.equal(apple.logoFamily, 'apple');
+    assert.equal(apple.logoEffect, 'halftone');
     assert.equal(automatic.glyph, '♪');
-    const generated = buildRegexScript({ ...RULE_PRESETS.universalClassical, logoId: 'leaf' }).replaceString;
-    assert.match(generated, /"glyph":"🍃"/);
+    const generated = buildRegexScript({ ...RULE_PRESETS.universalClassical, logoId: 'leaf-cut' }).replaceString;
+    assert.match(generated, /data-logo="leaf-cut"/);
+    assert.match(generated, /"logoEffect":"slice"/);
     assert.match(generated, /zrs-meter-marker/);
     assert.match(generated, /marker\.style\.left=n\+'%'/);
     assert.match(generated, /AI 动态数值位置/);
@@ -55,6 +60,66 @@ test('the workbench can reuse every exported theme instead of showing a color-on
     }
     assert.match(STATUS_THEME_CSS, /data-theme="vinyl-mag"[^}]*[\s\S]*?\.zrs-header::before/);
     assert.match(STATUS_THEME_CSS, /data-theme="cafe-receipt"[^}]*[\s\S]*?clip-path:polygon/);
+    for (const structure of ['custom', 'profile', 'social', 'forum', 'chat', 'collage', 'music', 'quest', 'casefile']) {
+        assert.match(STATUS_THEME_CSS, new RegExp(`data-structure="${structure}"`), `${structure} has a distinct exported skeleton`);
+    }
+    assert.match(STATUS_THEME_CSS, /data-structure="music"[^}]*[\s\S]*?repeating-radial-gradient/);
+    assert.match(STATUS_THEME_CSS, /data-structure="forum"[^}]*[\s\S]*?grid-template-columns:110px/);
+    assert.match(STATUS_THEME_CSS, /data-structure="forum"[^}]*[\s\S]*?zrs-field:nth-child\(4\)/);
+    assert.match(STATUS_THEME_CSS, /data-structure="collage"[^}]*[\s\S]*?grid-template-columns:repeat\(12/);
+    assert.match(STATUS_THEME_CSS, /data-structure="collage"[^}]*[\s\S]*?zrs-structure-art i:nth-child\(3\)/);
+    assert.match(STATUS_THEME_CSS, /data-structure="custom"[^}]*[\s\S]*?border:3px inset/);
+    assert.match(STATUS_THEME_CSS, /data-structure="social"[^}]*[\s\S]*?data-field="post_body"/);
+    assert.match(STATUS_THEME_CSS, /data-structure="forum"[^}]*[\s\S]*?zrs-forum-avatar/);
+    assert.match(STATUS_THEME_CSS, /data-structure="music"[^}]*[\s\S]*?33⅓/);
+    assert.match(STATUS_THEME_CSS, /data-structure="quest"[^}]*[\s\S]*?drop-shadow/);
+    assert.match(STATUS_THEME_CSS, /data-structure="casefile"[^}]*[\s\S]*?rotate\(-5deg\)/);
+    assert.match(STATUS_THEME_CSS, /data-structure="music"[^}]*[\s\S]*?box-shadow:7px 8px 0/);
+    assert.match(STATUS_THEME_CSS, /data-structure="quest"[^}]*[\s\S]*?clip-path:none/);
+    assert.match(STATUS_THEME_CSS, /data-logo="apple-halftone"/);
+});
+
+test('registers twenty custom panels and twenty one-click type recipes', () => {
+    assert.equal(STATUS_CUSTOM_VARIANTS.length, 20);
+    assert.equal(new Set(STATUS_CUSTOM_VARIANTS.map(item => item.id)).size, 20);
+    assert.equal(STATUS_RECIPE_PRESETS.filter(item => item.group === 'custom').length, 20);
+    assert.equal(STATUS_RECIPE_PRESETS.filter(item => item.group === 'type').length, 20);
+    assert.equal(new Set(STATUS_RECIPE_PRESETS.map(item => item.id)).size, 40);
+    for (const variant of STATUS_CUSTOM_VARIANTS) {
+        assert.match(STATUS_THEME_CSS, new RegExp(`data-variant="${variant.id}"`), `${variant.name} has exported material CSS`);
+    }
+    for (const recipe of STATUS_RECIPE_PRESETS.filter(item => item.group === 'type')) {
+        assert.match(STATUS_THEME_CSS, new RegExp(`data-structure="${recipe.structure}"`), `${recipe.name} has exported type CSS`);
+    }
+    for (const recipe of STATUS_RECIPE_PRESETS) {
+        const structure = STATUS_STRUCTURE_PRESETS.find(item => item.id === recipe.structure);
+        const variant = STATUS_CUSTOM_VARIANTS.find(item => item.id === recipe.variant);
+        const fields = variant?.fields || structure.fields;
+        const rendered = buildRegexScript({
+            ...RULE_PRESETS.custom,
+            structure: recipe.structure,
+            variant: recipe.variant,
+            theme: recipe.theme,
+            paletteId: recipe.paletteId,
+            logoId: recipe.logoId,
+            layout: recipe.layout,
+            pageFieldsText: fields.map(field => field.join('|')).join('\n'),
+        }).replaceString;
+        assert.match(rendered, new RegExp(`data-structure="${recipe.structure}"`));
+        assert.match(rendered, new RegExp(`data-variant="${recipe.variant}"`));
+        const browserScript = rendered.match(/<script>\n([\s\S]*?)\n<\/script>/);
+        assert.ok(browserScript, `${recipe.name} includes browser script`);
+        assert.doesNotThrow(() => new Function(browserScript[1]), `${recipe.name} browser script parses`);
+    }
+    const generated = buildRegexScript({ ...RULE_PRESETS.custom, variant: 'glass-orbit' }).replaceString;
+    assert.match(generated, /data-variant="glass-orbit"/);
+    assert.match(generated, /"variant":"glass-orbit"/);
+});
+
+test('free component canvas is the fallback instead of a hard-coded relationship card', () => {
+    assert.equal(normalizeRule({}).structure, 'custom');
+    assert.equal(RULE_PRESETS.custom.structure, 'custom');
+    assert.equal(RULE_PRESETS.custom.pageFieldsText.split('\n').length, 3);
 });
 
 test('normalizes safe media and rejects executable URLs', () => {
@@ -95,6 +160,21 @@ test('generated renderer contains real media components without autoplay', () =>
     assert.match(script.replaceString, /audio\.controls=true/);
     assert.doesNotMatch(script.replaceString, /autoplay/i);
     assert.match(script.replaceString, /--z-accent:#c9a54c/);
+});
+
+test('generated fields keep semantic ids and forum binds a real avatar into the author rail', () => {
+    const script = buildRegexScript({
+        ...RULE_PRESETS.universalClassical,
+        structure: 'forum',
+        media: {
+            avatarSource: 'character',
+            avatarUrl: '/thumbnail?type=avatar&file=character.png',
+        },
+    });
+    assert.match(script.replaceString, /item\.dataset\.field=field\.id/);
+    assert.match(script.replaceString, /field\.id==='floor_user'/);
+    assert.match(script.replaceString, /zrs-forum-avatar/);
+    assert.match(script.replaceString, /当前角色头像/);
 });
 
 test('parses a complete AI status block and rejects incomplete output', () => {

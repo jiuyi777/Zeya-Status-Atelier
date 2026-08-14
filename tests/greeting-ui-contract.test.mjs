@@ -195,6 +195,9 @@ test('status quick editor updates fields without reloading the whole opening-hom
 
 test('modal and palettes stay inside mobile viewport and palette library is collapsible', () => {
     assert.match(settingsMarkup, /status-atelier-status-palette-library/);
+    assert.match(settingsMarkup, /status-atelier-status-logo-library/);
+    assert.match(source, /status-atelier-status-logo-library/);
+    assert.match(source, /structure: 'custom'/);
     assert.match(settingsMarkup, /24 套色卡（可折叠）/);
     assert.match(styleSource, /max-height:\s*calc\(100dvh - 12px - env\(safe-area-inset-top\) - env\(safe-area-inset-bottom\)\)/);
     assert.match(styleSource, /\.status-atelier-dialog-body\s*\{[\s\S]*?overflow-y:\s*auto;[\s\S]*?overscroll-behavior:\s*contain;/);
@@ -230,13 +233,26 @@ test('one-click homepage updates the local regex and character greeting without 
 });
 
 test('status workspace exposes a short one-click path and hides customization by default', () => {
-    assert.match(settingsMarkup, /id="status-atelier-install-scoped"[^>]*>一键应用到当前角色</);
+    assert.match(settingsMarkup, /id="status-atelier-install-scoped"[^>]*>一键生成并应用</);
+    assert.match(settingsMarkup, /id="status-atelier-shuffle-recipe"[^>]*>换一套</);
+    assert.match(settingsMarkup, /完整 40 套默认收起/);
+    assert.match(source, /id="status-atelier-modal-shuffle-recipe"[^>]*>换一套</);
+    assert.match(source, /class="status-atelier-modal-status-advanced">/);
     assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?状态栏字段/);
     assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?更多外观与配色/);
     assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-advanced">[\s\S]*?可选：头像、配图与音乐/);
     const block = source.match(/async function installRegex\(scope\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(block, /settings\(\)\.promptEnabled = scope !== 'scoped'/);
     assert.match(block, /updatePrompt\(\)/);
+});
+
+test('one-click recipe switching only refreshes status controls instead of the whole workbench', () => {
+    const block = source.match(/function applyStatusRecipe\(recipeId, \{ announce = true \} = \{\}\) \{([\s\S]*?)\n\}\n\nfunction shuffleStatusRecipe/)?.[1] || '';
+    assert.doesNotMatch(block, /loadSettingsUI\(\)/);
+    assert.match(block, /renderStatusRecipeLibrary\(\)/);
+    assert.match(block, /renderStatusDesignControls\(\)/);
+    assert.match(block, /renderStatusSchema\(\)/);
+    assert.match(block, /updatePreview\(\)/);
 });
 
 test('status prompt only runs where the generated status regex is installed', () => {
