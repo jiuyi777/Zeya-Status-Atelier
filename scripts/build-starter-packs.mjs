@@ -122,7 +122,7 @@ for (const [index, recipe] of STATUS_RECIPE_PRESETS.entries()) {
         structure: recipe.structure,
         variant: recipe.variant,
         layout: recipe.layout,
-        pagesText: structure.pagesText,
+        pagesText: recipe.pagesText || structure.pagesText,
         sharedFieldsText: '',
         pageFieldsText: recipeFields.map(field => field.join('|')).join('\n'),
     };

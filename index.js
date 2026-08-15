@@ -683,12 +683,17 @@ function applyStatusRecipe(recipeId, { announce = true } = {}) {
         layout: recipe.layout,
         title: recipe.title || variant?.name || structure.title,
         subtitle: recipe.subtitle || (recipe.group === 'custom' ? `CUSTOM PANEL / ${recipe.id.slice(-2)}` : structure.subtitle),
-        pagesText: structure.pagesText,
+        pagesText: recipe.pagesText || structure.pagesText,
         sharedFieldsText: '',
         pageFieldsText: fields.map(field => field.join('|')).join('\n'),
         preset: 'custom',
         statusTemplate: 'custom',
     });
+    settings().media = {
+        ...DEFAULT_SETTINGS.media,
+        ...(settings().media || {}),
+        avatarSource: recipe.avatarSource || 'none',
+    };
     statusAiTestRecords = null;
     for (const [id, key] of Object.entries(SETTING_FIELDS)) {
         const control = field(id);
@@ -1570,6 +1575,7 @@ function renderStatusPreview(host) {
     root.dataset.logo = rule.logoId;
     root.dataset.logoFamily = rule.logoFamily;
     root.dataset.logoEffect = rule.logoEffect;
+    root.dataset.hasImage = rule.media.imageUrl ? 'true' : 'false';
     if (rule.palette) {
         root.style.setProperty('--sap-accent', rule.palette.accent);
         root.style.setProperty('--sap-layer', rule.palette.background);
