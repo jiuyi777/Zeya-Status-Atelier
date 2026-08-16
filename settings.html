@@ -138,23 +138,18 @@
         </section>
 
         <section class="status-atelier-workspace" data-status-workspace-panel="status" hidden>
-            <section class="status-atelier-library">
-                <div class="status-atelier-section-heading"><div><strong>已收藏状态栏用途</strong><small>用途模板只是起点，不绑定固定人物。</small></div><span>★ 已收藏</span></div>
-                <div id="status-atelier-status-favorites" class="status-atelier-template-grid"></div>
-                <details class="status-atelier-library-more"><summary>展开未收藏状态栏用途</summary><div id="status-atelier-status-others" class="status-atelier-template-grid"></div></details>
-            </section>
             <div class="status-atelier-workspace-grid">
                 <main>
-                    <section class="status-atelier-setting-section">
-                        <div class="status-atelier-section-heading"><div><h4>结构与组件</h4><small>先决定它是人物名片、论坛、聊天、拼贴、音乐页还是任务板；AI 会按该结构填写字段。</small></div></div>
+                    <details class="status-atelier-setting-section status-atelier-collapsible">
+                        <summary class="status-atelier-section-heading"><div><h4>手动换结构</h4><small>一键方案不合适时再展开。</small></div></summary>
                         <label>组件结构<select id="status-atelier-structure" class="text_pole"></select></label>
                         <small>切换结构会载入一套真正不同的组件和字段；之后仍可逐项改名、改类型、增删和排序。</small>
-                    </section>
+                    </details>
 
                     <section class="status-atelier-setting-section status-atelier-quick-apply">
                         <div class="status-atelier-section-heading"><div><h4>一键启用状态栏</h4><small>把 AI 输出规则写进当前角色世界书，并更新当前角色的局部正则。</small></div></div>
                         <div class="status-atelier-setting-actions">
-                            <button id="status-atelier-install-scoped" type="button" class="menu_button status-atelier-primary-action">一键应用到当前角色</button>
+                            <button id="status-atelier-install-scoped" type="button" class="menu_button status-atelier-primary-action">一键生成并应用</button>
                             <button id="status-atelier-test-ai" type="button" class="menu_button">先测试当前 AI</button>
                         </div>
                         <p id="status-atelier-ai-test-status" class="status-atelier-ai-test-status" role="status" aria-live="polite">无需先测试；一键应用会同时写入世界书输出规则和局部正则。</p>
@@ -183,11 +178,14 @@
                     </details>
 
                     <details class="status-atelier-setting-section status-atelier-collapsible">
-                        <summary class="status-atelier-section-heading"><div><h4>更多外观与配色</h4><small>结构、50 套外观和色卡可独立组装。</small></div></summary>
+                        <summary class="status-atelier-section-heading"><div><h4>更多外观与配色</h4><small>完整外观库按需展开，默认不占视线。</small></div></summary>
                         <div class="status-atelier-appearance-heading"><strong>50 套外观</strong><small>点击立即查看；只换外观，不会覆盖你编辑的字段。</small></div>
                         <div id="status-atelier-status-styles" class="status-atelier-status-styles" aria-label="状态栏外观"></div>
-                        <div class="status-atelier-appearance-heading"><strong>装饰 Logo</strong><small>叶片、苹果、月亮等只改变标识，不改变字段。</small></div>
-                        <div id="status-atelier-status-logos" class="status-atelier-status-logos" aria-label="状态栏装饰 Logo"></div>
+                        <details class="status-atelier-status-logo-library">
+                            <summary><strong>动态数值小物（可折叠）</strong><small>12 个简化图形，只标记位置，不覆盖文字</small></summary>
+                            <label>轨道填充方式<select id="status-atelier-fill-mode" class="text_pole"><option value="solid">纯色填充</option><option value="object">小物填充</option></select></label>
+                            <div id="status-atelier-status-logos" class="status-atelier-status-logos" aria-label="状态栏装饰 Logo"></div>
+                        </details>
                         <details class="status-atelier-status-palette-library">
                             <summary><strong>24 套色卡（可折叠）</strong><small>色卡只控制颜色，不改变形状与排版。</small></summary>
                             <div id="status-atelier-status-palettes" class="status-atelier-status-palettes" aria-label="状态栏色卡"></div>

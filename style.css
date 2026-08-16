@@ -1331,19 +1331,61 @@
     transition: width .2s ease;
 }
 
+.status-atelier-preview-meter .zrs-meter-trail {
+    position: absolute;
+    left: 0;
+    top: 3px;
+    display: none;
+    height: 18px;
+    align-items: center;
+    gap: 1px;
+    overflow: hidden;
+    color: var(--sap-accent);
+}
+
+.status-atelier-preview-meter .zrs-meter-trail span {
+    display: grid;
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    place-items: center;
+}
+
+.status-atelier-rule-preview[data-fill-mode="object"] .status-atelier-preview-meter > i {
+    display: none;
+}
+
+.status-atelier-rule-preview[data-fill-mode="object"] .zrs-meter-trail {
+    display: flex;
+}
+
 .status-atelier-preview-meter-marker {
     position: absolute;
     top: 50%;
     z-index: 1;
     display: grid;
     place-items: center;
-    min-width: 22px;
-    height: 22px;
+    width: 26px;
+    min-width: 26px;
+    height: 26px;
+    border: 2px solid var(--sap-card);
+    border-radius: 50%;
+    color: var(--sap-accent);
+    background: var(--sap-card);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--sap-text) 22%, transparent);
     transform: translate(-50%, -50%);
     font-size: 17px;
     line-height: 1;
     filter: drop-shadow(0 1px 1px color-mix(in srgb, var(--sap-text) 35%, transparent));
     transition: left .2s ease;
+}
+
+.status-atelier-rule-preview :is(.zrs-glyph, .zrs-meter-marker, .zrs-meter-trail span) > svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+    overflow: visible;
+    color: var(--sap-accent);
 }
 
 .status-atelier-status-palettes {
@@ -3107,16 +3149,90 @@ summary.status-atelier-section-heading {
 
 .status-atelier-status-logos {
     display: grid;
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-    gap: 5px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 7px;
+    max-height: 300px;
+    padding: 4px;
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
+.status-atelier-current-recipe {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 13px 14px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--status-atelier-ui-accent) 16%, var(--SmartThemeBlurTintColor)), color-mix(in srgb, var(--SmartThemeBlurTintColor) 92%, transparent));
+    box-shadow: inset 0 1px rgba(255,255,255,.18), 0 8px 22px rgba(0,0,0,.12);
+}
+
+.status-atelier-current-recipe > div {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.status-atelier-current-recipe strong {
+    font-size: 1.08em;
+}
+
+.status-atelier-current-recipe span,
+.status-atelier-current-recipe small {
+    opacity: .72;
+    font-size: .82em;
+}
+
+.status-atelier-current-recipe .menu_button {
+    min-width: 82px;
+    min-height: 42px;
+}
+
+.status-atelier-modal-status-advanced {
+    padding: 9px 11px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 82%, transparent);
+}
+
+.status-atelier-modal-status-advanced > summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.status-atelier-modal-status-advanced > summary small {
+    opacity: .66;
+}
+
+.status-atelier-modal-status-advanced[open] > .status-atelier-modal-status-controls {
+    margin-top: 10px;
+}
+
+.status-atelier-recipe-library h5 {
+    margin: 14px 0 7px;
+}
+
+.status-atelier-recipe-card {
+    min-height: 70px;
+    border-radius: 13px;
+    text-align: left;
+}
+
+.status-atelier-recipe-card[aria-pressed="true"] {
+    color: inherit;
+    outline: 3px solid var(--status-atelier-ui-accent);
+    outline-offset: -3px;
+    background: color-mix(in srgb, var(--status-atelier-ui-accent) 12%, var(--SmartThemeBlurTintColor));
 }
 
 .status-atelier-status-logo {
     display: grid;
     place-items: center;
     min-width: 0;
-    min-height: 54px;
-    padding: 5px 3px;
+    min-height: 72px;
+    padding: 8px 4px 6px;
     border: 1px solid var(--saw-line, var(--SmartThemeBorderColor));
     border-radius: 8px;
     color: var(--saw-ink, var(--SmartThemeBodyColor));
@@ -3125,7 +3241,7 @@ summary.status-atelier-section-heading {
 }
 
 .status-atelier-status-logo > span {
-    font-size: 1.25em;
+    font-size: 1.55em;
     line-height: 1;
 }
 
@@ -3138,16 +3254,19 @@ summary.status-atelier-section-heading {
 }
 
 .status-atelier-status-logo[aria-pressed="true"] {
-    color: var(--saw-panel, #fff);
-    background: var(--saw-ink, var(--status-atelier-ui-accent));
-    box-shadow: inset 0 -3px var(--saw-accent, var(--status-atelier-ui-accent));
+    border-color: var(--saw-accent, var(--status-atelier-ui-accent));
+    color: var(--saw-ink, var(--SmartThemeBodyColor));
+    background: color-mix(in srgb, var(--saw-accent, var(--status-atelier-ui-accent)) 14%, var(--saw-panel, transparent));
+    box-shadow: inset 0 -4px var(--saw-accent, var(--status-atelier-ui-accent));
 }
 
+.status-atelier-status-logo-library,
 .status-atelier-status-palette-library {
     margin-top: 12px;
     border-top: 1px solid var(--saw-line, var(--SmartThemeBorderColor));
 }
 
+.status-atelier-status-logo-library > summary,
 .status-atelier-status-palette-library > summary {
     display: flex;
     align-items: baseline;
@@ -3157,9 +3276,93 @@ summary.status-atelier-section-heading {
     cursor: pointer;
 }
 
+.status-atelier-status-logo-library > summary small,
 .status-atelier-status-palette-library > summary small {
     color: var(--saw-muted, var(--SmartThemeBodyColor));
     opacity: .72;
+}
+
+.status-atelier-logo-art {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-width: 30px;
+    min-height: 30px;
+    isolation: isolate;
+}
+
+.status-atelier-logo-art > svg {
+    display: block;
+    width: 26px;
+    height: 26px;
+    color: var(--saw-accent, var(--status-atelier-ui-accent));
+}
+
+.status-atelier-status-logo[data-logo-family="apple"] .status-atelier-logo-art {
+    width: 31px;
+    height: 28px;
+    border-radius: 48% 48% 44% 44%;
+    color: transparent;
+    background: var(--saw-ink, currentColor);
+}
+
+.status-atelier-status-logo[data-logo-family="apple"] .status-atelier-logo-art::before {
+    content: "";
+    position: absolute;
+    left: 16px;
+    top: -5px;
+    width: 10px;
+    height: 7px;
+    border-radius: 100% 0;
+    background: var(--saw-accent, var(--status-atelier-ui-accent));
+    transform: rotate(-24deg);
+}
+
+.status-atelier-status-logo[data-logo-effect="outline"] .status-atelier-logo-art {
+    color: transparent;
+    -webkit-text-stroke: 1px var(--saw-ink, currentColor);
+}
+
+.status-atelier-status-logo[data-logo-effect="slice"] .status-atelier-logo-art {
+    transform: skew(-10deg);
+    text-shadow: 4px 0 var(--saw-accent, var(--status-atelier-ui-accent)), -4px 0 color-mix(in srgb, var(--saw-ink, currentColor) 28%, transparent);
+}
+
+.status-atelier-status-logo[data-logo-effect="stamp"] .status-atelier-logo-art {
+    border: 2px double currentColor;
+    transform: rotate(-7deg);
+}
+
+.status-atelier-status-logo[data-logo-effect="burst"] .status-atelier-logo-art {
+    text-shadow: 0 -8px currentColor, 0 8px currentColor, 8px 0 currentColor, -8px 0 currentColor;
+}
+
+.status-atelier-status-logo[data-logo-effect="rings"] .status-atelier-logo-art {
+    border: 3px double currentColor;
+    border-radius: 50%;
+}
+
+.status-atelier-status-logo[data-status-logo="apple-halftone"] .status-atelier-logo-art,
+.status-atelier-status-logo[data-modal-status-logo="apple-halftone"] .status-atelier-logo-art {
+    border: 1px solid var(--saw-ink, currentColor);
+    background: radial-gradient(circle, var(--saw-ink, currentColor) 0 1px, transparent 1.5px) 0 0 / 5px 5px;
+}
+
+.status-atelier-status-logo[data-status-logo="apple-grid"] .status-atelier-logo-art,
+.status-atelier-status-logo[data-modal-status-logo="apple-grid"] .status-atelier-logo-art {
+    border-radius: 0;
+    background: repeating-linear-gradient(90deg, var(--saw-ink, currentColor) 0 4px, transparent 4px 6px), repeating-linear-gradient(var(--saw-ink, currentColor) 0 4px, transparent 4px 6px);
+    clip-path: polygon(20% 0,80% 0,80% 12%,100% 12%,100% 82%,80% 82%,80% 100%,20% 100%,20% 88%,0 88%,0 18%,20% 18%);
+}
+
+.status-atelier-status-logo[data-status-logo="apple-slice"] .status-atelier-logo-art,
+.status-atelier-status-logo[data-modal-status-logo="apple-slice"] .status-atelier-logo-art {
+    clip-path: polygon(0 0,100% 0,100% 35%,76% 35%,76% 55%,100% 55%,100% 100%,0 100%,0 66%,22% 66%,22% 45%,0 45%);
+}
+
+.status-atelier-status-logo[data-status-logo="apple-smear"] .status-atelier-logo-art,
+.status-atelier-status-logo[data-modal-status-logo="apple-smear"] .status-atelier-logo-art {
+    box-shadow: -6px 3px color-mix(in srgb, var(--saw-ink, currentColor) 24%, transparent), -12px 6px color-mix(in srgb, var(--saw-ink, currentColor) 10%, transparent);
 }
 
 .status-atelier-status-style {

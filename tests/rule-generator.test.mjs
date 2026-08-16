@@ -35,17 +35,25 @@ test('registers genuinely different component structures and composable palettes
 });
 
 test('decorative logos are independent from appearance and survive into generated renderer', () => {
-    assert.equal(STATUS_LOGO_PRESETS.length, 16);
-    assert.ok(STATUS_LOGO_PRESETS.some(item => item.id === 'leaf' && item.glyph === '🍃'));
-    assert.ok(STATUS_LOGO_PRESETS.some(item => item.id === 'apple' && item.glyph === '🍎'));
-    const apple = normalizeRule({ ...RULE_PRESETS.universalClassical, theme: 'vinyl-mag', logoId: 'apple' });
+    assert.equal(STATUS_LOGO_PRESETS.length, 13);
+    assert.equal(STATUS_LOGO_PRESETS.filter(item => item.id.startsWith('slider-')).length, 12);
+    assert.ok(STATUS_LOGO_PRESETS.filter(item => item.id.startsWith('slider-')).every(item => item.svg.includes('aria-hidden="true"')));
+    assert.deepEqual(
+        STATUS_LOGO_PRESETS.filter(item => item.id.startsWith('slider-')).map(item => item.id),
+        ['slider-circle', 'slider-capsule', 'slider-diamond', 'slider-bookmark', 'slider-leaf', 'slider-flower', 'slider-apple', 'slider-gem', 'slider-drop', 'slider-moon', 'slider-shell', 'slider-butterfly'],
+    );
+    const apple = normalizeRule({ ...RULE_PRESETS.universalClassical, theme: 'vinyl-mag', logoId: 'slider-apple', fillMode: 'object' });
     const automatic = normalizeRule({ ...RULE_PRESETS.universalClassical, theme: 'vinyl-mag', logoId: 'auto' });
-    assert.equal(apple.glyph, '🍎');
+    assert.equal(apple.logoFamily, 'slider');
+    assert.equal(apple.fillMode, 'object');
+    assert.match(apple.logoSvg, /<svg/);
     assert.equal(automatic.glyph, '♪');
-    const generated = buildRegexScript({ ...RULE_PRESETS.universalClassical, logoId: 'leaf' }).replaceString;
-    assert.match(generated, /"glyph":"🍃"/);
+    const generated = buildRegexScript({ ...RULE_PRESETS.universalClassical, logoId: 'slider-leaf', fillMode: 'object' }).replaceString;
+    assert.match(generated, /data-logo="slider-leaf"/);
+    assert.match(generated, /data-fill-mode="object"/);
     assert.match(generated, /zrs-meter-marker/);
-    assert.match(generated, /marker\.style\.left=n\+'%'/);
+    assert.match(generated, /zrs-meter-trail/);
+    assert.match(generated, /marker\.style\.left='clamp\(13px,'\+n\+'%,calc\(100% - 13px\)\)'/);
     assert.match(generated, /AI 动态数值位置/);
 });
 
@@ -55,6 +63,40 @@ test('the workbench can reuse every exported theme instead of showing a color-on
     }
     assert.match(STATUS_THEME_CSS, /data-theme="vinyl-mag"[^}]*[\s\S]*?\.zrs-header::before/);
     assert.match(STATUS_THEME_CSS, /data-theme="cafe-receipt"[^}]*[\s\S]*?clip-path:polygon/);
+    for (const structure of ['custom', 'profile', 'social', 'forum', 'chat', 'collage', 'music', 'quest', 'casefile']) {
+        assert.match(STATUS_THEME_CSS, new RegExp(`data-structure="${structure}"`), `${structure} has a distinct exported skeleton`);
+    }
+    assert.match(STATUS_THEME_CSS, /data-structure="music"[^}]*[\s\S]*?repeating-radial-gradient/);
+    assert.match(STATUS_THEME_CSS, /data-structure="forum"[^}]*[\s\S]*?grid-template-columns:110px/);
+    assert.match(STATUS_THEME_CSS, /data-structure="forum"[^}]*[\s\S]*?zrs-field:nth-child\(4\)/);
+    assert.match(STATUS_THEME_CSS, /data-structure="collage"[^}]*[\s\S]*?grid-template-columns:repeat\(12/);
+    assert.match(STATUS_THEME_CSS, /data-structure="collage"[^}]*[\s\S]*?zrs-structure-art i:nth-child\(3\)/);
+    assert.match(STATUS_THEME_CSS, /data-structure="custom"[^}]*[\s\S]*?border:3px inset/);
+    assert.match(STATUS_THEME_CSS, /data-structure="social"[^}]*[\s\S]*?data-field="post_body"/);
+    assert.match(STATUS_THEME_CSS, /data-structure="forum"[^}]*[\s\S]*?zrs-forum-avatar/);
+    assert.match(STATUS_THEME_CSS, /data-structure="music"[^}]*[\s\S]*?33⅓/);
+    assert.match(STATUS_THEME_CSS, /data-structure="quest"[^}]*[\s\S]*?drop-shadow/);
+    assert.match(STATUS_THEME_CSS, /data-structure="casefile"[^}]*[\s\S]*?rotate\(-5deg\)/);
+    assert.match(STATUS_THEME_CSS, /data-structure="music"[^}]*[\s\S]*?box-shadow:7px 8px 0/);
+    assert.match(STATUS_THEME_CSS, /data-structure="quest"[^}]*[\s\S]*?clip-path:none/);
+    assert.match(buildRegexScript({ ...RULE_PRESETS.universalClassical, logoId: 'slider-apple' }).replaceString, /data-logo="slider-apple"/);
+});
+
+test('removes the rejected 40-card recipe collection from selectable structures', () => {
+    const ids = STATUS_STRUCTURE_PRESETS.map(item => item.id);
+    assert.deepEqual(ids, ['profile', 'social', 'forum', 'chat', 'collage', 'music', 'quest', 'casefile', 'custom']);
+    for (const removedId of ['shop', 'travel', 'weather', 'holo', 'specimen', 'memory', 'livestream']) {
+        assert.equal(ids.includes(removedId), false, `${removedId} is no longer selectable`);
+    }
+    const generated = buildRegexScript({ ...RULE_PRESETS.custom, variant: 'glass-orbit', structure: 'shop' }).replaceString;
+    assert.match(generated, /data-structure="custom"/);
+    assert.match(generated, /data-variant="auto"/);
+});
+
+test('free component canvas is the fallback instead of a hard-coded relationship card', () => {
+    assert.equal(normalizeRule({}).structure, 'custom');
+    assert.equal(RULE_PRESETS.custom.structure, 'custom');
+    assert.equal(RULE_PRESETS.custom.pageFieldsText.split('\n').length, 3);
 });
 
 test('normalizes safe media and rejects executable URLs', () => {
@@ -95,6 +137,21 @@ test('generated renderer contains real media components without autoplay', () =>
     assert.match(script.replaceString, /audio\.controls=true/);
     assert.doesNotMatch(script.replaceString, /autoplay/i);
     assert.match(script.replaceString, /--z-accent:#c9a54c/);
+});
+
+test('generated fields keep semantic ids and forum binds a real avatar into the author rail', () => {
+    const script = buildRegexScript({
+        ...RULE_PRESETS.universalClassical,
+        structure: 'forum',
+        media: {
+            avatarSource: 'character',
+            avatarUrl: '/thumbnail?type=avatar&file=character.png',
+        },
+    });
+    assert.match(script.replaceString, /item\.dataset\.field=field\.id/);
+    assert.match(script.replaceString, /field\.id==='floor_user'/);
+    assert.match(script.replaceString, /zrs-forum-avatar/);
+    assert.match(script.replaceString, /当前角色头像/);
 });
 
 test('parses a complete AI status block and rejects incomplete output', () => {

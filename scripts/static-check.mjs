@@ -1,7 +1,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { STATUS_STYLE_PRESETS } from '../rule-generator.js';
+import { STATUS_LOGO_PRESETS, STATUS_STRUCTURE_PRESETS, STATUS_STYLE_PRESETS } from '../rule-generator.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const requiredFiles = [
@@ -182,6 +182,16 @@ if (new Set(STATUS_STYLE_PRESETS.map(style => style.id)).size !== 50) errors.pus
 if (statusIds.size !== 50) errors.push('50套通用状态栏必须使用50个独立正则 ID');
 if (miniWebPalettes.size !== 30) errors.push('21-50 必须使用30套独立五色色卡');
 if (miniWebSchemas.size !== 30) errors.push('21-50 必须使用30套独立动态字段协议');
+
+if (STATUS_STRUCTURE_PRESETS.length !== 9) errors.push('旧40套配方移除后，编辑器必须只保留9种基础结构');
+if (STATUS_LOGO_PRESETS.length !== 13) errors.push('动态数值小物必须包含跟随外观与12个简化图形');
+if (STATUS_LOGO_PRESETS.filter(item => item.id.startsWith('slider-')).length !== 12) errors.push('动态数值小物必须正好保留12个可选图形');
+try {
+    await readdir(join(root, 'starter-packs', '状态栏一键配方'));
+    errors.push('已删除的40套状态栏一键配方不应继续生成');
+} catch (error) {
+    if (error?.code !== 'ENOENT') errors.push(`无法确认旧状态栏配方目录已删除：${error.message}`);
+}
 
 if (errors.length) {
     console.error('STATIC_CHECK_FAILED');

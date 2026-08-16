@@ -2,7 +2,13 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildOpeningHomeBlock, buildOpeningHomeRegex } from '../opening-home-generator.js';
-import { RULE_PRESETS, STATUS_STYLE_PRESETS, buildAiInstruction, buildRegexScript, buildWorldbookJson } from '../rule-generator.js';
+import {
+    RULE_PRESETS,
+    STATUS_STYLE_PRESETS,
+    buildAiInstruction,
+    buildRegexScript,
+    buildWorldbookJson,
+} from '../rule-generator.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const outputRoot = join(root, 'starter-packs');
