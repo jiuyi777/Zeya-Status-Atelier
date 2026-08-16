@@ -71,85 +71,27 @@ export const STATUS_STYLE_PRESETS = Object.freeze([
 ]);
 
 export const STATUS_LOGO_PRESETS = Object.freeze([
-    { id: 'auto', name: '跟随外观', glyph: '', family: 'auto', effect: 'plain' },
-    { id: 'spark-burst', name: '星芒·爆闪', glyph: '✦', family: 'spark', effect: 'burst' },
-    { id: 'leaf-solid', name: '叶片·实心', glyph: '❧', family: 'leaf', effect: 'solid' },
-    { id: 'leaf-outline', name: '叶片·描边', glyph: '❧', family: 'leaf', effect: 'outline' },
-    { id: 'leaf-cut', name: '叶片·切片', glyph: '❧', family: 'leaf', effect: 'slice' },
-    { id: 'apple-solid', name: '苹果·实心', glyph: '●', family: 'apple', effect: 'solid' },
-    { id: 'apple-halftone', name: '苹果·网点', glyph: '●', family: 'apple', effect: 'halftone' },
-    { id: 'apple-grid', name: '苹果·像素', glyph: '●', family: 'apple', effect: 'pixel' },
-    { id: 'apple-slice', name: '苹果·错位', glyph: '●', family: 'apple', effect: 'slice' },
-    { id: 'apple-smear', name: '苹果·拖影', glyph: '●', family: 'apple', effect: 'smear' },
-    { id: 'moon-cut', name: '月相·切割', glyph: '☾', family: 'moon', effect: 'slice' },
-    { id: 'heart-outline', name: '心形·线稿', glyph: '♡', family: 'heart', effect: 'outline' },
-    { id: 'butterfly-stamp', name: '蝴蝶·印刷', glyph: '蝶', family: 'butterfly', effect: 'stamp' },
-    { id: 'flower-petal', name: '花朵·重瓣', glyph: '✿', family: 'flower', effect: 'burst' },
-    { id: 'music-disc', name: '唱片·声轨', glyph: '◉', family: 'music', effect: 'rings' },
-    { id: 'sun-raster', name: '太阳·栅格', glyph: '☼', family: 'sun', effect: 'halftone' },
-    { id: 'seal-chop', name: '印章·错版', glyph: '印', family: 'seal', effect: 'stamp' },
-    { id: 'diamond-glitch', name: '菱形·故障', glyph: '◆', family: 'diamond', effect: 'slice' },
-    { id: 'object-gem', name: '物件·宝石', glyph: '♦', family: 'object', effect: 'solid' },
-    { id: 'object-compass', name: '物件·罗盘', glyph: '⌖', family: 'object', effect: 'rings' },
-    { id: 'object-cloud', name: '物件·云朵', glyph: '☁', family: 'object', effect: 'outline' },
-    { id: 'object-vial', name: '物件·药瓶', glyph: '⚗', family: 'object', effect: 'solid' },
-    { id: 'object-key', name: '物件·钥匙', glyph: '⚿', family: 'object', effect: 'outline' },
-    { id: 'object-crown', name: '物件·王冠', glyph: '♛', family: 'object', effect: 'solid' },
-    { id: 'object-quill', name: '物件·羽笔', glyph: '✒', family: 'object', effect: 'solid' },
-    { id: 'object-book', name: '物件·书册', glyph: '▤', family: 'object', effect: 'stamp' },
-    { id: 'object-film', name: '物件·胶片', glyph: '▦', family: 'object', effect: 'solid' },
-    { id: 'object-hourglass', name: '物件·沙漏', glyph: '⧖', family: 'object', effect: 'outline' },
-    { id: 'object-dagger', name: '物件·短刃', glyph: '†', family: 'object', effect: 'slice' },
-    { id: 'object-flower', name: '物件·花饰', glyph: '✣', family: 'object', effect: 'burst' },
+    { id: 'auto', name: '跟随外观', glyph: '', family: 'auto', effect: 'plain', svg: '' },
+    { id: 'slider-circle', name: '圆点', glyph: '●', family: 'slider', effect: 'plain', svg: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="currentColor"/><circle cx="9" cy="8" r="2.2" fill="var(--z-muted)"/></svg>' },
+    { id: 'slider-capsule', name: '短胶囊', glyph: '▬', family: 'slider', effect: 'plain', svg: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="10" rx="5" fill="currentColor"/><path d="M9 8v8" stroke="var(--z-muted)" stroke-width="2"/></svg>' },
+    { id: 'slider-diamond', name: '切面菱形', glyph: '◆', family: 'slider', effect: 'plain', svg: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 22 12 12 22 2 12Z" fill="currentColor"/><path d="m12 5 4 7-4 7-4-7Z" fill="var(--z-muted)"/></svg>' },
+    { id: 'slider-bookmark', name: '书签缺口', glyph: '▾', family: 'slider', effect: 'plain', svg: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14l-8-4-8 4Z" fill="currentColor"/><path d="M7 8h10" stroke="var(--z-muted)" stroke-width="2" stroke-linecap="round"/></svg>' },
+    { id: 'slider-leaf', name: '一叶', glyph: '❧', family: 'slider', effect: 'plain', svg: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4C9 4 4 9 5 19c8 1 14-4 15-15Z" fill="currentColor"/><path d="M6 18 17 7" stroke="var(--z-muted)" stroke-width="1.8" stroke-linecap="round"/></svg>' },
+    { id: 'slider-flower', name: '四瓣花', glyph: '✿', family: 'slider', effect: 'plain', svg: '<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6.7" rx="4" ry="5" fill="currentColor"/><ellipse cx="17.3" cy="12" rx="5" ry="4" fill="var(--z-muted)"/><ellipse cx="12" cy="17.3" rx="4" ry="5" fill="currentColor"/><ellipse cx="6.7" cy="12" rx="5" ry="4" fill="var(--z-muted)"/><circle cx="12" cy="12" r="2.4" fill="var(--z-card)"/></svg>' },
+    { id: 'slider-apple', name: '小苹果', glyph: '●', family: 'slider', effect: 'plain', svg: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-5-4-9 0-8 6 1 5 5 8 8 6 3 2 7-1 8-6 1-6-3-10-8-6Z" fill="currentColor"/><path d="M12 8c0-4 3-5 6-4-1 3-3 5-6 4Z" fill="var(--z-muted)"/><path d="M12 8c0-2 0-3-1-4" stroke="var(--z-text)" stroke-width="1.5" stroke-linecap="round"/></svg>' },
+    { id: 'slider-gem', name: '小宝石', glyph: '♦', family: 'slider', effect: 'plain', svg: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 8 6-3 11H7L4 8Z" fill="currentColor"/><path d="m4 8 8 4 8-4M12 2v10m-5 7 5-7 5 7" fill="none" stroke="var(--z-muted)" stroke-width="1.3"/></svg>' },
+    { id: 'slider-drop', name: '水滴', glyph: '●', family: 'slider', effect: 'plain', svg: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2S5 10 5 15a7 7 0 0 0 14 0C19 10 12 2 12 2Z" fill="currentColor"/><path d="M9 17c-1-2 0-4 1-6" fill="none" stroke="var(--z-muted)" stroke-width="2" stroke-linecap="round"/></svg>' },
+    { id: 'slider-moon', name: '月牙', glyph: '☾', family: 'slider', effect: 'plain', svg: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.8 17.5A9 9 0 1 1 11 3a7.5 7.5 0 0 0 7.8 14.5Z" fill="currentColor"/><circle cx="18.5" cy="6" r="1.6" fill="var(--z-muted)"/></svg>' },
+    { id: 'slider-shell', name: '贝壳', glyph: '◒', family: 'slider', effect: 'plain', svg: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18c1-8 5-13 9-13s8 5 9 13c-5 3-13 3-18 0Z" fill="currentColor"/><path d="M12 6v13M8 7l2 12M16 7l-2 12M5 11l4 8m10-8-4 8" stroke="var(--z-muted)" stroke-width="1.2" stroke-linecap="round"/></svg>' },
+    { id: 'slider-butterfly', name: '蝴蝶', glyph: '蝶', family: 'slider', effect: 'plain', svg: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 11C9 4 3 3 3 8c0 3 3 5 8 5Z" fill="currentColor"/><path d="M13 11c2-7 8-8 8-3 0 3-3 5-8 5Z" fill="var(--z-muted)"/><path d="M11 13c-5 0-7 4-4 6 2 1 4-1 5-5m1-1c5 0 7 4 4 6-2 1-4-1-5-5" fill="currentColor"/><path d="M12 9v9" stroke="var(--z-text)" stroke-width="1.5" stroke-linecap="round"/></svg>' },
 ]);
 
 const STATUS_STYLE_IDS = new Set(STATUS_STYLE_PRESETS.map(style => style.id));
 const LEGACY_LOGO_IDS = Object.freeze({
-    spark: 'spark-burst', leaf: 'leaf-solid', apple: 'apple-solid', clover: 'leaf-outline', moon: 'moon-cut',
-    heart: 'heart-outline', butterfly: 'butterfly-stamp', paw: 'seal-chop', flower: 'flower-petal',
-    music: 'music-disc', sun: 'sun-raster', key: 'diamond-glitch', candle: 'spark-burst', diamond: 'diamond-glitch', seal: 'seal-chop',
+    spark: 'slider-circle', leaf: 'slider-leaf', apple: 'slider-apple', clover: 'slider-flower', moon: 'slider-moon',
+    heart: 'slider-flower', butterfly: 'slider-butterfly', paw: 'slider-circle', flower: 'slider-flower',
+    music: 'slider-circle', sun: 'slider-circle', key: 'slider-bookmark', candle: 'slider-drop', diamond: 'slider-diamond', seal: 'slider-circle',
 });
-
-const makeTypeStructure = ({ id, name, description, title, subtitle, layout = 'grid', fields }) => ({
-    id,
-    name,
-    description,
-    title,
-    subtitle,
-    layout,
-    pagesText: `当前${name}|填写当前剧情中最重要的${name}对象`,
-    fields: fields.map(([label, fieldId, kind = 'text', instruction]) => [
-        label,
-        instruction || (kind === 'progress'
-            ? `根据当前剧情填写${label}，只写0到100之间的整数`
-            : kind === 'long' ? `根据当前剧情完整填写${label}` : `根据当前剧情简短填写${label}`),
-        kind,
-        fieldId,
-    ]),
-});
-
-const ADDITIONAL_STATUS_STRUCTURES = Object.freeze([
-    makeTypeStructure({ id: 'shop', name: '包豪斯主视觉', description: '大标题、重点数值与不对称内容块，可填写任意剧情资料', title: '主视觉标题', subtitle: 'FEATURE / LAYOUT 01', fields: [['主标题', 'product_name'], ['重点数值', 'price'], ['信息 A', 'stock'], ['信息 B', 'sales'], ['短标签', 'spec'], ['正文说明', 'review', 'long']] }),
-    makeTypeStructure({ id: 'food', name: '圆盘构成卡', description: '圆形主视觉、三枚指标与两段正文，不限定题材', title: '圆形主视觉', subtitle: 'CIRCLE / LAYOUT 02', fields: [['主题', 'restaurant'], ['动态数值', 'rating', 'progress'], ['信息 A', 'taste'], ['信息 B', 'environment'], ['重点内容', 'recommended', 'long'], ['补充记录', 'visit_note', 'long']] }),
-    makeTypeStructure({ id: 'travel', name: '双页章节板', description: '左右书页、章节进度和大段记录，可作为任何剧情章节页', title: '本章主题', subtitle: 'CHAPTER / LAYOUT 03', layout: 'stack', fields: [['主标题', 'destination'], ['时间标记', 'departure'], ['动态进度', 'travel_progress', 'progress'], ['内容清单', 'places', 'long'], ['当前阶段', 'travel_state'], ['章节正文', 'travel_note', 'long']] }),
-    makeTypeStructure({ id: 'train', name: '瑞士信息牌', description: '高对比表格、编号和六格信息，可填写人物、地点或事件', title: '信息总览', subtitle: 'INDEX / LAYOUT 04', fields: [['编号', 'train_no'], ['信息 A', 'from_station'], ['信息 B', 'to_station'], ['时间', 'departure_time'], ['位置', 'platform'], ['补充', 'delay']] }),
-    makeTypeStructure({ id: 'weather', name: '大号数字牌', description: '一个大号核心值与五个辅助字段，不限定天气用途', title: '核心数据', subtitle: 'VALUE / LAYOUT 05', fields: [['对象', 'weather_location'], ['当前状态', 'weather_state'], ['核心数值', 'temperature'], ['动态数值', 'humidity', 'progress'], ['辅助信息', 'wind'], ['正文备注', 'warning', 'long']] }),
-    makeTypeStructure({ id: 'tarot', name: '三联叙事牌', description: '三个纵向卡位与一段总述，可填写任意三阶段内容', title: '三段叙事', subtitle: 'THREE / LAYOUT 06', fields: [['主题问题', 'question', 'long'], ['阶段一', 'past_card'], ['阶段二', 'present_card'], ['阶段三', 'future_card'], ['状态标记', 'orientation'], ['综合说明', 'reading', 'long']] }),
-    makeTypeStructure({ id: 'holo', name: '终端数据屏', description: '高对比终端读数、两条动态值与日志区', title: '数据终端', subtitle: 'SYSTEM / LAYOUT 07', fields: [['主节点', 'session'], ['连接状态', 'network'], ['动态值 A', 'cpu', 'progress'], ['动态值 B', 'memory', 'progress'], ['主日志', 'command_log', 'long'], ['强调信息', 'alert', 'long']] }),
-    makeTypeStructure({ id: 'survival-monitor', name: '地图监测页', description: '大图区域、双进度和资料区，可用于任何世界或行动记录', title: '区域监测', subtitle: 'MAP / LAYOUT 08', fields: [['位置', 'survival_location'], ['状态', 'threat'], ['动态值 A', 'health', 'progress'], ['动态值 B', 'water', 'progress'], ['内容清单', 'supplies', 'long'], ['地图说明', 'map_note', 'long']] }),
-    makeTypeStructure({ id: 'medical', name: '网格档案页', description: '冷静档案网格、编号、四项数据与正文', title: '档案记录', subtitle: 'FILE / LAYOUT 09', fields: [['档案编号', 'medical_id'], ['状态标签', 'medical_risk'], ['数据 A', 'heart_rate'], ['数据 B', 'body_temp'], ['动态数值', 'oxygen', 'progress'], ['详细正文', 'treatment', 'long']] }),
-    makeTypeStructure({ id: 'paper', name: '留白论文页', description: '大面积留白、标题、摘要与索引信息', title: '留白正文', subtitle: 'PAPER / LAYOUT 10', layout: 'stack', fields: [['标题', 'paper_title'], ['署名', 'paper_author'], ['正文摘要', 'abstract', 'long'], ['数字标记', 'citations'], ['关键词', 'keywords'], ['索引', 'doi']] }),
-    makeTypeStructure({ id: 'dashboard', name: '棱镜仪表页', description: '多尺寸数值块、趋势与两段长文本', title: '数据概览', subtitle: 'DASH / LAYOUT 11', fields: [['重点数值', 'revenue'], ['动态数值', 'margin', 'progress'], ['计数', 'orders'], ['趋势', 'trend'], ['待办内容', 'todo', 'long'], ['详细摘要', 'order_note', 'long']] }),
-    makeTypeStructure({ id: 'auction', name: '装饰目录页', description: '装饰艺术编号、主标题、强调值与时间信息', title: '主题目录', subtitle: 'CATALOG / LAYOUT 12', layout: 'stack', fields: [['编号', 'lot_no'], ['主标题', 'lot_name'], ['年代 / 章节', 'era'], ['强调数值', 'current_bid'], ['时间标记', 'countdown'], ['详细记录', 'bid_history', 'long']] }),
-    makeTypeStructure({ id: 'sport', name: '大字转播板', description: '三枚大字位、状态条与两段正文，不限定比赛内容', title: '实时主题', subtitle: 'LIVE / LAYOUT 13', fields: [['左侧标题', 'home_team'], ['核心大字', 'score'], ['右侧标题', 'away_team'], ['当前阶段', 'game_phase'], ['数据内容', 'player_stats', 'long'], ['事件正文', 'game_event', 'long']] }),
-    makeTypeStructure({ id: 'news', name: '报刊分栏页', description: '报头、主标题、导语与多栏正文', title: '今日头版', subtitle: 'NEWS / LAYOUT 14', fields: [['期号', 'issue'], ['主标题', 'headline'], ['时间 / 地点', 'dateline'], ['导语', 'lead', 'long'], ['正文速览', 'news_briefs', 'long'], ['页脚信息', 'news_weather']] }),
-    makeTypeStructure({ id: 'specimen', name: '大图标本页', description: '保留大型图片 URL 区与六项可编辑资料', title: '图像观察页', subtitle: 'IMAGE / LAYOUT 15', layout: 'stack', fields: [['编号', 'specimen_id'], ['来源 / 地点', 'collection_place'], ['分类标签', 'taxonomy'], ['图像标题', 'species'], ['主描述', 'morphology', 'long'], ['补充备注', 'specimen_note', 'long']] }),
-    makeTypeStructure({ id: 'receipt', name: '窄幅清单页', description: '小票式纵向层级，适合任意物品、事件或记录清单', title: '本页清单', subtitle: 'LIST / LAYOUT 16', layout: 'stack', fields: [['编号', 'order_no'], ['时间', 'receipt_time'], ['主要清单', 'items', 'long'], ['数值 A', 'subtotal'], ['数值 B', 'discount'], ['总计 / 结论', 'total']] }),
-    makeTypeStructure({ id: 'ticket', name: '撕票信息页', description: '票根孔线、主标题、进度与四项短信息', title: '入场信息', subtitle: 'ADMIT / LAYOUT 17', fields: [['主标题', 'film_title'], ['分类', 'film_genre'], ['动态数值', 'film_score', 'progress'], ['日期时间', 'show_time'], ['位置 / 对象', 'seat'], ['编号', 'ticket_no']] }),
-    makeTypeStructure({ id: 'memory', name: '拱窗纪念页', description: 'User 头像、拱窗大图感与三段长文本', title: '共同记录', subtitle: 'MEMORY / LAYOUT 18', layout: 'stack', fields: [['累计数值', 'days_together'], ['日期', 'anniversary'], ['动态数值', 'memory_mood', 'progress'], ['重要片段', 'milestone', 'long'], ['共同记忆', 'shared_memory', 'long'], ['下一章节', 'next_date', 'long']] }),
-    makeTypeStructure({ id: 'podcast', name: '磁带节目页', description: '封面位、波形、四项信息与两段正文', title: '声音记录', subtitle: 'AUDIO / LAYOUT 19', layout: 'stack', fields: [['编号', 'episode'], ['主标题', 'episode_title'], ['时长 / 时间', 'duration'], ['人物', 'hosts'], ['主简介', 'episode_intro', 'long'], ['章节内容', 'chapters', 'long']] }),
-    makeTypeStructure({ id: 'livestream', name: '弹幕画面页', description: '角色头像、画面区、动态数值和信息流', title: '实时画面', subtitle: 'STREAM / LAYOUT 20', fields: [['人物', 'streamer'], ['计数', 'viewers'], ['动态数值', 'heat', 'progress'], ['本页主题', 'stream_topic'], ['滚动内容', 'barrage', 'long'], ['事件记录', 'live_events', 'long']] }),
-]);
 
 export const STATUS_STRUCTURE_PRESETS = Object.freeze([
     {
@@ -266,7 +208,6 @@ export const STATUS_STRUCTURE_PRESETS = Object.freeze([
             ['动态数值', '填写0到100之间的整数，只写数字', 'progress', 'custom_progress'],
         ],
     },
-    ...ADDITIONAL_STATUS_STRUCTURES,
 ]);
 
 export const STATUS_PALETTE_PRESETS = Object.freeze([
@@ -296,88 +237,9 @@ export const STATUS_PALETTE_PRESETS = Object.freeze([
     { id: 'oxblood-gray', name: '牛血石灰', accent: '#8e2631', background: '#a7a39d', card: '#ece8df', text: '#2f2927', muted: '#706865' },
 ]);
 
-const customVariant = (id, name, description, fields) => ({
-    id,
-    name,
-    description,
-    fields: fields.map(([label, fieldId, kind = 'text']) => [
-        label,
-        kind === 'progress' ? `根据当前剧情填写${label}，只写0到100之间的整数` : kind === 'long' ? `根据当前剧情完整填写${label}` : `根据当前剧情简短填写${label}`,
-        kind,
-        fieldId,
-    ]),
-});
-
-export const STATUS_CUSTOM_VARIANTS = Object.freeze([
-    customVariant('cream-inset', '物件效果陈列', '十二种真正不同的物件变形、网点、像素、揉皱和三维效果', [['当前物件', 'focus'], ['状态强度', 'emotion', 'progress'], ['物件说明', 'note', 'long']]),
-    customVariant('crt-window', '复古电脑窗', '九十年代窗口、标题栏和立体按钮', [['主标题', 'window_title'], ['状态标签', 'runtime'], ['动态数值', 'load', 'progress'], ['正文日志', 'log', 'long']]),
-    customVariant('paper-stack', '旧信物拼贴', '角色照片、旧纸、封蜡、绳结和手写档案叠成完整拼贴', [['卷宗题签', 'tab'], ['手写记录', 'daily_note', 'long'], ['线索完成度', 'completion', 'progress'], ['落款日期', 'footnote']]),
-    customVariant('brutal-poster', '粗野海报板', '大字块、错位阴影和贴纸标签', [['主标题', 'poster_title'], ['副标题', 'slogan'], ['动态数值', 'intensity', 'progress'], ['主文', 'poster_body', 'long']]),
-    customVariant('glass-orbit', '章节分镜台', '三个可点击状态页切换总览、关系与任务；开场白跳转主页在预览顶部单独展示', [['当前节点', 'signal'], ['推进度', 'sync', 'progress'], ['剧情频道', 'channel'], ['节点摘要', 'data_note', 'long']]),
-    customVariant('editorial-cut', '杂志切版', '保持单行刊头的非对称大标题与整块版面', [['刊头', 'masthead'], ['本期主题', 'edition'], ['主文', 'feature', 'long'], ['索引', 'index']]),
-    customVariant('patchwork', '布艺拼贴', '织物色块、缝线与布标', [['标签', 'fabric_tag'], ['动态数值', 'comfort', 'progress'], ['主要内容', 'pocket', 'long'], ['角标', 'stitch']]),
-    customVariant('ceramic-plaque', '陶瓷铭牌', '放大角色头像、青花弧线与釉面留白', [['主标题', 'inscription'], ['副信息', 'glaze'], ['动态数值', 'integrity', 'progress'], ['正文', 'ceramic_note', 'long']]),
-    customVariant('neon-console', '霓虹控制台', '暗色仪表、斜切面板和霓虹读数', [['主节点', 'node'], ['动态数值', 'energy', 'progress'], ['强调信息', 'neon_alert'], ['正文日志', 'console_log', 'long']]),
-    customVariant('botanical-press', '植物大图板', '保留一整块图片 URL 空位和四项通用内容', [['图像标题', 'botanical_name'], ['图注', 'botanical_place'], ['动态数值', 'moisture', 'progress'], ['正文', 'observation', 'long']]),
-    customVariant('pixel-desktop', '像素桌面', '像素窗口、棋盘底和块状按钮', [['主标题', 'pixel_task'], ['状态标签', 'level'], ['动态数值', 'xp', 'progress'], ['正文消息', 'pixel_message', 'long']]),
-    customVariant('aluminum-deck', '工业构成板', '黑白铝材、大号编号和不对称模块', [['编号', 'device_id'], ['动态数值', 'pressure', 'progress'], ['分类标签', 'mode'], ['详细正文', 'maintenance', 'long']]),
-    customVariant('lacquer-screen', '漆艺折屏', '朱黑折屏、金线与竖排题签', [['主标题', 'lacquer_title'], ['时间标记', 'hour'], ['动态数值', 'mind', 'progress'], ['正文', 'screen_note', 'long']]),
-    customVariant('candy-device', '复古糖果窗口', '彩色旧电脑窗口、贴纸按钮和独立内容框', [['窗口标题', 'flavor'], ['动态数值', 'sweetness', 'progress'], ['状态标签', 'candy_state'], ['正文', 'candy_note', 'long']]),
-    customVariant('blueprint-grid', '工程制图页', '黑白网格、薄荷结构线和大号技术编号', [['项目编号', 'project_no'], ['阶段标签', 'phase'], ['动态数值', 'build_progress', 'progress'], ['技术正文', 'tech_note', 'long']]),
-    customVariant('postage-mail', '邮票信封', '邮戳、锯齿边和折叠信纸', [['署名', 'sender'], ['副信息', 'recipient_place'], ['动态数值', 'delivery', 'progress'], ['正文', 'letter', 'long']]),
-    customVariant('film-strip', '胶片接触表', '黑色齿孔、画格编号和曝光标记', [['编号', 'film_roll'], ['主标题', 'shot'], ['动态数值', 'exposure', 'progress'], ['正文', 'film_note', 'long']]),
-    customVariant('star-map', '星轨信息卡', '矩形深色星图、大号轨道和高对比文字', [['主标题', 'star'], ['副信息', 'azimuth'], ['动态数值', 'brightness', 'progress'], ['正文', 'star_note', 'long']]),
-    customVariant('broadcast-board', '动态大字板', '剧情主标题、核心大字、进度和一段正文', [['主标题', 'home'], ['核心大字', 'scoreboard'], ['动态数值', 'match_progress', 'progress'], ['正文', 'commentary', 'long']]),
-    customVariant('archive-drawer', '远征系统档案', '参考生存游戏界面：系统日期、资源柜、人物档案与三组生命指标组成完整长面板', [['系统日期', 'archive_no'], ['所在区域', 'archive_type'], ['燃料', 'fuel'], ['武器', 'arms'], ['食物', 'food'], ['饮水', 'water'], ['人员档案', 'personnel', 'long'], ['健康', 'health', 'progress'], ['饥饿', 'hunger', 'progress'], ['理智', 'sanity', 'progress'], ['行动日志', 'archive_note', 'long']]),
-]);
-
-const CUSTOM_RECIPE_STYLES = Object.freeze([
-    ['classical', 'cream-navy', 'flower-petal'], ['minimal', 'lavender-glass', 'diamond-glitch'], ['envelope', 'rust-cream', 'seal-chop'], ['brutal-paper', 'cobalt-lime', 'apple-slice'],
-    ['glass', 'aqua-mist', 'spark-burst'], ['newspaper', 'oxblood-gray', 'diamond-glitch'], ['sakura', 'apricot-lilac', 'flower-petal'], ['porcelain-memory', 'porcelain', 'seal-chop'],
-    ['holo-terminal', 'neon-night', 'diamond-glitch'], ['botanical', 'moss-copper', 'leaf-solid'], ['pixel', 'lemon-pink', 'apple-grid'], ['industrial-survival', 'black-silver', 'diamond-glitch'],
-    ['ink-diary', 'imperial-red', 'seal-chop'], ['candy-live', 'lemon-pink', 'apple-smear'], ['cyber', 'cornflower', 'diamond-glitch'], ['airline-passport', 'sakura-paper', 'butterfly-stamp'],
-    ['dada-collage', 'oxblood-gray', 'apple-halftone'], ['constellation', 'plum-gold', 'moon-cut'], ['broadcast-sport', 'cobalt-lime', 'sun-raster'], ['dossier', 'newsprint', 'seal-chop'],
-]);
-
-const CUSTOM_RECIPE_OPTIONS = Object.freeze({
-    'glass-orbit': {
-        title: '可切换章节状态',
-        subtitle: 'OVERVIEW / RELATION / QUEST',
-        pagesText: '总览|填写本轮剧情总览\n关系|填写当前主要人物与关系阶段\n任务|填写当前任务、地点或下一节点',
-    },
-    'paper-stack': { avatarSource: 'character' },
-    'ceramic-plaque': { avatarSource: 'character' },
-    'archive-drawer': { avatarSource: 'character' },
-});
-
-const TYPE_RECIPE_AVATARS = Object.freeze({
-    livestream: 'character',
-    memory: 'user',
-});
-
-const TYPE_RECIPE_MAP = Object.freeze([
-    ['shop', 'bauhaus-shop', 'cream-navy', 'object-gem'], ['food', 'memphis-food', 'lemon-pink', 'object-flower'], ['travel', 'airline-passport', 'sakura-paper', 'object-compass'], ['train', 'swiss-rail', 'newsprint', 'object-film'], ['weather', 'aqua-weather', 'aqua-mist', 'object-cloud'],
-    ['podcast', 'y2k-podcast', 'lavender-glass', 'music-disc'], ['livestream', 'candy-live', 'lemon-pink', 'object-film'], ['tarot', 'nouveau-tarot', 'plum-gold', 'object-hourglass'], ['holo', 'holo-terminal', 'neon-night', 'diamond-glitch'], ['survival-monitor', 'industrial-survival', 'moss-copper', 'object-dagger'],
-    ['medical', 'clinical-file', 'ice-blue', 'object-vial'], ['paper', 'brutal-paper', 'newsprint', 'object-book'], ['dashboard', 'prism-dashboard', 'cornflower', 'object-key'], ['auction', 'deco-auction', 'jade-gold', 'object-crown'], ['sport', 'broadcast-sport', 'cobalt-lime', 'sun-raster'],
-    ['news', 'victorian-news', 'newsprint', 'object-quill'], ['specimen', 'naturalist-specimen', 'moss-copper', 'object-flower'], ['receipt', 'cafe-receipt', 'coffee-mint', 'seal-chop'], ['ticket', 'pop-ticket', 'sunset-pop', 'object-film'], ['memory', 'porcelain-memory', 'porcelain', 'object-hourglass'],
-]);
-
-export const STATUS_RECIPE_PRESETS = Object.freeze([
-    ...STATUS_CUSTOM_VARIANTS.map((variant, index) => {
-        const [theme, paletteId, logoId] = CUSTOM_RECIPE_STYLES[index];
-        const options = CUSTOM_RECIPE_OPTIONS[variant.id] || {};
-        return { id: `custom-${String(index + 1).padStart(2, '0')}`, group: 'custom', name: variant.name, description: variant.description, theme, paletteId, logoId, structure: 'custom', variant: variant.id, layout: index % 3 === 1 ? 'stack' : 'grid', avatarSource: 'none', ...options };
-    }),
-    ...TYPE_RECIPE_MAP.map(([structure, theme, paletteId, logoId], index) => {
-        const definition = ADDITIONAL_STATUS_STRUCTURES.find(item => item.id === structure);
-        const style = STATUS_STYLE_PRESETS.find(item => item.id === theme);
-        return { id: `type-${String(index + 1).padStart(2, '0')}`, group: 'type', name: definition.name, description: definition.description, theme, paletteId, logoId, structure, variant: 'auto', layout: definition.layout, title: definition.title, subtitle: definition.subtitle, styleName: style?.name, avatarSource: TYPE_RECIPE_AVATARS[structure] || 'none' };
-    }),
-]);
-
 const STATUS_STRUCTURE_IDS = new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id));
 const STATUS_PALETTE_IDS = new Set(STATUS_PALETTE_PRESETS.map(item => item.id));
-const STATUS_CUSTOM_VARIANT_IDS = new Set(STATUS_CUSTOM_VARIANTS.map(item => item.id));
+const STATUS_CUSTOM_VARIANT_IDS = new Set();
 
 export const RULE_PRESETS = Object.freeze({
     custom: {
@@ -618,7 +480,7 @@ export function normalizeRule(input = {}) {
     const requestedLogoId = LEGACY_LOGO_IDS[input.logoId] || input.logoId;
     const logo = STATUS_LOGO_PRESETS.find(item => item.id === requestedLogoId) || STATUS_LOGO_PRESETS[0];
     const structure = STATUS_STRUCTURE_IDS.has(input.structure) ? input.structure : 'custom';
-    const variant = STATUS_CUSTOM_VARIANT_IDS.has(input.variant) ? input.variant : (structure === 'custom' ? 'cream-inset' : 'auto');
+    const variant = STATUS_CUSTOM_VARIANT_IDS.has(input.variant) ? input.variant : 'auto';
     return {
         ruleId: String(input.ruleId || 'zeya-status-rule'),
         ruleName: String(input.ruleName || '双页剧情状态').trim() || '双页剧情状态',
@@ -630,6 +492,8 @@ export function normalizeRule(input = {}) {
         logoId: logo.id,
         logoFamily: logo.family || 'auto',
         logoEffect: logo.effect || 'plain',
+        logoSvg: logo.svg || '',
+        fillMode: input.fillMode === 'object' ? 'object' : 'solid',
         glyph: logo.glyph || style?.glyph || '✦',
         structure,
         variant,
@@ -923,6 +787,8 @@ function generatedReplacement(rule) {
         logoId: rule.logoId,
         logoFamily: rule.logoFamily,
         logoEffect: rule.logoEffect,
+        logoSvg: rule.logoSvg,
+        fillMode: rule.fillMode,
         layout: rule.layout,
         structure: rule.structure,
         variant: rule.variant,
@@ -938,7 +804,7 @@ function generatedReplacement(rule) {
         ? `--z-accent:${rule.palette.accent};--z-bg:${rule.palette.background};--z-card:${rule.palette.card};--z-text:${rule.palette.text};--z-muted:${rule.palette.muted};`
         : '';
     return `\`\`\`html
-<div class="zeya-regex-status" data-theme="${rule.theme}" data-structure="${rule.structure}" data-variant="${rule.variant}" data-layout="${rule.layout}" data-logo="${rule.logoId}" data-logo-family="${rule.logoFamily}" data-logo-effect="${rule.logoEffect}" data-has-image="${rule.media.imageUrl ? 'true' : 'false'}" style="${paletteStyle}">
+<div class="zeya-regex-status" data-theme="${rule.theme}" data-structure="${rule.structure}" data-variant="${rule.variant}" data-layout="${rule.layout}" data-logo="${rule.logoId}" data-logo-family="${rule.logoFamily}" data-logo-effect="${rule.logoEffect}" data-fill-mode="${rule.fillMode}" data-has-image="${rule.media.imageUrl ? 'true' : 'false'}" style="${paletteStyle}">
   <textarea class="zrs-source" hidden>$1</textarea>
   <section class="zrs-card">
     <div class="zrs-chrome" aria-hidden="true"><span class="zrs-glyph"></span><span class="zrs-style-name"></span><i></i><i></i><i></i></div>
@@ -958,7 +824,7 @@ function generatedReplacement(rule) {
 <style>
 .zeya-regex-status,.zeya-regex-status *{box-sizing:border-box}.zeya-regex-status{--z-accent:#9b6849;--z-bg:#f2e5c5;--z-card:#f8efd7;--z-text:#493a2b;--z-muted:#7a6954;width:min(100%,620px);margin:14px auto;color:var(--z-text);font-family:"Noto Serif SC","Songti SC",serif}.zeya-regex-status[data-theme="envelope"]{--z-accent:#9b4b58;--z-bg:#4a566e;--z-card:#faf6ed;--z-text:#2a3242;--z-muted:#687185}.zeya-regex-status[data-theme="glass"]{--z-accent:#6ec7d9;--z-bg:#102631;--z-card:#173844;--z-text:#e9f8fb;--z-muted:#9dbdc5}.zeya-regex-status[data-theme="obsidian"]{--z-accent:#d7d7d7;--z-bg:#090909;--z-card:#141414;--z-text:#f3f3f3;--z-muted:#a7a7a7}.zrs-card{position:relative;overflow:hidden;border:2px solid var(--z-accent);border-radius:14px;background:linear-gradient(145deg,color-mix(in srgb,var(--z-accent) 8%,transparent),transparent 44%),var(--z-card);box-shadow:0 12px 28px rgba(0,0,0,.22)}.zrs-chrome{display:flex;align-items:center;gap:7px;min-height:25px;padding:5px 12px;color:var(--z-card);background:var(--z-accent);font:800 9px/1.2 sans-serif;letter-spacing:.12em;text-transform:uppercase}.zrs-glyph{font-size:14px}.zrs-style-name{margin-right:auto}.zrs-chrome i{width:7px;height:7px;border:1px solid currentColor;border-radius:50%}.zeya-regex-status[data-theme="newspaper"] .zrs-card{border:4px double var(--z-accent);border-radius:2px}.zeya-regex-status[data-theme="timeline"] .zrs-card{border-radius:22px;border-color:color-mix(in srgb,var(--z-muted) 60%,transparent)}.zeya-regex-status[data-theme="timeline"] .zrs-content{margin-left:18px;border-left:1px solid var(--z-muted)}.zeya-regex-status[data-theme="timeline"] .zrs-shared-item,.zeya-regex-status[data-theme="timeline"] .zrs-field{position:relative;border-radius:12px}.zeya-regex-status[data-theme="timeline"] .zrs-shared-item::before,.zeya-regex-status[data-theme="timeline"] .zrs-field::before{content:"";position:absolute;left:-20px;top:17px;width:7px;height:7px;border:2px solid var(--z-card);border-radius:50%;background:var(--z-accent)}.zeya-regex-status[data-theme="minimal"] .zrs-card{border:0;border-radius:0;box-shadow:none}.zeya-regex-status[data-theme="minimal"] .zrs-header{padding-inline:0;background:transparent}.zeya-regex-status[data-theme="minimal"] .zrs-content{padding-inline:0}.zeya-regex-status[data-theme="minimal"] .zrs-shared-item,.zeya-regex-status[data-theme="minimal"] .zrs-field{border-width:0 0 1px;background:transparent}.zeya-regex-status[data-theme="minimal"] .zrs-tab{border-width:0 0 1px;border-radius:0}.zrs-header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid color-mix(in srgb,var(--z-accent) 45%,transparent);background:color-mix(in srgb,var(--z-bg) 18%,var(--z-card))}.zrs-title{margin:0;font-size:1.12em;letter-spacing:.16em}.zrs-subtitle{margin:3px 0 0;color:var(--z-muted);font:600 .68em/1.2 sans-serif;letter-spacing:.2em}.zrs-collapse{min-width:36px;min-height:36px;border:1px solid color-mix(in srgb,var(--z-accent) 50%,transparent);border-radius:50%;color:var(--z-text);background:transparent;cursor:pointer}.zrs-content{padding:13px}.zrs-structure-head{display:flex;gap:10px;align-items:center;margin:0 0 11px}.zrs-avatar{width:64px;height:64px;flex:0 0 64px;border:2px solid var(--z-accent);border-radius:50%;object-fit:cover;background:color-mix(in srgb,var(--z-bg) 30%,var(--z-card))}.zrs-cover{display:block;width:100%;max-height:220px;object-fit:cover;border:1px solid color-mix(in srgb,var(--z-accent) 34%,transparent)}.zrs-media-copy{min-width:0}.zrs-media-copy b,.zrs-media-copy small{display:block}.zrs-media-copy small{margin-top:4px;color:var(--z-muted)}.zrs-audio{width:100%;min-height:40px;margin-top:9px}.zrs-shared{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:7px;margin-bottom:11px}.zrs-shared-item,.zrs-field{min-width:0;padding:9px 10px;border:1px solid color-mix(in srgb,var(--z-accent) 26%,transparent);background:color-mix(in srgb,var(--z-bg) 7%,transparent)}.zrs-label{display:block;margin-bottom:3px;color:var(--z-muted);font:600 .72em/1.35 sans-serif;letter-spacing:.08em}.zrs-value{display:block;white-space:pre-wrap;overflow-wrap:anywhere}.zrs-tabs{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 11px}.zrs-tab{flex:1 1 90px;padding:8px 10px;border:1px solid color-mix(in srgb,var(--z-accent) 38%,transparent);border-radius:999px;color:var(--z-text);background:transparent;cursor:pointer}.zrs-tab.is-active{color:var(--z-card);background:var(--z-accent)}.zrs-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.zeya-regex-status[data-layout="stack"] .zrs-fields{grid-template-columns:1fr}.zrs-field[data-kind="long"]{grid-column:1/-1}.zrs-meter{height:7px;margin-top:7px;overflow:hidden;border-radius:999px;background:color-mix(in srgb,var(--z-accent) 16%,transparent)}.zrs-meter>i{display:block;width:0;height:100%;background:var(--z-accent);transition:width .35s ease}.zeya-regex-status[data-structure="social"] .zrs-fields{display:flex;flex-wrap:wrap}.zeya-regex-status[data-structure="social"] .zrs-field{flex:1 1 120px;border-radius:16px}.zeya-regex-status[data-structure="social"] .zrs-field:nth-child(2),.zeya-regex-status[data-structure="social"] .zrs-field:nth-child(3){flex-basis:100%}.zeya-regex-status[data-structure="forum"] .zrs-fields{counter-reset:floor}.zeya-regex-status[data-structure="forum"] .zrs-field{position:relative;padding-left:45px;border-width:0 0 1px}.zeya-regex-status[data-structure="forum"] .zrs-field::before{counter-increment:floor;content:"#" counter(floor);position:absolute;left:9px;color:var(--z-accent);font-weight:800}.zeya-regex-status[data-structure="chat"] .zrs-field{max-width:88%;border-radius:18px 18px 18px 4px}.zeya-regex-status[data-structure="chat"] .zrs-field:nth-child(even){margin-left:auto;border-radius:18px 18px 4px 18px;color:var(--z-card);background:var(--z-accent)}.zeya-regex-status[data-structure="chat"] .zrs-field:nth-child(even) .zrs-label{color:inherit;opacity:.75}.zeya-regex-status[data-structure="collage"] .zrs-fields{padding:10px;background:color-mix(in srgb,var(--z-bg) 36%,transparent)}.zeya-regex-status[data-structure="collage"] .zrs-field{border-radius:2px;box-shadow:3px 4px 0 color-mix(in srgb,var(--z-text) 15%,transparent)}.zeya-regex-status[data-structure="collage"] .zrs-field:nth-child(3n+1){transform:rotate(-1deg)}.zeya-regex-status[data-structure="collage"] .zrs-field:nth-child(3n){transform:rotate(1deg)}.zeya-regex-status[data-structure="music"] .zrs-structure-head{display:block}.zeya-regex-status[data-structure="music"] .zrs-cover{aspect-ratio:1;max-height:280px}.zeya-regex-status[data-structure="quest"] .zrs-field{position:relative;margin-left:16px;border-left:4px solid var(--z-accent)}.zeya-regex-status[data-structure="casefile"] .zrs-field{border-radius:0;border-width:0 0 2px}.zeya-regex-status.is-collapsed .zrs-content{display:none}.zeya-regex-status.is-collapsed .zrs-collapse{transform:rotate(-90deg)}@media(max-width:520px){.zrs-fields{grid-template-columns:1fr}.zrs-field{grid-column:1}.zrs-header{padding:12px}.zrs-content{padding:10px}.zrs-avatar{width:54px;height:54px;flex-basis:54px}.zeya-regex-status[data-structure="collage"] .zrs-field{transform:none!important}}
 ${STATUS_THEME_CSS}
-.zeya-regex-status .zrs-field[data-kind="progress"]{padding-bottom:14px}.zeya-regex-status .zrs-meter{position:relative;height:24px!important;margin-top:10px;overflow:visible;background:transparent!important}.zeya-regex-status .zrs-meter::before{content:"";position:absolute;inset:9px 0;border-radius:999px;background:color-mix(in srgb,var(--z-accent) 16%,transparent)}.zeya-regex-status .zrs-meter>i{position:absolute;left:0;top:9px;height:6px;border-radius:999px;transition:width .2s ease}.zeya-regex-status .zrs-meter-marker{position:absolute;top:50%;z-index:1;display:grid;place-items:center;min-width:24px;height:24px;transform:translate(-50%,-50%);font-size:17px;line-height:1;filter:drop-shadow(0 1px 1px color-mix(in srgb,var(--z-text) 35%,transparent));transition:left .2s ease}
+.zeya-regex-status .zrs-field[data-kind="progress"]{padding-bottom:14px}.zeya-regex-status .zrs-meter{position:relative;height:26px!important;margin-top:10px;overflow:visible;background:transparent!important}.zeya-regex-status .zrs-meter::before{content:"";position:absolute;inset:9px 0;border-radius:999px;background:color-mix(in srgb,var(--z-accent) 16%,transparent)}.zeya-regex-status .zrs-meter>i{position:absolute;left:0;top:9px;height:8px;border-radius:999px;transition:width .2s ease}.zeya-regex-status .zrs-meter-trail{position:absolute;left:0;top:6px;display:none;height:18px;align-items:center;gap:1px;overflow:hidden;color:var(--z-accent)}.zeya-regex-status .zrs-meter-trail span{display:grid;flex:0 0 14px;width:14px;height:14px;place-items:center}.zeya-regex-status[data-fill-mode="object"] .zrs-meter>i{display:none}.zeya-regex-status[data-fill-mode="object"] .zrs-meter-trail{display:flex}.zeya-regex-status .zrs-meter-marker{position:absolute;top:50%;z-index:1;display:grid;width:26px;min-width:26px;height:26px;place-items:center;border:2px solid var(--z-card);border-radius:50%;color:var(--z-accent);background:var(--z-card);box-shadow:0 2px 8px color-mix(in srgb,var(--z-text) 22%,transparent);transform:translate(-50%,-50%);font-size:17px;line-height:1;transition:left .2s ease}.zeya-regex-status :is(.zrs-glyph,.zrs-meter-marker,.zrs-meter-trail span)>svg{display:block;width:18px;height:18px;overflow:visible;color:var(--z-accent)}
 </style>
 <script>
 (function(script){
@@ -976,7 +842,8 @@ ${STATUS_THEME_CSS}
   }
   var title=root.querySelector('.zrs-title');var subtitle=root.querySelector('.zrs-subtitle');
   title.textContent=config.title;subtitle.textContent=config.subtitle;
-  root.querySelector('.zrs-glyph').textContent=config.glyph;root.querySelector('.zrs-style-name').textContent=config.styleName;
+  function setLogo(el){if(config.logoSvg){el.innerHTML=config.logoSvg;}else{el.textContent=config.glyph;}}
+  setLogo(root.querySelector('.zrs-glyph'));root.querySelector('.zrs-style-name').textContent=config.styleName;
   function make(tag,className,text){var el=document.createElement(tag);if(className)el.className=className;if(text!==undefined)el.textContent=String(text);return el;}
   var mediaHost=root.querySelector('.zrs-structure-head');
   function addImage(url,className,alt){if(!url)return null;var img=make('img',className);img.src=url;img.alt=alt||'';img.loading='lazy';img.referrerPolicy='no-referrer';img.addEventListener('error',function(){img.remove();});mediaHost.append(img);return img;}
@@ -984,7 +851,7 @@ ${STATUS_THEME_CSS}
   if(config.media.imageUrl)addImage(config.media.imageUrl,'zrs-cover',config.media.imageAlt);
   if(config.media.audioUrl){var audio=make('audio','zrs-audio');audio.controls=true;audio.preload='metadata';audio.src=config.media.audioUrl;mediaHost.append(audio);}
   if(!mediaHost.children.length)mediaHost.remove();
-  function addValue(host,field,value){var item=make('div',host.classList.contains('zrs-shared')?'zrs-shared-item':'zrs-field');item.dataset.kind=field.kind;item.dataset.field=field.id||'';if(config.structure==='forum'&&field.id==='floor_user'){var avatar=config.media.avatarUrl?make('img','zrs-forum-avatar'):make('span','zrs-forum-avatar is-placeholder',config.glyph||'✦');if(config.media.avatarUrl){avatar.src=config.media.avatarUrl;avatar.alt=config.media.imageAlt||'当前角色头像';avatar.loading='lazy';avatar.referrerPolicy='no-referrer';avatar.addEventListener('error',function(){avatar.removeAttribute('src');avatar.classList.add('is-placeholder');avatar.textContent=config.glyph||'✦';});}item.append(avatar);}item.append(make('span','zrs-label',field.label),make('span','zrs-value',value||'—'));if(field.kind==='progress'){var n=Number(String(value||'').match(/-?\\d+(?:\\.\\d+)?/)?.[0]);if(!Number.isFinite(n))n=0;n=Math.max(0,Math.min(100,n));var meter=make('span','zrs-meter');var fill=make('i');fill.style.width=n+'%';var marker=make('span','zrs-meter-marker',config.glyph||'✦');marker.style.left='clamp(12px,'+n+'%,calc(100% - 12px))';marker.setAttribute('aria-label','AI 动态数值位置 '+n+'%');meter.append(fill,marker);item.append(meter);}host.append(item);}
+  function addValue(host,field,value){var item=make('div',host.classList.contains('zrs-shared')?'zrs-shared-item':'zrs-field');item.dataset.kind=field.kind;item.dataset.field=field.id||'';if(config.structure==='forum'&&field.id==='floor_user'){var avatar=config.media.avatarUrl?make('img','zrs-forum-avatar'):make('span','zrs-forum-avatar is-placeholder',config.glyph||'✦');if(config.media.avatarUrl){avatar.src=config.media.avatarUrl;avatar.alt=config.media.imageAlt||'当前角色头像';avatar.loading='lazy';avatar.referrerPolicy='no-referrer';avatar.addEventListener('error',function(){avatar.removeAttribute('src');avatar.classList.add('is-placeholder');avatar.textContent=config.glyph||'✦';});}item.append(avatar);}item.append(make('span','zrs-label',field.label),make('span','zrs-value',value||'—'));if(field.kind==='progress'){var n=Number(String(value||'').match(/-?\\d+(?:\\.\\d+)?/)?.[0]);if(!Number.isFinite(n))n=0;n=Math.max(0,Math.min(100,n));var meter=make('span','zrs-meter');var fill=make('i');fill.style.width=n+'%';var trail=make('span','zrs-meter-trail');trail.style.width=n+'%';for(var j=0;j<10;j++){var dot=make('span');setLogo(dot);trail.append(dot);}var marker=make('span','zrs-meter-marker');setLogo(marker);marker.style.left='clamp(13px,'+n+'%,calc(100% - 13px))';marker.setAttribute('aria-label','AI 动态数值位置 '+n+'%');meter.append(fill,trail,marker);item.append(meter);}host.append(item);}
   var shared=root.querySelector('.zrs-shared');var sharedValues=records.Shared||[];
   config.sharedFields.forEach(function(field,index){addValue(shared,field,sharedValues[index]);});
   if(!config.sharedFields.length)shared.remove();

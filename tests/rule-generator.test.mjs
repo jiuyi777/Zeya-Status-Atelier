@@ -2,10 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     RULE_PRESETS,
-    STATUS_CUSTOM_VARIANTS,
     STATUS_LOGO_PRESETS,
     STATUS_PALETTE_PRESETS,
-    STATUS_RECIPE_PRESETS,
     STATUS_STRUCTURE_PRESETS,
     STATUS_STYLE_PRESETS,
     STATUS_THEME_CSS,
@@ -25,8 +23,8 @@ test('parses any number of switch pages without storing story values', () => {
 });
 
 test('registers genuinely different component structures and composable palettes', () => {
-    assert.equal(STATUS_STRUCTURE_PRESETS.length, 29);
-    assert.equal(new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id)).size, 29);
+    assert.equal(STATUS_STRUCTURE_PRESETS.length, 9);
+    assert.equal(new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id)).size, 9);
     assert.equal(STATUS_PALETTE_PRESETS.length, 24);
     assert.equal(new Set(STATUS_PALETTE_PRESETS.map(item => item.id)).size, 24);
     assert.ok(STATUS_PALETTE_PRESETS.every(item => ['accent', 'background', 'card', 'text', 'muted'].every(key => /^#[0-9a-f]{6}$/i.test(item[key]))));
@@ -37,21 +35,25 @@ test('registers genuinely different component structures and composable palettes
 });
 
 test('decorative logos are independent from appearance and survive into generated renderer', () => {
-    assert.ok(STATUS_LOGO_PRESETS.length >= 18);
-    assert.ok(STATUS_LOGO_PRESETS.some(item => item.id === 'leaf-cut' && item.effect === 'slice'));
-    assert.equal(STATUS_LOGO_PRESETS.filter(item => item.family === 'apple').length, 5);
-    assert.ok(new Set(STATUS_LOGO_PRESETS.filter(item => item.family === 'apple').map(item => item.effect)).size >= 5);
-    assert.ok(STATUS_LOGO_PRESETS.filter(item => item.family === 'object').length >= 10);
-    const apple = normalizeRule({ ...RULE_PRESETS.universalClassical, theme: 'vinyl-mag', logoId: 'apple-halftone' });
+    assert.equal(STATUS_LOGO_PRESETS.length, 13);
+    assert.equal(STATUS_LOGO_PRESETS.filter(item => item.id.startsWith('slider-')).length, 12);
+    assert.ok(STATUS_LOGO_PRESETS.filter(item => item.id.startsWith('slider-')).every(item => item.svg.includes('aria-hidden="true"')));
+    assert.deepEqual(
+        STATUS_LOGO_PRESETS.filter(item => item.id.startsWith('slider-')).map(item => item.id),
+        ['slider-circle', 'slider-capsule', 'slider-diamond', 'slider-bookmark', 'slider-leaf', 'slider-flower', 'slider-apple', 'slider-gem', 'slider-drop', 'slider-moon', 'slider-shell', 'slider-butterfly'],
+    );
+    const apple = normalizeRule({ ...RULE_PRESETS.universalClassical, theme: 'vinyl-mag', logoId: 'slider-apple', fillMode: 'object' });
     const automatic = normalizeRule({ ...RULE_PRESETS.universalClassical, theme: 'vinyl-mag', logoId: 'auto' });
-    assert.equal(apple.logoFamily, 'apple');
-    assert.equal(apple.logoEffect, 'halftone');
+    assert.equal(apple.logoFamily, 'slider');
+    assert.equal(apple.fillMode, 'object');
+    assert.match(apple.logoSvg, /<svg/);
     assert.equal(automatic.glyph, '♪');
-    const generated = buildRegexScript({ ...RULE_PRESETS.universalClassical, logoId: 'leaf-cut' }).replaceString;
-    assert.match(generated, /data-logo="leaf-cut"/);
-    assert.match(generated, /"logoEffect":"slice"/);
+    const generated = buildRegexScript({ ...RULE_PRESETS.universalClassical, logoId: 'slider-leaf', fillMode: 'object' }).replaceString;
+    assert.match(generated, /data-logo="slider-leaf"/);
+    assert.match(generated, /data-fill-mode="object"/);
     assert.match(generated, /zrs-meter-marker/);
-    assert.match(generated, /marker\.style\.left='clamp\(12px,'\+n\+'%,calc\(100% - 12px\)\)'/);
+    assert.match(generated, /zrs-meter-trail/);
+    assert.match(generated, /marker\.style\.left='clamp\(13px,'\+n\+'%,calc\(100% - 13px\)\)'/);
     assert.match(generated, /AI 动态数值位置/);
 });
 
@@ -77,72 +79,18 @@ test('the workbench can reuse every exported theme instead of showing a color-on
     assert.match(STATUS_THEME_CSS, /data-structure="casefile"[^}]*[\s\S]*?rotate\(-5deg\)/);
     assert.match(STATUS_THEME_CSS, /data-structure="music"[^}]*[\s\S]*?box-shadow:7px 8px 0/);
     assert.match(STATUS_THEME_CSS, /data-structure="quest"[^}]*[\s\S]*?clip-path:none/);
-    assert.match(STATUS_THEME_CSS, /data-logo="apple-halftone"/);
+    assert.match(buildRegexScript({ ...RULE_PRESETS.universalClassical, logoId: 'slider-apple' }).replaceString, /data-logo="slider-apple"/);
 });
 
-test('registers twenty custom panels and twenty one-click type recipes', () => {
-    assert.equal(STATUS_CUSTOM_VARIANTS.length, 20);
-    assert.equal(new Set(STATUS_CUSTOM_VARIANTS.map(item => item.id)).size, 20);
-    assert.equal(STATUS_RECIPE_PRESETS.filter(item => item.group === 'custom').length, 20);
-    assert.equal(STATUS_RECIPE_PRESETS.filter(item => item.group === 'type').length, 20);
-    assert.equal(new Set(STATUS_RECIPE_PRESETS.map(item => item.id)).size, 40);
-    for (const variant of STATUS_CUSTOM_VARIANTS) {
-        assert.match(STATUS_THEME_CSS, new RegExp(`data-variant="${variant.id}"`), `${variant.name} has exported material CSS`);
+test('removes the rejected 40-card recipe collection from selectable structures', () => {
+    const ids = STATUS_STRUCTURE_PRESETS.map(item => item.id);
+    assert.deepEqual(ids, ['profile', 'social', 'forum', 'chat', 'collage', 'music', 'quest', 'casefile', 'custom']);
+    for (const removedId of ['shop', 'travel', 'weather', 'holo', 'specimen', 'memory', 'livestream']) {
+        assert.equal(ids.includes(removedId), false, `${removedId} is no longer selectable`);
     }
-    for (const recipe of STATUS_RECIPE_PRESETS.filter(item => item.group === 'type')) {
-        assert.match(STATUS_THEME_CSS, new RegExp(`data-structure="${recipe.structure}"`), `${recipe.name} has exported type CSS`);
-    }
-    for (const recipe of STATUS_RECIPE_PRESETS) {
-        const structure = STATUS_STRUCTURE_PRESETS.find(item => item.id === recipe.structure);
-        const variant = STATUS_CUSTOM_VARIANTS.find(item => item.id === recipe.variant);
-        const fields = variant?.fields || structure.fields;
-        const rendered = buildRegexScript({
-            ...RULE_PRESETS.custom,
-            structure: recipe.structure,
-            variant: recipe.variant,
-            theme: recipe.theme,
-            paletteId: recipe.paletteId,
-            logoId: recipe.logoId,
-            layout: recipe.layout,
-            pageFieldsText: fields.map(field => field.join('|')).join('\n'),
-        }).replaceString;
-        assert.match(rendered, new RegExp(`data-structure="${recipe.structure}"`));
-        assert.match(rendered, new RegExp(`data-variant="${recipe.variant}"`));
-        const browserScript = rendered.match(/<script>\n([\s\S]*?)\n<\/script>/);
-        assert.ok(browserScript, `${recipe.name} includes browser script`);
-        assert.doesNotThrow(() => new Function(browserScript[1]), `${recipe.name} browser script parses`);
-    }
-    const generated = buildRegexScript({ ...RULE_PRESETS.custom, variant: 'glass-orbit' }).replaceString;
-    assert.match(generated, /data-variant="glass-orbit"/);
-    assert.match(generated, /"variant":"glass-orbit"/);
-    const navigationRecipe = STATUS_RECIPE_PRESETS.find(item => item.variant === 'glass-orbit');
-    assert.equal(navigationRecipe.name, '章节分镜台');
-    assert.equal(navigationRecipe.pagesText.split('\n').length, 3);
-    assert.match(navigationRecipe.title, /可切换/);
-    const ceramicRecipe = STATUS_RECIPE_PRESETS.find(item => item.variant === 'ceramic-plaque');
-    const memoryRecipe = STATUS_RECIPE_PRESETS.find(item => item.structure === 'memory');
-    assert.equal(ceramicRecipe.avatarSource, 'character');
-    assert.equal(memoryRecipe.avatarSource, 'user');
-    assert.match(STATUS_THEME_CSS, /data-variant="editorial-cut"[\s\S]*?white-space:nowrap/);
-    assert.match(STATUS_THEME_CSS, /data-variant="botanical-press"[\s\S]*?粘贴图片 URL/);
-    assert.doesNotMatch(STATUS_THEME_CSS, /data-variant="botanical-press"[\s\S]*?data:image\/svg\+xml/);
-
-    const typeRecipes = STATUS_RECIPE_PRESETS.filter(item => item.group === 'type');
-    const typeCopy = STATUS_STRUCTURE_PRESETS
-        .filter(item => typeRecipes.some(recipe => recipe.structure === item.id))
-        .flatMap(item => [item.name, item.title, item.description, ...item.fields.flat()])
-        .join('\n');
-    for (const fixedBusinessCopy of ['精选商品', '商品名', '价格', '库存', '销量', '目的地', '出发日', '含水量', '主队', '客队', '比分']) {
-        assert.doesNotMatch(typeCopy, new RegExp(fixedBusinessCopy), `type layouts stay generic instead of fixing ${fixedBusinessCopy}`);
-    }
-    assert.equal(STATUS_STRUCTURE_PRESETS.find(item => item.id === 'shop').name, '包豪斯主视觉');
-    assert.equal(STATUS_STRUCTURE_PRESETS.find(item => item.id === 'specimen').fields[3][0], '图像标题');
-    assert.equal(typeRecipes.find(item => item.structure === 'shop').paletteId, 'cream-navy');
-    assert.equal(typeRecipes.find(item => item.structure === 'travel').paletteId, 'sakura-paper');
-    assert.match(STATUS_THEME_CSS, /data-variant="star-map"[\s\S]*?border-radius:22px/);
-    assert.doesNotMatch(STATUS_THEME_CSS, /data-variant="star-map"[^\n]*?border-radius:50% 50%/);
-    assert.match(STATUS_THEME_CSS, /data-variant="cream-inset"[\s\S]*?彩色网点/);
-    assert.match(STATUS_THEME_CSS, /data-variant="archive-drawer"[\s\S]*?SUPPLY MANIFEST/);
+    const generated = buildRegexScript({ ...RULE_PRESETS.custom, variant: 'glass-orbit', structure: 'shop' }).replaceString;
+    assert.match(generated, /data-structure="custom"/);
+    assert.match(generated, /data-variant="auto"/);
 });
 
 test('free component canvas is the fallback instead of a hard-coded relationship card', () => {

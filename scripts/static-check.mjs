@@ -1,7 +1,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { STATUS_CUSTOM_VARIANTS, STATUS_RECIPE_PRESETS, STATUS_STYLE_PRESETS } from '../rule-generator.js';
+import { STATUS_LOGO_PRESETS, STATUS_STRUCTURE_PRESETS, STATUS_STYLE_PRESETS } from '../rule-generator.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const requiredFiles = [
@@ -183,34 +183,15 @@ if (statusIds.size !== 50) errors.push('50套通用状态栏必须使用50个独
 if (miniWebPalettes.size !== 30) errors.push('21-50 必须使用30套独立五色色卡');
 if (miniWebSchemas.size !== 30) errors.push('21-50 必须使用30套独立动态字段协议');
 
+if (STATUS_STRUCTURE_PRESETS.length !== 9) errors.push('旧40套配方移除后，编辑器必须只保留9种基础结构');
+if (STATUS_LOGO_PRESETS.length !== 13) errors.push('动态数值小物必须包含跟随外观与12个简化图形');
+if (STATUS_LOGO_PRESETS.filter(item => item.id.startsWith('slider-')).length !== 12) errors.push('动态数值小物必须正好保留12个可选图形');
 try {
-    const recipeRoot = join(root, 'starter-packs', '状态栏一键配方');
-    const recipeDirectories = (await readdir(recipeRoot, { withFileTypes: true })).filter(item => item.isDirectory());
-    if (recipeDirectories.length !== 40) errors.push('状态栏一键配方必须正好生成40套成品');
-    const recipeIds = new Set();
-    for (const directory of recipeDirectories) {
-        const folder = join(recipeRoot, directory.name);
-        const files = await readdir(folder);
-        const regexName = files.find(name => name.startsWith('regex-') && name.endsWith('.json'));
-        const worldbookName = files.find(name => name.startsWith('世界书-') && name.endsWith('.json'));
-        if (!regexName || !worldbookName) {
-            errors.push(`状态栏配方${directory.name}缺少正则或世界书`);
-            continue;
-        }
-        const regex = JSON.parse(await readFile(join(folder, regexName), 'utf8'));
-        const worldbook = JSON.parse(await readFile(join(folder, worldbookName), 'utf8'));
-        recipeIds.add(regex.id);
-        if (!regex.replaceString?.includes('data-structure=') || !regex.replaceString?.includes('data-variant=')) errors.push(`状态栏配方${directory.name}未导出结构或变体`);
-        const content = Object.values(worldbook.entries || {}).map(entry => entry.content || '').join('\n');
-        if (!content.includes('严格输出模板')) errors.push(`状态栏配方${directory.name}世界书缺少 AI 输出协议`);
-    }
-    if (recipeIds.size !== 40) errors.push('40套状态栏一键配方必须使用40个独立正则 ID');
+    await readdir(join(root, 'starter-packs', '状态栏一键配方'));
+    errors.push('已删除的40套状态栏一键配方不应继续生成');
 } catch (error) {
-    errors.push(`40套状态栏一键配方缺失或无效：${error.message}`);
+    if (error?.code !== 'ENOENT') errors.push(`无法确认旧状态栏配方目录已删除：${error.message}`);
 }
-if (STATUS_CUSTOM_VARIANTS.length !== 20) errors.push('自由面板材质必须正好包含20套');
-if (STATUS_RECIPE_PRESETS.filter(item => item.group === 'custom').length !== 20) errors.push('一键配方必须包含20套自由面板');
-if (STATUS_RECIPE_PRESETS.filter(item => item.group === 'type').length !== 20) errors.push('一键配方必须包含20套类型状态栏');
 
 if (errors.length) {
     console.error('STATIC_CHECK_FAILED');

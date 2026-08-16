@@ -4,8 +4,6 @@ import {
     STATUS_PALETTE_PRESETS,
     STATUS_STYLE_PRESETS,
     STATUS_STRUCTURE_PRESETS,
-    STATUS_CUSTOM_VARIANTS,
-    STATUS_RECIPE_PRESETS,
     STATUS_THEME_CSS,
     buildAiInstruction,
     buildRegexScript,
@@ -163,9 +161,9 @@ const DEFAULT_SETTINGS = Object.freeze({
     favoriteHomeTemplates: ['classical', 'newspaper', 'timeline'],
     favoriteStatusTemplates: ['relationship', 'worldNpc'],
     structure: 'custom',
-    variant: 'cream-inset',
-    recipeId: 'custom-01',
+    variant: 'auto',
     logoId: 'auto',
+    fillMode: 'solid',
     paletteId: 'cream-navy',
     media: { avatarSource: 'character', avatarUrl: '', imageUrl: '', audioUrl: '', imageAlt: '状态栏配图' },
     openingNotes: {},
@@ -204,6 +202,7 @@ const SETTING_FIELDS = Object.freeze({
     'status-atelier-theme': 'theme',
     'status-atelier-structure': 'structure',
     'status-atelier-palette': 'paletteId',
+    'status-atelier-fill-mode': 'fillMode',
     'status-atelier-layout': 'layout',
     'status-atelier-pages': 'pagesText',
     'status-atelier-shared-fields': 'sharedFieldsText',
@@ -495,43 +494,6 @@ function renderTemplateLibraries() {
     if (!settingsRoot) return;
     const stored = settings();
     fillTemplateLibrary(HOME_TEMPLATES, stored.favoriteHomeTemplates, stored.openingHome.theme, 'home', field('status-atelier-home-favorites'), field('status-atelier-home-others'));
-    renderStatusRecipeLibrary();
-}
-
-function statusRecipe(recipeId = settings().recipeId) {
-    return STATUS_RECIPE_PRESETS.find(item => item.id === recipeId) || STATUS_RECIPE_PRESETS[0];
-}
-
-function makeStatusRecipeCard(recipe) {
-    const button = makeElement('button', 'status-atelier-template-card status-atelier-recipe-card');
-    button.type = 'button';
-    button.dataset.statusRecipe = recipe.id;
-    button.setAttribute('aria-pressed', String(settings().recipeId === recipe.id));
-    button.append(makeElement('strong', '', recipe.name), makeElement('small', '', recipe.description));
-    button.addEventListener('click', () => applyStatusRecipe(recipe.id));
-    return button;
-}
-
-function renderStatusRecipeLibrary() {
-    if (!settingsRoot) return;
-    const current = statusRecipe();
-    const name = field('status-atelier-current-recipe-name');
-    const description = field('status-atelier-current-recipe-description');
-    if (name) name.textContent = current.name;
-    if (description) description.textContent = current.description;
-    const customHost = field('status-atelier-status-custom-recipes');
-    const typeHost = field('status-atelier-status-type-recipes');
-    if (!customHost || !typeHost) return;
-    if (customHost.children.length !== 20 || typeHost.children.length !== 20) {
-        customHost.replaceChildren();
-        typeHost.replaceChildren();
-        STATUS_RECIPE_PRESETS.forEach(recipe => {
-            (recipe.group === 'custom' ? customHost : typeHost).append(makeStatusRecipeCard(recipe));
-        });
-    }
-    settingsRoot.querySelectorAll('[data-status-recipe]').forEach(button => {
-        button.setAttribute('aria-pressed', String(button.dataset.statusRecipe === current.id));
-    });
 }
 
 function renderPaletteButtons() {
@@ -588,10 +550,9 @@ function renderStatusDesignControls() {
             button.dataset.logoFamily = logo.family || 'auto';
             button.dataset.logoEffect = logo.effect || 'plain';
             button.title = logo.name;
-            button.append(
-                makeElement('span', 'status-atelier-logo-art', logo.glyph || 'AUTO'),
-                makeElement('small', '', logo.name),
-            );
+            const art = makeElement('span', 'status-atelier-logo-art', logo.svg ? '' : (logo.glyph || 'AUTO'));
+            if (logo.svg) art.innerHTML = logo.svg;
+            button.append(art, makeElement('small', '', logo.name));
             logoHost.append(button);
         });
     }
@@ -635,7 +596,7 @@ function applyStatusStructure(structureId) {
     if (!structure) return;
     const stored = settings();
     stored.structure = structure.id;
-    stored.variant = structure.id === 'custom' ? (stored.variant || 'cream-inset') : 'auto';
+    stored.variant = 'auto';
     stored.title = structure.title;
     stored.subtitle = structure.subtitle;
     stored.layout = structure.layout;
@@ -662,58 +623,6 @@ function applyStatusStructure(structureId) {
     renderStatusSchema();
     renderModalStatusSchema();
     scheduleStatusPreviewUpdate();
-}
-
-function applyStatusRecipe(recipeId, { announce = true } = {}) {
-    const recipe = STATUS_RECIPE_PRESETS.find(item => item.id === recipeId);
-    if (!recipe) return null;
-    const structure = STATUS_STRUCTURE_PRESETS.find(item => item.id === recipe.structure);
-    if (!structure) return null;
-    const variant = recipe.group === 'custom'
-        ? STATUS_CUSTOM_VARIANTS.find(item => item.id === recipe.variant)
-        : null;
-    const fields = variant?.fields || structure.fields;
-    Object.assign(settings(), {
-        recipeId: recipe.id,
-        theme: recipe.theme,
-        paletteId: recipe.paletteId,
-        logoId: recipe.logoId,
-        structure: recipe.structure,
-        variant: recipe.variant,
-        layout: recipe.layout,
-        title: recipe.title || variant?.name || structure.title,
-        subtitle: recipe.subtitle || (recipe.group === 'custom' ? `CUSTOM PANEL / ${recipe.id.slice(-2)}` : structure.subtitle),
-        pagesText: recipe.pagesText || structure.pagesText,
-        sharedFieldsText: '',
-        pageFieldsText: fields.map(field => field.join('|')).join('\n'),
-        preset: 'custom',
-        statusTemplate: 'custom',
-    });
-    settings().media = {
-        ...DEFAULT_SETTINGS.media,
-        ...(settings().media || {}),
-        avatarSource: recipe.avatarSource || 'none',
-    };
-    statusAiTestRecords = null;
-    for (const [id, key] of Object.entries(SETTING_FIELDS)) {
-        const control = field(id);
-        if (control) control.type === 'checkbox' ? control.checked = Boolean(settings()[key]) : control.value = String(settings()[key] ?? '');
-    }
-    renderStatusRecipeLibrary();
-    renderStatusDesignControls();
-    renderStatusSchema();
-    renderGreetingStatusChooser();
-    updatePrompt();
-    updatePreview();
-    saveSettingsSoon({ snapshotOpening: false });
-    if (announce) notify('success', `已换成“${recipe.name}”；点击一键生成并应用即可写入当前角色`);
-    return recipe;
-}
-
-function shuffleStatusRecipe({ announce = true } = {}) {
-    const currentIndex = STATUS_RECIPE_PRESETS.findIndex(item => item.id === settings().recipeId);
-    const next = STATUS_RECIPE_PRESETS[(currentIndex + 1 + STATUS_RECIPE_PRESETS.length) % STATUS_RECIPE_PRESETS.length];
-    return applyStatusRecipe(next.id, { announce });
 }
 
 function fieldDefinitions() {
@@ -1485,6 +1394,7 @@ function resolvedStatusInput(source = settings()) {
         structure: source.structure,
         variant: source.variant,
         logoId: source.logoId,
+        fillMode: source.fillMode,
         paletteId: source.paletteId,
         palette: source.palette && typeof source.palette === 'object' ? { ...source.palette } : undefined,
         layout: source.layout,
@@ -1517,6 +1427,11 @@ function previewValue(fieldDefinition) {
     return 'AI动态填写';
 }
 
+function paintRuleLogo(element, rule, fallback = '✦') {
+    if (rule?.logoSvg) element.innerHTML = rule.logoSvg;
+    else element.textContent = rule?.glyph || fallback;
+}
+
 function appendPreviewField(host, definition, value, shared = false, glyph = '✦', rule = null) {
     const item = makeElement('div', shared ? 'status-atelier-preview-shared-item zrs-shared-item' : 'status-atelier-preview-field zrs-field');
     item.dataset.kind = definition.kind;
@@ -1547,10 +1462,18 @@ function appendPreviewField(host, definition, value, shared = false, glyph = '�
         const percent = Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 68;
         const fill = makeElement('i');
         fill.style.width = `${percent}%`;
-        const marker = makeElement('span', 'status-atelier-preview-meter-marker zrs-meter-marker', glyph);
-        marker.style.left = `${percent}%`;
+        const trail = makeElement('span', 'zrs-meter-trail');
+        trail.style.width = `${percent}%`;
+        for (let index = 0; index < 10; index += 1) {
+            const dot = makeElement('span');
+            paintRuleLogo(dot, rule, glyph);
+            trail.append(dot);
+        }
+        const marker = makeElement('span', 'status-atelier-preview-meter-marker zrs-meter-marker');
+        paintRuleLogo(marker, rule, glyph);
+        marker.style.left = `clamp(13px, ${percent}%, calc(100% - 13px))`;
         marker.setAttribute('aria-label', `AI 动态数值位置 ${percent}%`);
-        meter.append(fill, marker);
+        meter.append(fill, trail, marker);
         item.append(meter);
     }
     host.append(item);
@@ -1575,6 +1498,7 @@ function renderStatusPreview(host) {
     root.dataset.logo = rule.logoId;
     root.dataset.logoFamily = rule.logoFamily;
     root.dataset.logoEffect = rule.logoEffect;
+    root.dataset.fillMode = rule.fillMode;
     root.dataset.hasImage = rule.media.imageUrl ? 'true' : 'false';
     if (rule.palette) {
         root.style.setProperty('--sap-accent', rule.palette.accent);
@@ -1591,8 +1515,10 @@ function renderStatusPreview(host) {
 
     const card = makeElement('section', 'status-atelier-preview-card zrs-card');
     const chrome = makeElement('div', 'status-atelier-preview-chrome zrs-chrome');
+    const previewGlyph = makeElement('span', 'status-atelier-preview-glyph zrs-glyph');
+    paintRuleLogo(previewGlyph, rule);
     chrome.append(
-        makeElement('span', 'status-atelier-preview-glyph zrs-glyph', rule.glyph),
+        previewGlyph,
         makeElement('span', 'status-atelier-preview-style-name zrs-style-name', rule.styleName),
         makeElement('i'),
         makeElement('i'),
@@ -1681,10 +1607,15 @@ function refreshStatusAppearancePreview() {
         root.dataset.logo = rule.logoId;
         root.dataset.logoFamily = rule.logoFamily;
         root.dataset.logoEffect = rule.logoEffect;
-        root.querySelector('.status-atelier-preview-glyph')?.replaceChildren(document.createTextNode(rule.glyph));
+        root.dataset.fillMode = rule.fillMode;
+        const glyph = root.querySelector('.status-atelier-preview-glyph');
+        if (glyph) paintRuleLogo(glyph, rule);
         root.querySelector('.status-atelier-preview-style-name')?.replaceChildren(document.createTextNode(rule.styleName));
         root.querySelectorAll('.status-atelier-preview-meter-marker').forEach(marker => {
-            marker.replaceChildren(document.createTextNode(rule.glyph));
+            paintRuleLogo(marker, rule);
+        });
+        root.querySelectorAll('.zrs-meter-trail span').forEach(marker => {
+            paintRuleLogo(marker, rule);
         });
     });
 }
@@ -2401,11 +2332,10 @@ function renderGreetingThemeChooser() {
 function renderGreetingStatusChooser() {
     const select = greetingModal?.querySelector('#status-atelier-modal-status-style');
     const structureSelect = greetingModal?.querySelector('#status-atelier-modal-status-structure');
+    const fillModeSelect = greetingModal?.querySelector('#status-atelier-modal-status-fill-mode');
     const logoHost = greetingModal?.querySelector('#status-atelier-modal-status-logos');
     const paletteHost = greetingModal?.querySelector('#status-atelier-modal-status-palettes');
     const state = greetingModal?.querySelector('.status-atelier-modal-status-state');
-    const recipeName = greetingModal?.querySelector('#status-atelier-modal-current-recipe-name');
-    const recipeDescription = greetingModal?.querySelector('#status-atelier-modal-current-recipe-description');
     if (!select) return;
     if (!select.options.length) {
         STATUS_STYLE_PRESETS.forEach(style => {
@@ -2423,9 +2353,7 @@ function renderGreetingStatusChooser() {
         });
     }
     if (structureSelect) structureSelect.value = settings().structure || 'custom';
-    const activeRecipe = statusRecipe();
-    if (recipeName) recipeName.textContent = activeRecipe.name;
-    if (recipeDescription) recipeDescription.textContent = activeRecipe.description;
+    if (fillModeSelect) fillModeSelect.value = settings().fillMode === 'object' ? 'object' : 'solid';
     if (logoHost && logoHost.children.length !== STATUS_LOGO_PRESETS.length) {
         logoHost.replaceChildren();
         STATUS_LOGO_PRESETS.forEach(logo => {
@@ -2434,7 +2362,9 @@ function renderGreetingStatusChooser() {
             button.dataset.modalStatusLogo = logo.id;
             button.dataset.logoFamily = logo.family || 'auto';
             button.dataset.logoEffect = logo.effect || 'plain';
-            button.append(makeElement('span', 'status-atelier-logo-art', logo.glyph || 'AUTO'), makeElement('small', '', logo.name));
+            const art = makeElement('span', 'status-atelier-logo-art', logo.svg ? '' : (logo.glyph || 'AUTO'));
+            if (logo.svg) art.innerHTML = logo.svg;
+            button.append(art, makeElement('small', '', logo.name));
             logoHost.append(button);
         });
     }
@@ -2464,7 +2394,7 @@ function renderGreetingStatusChooser() {
     if (state) {
         const installed = statusRegexAppliesToCurrentContext();
         state.textContent = installed
-            ? `当前角色已启用状态栏；再次点击会直接覆盖更新为“${activeRecipe.name}”。`
+            ? '当前角色已启用状态栏；再次点击会直接覆盖为当前编辑结果。'
             : `当前角色尚未安装状态栏；点击后直接写入局部正则，不需要下载。`;
         state.dataset.state = installed ? 'success' : 'idle';
     }
@@ -2644,13 +2574,9 @@ function buildGreetingModal() {
                     </details>
                 </details>
                 <section class="status-atelier-greeting-status-step">
-                    <div class="status-atelier-greeting-step-heading"><strong>一键状态栏</strong><small>先看结果；不满意就换一套。</small></div>
-                    <div class="status-atelier-current-recipe status-atelier-modal-current-recipe">
-                        <div><strong id="status-atelier-modal-current-recipe-name"></strong><span id="status-atelier-modal-current-recipe-description"></span></div>
-                        <button type="button" class="menu_button" id="status-atelier-modal-shuffle-recipe">换一套</button>
-                    </div>
+                    <div class="status-atelier-greeting-step-heading"><strong>制作状态栏</strong><small>直接选择结构、字段和小物；预览满意后再一键应用。</small></div>
                     <details class="status-atelier-modal-status-advanced">
-                        <summary><strong>想自己调整再展开</strong><small>结构、字段、外观、Logo 与色卡</small></summary>
+                        <summary><strong>调整状态栏</strong><small>结构、字段、小物与色卡</small></summary>
                         <div class="status-atelier-modal-status-controls">
                             <label>组件结构<select id="status-atelier-modal-status-structure" class="text_pole"></select></label>
                             <label>外观版式<select id="status-atelier-modal-status-style" class="text_pole"></select></label>
@@ -2661,7 +2587,8 @@ function buildGreetingModal() {
                             <div id="status-atelier-modal-status-schema" class="status-atelier-modal-schema-list"></div>
                         </details>
                         <details class="status-atelier-status-logo-library">
-                            <summary><strong>装饰 Logo</strong><small>网点、切片、像素与拖影</small></summary>
+                            <summary><strong>动态数值小物</strong><small>12 个简化图形，不会盖住数值</small></summary>
+                            <label>轨道填充方式<select id="status-atelier-modal-status-fill-mode" class="text_pole"><option value="solid">纯色填充</option><option value="object">小物填充</option></select></label>
                             <div id="status-atelier-modal-status-logos" class="status-atelier-status-logos"></div>
                         </details>
                         <details class="status-atelier-status-palette-library">
@@ -2706,7 +2633,6 @@ function buildGreetingModal() {
         notify('success', '已复制主页标记【主页】；请放进主开场白');
     });
     greetingModal.querySelector('#status-atelier-open-full-workbench').addEventListener('click', openFullWorkbench);
-    greetingModal.querySelector('#status-atelier-modal-shuffle-recipe').addEventListener('click', () => shuffleStatusRecipe());
     greetingModal.querySelector('#status-atelier-modal-status-structure').addEventListener('change', event => {
         applyStatusStructure(event.currentTarget.value);
     });
@@ -2714,6 +2640,11 @@ function buildGreetingModal() {
         const style = STATUS_STYLE_PRESETS.find(item => item.id === event.currentTarget.value);
         if (!style) return;
         Object.assign(settings(), { theme: style.id, layout: style.layout, preset: 'custom', statusTemplate: 'custom' });
+        refreshStatusAppearancePreview();
+        saveSettingsSoon({ snapshotOpening: false });
+    });
+    greetingModal.querySelector('#status-atelier-modal-status-fill-mode').addEventListener('change', event => {
+        settings().fillMode = event.currentTarget.value === 'object' ? 'object' : 'solid';
         refreshStatusAppearancePreview();
         saveSettingsSoon({ snapshotOpening: false });
     });
@@ -3116,8 +3047,6 @@ async function addSettingsPanel() {
     host.append(settingsRoot);
 
     settingsRoot.querySelectorAll('[data-status-workspace]').forEach(button => button.addEventListener('click', () => setWorkspace(button.dataset.statusWorkspace)));
-    field('status-atelier-shuffle-recipe')?.addEventListener('click', () => shuffleStatusRecipe());
-
     field('status-atelier-preset').addEventListener('change', event => {
         if (event.target.value !== 'custom') applyPreset(event.target.value);
     });

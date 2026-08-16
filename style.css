@@ -1331,19 +1331,61 @@
     transition: width .2s ease;
 }
 
+.status-atelier-preview-meter .zrs-meter-trail {
+    position: absolute;
+    left: 0;
+    top: 3px;
+    display: none;
+    height: 18px;
+    align-items: center;
+    gap: 1px;
+    overflow: hidden;
+    color: var(--sap-accent);
+}
+
+.status-atelier-preview-meter .zrs-meter-trail span {
+    display: grid;
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    place-items: center;
+}
+
+.status-atelier-rule-preview[data-fill-mode="object"] .status-atelier-preview-meter > i {
+    display: none;
+}
+
+.status-atelier-rule-preview[data-fill-mode="object"] .zrs-meter-trail {
+    display: flex;
+}
+
 .status-atelier-preview-meter-marker {
     position: absolute;
     top: 50%;
     z-index: 1;
     display: grid;
     place-items: center;
-    min-width: 22px;
-    height: 22px;
+    width: 26px;
+    min-width: 26px;
+    height: 26px;
+    border: 2px solid var(--sap-card);
+    border-radius: 50%;
+    color: var(--sap-accent);
+    background: var(--sap-card);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--sap-text) 22%, transparent);
     transform: translate(-50%, -50%);
     font-size: 17px;
     line-height: 1;
     filter: drop-shadow(0 1px 1px color-mix(in srgb, var(--sap-text) 35%, transparent));
     transition: left .2s ease;
+}
+
+.status-atelier-rule-preview :is(.zrs-glyph, .zrs-meter-marker, .zrs-meter-trail span) > svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+    overflow: visible;
+    color: var(--sap-accent);
 }
 
 .status-atelier-status-palettes {
@@ -3247,6 +3289,13 @@ summary.status-atelier-section-heading {
     min-width: 30px;
     min-height: 30px;
     isolation: isolate;
+}
+
+.status-atelier-logo-art > svg {
+    display: block;
+    width: 26px;
+    height: 26px;
+    color: var(--saw-accent, var(--status-atelier-ui-accent));
 }
 
 .status-atelier-status-logo[data-logo-family="apple"] .status-atelier-logo-art {

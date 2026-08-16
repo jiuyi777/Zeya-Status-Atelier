@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>状态栏滑块设计试验</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --page: #f1eee7;
+      --surface: #fffdf8;
+      --text: #24211f;
+      --muted: #716a63;
+      --line: #d9d2c8;
+      --focus: #245cc7;
+      --shadow: 0 12px 32px rgba(48, 40, 31, .09);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 280px;
+      background: var(--page);
+      color: var(--text);
+      font: 16px/1.5 system-ui, -apple-system, "Segoe UI", "Noto Sans SC", sans-serif;
+    }
+    button, input { font: inherit; }
+    .page {
+      width: min(1080px, 100%);
+      margin: 0 auto;
+      padding: max(20px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+    }
+    header {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 22px;
+      padding: clamp(20px, 5vw, 40px);
+      border-radius: 28px;
+      background: #25231f;
+      color: #fffdf8;
+      box-shadow: var(--shadow);
+    }
+    header p { max-width: 720px; margin: 0; color: #d7d0c7; }
+    h1 { margin: 0; font-size: clamp(26px, 5vw, 46px); line-height: 1.05; letter-spacing: -.04em; }
+    .rules { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .rule { padding: 5px 10px; border: 1px solid #575149; border-radius: 999px; color: #e6dfd5; font-size: 13px; }
+    .mode-panel {
+      position: sticky;
+      z-index: 5;
+      top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding: 10px 12px 10px 16px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      box-shadow: 0 8px 22px rgba(48, 40, 31, .08);
+      backdrop-filter: blur(14px);
+    }
+    .mode-copy strong, .mode-copy span { display: block; }
+    .mode-copy span { color: var(--muted); font-size: 12px; }
+    .segmented { display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: #e7e1d8; }
+    .segmented button {
+      min-height: 44px;
+      padding: 0 14px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: #5f5851;
+      cursor: pointer;
+    }
+    .segmented button[aria-pressed="true"] { background: #fff; color: #1f1c19; box-shadow: 0 2px 9px rgba(48,40,31,.12); }
+    .segmented button:focus-visible, .step:focus-visible, input:focus-visible + .focus-ring { outline: 3px solid color-mix(in srgb, var(--focus) 48%, transparent); outline-offset: 2px; }
+    .section-title { margin: 28px 0 12px; }
+    .section-title h2 { margin: 0; font-size: 21px; }
+    .section-title p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .slider-card {
+      --accent: #4666a3;
+      --accent-2: #a9bee9;
+      display: grid;
+      gap: 14px;
+      min-width: 0;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--surface);
+      box-shadow: 0 7px 20px rgba(48, 40, 31, .055);
+    }
+    .card-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+    .card-head h3 { margin: 0; font-size: 17px; }
+    .card-head p { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+    output { min-width: 48px; color: var(--accent); font: 700 22px/1 ui-monospace, SFMono-Regular, Consolas, monospace; text-align: right; }
+    .control-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 8px; }
+    .step {
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .step:active { background: color-mix(in srgb, var(--accent) 11%, #fff); }
+    .slider-zone { position: relative; height: 48px; touch-action: pan-y; }
+    .track {
+      position: absolute;
+      top: 50%;
+      right: 0;
+      left: 0;
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #ded8cf;
+      transform: translateY(-50%);
+    }
+    .fill, .trail { position: absolute; inset: 0 auto 0 0; width: calc(var(--value) * 1%); }
+    .fill { border-radius: inherit; background: linear-gradient(90deg, var(--accent-2), var(--accent)); }
+    .trail { display: none; align-items: center; gap: 2px; overflow: hidden; background: color-mix(in srgb, var(--accent-2) 16%, transparent); }
+    .trail svg { width: 14px; height: 14px; min-width: 14px; }
+    body[data-fill="object"] .fill { display: none; }
+    body[data-fill="object"] .trail { display: flex; }
+    .marker {
+      position: absolute;
+      z-index: 2;
+      top: 50%;
+      left: clamp(13px, calc(var(--value) * 1%), calc(100% - 13px));
+      display: grid;
+      width: 26px;
+      height: 26px;
+      place-items: center;
+      border: 2px solid var(--surface);
+      border-radius: 50%;
+      background: var(--surface);
+      box-shadow: 0 2px 8px rgba(38, 31, 25, .23);
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      transition: left 120ms ease-out, box-shadow 120ms ease-out;
+    }
+    .marker svg { width: 18px; height: 18px; overflow: visible; }
+    .slider-card.is-dragging .marker { transition: none; box-shadow: 0 1px 4px rgba(38,31,25,.28); }
+    input[type="range"] {
+      position: absolute;
+      z-index: 3;
+      inset: 0;
+      width: 100%;
+      height: 48px;
+      margin: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .focus-ring { position: absolute; inset: 6px -2px; border-radius: 16px; pointer-events: none; }
+    .note { color: var(--muted); font-size: 12px; }
+    .swatch { display: inline-block; width: 10px; height: 10px; margin-right: 5px; border-radius: 50%; background: var(--accent); }
+    @media (max-width: 700px) {
+      .grid { grid-template-columns: 1fr; }
+      .mode-panel { align-items: stretch; flex-direction: column; }
+      .segmented { width: 100%; }
+      .segmented button { flex: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .001ms !important; animation-duration: .001ms !important; }
+    }
+  </style>
+</head>
+<body data-fill="solid">
+  <main class="page">
+    <header>
+      <h1>滑块应该小而清楚，艺术感留在轮廓里。</h1>
+      <p>根据 UI/UX Pro Max 的触控、拖动替代方案与图标一致性规则制作。下方所有滑块都能拖动、点击轨道、使用键盘或 ± 按钮。</p>
+      <div class="rules" aria-label="设计规则">
+        <span class="rule">可见游标 18px</span>
+        <span class="rule">触控区域 48px</span>
+        <span class="rule">数值独立显示</span>
+        <span class="rule">不覆盖文字</span>
+        <span class="rule">支持减少动态效果</span>
+      </div>
+    </header>
+
+    <section class="mode-panel" aria-label="填充方式">
+      <div class="mode-copy"><strong>轨道填充方式</strong><span>切换后直接观察全部滑块</span></div>
+      <div class="segmented">
+        <button type="button" data-mode="solid" aria-pressed="true">纯色填充</button>
+        <button type="button" data-mode="object" aria-pressed="false">小物填充</button>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title"><h2>01 · 通用基础型</h2><p>最稳妥，适合数据密集的状态栏。</p></div>
+      <div class="grid" id="basic-grid"></div>
+    </section>
+
+    <section>
+      <div class="section-title"><h2>02 · 艺术简化型</h2><p>只保留两三块颜色和清楚轮廓，不使用完整插画。</p></div>
+      <div class="grid" id="art-grid"></div>
+    </section>
+  </main>
+
+  <script>
+    const icons = {
+      circle: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="var(--accent)"/><circle cx="9" cy="8" r="2.2" fill="var(--accent-2)"/></svg>`,
+      capsule: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="10" rx="5" fill="var(--accent)"/><path d="M9 8v8" stroke="var(--accent-2)" stroke-width="2"/></svg>`,
+      diamond: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 22 12 12 22 2 12Z" fill="var(--accent)"/><path d="m12 5 4 7-4 7-4-7Z" fill="var(--accent-2)"/></svg>`,
+      notch: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14l-8-4-8 4Z" fill="var(--accent)"/><path d="M7 8h10" stroke="var(--accent-2)" stroke-width="2" stroke-linecap="round"/></svg>`,
+      leaf: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4C9 4 4 9 5 19c8 1 14-4 15-15Z" fill="var(--accent)"/><path d="M6 18 17 7" stroke="var(--accent-2)" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+      petal: `<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6.7" rx="4" ry="5" fill="var(--accent)"/><ellipse cx="17.3" cy="12" rx="5" ry="4" fill="var(--accent-2)"/><ellipse cx="12" cy="17.3" rx="4" ry="5" fill="var(--accent)"/><ellipse cx="6.7" cy="12" rx="5" ry="4" fill="var(--accent-2)"/><circle cx="12" cy="12" r="2.4" fill="#fff8de"/></svg>`,
+      apple: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-5-4-9 0-8 6 1 5 5 8 8 6 3 2 7-1 8-6 1-6-3-10-8-6Z" fill="var(--accent)"/><path d="M12 8c0-4 3-5 6-4-1 3-3 5-6 4Z" fill="var(--accent-2)"/><path d="M12 8c0-2 0-3-1-4" stroke="#624631" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+      gem: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 8 6-3 11H7L4 8Z" fill="var(--accent)"/><path d="m4 8 8 4 8-4M12 2v10m-5 7 5-7 5 7" fill="none" stroke="var(--accent-2)" stroke-width="1.3"/></svg>`,
+      drop: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2S5 10 5 15a7 7 0 0 0 14 0C19 10 12 2 12 2Z" fill="var(--accent)"/><path d="M9 17c-1-2 0-4 1-6" fill="none" stroke="var(--accent-2)" stroke-width="2" stroke-linecap="round"/></svg>`,
+      moon: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.8 17.5A9 9 0 1 1 11 3a7.5 7.5 0 0 0 7.8 14.5Z" fill="var(--accent)"/><circle cx="18.5" cy="6" r="1.6" fill="var(--accent-2)"/></svg>`,
+      shell: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18c1-8 5-13 9-13s8 5 9 13c-5 3-13 3-18 0Z" fill="var(--accent)"/><path d="M12 6v13M8 7l2 12M16 7l-2 12M5 11l4 8m10-8-4 8" stroke="var(--accent-2)" stroke-width="1.2" stroke-linecap="round"/></svg>`,
+      butterfly: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 11C9 4 3 3 3 8c0 3 3 5 8 5Z" fill="var(--accent)"/><path d="M13 11c2-7 8-8 8-3 0 3-3 5-8 5Z" fill="var(--accent-2)"/><path d="M11 13c-5 0-7 4-4 6 2 1 4-1 5-5m1-1c5 0 7 4 4 6-2 1-4-1-5-5" fill="var(--accent)"/><path d="M12 9v9" stroke="#54413b" stroke-width="1.5" stroke-linecap="round"/></svg>`
+    };
+
+    const basic = [
+      { id: 'S1', name: '圆点', desc: '最清楚、最适合密集信息', icon: 'circle', a: '#3868c7', b: '#a9c5ff', value: 72 },
+      { id: 'S2', name: '短胶囊', desc: '有方向感但不过度装饰', icon: 'capsule', a: '#bd5a42', b: '#efb6a6', value: 58 },
+      { id: 'S3', name: '切面菱形', desc: '游戏感较强，仍保持简洁', icon: 'diamond', a: '#5b4e9b', b: '#bab0ef', value: 64 },
+      { id: 'S4', name: '书签缺口', desc: '适合章节、路线和档案', icon: 'notch', a: '#2f786a', b: '#9ed8c9', value: 45 }
+    ];
+    const artistic = [
+      { id: 'A1', name: '一叶', desc: '自然、清冷、古风都可用', icon: 'leaf', a: '#507642', b: '#bed49c', value: 68 },
+      { id: 'A2', name: '四瓣花', desc: '柔和但轮廓清楚', icon: 'petal', a: '#c8627a', b: '#f2afbf', value: 53 },
+      { id: 'A3', name: '小苹果', desc: '仅保留果实和叶片两块色', icon: 'apple', a: '#c23d35', b: '#68a15a', value: 76 },
+      { id: 'A4', name: '小宝石', desc: '适合魔法值、状态强度', icon: 'gem', a: '#396ebc', b: '#91c4ef', value: 61 },
+      { id: 'A5', name: '水滴', desc: '适合体力、情绪和含量', icon: 'drop', a: '#258cae', b: '#9bdcf0', value: 39 },
+      { id: 'A6', name: '月牙', desc: '适合时间、睡眠和夜间状态', icon: 'moon', a: '#6a5aa2', b: '#e0cb76', value: 82 },
+      { id: 'A7', name: '贝壳', desc: '复古、海洋、收藏感', icon: 'shell', a: '#c67e65', b: '#f2c7ad', value: 57 },
+      { id: 'A8', name: '蝴蝶', desc: '适合关系、变化和自由度', icon: 'butterfly', a: '#4e77b6', b: '#d380b2', value: 47 }
+    ];
+
+    function repeatedIcon(icon) {
+      return Array.from({ length: 12 }, () => icons[icon]).join('');
+    }
+    function card(item) {
+      const el = document.createElement('article');
+      el.className = 'slider-card';
+      el.dataset.id = item.id;
+      el.style.setProperty('--accent', item.a);
+      el.style.setProperty('--accent-2', item.b);
+      el.style.setProperty('--value', item.value);
+      el.innerHTML = `
+        <div class="card-head">
+          <div><h3>${item.id} · ${item.name}</h3><p>${item.desc}</p></div>
+          <output for="range-${item.id}">${item.value}</output>
+        </div>
+        <div class="control-row">
+          <button class="step" type="button" data-step="-5" aria-label="${item.name}减少5">−</button>
+          <div class="slider-zone">
+            <div class="track"><span class="fill"></span><span class="trail" aria-hidden="true">${repeatedIcon(item.icon)}</span></div>
+            <span class="marker" aria-hidden="true">${icons[item.icon]}</span>
+            <input id="range-${item.id}" type="range" min="0" max="100" step="1" value="${item.value}" aria-label="${item.name}数值">
+            <span class="focus-ring"></span>
+          </div>
+          <button class="step" type="button" data-step="5" aria-label="${item.name}增加5">＋</button>
+        </div>
+        <div class="note"><span class="swatch"></span>小物只负责定位；数值永远留在右上角。</div>`;
+      const range = el.querySelector('input');
+      const output = el.querySelector('output');
+      const update = () => {
+        el.style.setProperty('--value', range.value);
+        output.value = range.value;
+        output.textContent = range.value;
+      };
+      range.addEventListener('input', update);
+      range.addEventListener('pointerdown', () => el.classList.add('is-dragging'));
+      range.addEventListener('pointerup', () => el.classList.remove('is-dragging'));
+      range.addEventListener('pointercancel', () => el.classList.remove('is-dragging'));
+      el.querySelectorAll('.step').forEach(button => button.addEventListener('click', () => {
+        range.value = Math.max(0, Math.min(100, Number(range.value) + Number(button.dataset.step)));
+        update();
+        range.focus();
+      }));
+      return el;
+    }
+
+    basic.forEach(item => document.querySelector('#basic-grid').append(card(item)));
+    artistic.forEach(item => document.querySelector('#art-grid').append(card(item)));
+    function setMode(mode) {
+      const selected = mode === 'object' ? 'object' : 'solid';
+      document.body.dataset.fill = selected;
+      document.querySelectorAll('[data-mode]').forEach(item => item.setAttribute('aria-pressed', String(item.dataset.mode === selected)));
+    }
+    document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => {
+      setMode(button.dataset.mode);
+    }));
+    setMode(new URLSearchParams(location.search).get('fill'));
+  </script>
+</body>
+</html>
