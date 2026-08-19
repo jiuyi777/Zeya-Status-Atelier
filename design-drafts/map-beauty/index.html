@@ -4,16 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>Status Atelier · 地图型状态栏设计原型</title>
+  <title>Status Atelier · 复古旅行档案地图模板</title>
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <main class="prototype-shell">
     <section class="prototype-intro" aria-labelledby="prototype-title">
       <div>
-        <p class="eyebrow">STATUS ATELIER / DESIGN DRAFT</p>
-        <h1 id="prototype-title">地图型任务状态栏</h1>
-        <p>独立设计原型：验证动态地点、路线状态、当前位置反馈与手机触控，不接入主干生成器。</p>
+        <p class="eyebrow">STATUS ATELIER / ARCHIVE MAP</p>
+        <h1 id="prototype-title">复古旅行档案地图</h1>
+        <p>旧地图、拍立得、图钉红线与旅行剪报组成同一张可交互任务地图；照片和节点读取同一份地点数据。</p>
       </div>
 
       <div class="prototype-controls" aria-label="原型数据控制">
@@ -31,13 +32,25 @@
     </section>
 
     <article class="quest-map" id="quest-map" aria-labelledby="map-title">
+      <div class="archive-decor" aria-hidden="true">
+        <div class="newspaper-scrap scrap-left"><b>THE NORTHERN POST</b><span>Field notes · route archive · weather report</span></div>
+        <div class="newspaper-scrap scrap-right"><b>THE INDIGO DOOR</b><span>October 21 · Late edition · $7.00</span></div>
+        <div class="binder-clip"><i></i><i></i></div>
+        <div class="tape tape-left"></div>
+        <div class="tape tape-right"></div>
+        <div class="pressed-flower flower-left"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="pressed-flower flower-right"><i></i><i></i><i></i><i></i></div>
+        <div class="luggage-tag"><span>FIELD</span><b>042</b></div>
+      </div>
+
+      <div class="map-paper">
       <header class="map-header">
         <button class="map-exit" id="map-exit" type="button" aria-label="返回上层状态页">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
           <span>返回状态</span>
         </button>
         <div class="map-heading">
-          <p class="map-kicker">QUEST ROUTE · AI DYNAMIC</p>
+          <p class="map-kicker">FIELD ARCHIVE · AI ROUTE DOSSIER</p>
           <h2 id="map-title">雾脊古道</h2>
           <p id="map-subtitle">沿废弃驿道抵达北境观星台</p>
         </div>
@@ -92,6 +105,7 @@
           <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="25"/><path d="m32 8 7 24-7 24-7-24Z"/><path d="M8 32h48"/></svg>
           <span>北</span>
         </div>
+        <span class="map-scale" aria-hidden="true">TOPOGRAPHIC RECORD · SCALE 1:250,000</span>
       </section>
 
       <div class="route-legend" aria-label="路线图例">
@@ -111,6 +125,9 @@
           <span><b>风险</b><span id="risk-value">北坡出现不稳定落石</span></span>
         </div>
       </footer>
+      </div>
+
+      <div class="photo-layer" id="photo-layer" role="group" aria-label="地点照片索引"></div>
 
       <section class="location-sheet" id="location-sheet" aria-labelledby="sheet-title" aria-hidden="true">
         <div class="sheet-scrim" data-close-sheet></div>
@@ -137,7 +154,7 @@
       </section>
     </article>
 
-    <p class="prototype-note">地点按钮可点击；“返回地图”和浏览器返回键都会关闭详情。路线以线型、文字与节点形状共同表达状态，不只依赖颜色。</p>
+    <p class="prototype-note">地图节点与拍立得照片都可点击；照片来自同一份动态地点数据。红线、虚线、节点形状与文字共同表达路线状态。</p>
     <div class="prototype-toast" id="prototype-toast" role="status" aria-live="polite"></div>
   </main>
   <script src="./prototype.js"></script>

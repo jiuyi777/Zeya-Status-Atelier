@@ -18,6 +18,7 @@ const place = (id, name, type, status, x, y, extra = {}) => ({
   id, name, type, status, x, y,
   description: '此处尚未写入详细记录，AI 可在下一轮剧情中补全地点信息。',
   distance: '—', weather: '薄雾', hint: '路线信息等待确认。',
+  photoUrl: '', photoAlt: '',
   ...extra,
 });
 
@@ -76,10 +77,11 @@ const datasets = {
   },
 };
 
-const state = { dataset: 'standard', selected: null, toastTimer: null };
+const state = { dataset: 'standard', selected: null, trigger: null, toastTimer: null };
 const map = document.querySelector('#quest-map');
 const nodesHost = document.querySelector('#node-layer');
 const routeHost = document.querySelector('#route-layer');
+const photoHost = document.querySelector('#photo-layer');
 const sheet = document.querySelector('#location-sheet');
 const sheetPanel = sheet.querySelector('.sheet-panel');
 const toast = document.querySelector('#prototype-toast');
@@ -146,8 +148,68 @@ function renderNodes(data) {
     statusDot.className = 'node-status-dot';
     statusDot.setAttribute('aria-hidden', 'true');
     button.append(icon, label, statusDot);
-    button.addEventListener('click', () => openSheet(node, true));
+    button.addEventListener('click', () => openSheet(node, true, button));
     nodesHost.append(button);
+  });
+}
+
+function archiveScene(node) {
+  const scenes = {
+    port: '<path d="M0 126h320v74H0z" fill="#8c8b80"/><path d="M0 139q54-25 105 0t108 0 107 2v59H0z" fill="#5e625e"/><path d="M58 117h109l-18 16H76zM112 63v55m-31-35h77" fill="none" stroke="#343833" stroke-width="8"/>',
+    town: '<path d="M0 150h320v50H0z" fill="#6b6d65"/><path d="M28 154V92l45-30 42 30v62m18 0v-43l39-27 39 27v43m18 0v-68h52v68" fill="#77786e" stroke="#363934" stroke-width="6"/><path d="M47 114h18m20 0h17m48 17h19m24 0h17m39-17h22" stroke="#d4cfbc" stroke-width="8"/>',
+    bridge: '<path d="M0 148h320v52H0z" fill="#696c67"/><path d="M12 145h296M42 145q28-79 64 0m0 0q28-79 64 0m0 0q28-79 64 0m0 0q28-79 64 0" fill="none" stroke="#3f423e" stroke-width="10"/><path d="M0 166q70-19 140 0t180 0" fill="none" stroke="#a7a596" stroke-width="7"/>',
+    tower: '<path d="M0 152h320v48H0z" fill="#656862"/><path d="M121 158l12-108h55l13 108zm-8-108h96l-15-19h-67z" fill="#575a55" stroke="#343733" stroke-width="5"/><path d="M150 78h23m-26 26h29m-33 28h36" stroke="#cfccb9" stroke-width="6"/>',
+    camp: '<path d="M0 153h320v47H0z" fill="#656a62"/><path d="m57 154 62-94 62 94zm121 0 43-68 45 68" fill="#7c7d72" stroke="#393c37" stroke-width="7"/><path d="M119 61v94m102-68v68" stroke="#393c37" stroke-width="5"/>',
+    forest: '<path d="M0 154h320v46H0z" fill="#666960"/><path d="m35 154 42-99 42 99m-13 0 52-125 52 125m-17 0 42-96 45 96" fill="#5f645c" stroke="#363a35" stroke-width="7"/>',
+    cave: '<path d="M0 164h320v36H0z" fill="#666862"/><path d="M35 166Q66 47 160 46t128 120" fill="#666963" stroke="#383b37" stroke-width="9"/><path d="M105 166q9-75 55-75t58 75" fill="#30332f"/>',
+    shrine: '<path d="M0 154h320v46H0z" fill="#696c64"/><path d="M78 77h164M95 77l22-38h86l22 38M105 77v81m110-81v81M76 158h168" fill="none" stroke="#41443f" stroke-width="12"/><path d="M132 101h57v57h-57z" fill="#74766d"/>',
+    ruins: '<path d="M0 155h320v45H0z" fill="#696b64"/><path d="M39 158V62l39-23 41 23 39-23 42 23 39-23 39 23v96M76 158v-56h41v56m65-89h36v42" fill="#73746b" stroke="#3c3f3a" stroke-width="7"/>',
+    gate: '<path d="M0 158h320v42H0z" fill="#686b65"/><path d="M49 159V82q0-54 48-54t48 54v77m29 0V82q0-54 48-54t48 54v77" fill="#74776f" stroke="#383c37" stroke-width="8"/><path d="M76 159V84q0-24 21-24t21 24v75m83 0V84q0-24 21-24t21 24v75" fill="#343733"/>',
+    peak: '<path d="m0 170 83-110 45 54 54-89 138 145v30H0z" fill="#686b65"/><path d="m82 61 19 25 19-11 62-50 26 28" fill="none" stroke="#d1cdbb" stroke-width="8"/>',
+  };
+  const art = scenes[node.type] || scenes.town;
+  const label = node.name.replace(/[&<>"']/g, '');
+  const markup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200"><defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#d8d3c2"/><stop offset="1" stop-color="#9d9d91"/></linearGradient><filter id="grain"><feTurbulence baseFrequency=".72" numOctaves="3" seed="${node.id.length + node.name.length}" type="fractalNoise"/><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 .16 0"/></filter></defs><path d="M0 0h320v200H0z" fill="url(#sky)"/><circle cx="245" cy="49" r="24" fill="#e7dfc8" opacity=".45"/>${art}<path d="M0 0h320v200H0z" filter="url(#grain)" opacity=".38"/><text x="12" y="190" fill="#292d29" font-family="Georgia,serif" font-size="12" opacity=".82">FIELD RECORD · ${label}</text></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+}
+
+function photoNodes(data) {
+  const current = data.nodes.find(node => node.status === 'current');
+  const available = data.nodes.filter(node => node.status === 'available');
+  const candidates = [current, ...available, data.nodes[0], data.nodes[data.nodes.length - 1], ...data.nodes].filter(Boolean);
+  return [...new Map(candidates.map(node => [node.id, node])).values()].slice(0, 6);
+}
+
+function renderPhotos(data) {
+  photoHost.replaceChildren();
+  photoNodes(data).forEach((node, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'photo-card';
+    button.dataset.nodeId = node.id;
+    button.dataset.status = node.status;
+    button.style.setProperty('--photo-index', index);
+    button.setAttribute('aria-label', `打开${node.name}地点档案，${nodeStatusLabel(node.status)}`);
+    button.setAttribute('aria-pressed', String(state.selected === node.id));
+
+    const pin = document.createElement('i');
+    pin.className = 'photo-pin';
+    pin.setAttribute('aria-hidden', 'true');
+    const image = document.createElement('img');
+    image.src = node.photoUrl || archiveScene(node);
+    image.alt = node.photoAlt || `${node.name}的黑白档案风景`;
+    image.width = 320;
+    image.height = 200;
+    image.loading = 'lazy';
+    image.decoding = 'async';
+    const caption = document.createElement('span');
+    caption.className = 'photo-caption';
+    caption.textContent = node.name;
+    const meta = document.createElement('small');
+    meta.textContent = nodeStatusLabel(node.status);
+    button.append(pin, image, caption, meta);
+    button.addEventListener('click', () => openSheet(node, true, button));
+    photoHost.append(button);
   });
 }
 
@@ -169,10 +231,18 @@ function render() {
   renderSummary(data);
   renderRoutes(data);
   renderNodes(data);
+  renderPhotos(data);
 }
 
-function openSheet(node, pushHistory) {
+function syncSelection(nodeId) {
+  map.querySelectorAll('.map-node, .photo-card').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.nodeId === nodeId));
+  });
+}
+
+function openSheet(node, pushHistory, trigger) {
   state.selected = node.id;
+  state.trigger = trigger || document.activeElement;
   document.querySelector('#sheet-route-state').textContent = nodeStatusLabel(node.status);
   document.querySelector('#sheet-eyebrow').textContent = node.status === 'current' ? 'CURRENT LOCATION' : node.status === 'available' ? 'NEXT LOCATION' : 'MAP RECORD';
   document.querySelector('#sheet-title').textContent = node.name;
@@ -181,17 +251,20 @@ function openSheet(node, pushHistory) {
   document.querySelector('#sheet-weather').textContent = node.weather;
   document.querySelector('#sheet-hint').textContent = node.hint;
   sheet.setAttribute('aria-hidden', 'false');
-  nodesHost.querySelectorAll('.map-node').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.nodeId === node.id)));
+  syncSelection(node.id);
   if (pushHistory) history.pushState({ mapDetail: true, nodeId: node.id }, '', `#place-${node.id}`);
   requestAnimationFrame(() => sheetPanel.focus());
 }
 
 function closeSheet({ useHistory = true } = {}) {
   if (sheet.getAttribute('aria-hidden') === 'true') return;
-  const previous = nodesHost.querySelector(`[data-node-id="${CSS.escape(state.selected)}"]`);
+  const previous = state.trigger?.isConnected
+    ? state.trigger
+    : map.querySelector(`[data-node-id="${CSS.escape(state.selected)}"]`);
   state.selected = null;
+  state.trigger = null;
   sheet.setAttribute('aria-hidden', 'true');
-  nodesHost.querySelectorAll('.map-node').forEach(button => button.setAttribute('aria-pressed', 'false'));
+  syncSelection(null);
   previous?.focus();
   if (useHistory && history.state?.mapDetail) history.back();
 }
