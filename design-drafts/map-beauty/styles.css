@@ -29,6 +29,12 @@ body {
     linear-gradient(135deg, #292620, #11110f 68%);
 }
 
+body.is-embedded { min-height: 100dvh; }
+body.is-embedded .prototype-shell { width: 100%; padding: 18px 12px 28px; }
+body.is-embedded .prototype-intro,
+body.is-embedded .prototype-note { display: none; }
+body.is-embedded .quest-map { margin-inline: auto; }
+
 button { font: inherit; }
 button, [role="button"] { touch-action: manipulation; }
 button:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }

@@ -85,6 +85,9 @@ const photoHost = document.querySelector('#photo-layer');
 const sheet = document.querySelector('#location-sheet');
 const sheetPanel = sheet.querySelector('.sheet-panel');
 const toast = document.querySelector('#prototype-toast');
+const embeddedMode = new URLSearchParams(location.search).get('embedded') === '1';
+
+if (embeddedMode) document.body.classList.add('is-embedded');
 
 function nodeStatusLabel(status) {
   return ({ completed: '已走过', current: '当前位置', available: '可前往', blocked: '路线已阻断', unknown: '未探明' })[status] || '未知状态';
@@ -313,11 +316,24 @@ document.querySelectorAll('[data-dataset]').forEach(button => {
 });
 
 document.querySelector('#advance-button').addEventListener('click', advanceStory);
-document.querySelector('#map-exit').addEventListener('click', () => showToast('原型返回动作：主干集成时交还上层状态页或聊天。'));
+document.querySelector('#map-exit').addEventListener('click', () => {
+  if (embeddedMode && window.parent !== window) {
+    window.parent.postMessage({ type: 'status-atelier-map-close' }, location.origin);
+    return;
+  }
+  showToast('原型返回动作：主干集成时交还上层状态页或聊天。');
+});
 sheet.querySelectorAll('[data-close-sheet]').forEach(element => element.addEventListener('click', () => closeSheet()));
 
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && sheet.getAttribute('aria-hidden') === 'false') closeSheet();
+  if (event.key !== 'Escape') return;
+  if (sheet.getAttribute('aria-hidden') === 'false') {
+    closeSheet();
+    return;
+  }
+  if (embeddedMode && window.parent !== window) {
+    window.parent.postMessage({ type: 'status-atelier-map-close' }, location.origin);
+  }
 });
 
 window.addEventListener('popstate', () => {

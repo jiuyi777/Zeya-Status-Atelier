@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Status Atelier · 插件内地图打开原型</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root { font-family: "Microsoft YaHei", system-ui, sans-serif; color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; min-width: 320px; min-height: 100%; margin: 0; background: #202724; }
+    body { overflow: hidden; }
+    .plugin-stage { position: fixed; inset: 0; }
+    .plugin-frame, .map-frame { display: block; width: 100%; height: 100%; border: 0; background: #202724; }
+    .loading-note {
+      position: fixed;
+      z-index: 2;
+      left: 50%;
+      top: 18px;
+      max-width: calc(100% - 32px);
+      padding: 10px 14px;
+      border: 1px solid rgba(231, 211, 173, .45);
+      color: #f2e6cf;
+      background: #27231d;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+      font-size: .82rem;
+      line-height: 1.45;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+    .loading-note[hidden] { display: none; }
+    .map-overlay {
+      position: fixed;
+      z-index: 20;
+      inset: 0;
+      background: #11110f;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translateY(18px);
+      transition: opacity 180ms ease, transform 240ms cubic-bezier(.2,.75,.25,1), visibility 0s linear 240ms;
+    }
+    .map-overlay.is-open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: translateY(0);
+      transition-delay: 0s;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .map-overlay { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="plugin-stage" aria-label="Status Atelier 插件任务地图打开原型">
+    <p class="loading-note" id="loading-note" role="status">正在打开插件的“状态栏库 → 任务地图”界面……</p>
+    <iframe
+      class="plugin-frame"
+      id="plugin-frame"
+      title="Status Atelier 插件界面"
+      src="/status-atelier-current-preview.html?workspace=status"
+    ></iframe>
+
+    <section class="map-overlay" id="map-overlay" aria-label="复古任务地图" aria-hidden="true">
+      <iframe
+        class="map-frame"
+        id="map-frame"
+        title="复古旅行档案地图"
+        src="./index.html?embedded=1"
+        tabindex="-1"
+      ></iframe>
+    </section>
+  </main>
+
+  <script>
+    const pluginFrame = document.querySelector('#plugin-frame');
+    const mapFrame = document.querySelector('#map-frame');
+    const overlay = document.querySelector('#map-overlay');
+    const loadingNote = document.querySelector('#loading-note');
+    let lastTrigger = null;
+
+    function openMap(trigger) {
+      lastTrigger = trigger || pluginFrame;
+      overlay.classList.add('is-open');
+      overlay.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('map-is-open');
+      if (!history.state?.statusAtelierMap) history.pushState({ statusAtelierMap: true }, '', '#map');
+      mapFrame.focus();
+    }
+
+    function closeMap({ useHistory = true } = {}) {
+      if (!overlay.classList.contains('is-open')) return;
+      overlay.classList.remove('is-open');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('map-is-open');
+      lastTrigger?.focus?.();
+      if (useHistory && history.state?.statusAtelierMap) history.back();
+    }
+
+    function attachMapEntry() {
+      const pluginDocument = pluginFrame.contentDocument;
+      if (!pluginDocument) return false;
+
+      const structureSelect = pluginDocument.querySelector('#status-atelier-structure');
+      if (!structureSelect) return false;
+      if (structureSelect && structureSelect.value !== 'quest') {
+        structureSelect.value = 'quest';
+        structureSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      const preview = pluginDocument.querySelector('#status-atelier-preview');
+      if (!preview) return false;
+      const nodes = preview.querySelectorAll('.zrs-map-node');
+      nodes.forEach(node => {
+        if (node.dataset.mapBeautyBound === 'true') return;
+        node.dataset.mapBeautyBound = 'true';
+        node.setAttribute('aria-label', `${node.textContent.trim()}，打开地图画面`);
+        node.title = '打开复古任务地图';
+        node.addEventListener('click', () => openMap(node));
+      });
+
+      if (!preview.querySelector('.map-beauty-entry-help')) {
+        const help = pluginDocument.createElement('p');
+        help.className = 'map-beauty-entry-help';
+        help.textContent = '点击上方任一地图节点，打开完整地图画面';
+        if (!pluginDocument.querySelector('#map-beauty-entry-style')) {
+          const style = pluginDocument.createElement('style');
+          style.id = 'map-beauty-entry-style';
+          style.textContent = '.map-beauty-entry-help{margin:10px 16px 0;padding:9px 12px;border:1px dashed currentColor;color:var(--z-accent,#8d2d23);font-weight:800;font-size:12px;text-align:center}.zrs-map-node{cursor:pointer}.zrs-map-node:focus-visible{outline:3px solid #ffe29a;outline-offset:3px}';
+          pluginDocument.head.append(style);
+        }
+        preview.querySelector('.zrs-structure-art')?.after(help);
+      }
+
+      if (nodes.length) loadingNote.hidden = true;
+      return nodes.length > 0;
+    }
+
+    pluginFrame.addEventListener('load', () => {
+      attachMapEntry();
+      const pluginDocument = pluginFrame.contentDocument;
+      const preview = pluginDocument?.querySelector('#status-atelier-preview');
+      if (preview) new MutationObserver(attachMapEntry).observe(preview, { childList: true, subtree: true });
+    });
+
+    const integrationTimer = window.setInterval(() => {
+      if (attachMapEntry()) window.clearInterval(integrationTimer);
+    }, 120);
+    window.setTimeout(() => window.clearInterval(integrationTimer), 10000);
+
+    window.addEventListener('message', event => {
+      if (event.origin !== location.origin || event.data?.type !== 'status-atelier-map-close') return;
+      closeMap();
+    });
+
+    window.addEventListener('popstate', () => closeMap({ useHistory: false }));
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && overlay.classList.contains('is-open')) closeMap();
+    });
+  </script>
+</body>
+</html>
