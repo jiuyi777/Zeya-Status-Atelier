@@ -3481,6 +3481,10 @@ summary.status-atelier-section-heading {
     font-size: 14px;
 }
 
+.status-atelier-phone-shell-picker {
+    grid-column: 1 / -1;
+}
+
 .status-atelier-phone-diy-card label,
 .status-atelier-phone-diy-card > small {
     display: block;

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>小手机美化 · 独立原型台</title>
+  <link rel="stylesheet" href="./prototype.css">
+</head>
+<body>
+  <header class="lab-head">
+    <div>
+      <p class="eyebrow">STATUS ATELIER · PHONE BEAUTY LAB</p>
+      <h1>三种手机，不是三张换色皮肤</h1>
+      <p class="lead">贝壳机把 APP 做成实体按键；轨道机让 APP 围绕桌面转动；滑盖机把快捷入口放进键盘。三款共用同一套数据与 APP ID。</p>
+    </div>
+    <div class="contract-badge" aria-label="原型契约状态">
+      <span>原型层</span>
+      <strong>保留 4 APP / 3 公共字段</strong>
+      <small>未接入 ST / TT</small>
+    </div>
+  </header>
+
+  <main>
+    <details class="diy-panel" open>
+      <summary>
+        <span><strong>DIY 素材台</strong><small>改 URL、取景、颜色和 APP 名称，三台手机同时更新</small></span>
+        <span class="summary-action">展开 / 收起</span>
+      </summary>
+      <div class="diy-grid">
+        <label class="wide">壁纸图片 URL
+          <input id="wallpaper-url" type="url" placeholder="https://...（留空使用每款内置桌面）">
+        </label>
+        <label class="wide">角色头像 URL
+          <input id="avatar-url" type="url" placeholder="https://...（留空使用头像占位图）">
+        </label>
+        <label>外壳主色
+          <input id="shell-color" type="color" value="#6f65c8">
+        </label>
+        <label>壁纸横向取景
+          <input id="wallpaper-x" type="range" min="0" max="100" value="50">
+        </label>
+        <label>壁纸纵向取景
+          <input id="wallpaper-y" type="range" min="0" max="100" value="50">
+        </label>
+        <label>头像缩放
+          <input id="avatar-scale" type="range" min="1" max="3" step="0.1" value="1">
+        </label>
+        <label class="switch"><input id="motion-toggle" type="checkbox" checked><span>开启非必要动效</span></label>
+        <button id="reset-diy" class="reset-button" type="button">恢复原型默认值</button>
+      </div>
+
+      <div class="app-editor" aria-label="APP 名称和图标 URL">
+        <div class="app-editor-head"><strong>APP DIY</strong><span>名称与图标 URL 不改变绑定 ID</span></div>
+        <div id="app-editor-grid"></div>
+      </div>
+    </details>
+
+    <nav class="prototype-nav" aria-label="手机原型定位">
+      <a href="#clamshell">01 贝壳折叠</a>
+      <a href="#orbit">02 透明轨道</a>
+      <a href="#slider">03 贴纸滑盖</a>
+    </nav>
+
+    <section id="phone-gallery" class="phone-gallery" aria-label="三款可交互手机原型"></section>
+
+    <section class="contract-panel">
+      <div>
+        <p class="eyebrow">BINDING CONTRACT</p>
+        <h2>设计变化只发生在呈现层</h2>
+      </div>
+      <dl>
+        <div><dt>APP ID</dt><dd>Personal / Memo / Wechat / Shop</dd></div>
+        <div><dt>公共字段</dt><dd>current_location / current_time / current_weather</dd></div>
+        <div><dt>个人字段</dt><dd>favor / desire / cloth / thought</dd></div>
+        <div><dt>素材契约</dt><dd>壁纸 URL、头像 URL、APP 图标 URL、头像缩放、壁纸取景</dd></div>
+      </dl>
+    </section>
+  </main>
+
+  <template id="phone-card-template">
+    <article class="prototype-card">
+      <header class="prototype-copy">
+        <span class="prototype-number"></span>
+        <div><h2></h2><p></p></div>
+      </header>
+      <div class="phone-stage"></div>
+      <p class="prototype-note"></p>
+    </article>
+  </template>
+
+  <script src="./prototype.js"></script>
+</body>
+</html>

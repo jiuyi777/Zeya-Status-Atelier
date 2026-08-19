@@ -146,6 +146,8 @@ const STATUS_TEMPLATES = Object.freeze([
 const KIND_LABELS = Object.freeze({ text: '短文本', long: '长文本', number: '数字', progress: '数值 0–100', currency: '金额', avatar: '头像' });
 const PHONE_STRUCTURE_IDS = Object.freeze(['phone', 'profile', 'social', 'forum', 'chat', 'music', 'casefile', 'quest']);
 const PHONE_DESKTOP_DEFAULTS = Object.freeze({
+    shellStyle: 'classic',
+    shellColor: '#e6a5c4',
     wallpaperUrl: '', wallpaperPositionX: 50, wallpaperPositionY: 50,
     petalsEnabled: true,
     widgetX: 15, widgetY: 58,
@@ -258,6 +260,8 @@ const STATUS_MEDIA_FIELDS = Object.freeze({
 });
 
 const PHONE_DESKTOP_FIELDS = Object.freeze({
+    'status-atelier-phone-shell-style': 'shellStyle',
+    'status-atelier-phone-shell-color': 'shellColor',
     'status-atelier-phone-wallpaper-url': 'wallpaperUrl',
     'status-atelier-phone-petals-enabled': 'petalsEnabled',
     'status-atelier-phone-avatar-source': 'personalAvatarSource',
@@ -354,9 +358,9 @@ function settings() {
     if (!stored.phoneDesktop || typeof stored.phoneDesktop !== 'object' || Array.isArray(stored.phoneDesktop)) {
         stored.phoneDesktop = clone(DEFAULT_SETTINGS.phoneDesktop);
     }
-    if (stored.phoneDesktopSchemaVersion !== 2) {
+    if (stored.phoneDesktopSchemaVersion !== 3) {
         stored.phoneDesktop = normalizePhoneDesktop({ phoneDesktop: stored.phoneDesktop, media: stored.media });
-        stored.phoneDesktopSchemaVersion = 2;
+        stored.phoneDesktopSchemaVersion = 3;
     }
     if (!PHONE_STRUCTURE_IDS.includes(stored.structure)) {
         stored.structure = PHONE_STRUCTURE_DEFAULT.id;
@@ -2132,6 +2136,7 @@ function renderStatusPreview(host) {
     root.dataset.variant = rule.variant;
     root.dataset.layout = rule.layout;
     root.dataset.hasImage = rule.media.imageUrl ? 'true' : 'false';
+    if (rule.structure === 'phone') root.dataset.phoneShell = rule.phoneDesktop.shellStyle;
     if (rule.palette) {
         root.style.setProperty('--sap-accent', rule.palette.accent);
         root.style.setProperty('--sap-layer', rule.palette.background);
@@ -2144,6 +2149,7 @@ function renderStatusPreview(host) {
         root.style.setProperty('--z-text', rule.palette.text);
         root.style.setProperty('--z-muted', rule.palette.muted);
     }
+    if (rule.structure === 'phone') root.style.setProperty('--z-phone-shell', rule.phoneDesktop.shellColor);
 
     const card = makeElement('section', 'status-atelier-preview-card zrs-card');
     const chrome = makeElement('div', 'status-atelier-preview-chrome zrs-chrome');
@@ -2398,13 +2404,14 @@ function renderStatusPreview(host) {
         root.classList.add('is-phone-home');
         [...tabs.children].forEach(button => button.classList.remove('is-active'));
     });
-    if (pages.length > 1 || phoneMode) body.append(tabs);
+    if ((pages.length > 1 || phoneMode) && !phoneMode) body.append(tabs);
     body.append(phonePagebar);
     body.append(pageHost);
     card.append(body);
     root.append(card);
     host.replaceChildren(root);
     if (phoneMode) {
+        root.append(tabs);
         root.classList.add('is-phone-home');
         pageHost.replaceChildren();
         bindPhoneDiyDrag(root, phoneSharedHost, phoneWallpaperImage);

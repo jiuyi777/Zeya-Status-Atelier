@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>小手机美化 · 插件真实导出预览</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, "Microsoft YaHei", sans-serif; background: #eee9df; color: #282534; }
+    * { box-sizing: border-box; }
+    body { width: min(100% - 24px, 1240px); margin: 0 auto; padding: calc(24px + env(safe-area-inset-top)) 0 48px; }
+    header { display: grid; gap: 8px; margin-bottom: 20px; }
+    h1, p { margin: 0; }
+    h1 { font-size: clamp(26px, 6vw, 52px); line-height: 1; }
+    p { max-width: 760px; line-height: 1.65; }
+    .badge { width: fit-content; padding: 5px 9px; border: 2px solid currentColor; background: #fff; font: 800 11px/1.2 ui-monospace, monospace; letter-spacing: .08em; }
+    .gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    article { min-width: 0; padding: 14px; border: 2px solid #282534; background: #fffdf8; box-shadow: 7px 7px 0 #282534; }
+    h2 { margin: 0 0 10px; font-size: 17px; }
+    iframe { display: block; width: 100%; height: 650px; border: 0; background: transparent; }
+    @media (max-width: 760px) { .gallery { grid-template-columns: 1fr; } article { padding-inline: 4px; } iframe { height: 640px; } }
+    @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="badge">STATUS ATELIER · REAL EXPORT</span>
+    <h1>同一套插件契约，四种手机构图</h1>
+    <p>每个预览框都由当前 worktree 的 <code>buildRegexScript()</code> 现场生成；点击 APP、返回、购物折叠均运行最终导出的脚本，不是另写的演示组件。</p>
+  </header>
+  <main id="gallery" class="gallery" aria-label="插件真实导出手机预览"></main>
+  <script type="module" src="./integrated-preview.js"></script>
+</body>
+</html>

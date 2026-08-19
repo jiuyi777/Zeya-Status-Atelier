@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     RULE_PRESETS,
+    PHONE_SHELL_STYLES,
     STATUS_PALETTE_PRESETS,
     STATUS_STRUCTURE_PRESETS,
     STATUS_STYLE_PRESETS,
@@ -144,11 +145,30 @@ test('phone desktop is editable and exports real app navigation with a back acti
     assert.doesNotMatch(generated, /img\.remit\.ee/);
     assert.match(STATUS_PHONE_CSS, /data-phone-page="Personal"/);
     assert.match(STATUS_PHONE_CSS, /data-phone-page="Wechat"/);
+    assert.deepEqual(PHONE_SHELL_STYLES, ['classic', 'clamshell', 'orbit', 'slider']);
+    for (const shellStyle of PHONE_SHELL_STYLES) {
+        const shellRule = normalizeRule({ ...phoneInput, phoneDesktop: { shellStyle } });
+        assert.equal(shellRule.phoneDesktop.shellStyle, shellStyle);
+        assert.deepEqual(shellRule.pages.map(page => page.id), ['Personal', 'Memo', 'Wechat', 'Shop']);
+        const shellOutput = buildRegexScript({ ...phoneInput, phoneDesktop: { shellStyle } }).replaceString;
+        assert.match(shellOutput, new RegExp(`data-phone-shell="${shellStyle}"`));
+    }
+    assert.match(generated, /<\/section>\s*<nav class="zrs-tabs"/);
+    assert.match(generated, /while\(root&&!root\.classList\.contains\('zeya-regex-status'\)\)/);
+    assert.doesNotMatch(generated, /script\.previousElementSibling\.previousElementSibling/);
+    assert.match(STATUS_PHONE_CSS, /data-phone-shell="clamshell"/);
+    assert.match(STATUS_PHONE_CSS, /data-phone-shell="orbit"/);
+    assert.match(STATUS_PHONE_CSS, /data-phone-shell="slider"/);
+    assert.match(STATUS_PHONE_CSS, /min-height:76px/);
+    assert.match(STATUS_PHONE_CSS, /focus-visible/);
+    assert.match(STATUS_PHONE_CSS, /prefers-reduced-motion:reduce/);
 });
 
 test('phone DIY settings are normalized separately from AI story values', () => {
     const phone = normalizePhoneDesktop({
         phoneDesktop: {
+            shellStyle: 'slider',
+            shellColor: '#e6a5c4',
             wallpaperUrl: 'https://example.com/wallpaper.jpg',
             wallpaperPositionX: 140,
             wallpaperPositionY: -10,
@@ -170,6 +190,8 @@ test('phone DIY settings are normalized separately from AI story values', () => 
             ],
         },
     });
+    assert.equal(phone.shellStyle, 'slider');
+    assert.equal(phone.shellColor, '#e6a5c4');
     assert.equal(phone.wallpaperPositionX, 100);
     assert.equal(phone.wallpaperPositionY, 0);
     assert.equal(phone.petalsEnabled, true);
@@ -192,6 +214,7 @@ test('phone DIY settings are normalized separately from AI story values', () => 
     assert.match(instruction, /信赖度/);
     assert.match(instruction, /填写当前信赖阶段/);
     assert.doesNotMatch(instruction, /wallpaper|iconUrl|壁纸图片 URL/);
+    assert.doesNotMatch(instruction, /shellStyle|slider/);
     const generated = buildRegexScript(input).replaceString;
     assert.match(generated, /https:\/\/example\.com\/wallpaper\.jpg/);
     assert.match(generated, /https:\/\/example\.com\/me\.png/);
@@ -200,6 +223,11 @@ test('phone DIY settings are normalized separately from AI story values', () => 
     assert.match(generated, /field&&field\.kind==='progress'/);
     assert.match(generated, /personalFields\[0\]/);
     assert.doesNotMatch(generated, /phoneDataCard\('好感度'/);
+});
+
+test('phone shell style falls back to the original classic phone', () => {
+    assert.equal(normalizePhoneDesktop().shellStyle, 'classic');
+    assert.equal(normalizePhoneDesktop({ phoneDesktop: { shellStyle: 'unknown-shell' } }).shellStyle, 'classic');
 });
 
 test('phone falling decoration can be disabled without exposing the general appearance library', () => {
