@@ -1,14 +1,15 @@
 import {
     RULE_PRESETS,
-    STATUS_LOGO_PRESETS,
     STATUS_PALETTE_PRESETS,
     STATUS_STYLE_PRESETS,
     STATUS_STRUCTURE_PRESETS,
     STATUS_THEME_CSS,
+    STATUS_PHONE_CSS,
     buildAiInstruction,
     buildRegexScript,
     buildWorldbookJson,
     makePreviewRecords,
+    normalizePhoneDesktop,
     normalizeRule,
     parseStatusOutput,
     parseFields,
@@ -71,6 +72,7 @@ import {
     createNewWorldInfo,
     loadWorldInfo,
     saveWorldInfo,
+    selected_world_info,
     world_info,
     world_names,
 } from '../../../world-info.js';
@@ -124,12 +126,12 @@ const HOME_TEMPLATES = Object.freeze([
         values: { theme: 'kinetic', font: 'sans', background: '#f1f1ef', cardBackground: '#ffffff', text: '#102c9e', accent: '#1438c2', secondary: '#7187df', introBackground: '#dce3ff', buttonColor: '#1438c2' },
     },
     {
-        id: 'noir-poster', name: '12 赤黑电影海报', description: '红黑切片 · 巨型编号 · 纵向标题',
-        values: { theme: 'noir-poster', font: 'sans', background: '#e72d24', cardBackground: '#161313', text: '#f3e9dd', accent: '#ff4035', secondary: '#a39a91', introBackground: '#302825', buttonColor: '#f3e9dd' },
+        id: 'noir-poster', name: '12 赤黑电影海报', description: '深红片头 · 横向海报 · 高对比字幕',
+        values: { theme: 'noir-poster', font: 'sans', background: '#b83a30', cardBackground: '#171313', text: '#fff8ed', accent: '#ef5a49', secondary: '#d6c6b5', introBackground: '#302725', buttonColor: '#fff8ed' },
     },
     {
-        id: 'negative-space', name: '13 留白构成', description: '大面积留白 · 错位黑块 · 建筑网格',
-        values: { theme: 'negative-space', font: 'sans', background: '#f7f7f4', cardBackground: '#1d1717', text: '#201b1b', accent: '#1d1717', secondary: '#a7a5a2', introBackground: '#d6d5d1', buttonColor: '#1d1717' },
+        id: 'negative-space', name: '13 立绘分割', description: '大图 / 立绘区 · 左右切换 · 自定义比例',
+        values: { theme: 'negative-space', font: 'sans', background: '#f4f1ea', cardBackground: '#fffdfa', text: '#201b1b', accent: '#6c463b', secondary: '#81746b', introBackground: '#ded7cd', buttonColor: '#201b1b', imagePosition: 'left', imageWidth: 42 },
     },
 ]);
 
@@ -141,7 +143,35 @@ const STATUS_TEMPLATES = Object.freeze([
     { id: 'survival', name: '生存探索型', description: '生命、资源、危险、背包与任务' },
 ]);
 
-const KIND_LABELS = Object.freeze({ text: '短文本', long: '长文本', number: '数字', progress: '数值 0–100', currency: '金额' });
+const KIND_LABELS = Object.freeze({ text: '短文本', long: '长文本', number: '数字', progress: '数值 0–100', currency: '金额', avatar: '头像' });
+const PHONE_STRUCTURE_IDS = Object.freeze(['phone', 'profile', 'social', 'forum', 'chat', 'music', 'casefile', 'quest']);
+const PHONE_DESKTOP_DEFAULTS = Object.freeze({
+    wallpaperUrl: '', wallpaperPositionX: 50, wallpaperPositionY: 50,
+    petalsEnabled: true,
+    widgetX: 15, widgetY: 58,
+    widgetOrder: ['current_location', 'current_time', 'current_weather'],
+    personalAvatarSource: 'character', personalAvatarUrl: '', personalAvatarPositionX: 50, personalAvatarPositionY: 50, personalAvatarScale: 1,
+    personalFields: [
+        { id: 'favor', label: '好感度', instruction: '填写0到100之间的整数，只写数字', kind: 'progress' },
+        { id: 'desire', label: '欲望度', instruction: '填写0到100之间的整数，只写数字', kind: 'progress' },
+        { id: 'cloth', label: '当前衣着', instruction: '具体描述当前角色的衣着与明显细节', kind: 'long' },
+        { id: 'thought', label: '实时想法', instruction: '第一人称填写角色此刻没有说出口的真实想法', kind: 'long' },
+    ],
+    apps: [
+        { id: 'Personal', name: '个人', iconUrl: '' },
+        { id: 'Memo', name: '备忘录', iconUrl: '' },
+        { id: 'Wechat', name: '微信', iconUrl: '' },
+        { id: 'Shop', name: '购物', iconUrl: '' },
+    ],
+});
+const PHONE_APP_ICON_PATHS = Object.freeze({
+    Personal: '<circle cx="12" cy="8" r="3.1"></circle><path d="M5.7 19.2c.8-3.4 3-5.3 6.3-5.3s5.5 1.9 6.3 5.3"></path>',
+    Memo: '<rect x="5.5" y="3.5" width="13" height="17" rx="3"></rect><path d="M9 8h6M9 12h6M9 16h4"></path>',
+    Wechat: '<path d="M4.2 10.1c0-3.1 3-5.6 6.7-5.6s6.7 2.5 6.7 5.6-3 5.6-6.7 5.6c-.8 0-1.6-.1-2.3-.4l-3.3 1.6.8-3.1a5.1 5.1 0 0 1-1.9-3.7Z"></path><path d="M13.4 14.8c.5 2.1 2.6 3.7 5.1 3.7.6 0 1.1-.1 1.6-.3l2.1 1-.5-2c.8-.7 1.3-1.7 1.3-2.8 0-2-1.7-3.7-4.1-4.1"></path>',
+    Shop: '<path d="M5.2 8.5h13.6l-1 11H6.2l-1-11Z"></path><path d="M8.6 9V7.1a3.4 3.4 0 0 1 6.8 0V9"></path>',
+});
+const phoneAppIconMarkup = id => `<svg class="zrs-app-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${PHONE_APP_ICON_PATHS[id] || PHONE_APP_ICON_PATHS.Personal}</svg>`;
+const PHONE_STRUCTURE_DEFAULT = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'phone');
 
 const OPENING_PALETTES = Object.freeze({
     navy: { background: '#f5ead7', cardBackground: '#fffaf0', text: '#2f261e', accent: '#914538', secondary: '#7d6a56', introBackground: '#e8e0d0', buttonColor: '#1a3048' },
@@ -160,12 +190,17 @@ const DEFAULT_SETTINGS = Object.freeze({
     activeWorkspace: 'opening',
     favoriteHomeTemplates: ['classical', 'newspaper', 'timeline'],
     favoriteStatusTemplates: ['relationship', 'worldNpc'],
-    structure: 'custom',
+    structure: 'phone',
+    title: PHONE_STRUCTURE_DEFAULT.title,
+    subtitle: PHONE_STRUCTURE_DEFAULT.subtitle,
+    layout: PHONE_STRUCTURE_DEFAULT.layout,
+    pagesText: PHONE_STRUCTURE_DEFAULT.pagesText,
+    sharedFieldsText: PHONE_STRUCTURE_DEFAULT.shared.map(item => item.join('|')).join('\n'),
+    pageFieldsText: PHONE_STRUCTURE_DEFAULT.fields.map(item => item.join('|')).join('\n'),
     variant: 'auto',
-    logoId: 'auto',
-    fillMode: 'solid',
-    paletteId: 'cream-navy',
+    paletteId: 'ice-blue',
     media: { avatarSource: 'character', avatarUrl: '', imageUrl: '', audioUrl: '', imageAlt: '状态栏配图' },
+    phoneDesktop: PHONE_DESKTOP_DEFAULTS,
     openingNotes: {},
     openingProfiles: {},
     openingProfilesMigrated: false,
@@ -192,6 +227,10 @@ const OPENING_HOME_FIELDS = Object.freeze({
     'status-atelier-opening-home-secondary': 'secondary',
     'status-atelier-opening-home-intro-background': 'introBackground',
     'status-atelier-opening-home-button-color': 'buttonColor',
+    'status-atelier-opening-home-image-url': 'imageUrl',
+    'status-atelier-opening-home-image-alt': 'imageAlt',
+    'status-atelier-opening-home-image-position': 'imagePosition',
+    'status-atelier-opening-home-image-width': 'imageWidth',
 });
 
 const SETTING_FIELDS = Object.freeze({
@@ -202,7 +241,6 @@ const SETTING_FIELDS = Object.freeze({
     'status-atelier-theme': 'theme',
     'status-atelier-structure': 'structure',
     'status-atelier-palette': 'paletteId',
-    'status-atelier-fill-mode': 'fillMode',
     'status-atelier-layout': 'layout',
     'status-atelier-pages': 'pagesText',
     'status-atelier-shared-fields': 'sharedFieldsText',
@@ -217,6 +255,13 @@ const STATUS_MEDIA_FIELDS = Object.freeze({
     'status-atelier-image-url': 'imageUrl',
     'status-atelier-audio-url': 'audioUrl',
     'status-atelier-image-alt': 'imageAlt',
+});
+
+const PHONE_DESKTOP_FIELDS = Object.freeze({
+    'status-atelier-phone-wallpaper-url': 'wallpaperUrl',
+    'status-atelier-phone-petals-enabled': 'petalsEnabled',
+    'status-atelier-phone-avatar-source': 'personalAvatarSource',
+    'status-atelier-phone-avatar-url': 'personalAvatarUrl',
 });
 
 const OPENING_SUMMARY_FIELDS = Object.freeze({
@@ -306,11 +351,27 @@ function settings() {
     for (const [key, value] of Object.entries(DEFAULT_SETTINGS.media)) {
         if (!Object.hasOwn(stored.media, key)) stored.media[key] = value;
     }
+    if (!stored.phoneDesktop || typeof stored.phoneDesktop !== 'object' || Array.isArray(stored.phoneDesktop)) {
+        stored.phoneDesktop = clone(DEFAULT_SETTINGS.phoneDesktop);
+    }
+    if (stored.phoneDesktopSchemaVersion !== 2) {
+        stored.phoneDesktop = normalizePhoneDesktop({ phoneDesktop: stored.phoneDesktop, media: stored.media });
+        stored.phoneDesktopSchemaVersion = 2;
+    }
+    if (!PHONE_STRUCTURE_IDS.includes(stored.structure)) {
+        stored.structure = PHONE_STRUCTURE_DEFAULT.id;
+        stored.title = PHONE_STRUCTURE_DEFAULT.title;
+        stored.subtitle = PHONE_STRUCTURE_DEFAULT.subtitle;
+        stored.layout = PHONE_STRUCTURE_DEFAULT.layout;
+        stored.pagesText = PHONE_STRUCTURE_DEFAULT.pagesText;
+        stored.sharedFieldsText = PHONE_STRUCTURE_DEFAULT.shared.map(item => item.join('|')).join('\n');
+        stored.pageFieldsText = PHONE_STRUCTURE_DEFAULT.fields.map(item => item.join('|')).join('\n');
+    }
     if (stored.openingSummary.source === 'manual') stored.openingSummary.source = 'main';
     if (!['opening', 'status'].includes(stored.activeWorkspace)) stored.activeWorkspace = 'opening';
     if (!Array.isArray(stored.favoriteHomeTemplates)) stored.favoriteHomeTemplates = clone(DEFAULT_SETTINGS.favoriteHomeTemplates);
     if (!Array.isArray(stored.favoriteStatusTemplates)) stored.favoriteStatusTemplates = clone(DEFAULT_SETTINGS.favoriteStatusTemplates);
-    if (stored.statusFieldsUnified !== true) {
+    if (stored.statusFieldsUnified !== true && stored.structure !== 'phone') {
         const definitions = [...parseFields(stored.sharedFieldsText), ...parseFields(stored.pageFieldsText)];
         const used = new Set();
         stored.pageFieldsText = definitions.map((item, index) => {
@@ -324,6 +385,7 @@ function settings() {
         stored.sharedFieldsText = '';
         stored.statusFieldsUnified = true;
     }
+    if (stored.structure === 'phone') stored.statusFieldsUnified = true;
     if (stored.openingIntroContrastV051 !== true) {
         if (String(stored.openingHome?.introBackground || '').toLowerCase() === '#1a3048') {
             stored.openingHome.introBackground = '#e8e0d0';
@@ -461,7 +523,7 @@ function makeTemplateCard(template, type, selected, favorites) {
             applyPreset(template.id);
         }
     });
-    const favorite = makeElement('button', 'status-atelier-favorite', favorites.includes(template.id) ? '★' : '☆');
+    const favorite = makeElement('button', 'status-atelier-favorite', favorites.includes(template.id) ? '★ 已收藏' : '☆ 收藏');
     favorite.type = 'button';
     favorite.title = favorites.includes(template.id) ? '取消收藏' : '加入收藏';
     favorite.setAttribute('aria-pressed', String(favorites.includes(template.id)));
@@ -514,8 +576,8 @@ function renderPaletteButtons() {
 function renderStatusDesignControls() {
     const structureSelect = field('status-atelier-structure');
     if (structureSelect && !structureSelect.options.length) {
-        STATUS_STRUCTURE_PRESETS.forEach(item => {
-            const option = makeElement('option', '', `${item.name} · ${item.description}`);
+        STATUS_STRUCTURE_PRESETS.filter(item => PHONE_STRUCTURE_IDS.includes(item.id)).forEach(item => {
+            const option = makeElement('option', '', item.name);
             option.value = item.id;
             structureSelect.append(option);
         });
@@ -539,26 +601,6 @@ function renderStatusDesignControls() {
     }
     styleHost?.querySelectorAll('[data-status-style]').forEach(button => {
         button.setAttribute('aria-pressed', String(button.dataset.statusStyle === settings().theme));
-    });
-    const logoHost = field('status-atelier-status-logos');
-    if (logoHost && logoHost.children.length !== STATUS_LOGO_PRESETS.length) {
-        logoHost.replaceChildren();
-        STATUS_LOGO_PRESETS.forEach(logo => {
-            const button = makeElement('button', 'status-atelier-status-logo');
-            button.type = 'button';
-            button.dataset.statusLogo = logo.id;
-            button.dataset.logoFamily = logo.family || 'auto';
-            button.dataset.logoEffect = logo.effect || 'plain';
-            button.title = logo.name;
-            const art = makeElement('span', 'status-atelier-logo-art', logo.svg ? '' : (logo.glyph || 'AUTO'));
-            if (logo.svg) art.innerHTML = logo.svg;
-            button.append(art, makeElement('small', '', logo.name));
-            logoHost.append(button);
-        });
-    }
-    const activeLogoId = normalizeRule(resolvedStatusInput()).logoId;
-    logoHost?.querySelectorAll('[data-status-logo]').forEach(button => {
-        button.setAttribute('aria-pressed', String(button.dataset.statusLogo === activeLogoId));
     });
     const paletteHost = field('status-atelier-status-palettes');
     if (paletteHost && paletteHost.children.length !== STATUS_PALETTE_PRESETS.length) {
@@ -589,6 +631,59 @@ function renderStatusDesignControls() {
     }
     const avatarUrlLabel = field('status-atelier-avatar-url-wrap');
     if (avatarUrlLabel) avatarUrlLabel.hidden = media.avatarSource !== 'url';
+    renderPhoneDesktopControls();
+}
+
+function renderPhoneDesktopControls() {
+    const stored = settings();
+    const phone = stored.phoneDesktop || DEFAULT_SETTINGS.phoneDesktop;
+    const section = field('status-atelier-phone-diy');
+    if (section) section.hidden = stored.structure !== 'phone';
+    const appearanceSection = field('status-atelier-appearance-section');
+    if (appearanceSection) appearanceSection.hidden = stored.structure === 'phone';
+    renderTemplateMediaControls();
+    for (const [id, key] of Object.entries(PHONE_DESKTOP_FIELDS)) {
+        const control = field(id);
+        if (!control) continue;
+        if (control.type === 'checkbox') control.checked = phone[key] !== false;
+        else control.value = String(phone[key] ?? '');
+    }
+    const avatarUrlWrap = field('status-atelier-phone-avatar-url-wrap');
+    if (avatarUrlWrap) avatarUrlWrap.hidden = phone.personalAvatarSource !== 'url';
+    phone.apps.forEach(app => {
+        const name = field(`status-atelier-phone-app-${app.id.toLowerCase()}-name`);
+        const icon = field(`status-atelier-phone-app-${app.id.toLowerCase()}-icon`);
+        if (name) name.value = app.name;
+        if (icon) icon.value = app.iconUrl;
+    });
+}
+
+function renderTemplateMediaControls() {
+    const structure = settings().structure;
+    const section = field('status-atelier-template-media');
+    if (!section) return;
+    const usesAvatar = ['profile', 'social', 'forum', 'chat', 'casefile'].includes(structure);
+    const usesImage = ['social', 'collage', 'music'].includes(structure);
+    const usesAudio = structure === 'music';
+    section.hidden = structure === 'phone' || (!usesAvatar && !usesImage && !usesAudio);
+    const title = field('status-atelier-template-media-title');
+    const help = field('status-atelier-template-media-help');
+    if (title) title.textContent = usesAudio ? '播放界面素材' : usesImage ? '当前模板配图' : '当前模板头像';
+    if (help) help.textContent = usesAudio
+        ? '封面与音频只会进入播放界面，音频不会自动播放。'
+        : usesImage
+            ? '这些图片只会进入当前选中的模板。'
+            : '头像会绑定当前角色、当前 user 或图片 URL。';
+    const avatarSourceWrap = field('status-atelier-media-avatar-source-wrap');
+    const avatarUrlWrap = field('status-atelier-avatar-url-wrap');
+    const imageUrlWrap = field('status-atelier-image-url-wrap');
+    const audioUrlWrap = field('status-atelier-audio-url-wrap');
+    const altWrap = field('status-atelier-image-alt-wrap');
+    if (avatarSourceWrap) avatarSourceWrap.hidden = !usesAvatar;
+    if (avatarUrlWrap) avatarUrlWrap.hidden = !usesAvatar || settings().media?.avatarSource !== 'url';
+    if (imageUrlWrap) imageUrlWrap.hidden = !usesImage;
+    if (audioUrlWrap) audioUrlWrap.hidden = !usesAudio;
+    if (altWrap) altWrap.hidden = !usesAvatar && !usesImage;
 }
 
 function applyStatusStructure(structureId) {
@@ -601,7 +696,7 @@ function applyStatusStructure(structureId) {
     stored.subtitle = structure.subtitle;
     stored.layout = structure.layout;
     stored.pagesText = structure.pagesText;
-    stored.sharedFieldsText = '';
+    stored.sharedFieldsText = (structure.shared || []).map(field => field.join('|')).join('\n');
     stored.pageFieldsText = structure.fields.map(field => field.join('|')).join('\n');
     stored.preset = 'custom';
     stored.statusTemplate = 'custom';
@@ -622,12 +717,13 @@ function applyStatusStructure(structureId) {
     if (pageControl) pageControl.value = stored.pageFieldsText;
     renderStatusSchema();
     renderModalStatusSchema();
+    renderPhoneDesktopControls();
     scheduleStatusPreviewUpdate();
 }
 
 function fieldDefinitions() {
     const stored = settings();
-    const shared = parseFields(stored.sharedFieldsText).map((item, index) => ({ ...item, scope: 'page', id: item.id === `field_${index + 1}` ? `shared_${index + 1}` : item.id }));
+    const shared = parseFields(stored.sharedFieldsText).map((item, index) => ({ ...item, scope: 'shared', id: item.id === `field_${index + 1}` ? `shared_${index + 1}` : item.id }));
     const page = parseFields(stored.pageFieldsText).map((item, index) => ({ ...item, scope: 'page', id: item.id === `field_${index + 1}` ? `field_${index + 1}` : item.id }));
     const used = new Set();
     return [...shared, ...page].map((item, index) => {
@@ -641,8 +737,9 @@ function fieldDefinitions() {
 
 function serializeFieldDefinitions(definitions) {
     statusAiTestRecords = null;
-    settings().sharedFieldsText = '';
-    settings().pageFieldsText = definitions.map(item => `${item.label}|${item.instruction}|${item.kind}|${item.id}`).join('\n');
+    const serialize = items => items.map(item => `${item.label}|${item.instruction}|${item.kind}|${item.id}`).join('\n');
+    settings().sharedFieldsText = serialize(definitions.filter(item => item.scope === 'shared'));
+    settings().pageFieldsText = serialize(definitions.filter(item => item.scope !== 'shared'));
     const sharedControl = field('status-atelier-shared-fields');
     const pageControl = field('status-atelier-page-fields');
     if (sharedControl) sharedControl.value = settings().sharedFieldsText;
@@ -656,6 +753,53 @@ function serializeFieldDefinitions(definitions) {
 function renderStatusSchema() {
     const host = field('status-atelier-status-schema');
     if (!host) return;
+    const phoneMode = settings().structure === 'phone';
+    const addButton = field('status-atelier-add-field');
+    if (addButton) addButton.hidden = phoneMode;
+    const editLegend = field('status-atelier-edit-legend');
+    if (editLegend) editLegend.hidden = phoneMode;
+    const editorTitle = field('status-atelier-status-editor-title');
+    const editorHelp = field('status-atelier-status-editor-help');
+    if (editorTitle) editorTitle.textContent = phoneMode ? '个人页显示与 AI 规则' : '字段显示与 AI 规则';
+    if (editorHelp) editorHelp.textContent = phoneMode
+        ? '字段名称在右侧“个人”页双击修改；这里只设置显示类型和 AI 填写要求。'
+        : '名称和顺序直接在预览修改；这里只设置显示类型和 AI 填写要求。';
+    if (phoneMode) {
+        const phone = settings().phoneDesktop;
+        phone.personalFields ??= clone(PHONE_DESKTOP_DEFAULTS.personalFields);
+        host.replaceChildren();
+        phone.personalFields.forEach(definition => {
+            const row = makeElement('article', 'status-atelier-schema-row status-atelier-phone-rule-row');
+            const label = makeElement('strong', 'status-atelier-phone-rule-label', definition.label);
+            const kind = makeElement('select', 'text_pole');
+            Object.entries(KIND_LABELS).forEach(([value, text]) => {
+                const option = makeElement('option', '', text);
+                option.value = value;
+                kind.append(option);
+            });
+            kind.value = definition.kind;
+            kind.setAttribute('aria-label', `${definition.label}显示类型`);
+            const instruction = makeElement('textarea', 'text_pole');
+            instruction.value = definition.instruction;
+            instruction.rows = 2;
+            instruction.setAttribute('aria-label', `${definition.label}的 AI 填写要求`);
+            kind.addEventListener('change', () => {
+                definition.kind = kind.value;
+                statusAiTestRecords = null;
+                scheduleStatusPreviewUpdate();
+                saveSettingsSoon({ snapshotOpening: false });
+            });
+            instruction.addEventListener('input', () => {
+                definition.instruction = instruction.value.slice(0, 300);
+                statusAiTestRecords = null;
+                scheduleStatusPreviewUpdate();
+            });
+            instruction.addEventListener('change', () => saveSettingsSoon({ snapshotOpening: false }));
+            row.append(label, kind, instruction);
+            host.append(row);
+        });
+        return;
+    }
     const definitions = fieldDefinitions();
     host.replaceChildren();
     definitions.forEach((definition, index) => {
@@ -676,10 +820,15 @@ function renderStatusSchema() {
         const down = makeElement('button', 'status-atelier-schema-remove', '↓');
         const remove = makeElement('button', 'status-atelier-schema-remove', '×');
         [up, down, remove].forEach(button => { button.type = 'button'; });
-        up.disabled = index === 0;
-        down.disabled = index === definitions.length - 1;
-        up.addEventListener('click', () => { [definitions[index - 1], definitions[index]] = [definitions[index], definitions[index - 1]]; serializeFieldDefinitions(definitions); renderStatusSchema(); });
-        down.addEventListener('click', () => { [definitions[index + 1], definitions[index]] = [definitions[index], definitions[index + 1]]; serializeFieldDefinitions(definitions); renderStatusSchema(); });
+        const scopedDefinitions = definitions.filter(item => item.scope === definition.scope);
+        const scopedPosition = scopedDefinitions.findIndex(item => item.id === definition.id);
+        up.disabled = scopedPosition <= 0;
+        down.disabled = scopedPosition < 0 || scopedPosition >= scopedDefinitions.length - 1;
+        up.setAttribute('aria-label', `${definition.label}上移`);
+        down.setAttribute('aria-label', `${definition.label}下移`);
+        remove.setAttribute('aria-label', `删除${definition.label}`);
+        up.addEventListener('click', () => moveFieldDefinition(definitions, index, -1));
+        down.addEventListener('click', () => moveFieldDefinition(definitions, index, 1));
         remove.addEventListener('click', () => { definitions.splice(index, 1); serializeFieldDefinitions(definitions); renderStatusSchema(); });
         actions.append(up, down, remove);
         const key = makeElement('span', 'status-atelier-schema-key', `🔒 ${definition.id}`);
@@ -757,7 +906,6 @@ function applyPreset(name) {
         favoriteHomeTemplates: stored.favoriteHomeTemplates,
         favoriteStatusTemplates: stored.favoriteStatusTemplates,
         structure: stored.structure,
-        logoId: stored.logoId,
         paletteId: stored.paletteId,
         media: stored.media,
     };
@@ -855,9 +1003,23 @@ function renderOpeningHomePreview(host) {
     root.style.setProperty('--zop-text', data.text);
     root.style.setProperty('--zop-secondary', data.secondary);
     root.style.setProperty('--zop-intro', data.introBackground);
+    root.style.setProperty('--zop-intro-text', data.introText);
     root.style.setProperty('--zop-button', data.buttonColor);
+    root.style.setProperty('--zop-media-width', `${data.imageWidth}%`);
+    root.dataset.mediaPosition = data.imagePosition;
     const header = makeElement('header', 'status-atelier-opening-live-header');
     header.append(makeElement('h3', '', data.title), makeElement('small', '', data.subtitle));
+    const media = makeElement('figure', `status-atelier-opening-live-media${data.imageUrl ? '' : ' is-empty'}`);
+    if (data.imageUrl) {
+        const image = makeElement('img');
+        image.src = data.imageUrl;
+        image.alt = data.imageAlt;
+        image.loading = 'lazy';
+        media.append(image);
+    } else {
+        media.setAttribute('aria-label', '预留立绘或图片位置');
+        media.append(makeElement('span', '', 'IMAGE / PORTRAIT'));
+    }
     const meta = makeElement('div', 'status-atelier-opening-live-meta');
     [['作者', data.author], ['推荐模型', data.model], ['推荐预设', data.preset]].forEach(([label, value]) => {
         const item = makeElement('div');
@@ -890,7 +1052,7 @@ function renderOpeningHomePreview(host) {
         item.append(copy, makeElement('span', '', '进入'));
         directory.append(item);
     });
-    root.append(header, meta, intro, directory);
+    root.append(header, media, meta, intro, directory);
     host.replaceChildren(root);
 }
 
@@ -1383,6 +1545,47 @@ function readStatusMediaControl(control) {
     scheduleStatusPreviewUpdate();
 }
 
+function moveFieldDefinition(definitions, index, direction) {
+    const definition = definitions[index];
+    if (!definition) return;
+    const scopedIndexes = definitions
+        .map((item, itemIndex) => item.scope === definition.scope ? itemIndex : -1)
+        .filter(itemIndex => itemIndex >= 0);
+    const position = scopedIndexes.indexOf(index);
+    const targetPosition = position + direction;
+    if (position < 0 || targetPosition < 0 || targetPosition >= scopedIndexes.length) return;
+    const targetIndex = scopedIndexes[targetPosition];
+    [definitions[targetIndex], definitions[index]] = [definitions[index], definitions[targetIndex]];
+    serializeFieldDefinitions(definitions);
+    renderStatusSchema();
+    renderModalStatusSchema();
+    saveSettingsSoon({ snapshotOpening: false });
+}
+
+function readPhoneDesktopControl(control) {
+    const stored = settings();
+    stored.phoneDesktop ??= clone(DEFAULT_SETTINGS.phoneDesktop);
+    const key = PHONE_DESKTOP_FIELDS[control.id];
+    if (key) {
+        stored.phoneDesktop[key] = control.type === 'checkbox' ? control.checked : control.type === 'range' ? Number(control.value) : control.value;
+        if (key === 'personalAvatarSource') {
+            const urlWrap = field('status-atelier-phone-avatar-url-wrap');
+            if (urlWrap) urlWrap.hidden = control.value !== 'url';
+        }
+        statusAiTestRecords = null;
+        scheduleStatusPreviewUpdate();
+        return;
+    }
+    const appId = control.dataset?.phoneAppId;
+    const appKey = control.dataset?.phoneAppKey;
+    if (!appId || !['name', 'iconUrl'].includes(appKey)) return;
+    const app = stored.phoneDesktop.apps.find(item => item.id === appId);
+    if (!app) return;
+    app[appKey] = control.value;
+    statusAiTestRecords = null;
+    scheduleStatusPreviewUpdate();
+}
+
 function resolvedStatusInput(source = settings()) {
     const output = {
         ruleId: source.ruleId,
@@ -1393,8 +1596,6 @@ function resolvedStatusInput(source = settings()) {
         theme: source.theme,
         structure: source.structure,
         variant: source.variant,
-        logoId: source.logoId,
-        fillMode: source.fillMode,
         paletteId: source.paletteId,
         palette: source.palette && typeof source.palette === 'object' ? { ...source.palette } : undefined,
         layout: source.layout,
@@ -1402,6 +1603,7 @@ function resolvedStatusInput(source = settings()) {
         sharedFieldsText: source.sharedFieldsText,
         pageFieldsText: source.pageFieldsText,
         media: { ...DEFAULT_SETTINGS.media, ...(source.media || {}) },
+        phoneDesktop: clone(source.phoneDesktop || DEFAULT_SETTINGS.phoneDesktop),
     };
     const ctx = context();
     const thumbnail = ctx?.getThumbnailUrl || getThumbnailUrl;
@@ -1417,25 +1619,316 @@ function resolvedStatusInput(source = settings()) {
     } catch {
         output.media.avatarUrl = output.media.avatarSource === 'url' ? output.media.avatarUrl : '';
     }
+    try {
+        if (output.phoneDesktop.personalAvatarSource === 'character') {
+            const avatar = ctx?.characters?.[ctx?.characterId]?.avatar;
+            output.phoneDesktop.personalAvatarUrl = avatar && avatar !== 'none' ? thumbnail('avatar', avatar) : '';
+        } else if (output.phoneDesktop.personalAvatarSource === 'user') {
+            output.phoneDesktop.personalAvatarUrl = user_avatar ? thumbnail('persona', user_avatar) : '';
+        } else if (output.phoneDesktop.personalAvatarSource === 'none') {
+            output.phoneDesktop.personalAvatarUrl = '';
+        }
+    } catch {
+        output.phoneDesktop.personalAvatarUrl = output.phoneDesktop.personalAvatarSource === 'url' ? output.phoneDesktop.personalAvatarUrl : '';
+    }
     return output;
 }
 
 function previewValue(fieldDefinition) {
     if (fieldDefinition.kind === 'progress') return 'AI动态数值';
     if (fieldDefinition.kind === 'currency') return 'AI动态金额';
+    if (fieldDefinition.kind === 'avatar') return '当前角色';
     if (fieldDefinition.kind === 'long') return '这里显示 AI 根据当前剧情生成的长文本。';
     return 'AI动态填写';
 }
 
 function paintRuleLogo(element, rule, fallback = '✦') {
-    if (rule?.logoSvg) element.innerHTML = rule.logoSvg;
-    else element.textContent = rule?.glyph || fallback;
+    element.textContent = rule?.glyph || fallback;
+}
+
+function updatePreviewFieldLabel(definition, scope, nextLabel) {
+    const label = String(nextLabel || '').trim().slice(0, 30);
+    if (!label) return false;
+    const definitions = fieldDefinitions();
+    const target = definitions.find(item => item.id === definition.id && item.scope === scope);
+    if (!target || target.label === label) return Boolean(target);
+    target.label = label;
+    serializeFieldDefinitions(definitions);
+    renderStatusSchema();
+    renderModalStatusSchema();
+    saveSettingsSoon({ snapshotOpening: false });
+    return true;
+}
+
+function bindPreviewFieldLabelEditor(label, definition, scope) {
+    const originalLabel = definition.label;
+    let editing = false;
+    let cancelled = false;
+    const finish = () => {
+        if (!editing) return;
+        editing = false;
+        label.contentEditable = 'false';
+        label.classList.remove('is-editing');
+        const nextLabel = cancelled ? originalLabel : label.textContent;
+        cancelled = false;
+        if (!updatePreviewFieldLabel(definition, scope, nextLabel)) label.textContent = originalLabel;
+    };
+    const begin = () => {
+        if (editing) return;
+        editing = true;
+        label.contentEditable = 'true';
+        label.classList.add('is-editing');
+        label.focus();
+        const selection = window.getSelection?.();
+        if (selection && document.createRange) {
+            const range = document.createRange();
+            range.selectNodeContents(label);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+    };
+    label.tabIndex = 0;
+    label.title = '双击修改字段名称；按 Enter 保存，Esc 取消';
+    label.setAttribute('aria-label', `${definition.label}，双击或按 Enter 修改字段名称`);
+    label.addEventListener('pointerdown', event => event.stopPropagation());
+    label.addEventListener('dblclick', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        begin();
+    });
+    label.addEventListener('keydown', event => {
+        if (!editing && (event.key === 'Enter' || event.key === 'F2')) {
+            event.preventDefault();
+            begin();
+            return;
+        }
+        if (!editing) return;
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            label.blur();
+        } else if (event.key === 'Escape') {
+            event.preventDefault();
+            cancelled = true;
+            label.blur();
+        }
+    });
+    label.addEventListener('blur', finish);
+}
+
+function bindPhonePersonalFieldLabelEditor(label, definition) {
+    const originalLabel = definition.label;
+    let editing = false;
+    let cancelled = false;
+    const finish = () => {
+        if (!editing) return;
+        editing = false;
+        label.contentEditable = 'false';
+        label.classList.remove('is-editing');
+        const nextLabel = String(cancelled ? originalLabel : label.textContent || '').trim().slice(0, 30);
+        cancelled = false;
+        const target = settings().phoneDesktop.personalFields?.find(item => item.id === definition.id);
+        if (!target || !nextLabel) {
+            label.textContent = originalLabel;
+            return;
+        }
+        target.label = nextLabel;
+        statusAiTestRecords = null;
+        renderStatusSchema();
+        scheduleStatusPreviewUpdate();
+        saveSettingsSoon({ snapshotOpening: false });
+    };
+    const begin = () => {
+        if (editing) return;
+        editing = true;
+        label.contentEditable = 'true';
+        label.classList.add('is-editing');
+        label.focus();
+        const selection = window.getSelection?.();
+        if (selection && document.createRange) {
+            const range = document.createRange();
+            range.selectNodeContents(label);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+    };
+    label.tabIndex = 0;
+    label.title = '双击修改名称；按 Enter 保存，Esc 取消';
+    label.setAttribute('aria-label', `${definition.label}，双击或按 Enter 修改名称`);
+    label.addEventListener('pointerdown', event => event.stopPropagation());
+    label.addEventListener('dblclick', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        begin();
+    });
+    label.addEventListener('keydown', event => {
+        if (!editing && (event.key === 'Enter' || event.key === 'F2')) {
+            event.preventDefault();
+            begin();
+            return;
+        }
+        if (!editing) return;
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            label.blur();
+        } else if (event.key === 'Escape') {
+            event.preventDefault();
+            cancelled = true;
+            label.blur();
+        }
+    });
+    label.addEventListener('blur', finish);
+}
+
+function bindPreviewTitleEditor(title) {
+    const originalTitle = settings().title;
+    let editing = false;
+    let cancelled = false;
+    const finish = () => {
+        if (!editing) return;
+        editing = false;
+        title.contentEditable = 'false';
+        title.classList.remove('is-editing');
+        const nextTitle = String(cancelled ? originalTitle : title.textContent || '').trim().slice(0, 80);
+        cancelled = false;
+        if (!nextTitle) {
+            title.textContent = originalTitle;
+            return;
+        }
+        settings().title = nextTitle;
+        const titleControl = field('status-atelier-title');
+        if (titleControl) titleControl.value = nextTitle;
+        statusAiTestRecords = null;
+        saveSettingsSoon({ snapshotOpening: false });
+        scheduleStatusPreviewUpdate();
+    };
+    const begin = () => {
+        if (editing) return;
+        editing = true;
+        title.contentEditable = 'true';
+        title.classList.add('is-editing');
+        title.focus();
+        const selection = window.getSelection?.();
+        if (selection && document.createRange) {
+            const range = document.createRange();
+            range.selectNodeContents(title);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+    };
+    title.tabIndex = 0;
+    title.title = '双击修改状态栏标题；按 Enter 保存，Esc 取消';
+    title.setAttribute('aria-label', `${originalTitle}，双击或按 Enter 修改状态栏标题`);
+    title.addEventListener('dblclick', event => {
+        event.preventDefault();
+        begin();
+    });
+    title.addEventListener('keydown', event => {
+        if (!editing && (event.key === 'Enter' || event.key === 'F2')) {
+            event.preventDefault();
+            begin();
+            return;
+        }
+        if (!editing) return;
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            title.blur();
+        } else if (event.key === 'Escape') {
+            event.preventDefault();
+            cancelled = true;
+            title.blur();
+        }
+    });
+    title.addEventListener('blur', finish);
+}
+
+function persistPreviewFieldOrder(host, rule, scope) {
+    const orderedIds = [...host.children]
+        .filter(item => item.dataset?.field && item.dataset.previewScope === scope)
+        .map(item => item.dataset.field);
+    if (!orderedIds.length) return;
+    if (rule.structure === 'phone' && scope === 'shared') {
+        settings().phoneDesktop.widgetOrder = orderedIds.filter(id => PHONE_DESKTOP_DEFAULTS.widgetOrder.includes(id));
+        renderPhoneDesktopControls();
+    } else {
+        const definitions = fieldDefinitions();
+        const byId = new Map(definitions.filter(item => item.scope === scope).map(item => [item.id, item]));
+        const ordered = orderedIds.map(id => byId.get(id)).filter(Boolean);
+        byId.forEach(item => { if (!ordered.includes(item)) ordered.push(item); });
+        let scopedIndex = 0;
+        const merged = definitions.map(item => item.scope === scope ? ordered[scopedIndex++] : item);
+        serializeFieldDefinitions(merged);
+        renderStatusSchema();
+        renderModalStatusSchema();
+    }
+    statusAiTestRecords = null;
+    saveSettingsSoon({ snapshotOpening: false });
+}
+
+function bindPreviewFieldReorder(host, rule, scope) {
+    const items = [...host.children].filter(item => item.dataset?.previewScope === scope);
+    items.forEach(item => {
+        const handle = item.querySelector('.status-atelier-preview-field-drag');
+        if (!handle) return;
+        handle.addEventListener('pointerdown', event => {
+            if (event.button !== 0) return;
+            event.preventDefault();
+            event.stopPropagation();
+            let changed = false;
+            let dragging = false;
+            const startX = event.clientX;
+            const startY = event.clientY;
+            handle.setPointerCapture?.(event.pointerId);
+            const move = moveEvent => {
+                moveEvent.preventDefault();
+                if (!dragging && Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY) < 6) return;
+                if (!dragging) {
+                    dragging = true;
+                    item.classList.add('is-preview-dragging');
+                }
+                const candidates = [...host.children].filter(candidate => candidate !== item && candidate.dataset?.previewScope === scope);
+                let nearest = null;
+                let nearestDistance = Number.POSITIVE_INFINITY;
+                candidates.forEach(candidate => {
+                    const rect = candidate.getBoundingClientRect();
+                    const dx = moveEvent.clientX - (rect.left + rect.width / 2);
+                    const dy = moveEvent.clientY - (rect.top + rect.height / 2);
+                    const distance = dx * dx + dy * dy;
+                    if (distance < nearestDistance) {
+                        nearest = candidate;
+                        nearestDistance = distance;
+                    }
+                });
+                if (!nearest) return;
+                const rect = nearest.getBoundingClientRect();
+                const after = Math.abs(moveEvent.clientY - (rect.top + rect.height / 2)) > rect.height * .35
+                    ? moveEvent.clientY > rect.top + rect.height / 2
+                    : moveEvent.clientX > rect.left + rect.width / 2;
+                const anchor = after ? nearest.nextSibling : nearest;
+                if (anchor !== item && item.nextSibling !== anchor) {
+                    host.insertBefore(item, anchor);
+                    changed = true;
+                }
+            };
+            const finish = () => {
+                handle.removeEventListener('pointermove', move);
+                handle.removeEventListener('pointerup', finish);
+                handle.removeEventListener('pointercancel', finish);
+                item.classList.remove('is-preview-dragging');
+                if (changed) persistPreviewFieldOrder(host, rule, scope);
+            };
+            handle.addEventListener('pointermove', move);
+            handle.addEventListener('pointerup', finish);
+            handle.addEventListener('pointercancel', finish);
+        });
+    });
 }
 
 function appendPreviewField(host, definition, value, shared = false, glyph = '✦', rule = null) {
     const item = makeElement('div', shared ? 'status-atelier-preview-shared-item zrs-shared-item' : 'status-atelier-preview-field zrs-field');
+    const scope = shared ? 'shared' : 'page';
     item.dataset.kind = definition.kind;
     item.dataset.field = definition.id || '';
+    item.dataset.previewScope = scope;
     if (rule?.structure === 'forum' && definition.id === 'floor_user') {
         const avatar = rule.media.avatarUrl
             ? makeElement('img', 'status-atelier-preview-forum-avatar zrs-forum-avatar')
@@ -1452,31 +1945,166 @@ function appendPreviewField(host, definition, value, shared = false, glyph = '�
         }
         item.append(avatar);
     }
-    item.append(
-        makeElement('span', 'status-atelier-preview-label zrs-label', definition.label),
-        makeElement('span', 'status-atelier-preview-value zrs-value', value),
-    );
+    const label = makeElement('span', 'status-atelier-preview-label zrs-label', definition.label);
+    const dragHandle = makeElement('button', 'status-atelier-preview-field-drag', '⋮⋮');
+    dragHandle.type = 'button';
+    dragHandle.setAttribute('aria-label', `拖动${definition.label}调整顺序；也可在字段设置中使用上移和下移`);
+    dragHandle.title = '拖动调整顺序';
+    bindPreviewFieldLabelEditor(label, definition, scope);
+    item.append(label);
+    if (definition.kind === 'avatar') {
+        const avatar = rule?.media?.avatarUrl
+            ? makeElement('img', 'status-atelier-preview-field-avatar zrs-field-avatar')
+            : makeElement('span', 'status-atelier-preview-field-avatar zrs-field-avatar is-placeholder', glyph);
+        if (rule?.media?.avatarUrl) {
+            avatar.src = rule.media.avatarUrl;
+            avatar.alt = rule.media.imageAlt || String(value || definition.label);
+            avatar.loading = 'lazy';
+            avatar.addEventListener('error', () => {
+                avatar.removeAttribute('src');
+                avatar.classList.add('is-placeholder');
+                avatar.textContent = glyph;
+            });
+        }
+        item.append(avatar, makeElement('span', 'status-atelier-preview-value zrs-value zrs-avatar-caption', value));
+    } else {
+        item.append(makeElement('span', 'status-atelier-preview-value zrs-value', value));
+    }
     if (definition.kind === 'progress') {
         const meter = makeElement('span', 'status-atelier-preview-meter zrs-meter');
         const parsed = Number(String(value || '').match(/-?\d+(?:\.\d+)?/)?.[0]);
         const percent = Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 68;
         const fill = makeElement('i');
         fill.style.width = `${percent}%`;
-        const trail = makeElement('span', 'zrs-meter-trail');
-        trail.style.width = `${percent}%`;
-        for (let index = 0; index < 10; index += 1) {
-            const dot = makeElement('span');
-            paintRuleLogo(dot, rule, glyph);
-            trail.append(dot);
-        }
-        const marker = makeElement('span', 'status-atelier-preview-meter-marker zrs-meter-marker');
-        paintRuleLogo(marker, rule, glyph);
-        marker.style.left = `clamp(13px, ${percent}%, calc(100% - 13px))`;
-        marker.setAttribute('aria-label', `AI 动态数值位置 ${percent}%`);
-        meter.append(fill, trail, marker);
+        meter.append(fill);
         item.append(meter);
     }
+    item.append(dragHandle);
     host.append(item);
+}
+
+function bindPhoneDiyDrag(root, sharedHost, wallpaperImage) {
+    if (!root || !sharedHost) return;
+    const stored = settings();
+    const phone = stored.phoneDesktop;
+    const bindDrag = (target, onMove, onFinish) => {
+        if (!target) return;
+        target.addEventListener('pointerdown', event => {
+            if (event.button !== 0) return;
+            if (event.target.closest?.('.status-atelier-preview-field-drag, .status-atelier-preview-label')) return;
+            event.preventDefault();
+            const startX = event.clientX;
+            const startY = event.clientY;
+            target.setPointerCapture?.(event.pointerId);
+            const move = moveEvent => onMove(moveEvent.clientX - startX, moveEvent.clientY - startY);
+            const finish = () => {
+                target.removeEventListener('pointermove', move);
+                target.removeEventListener('pointerup', finish);
+                target.removeEventListener('pointercancel', finish);
+                onFinish?.();
+            };
+            target.addEventListener('pointermove', move);
+            target.addEventListener('pointerup', finish);
+            target.addEventListener('pointercancel', finish);
+        });
+    };
+    sharedHost.classList.add('is-diy-draggable');
+    sharedHost.title = '拖动调整桌面信息组件位置';
+    const widgetStart = { x: Number(phone.widgetX), y: Number(phone.widgetY) };
+    bindDrag(sharedHost, (deltaX, deltaY) => {
+        phone.widgetX = Math.max(8, Math.min(42, widgetStart.x + deltaX));
+        phone.widgetY = Math.max(45, Math.min(300, widgetStart.y + deltaY));
+        sharedHost.style.left = `${phone.widgetX}px`;
+        sharedHost.style.top = `${phone.widgetY}px`;
+    }, () => saveSettingsSoon({ snapshotOpening: false }));
+    if (wallpaperImage) {
+        wallpaperImage.classList.add('is-diy-draggable');
+        wallpaperImage.title = '拖动调整壁纸取景';
+        const wallpaperStart = { x: Number(phone.wallpaperPositionX), y: Number(phone.wallpaperPositionY) };
+        bindDrag(wallpaperImage, (deltaX, deltaY) => {
+            phone.wallpaperPositionX = Math.max(0, Math.min(100, wallpaperStart.x - deltaX / 2));
+            phone.wallpaperPositionY = Math.max(0, Math.min(100, wallpaperStart.y - deltaY / 3));
+            wallpaperImage.style.objectPosition = `${phone.wallpaperPositionX}% ${phone.wallpaperPositionY}%`;
+            const xControl = field('status-atelier-phone-wallpaper-x');
+            const yControl = field('status-atelier-phone-wallpaper-y');
+            if (xControl) xControl.value = String(Math.round(phone.wallpaperPositionX));
+            if (yControl) yControl.value = String(Math.round(phone.wallpaperPositionY));
+        }, () => saveSettingsSoon({ snapshotOpening: false }));
+    }
+}
+
+function bindPhoneAvatarDiy(avatarHolder, avatarImage) {
+    if (!avatarHolder || !avatarImage) return;
+    const phone = settings().phoneDesktop;
+    const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
+    const apply = () => {
+        avatarImage.style.objectPosition = `${phone.personalAvatarPositionX}% ${phone.personalAvatarPositionY}%`;
+        avatarImage.style.transform = `scale(${phone.personalAvatarScale})`;
+    };
+    const pointers = new Map();
+    let dragStart = null;
+    let pinchStart = null;
+    const pointerDistance = () => {
+        const [first, second] = [...pointers.values()];
+        return first && second ? Math.hypot(second.x - first.x, second.y - first.y) : 0;
+    };
+    avatarHolder.classList.add('is-diy-draggable');
+    avatarHolder.title = '拖动移动取景；滚轮或双指缩放';
+    avatarImage.draggable = false;
+    apply();
+    avatarHolder.addEventListener('pointerdown', event => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        avatarHolder.setPointerCapture?.(event.pointerId);
+        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (pointers.size === 1) {
+            dragStart = {
+                x: event.clientX,
+                y: event.clientY,
+                positionX: Number(phone.personalAvatarPositionX),
+                positionY: Number(phone.personalAvatarPositionY),
+            };
+        } else if (pointers.size === 2) {
+            pinchStart = { distance: pointerDistance(), scale: Number(phone.personalAvatarScale) };
+        }
+    });
+    avatarHolder.addEventListener('pointermove', event => {
+        if (!pointers.has(event.pointerId)) return;
+        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (pointers.size >= 2 && pinchStart?.distance) {
+            phone.personalAvatarScale = clamp(pinchStart.scale * pointerDistance() / pinchStart.distance, 1, 3);
+        } else if (dragStart) {
+            phone.personalAvatarPositionX = clamp(dragStart.positionX - (event.clientX - dragStart.x) * 0.9, 0, 100);
+            phone.personalAvatarPositionY = clamp(dragStart.positionY - (event.clientY - dragStart.y) * 0.9, 0, 100);
+        }
+        apply();
+    });
+    const finishPointer = event => {
+        if (!pointers.has(event.pointerId)) return;
+        pointers.delete(event.pointerId);
+        if (pointers.size === 1) {
+            const [remaining] = pointers.values();
+            dragStart = {
+                x: remaining.x,
+                y: remaining.y,
+                positionX: Number(phone.personalAvatarPositionX),
+                positionY: Number(phone.personalAvatarPositionY),
+            };
+            pinchStart = null;
+        } else if (!pointers.size) {
+            dragStart = null;
+            pinchStart = null;
+            saveSettingsSoon({ snapshotOpening: false });
+        }
+    };
+    avatarHolder.addEventListener('pointerup', finishPointer);
+    avatarHolder.addEventListener('pointercancel', finishPointer);
+    avatarHolder.addEventListener('wheel', event => {
+        event.preventDefault();
+        phone.personalAvatarScale = clamp(Number(phone.personalAvatarScale) + (event.deltaY < 0 ? 0.1 : -0.1), 1, 3);
+        apply();
+        saveSettingsSoon({ snapshotOpening: false });
+    }, { passive: false });
 }
 
 function renderStatusPreview(host) {
@@ -1484,8 +2112,16 @@ function renderStatusPreview(host) {
     if (!document.querySelector('#status-atelier-exported-theme-css')) {
         const style = document.createElement('style');
         style.id = 'status-atelier-exported-theme-css';
-        style.textContent = STATUS_THEME_CSS;
+        style.textContent = `${STATUS_THEME_CSS}\n${STATUS_PHONE_CSS}`;
         document.head.append(style);
+    }
+    if (!document.querySelector('#status-atelier-phone-font')) {
+        const phoneFont = document.createElement('link');
+        phoneFont.id = 'status-atelier-phone-font';
+        phoneFont.rel = 'stylesheet';
+        phoneFont.href = 'https://fontsapi.zeoseven.com/813/main/result.css';
+        phoneFont.crossOrigin = 'anonymous';
+        document.head.append(phoneFont);
     }
     const previewInput = resolvedStatusInput();
     const previewRecords = statusAiTestRecords || makePreviewRecords(previewInput);
@@ -1495,10 +2131,6 @@ function renderStatusPreview(host) {
     root.dataset.structure = rule.structure;
     root.dataset.variant = rule.variant;
     root.dataset.layout = rule.layout;
-    root.dataset.logo = rule.logoId;
-    root.dataset.logoFamily = rule.logoFamily;
-    root.dataset.logoEffect = rule.logoEffect;
-    root.dataset.fillMode = rule.fillMode;
     root.dataset.hasImage = rule.media.imageUrl ? 'true' : 'false';
     if (rule.palette) {
         root.style.setProperty('--sap-accent', rule.palette.accent);
@@ -1528,19 +2160,75 @@ function renderStatusPreview(host) {
 
     const header = makeElement('header', 'status-atelier-rule-preview-header zrs-header');
     const heading = makeElement('div');
-    heading.append(
-        makeElement('h3', 'status-atelier-rule-preview-title zrs-title', rule.title),
-        makeElement('p', 'status-atelier-rule-preview-subtitle zrs-subtitle', rule.subtitle),
-    );
+    const previewTitle = makeElement('h3', 'status-atelier-rule-preview-title zrs-title', rule.title);
+    bindPreviewTitleEditor(previewTitle);
+    heading.append(previewTitle, makeElement('p', 'status-atelier-rule-preview-subtitle zrs-subtitle', rule.subtitle));
     header.append(heading, makeElement('span', 'status-atelier-preview-dynamic-badge', 'AI 动态数值'));
     card.append(header);
 
     const body = makeElement('div', 'status-atelier-rule-preview-body zrs-content');
     const structureArt = makeElement('div', 'status-atelier-preview-structure-art zrs-structure-art');
     structureArt.setAttribute('aria-hidden', 'true');
-    structureArt.append(makeElement('i'), makeElement('i'), makeElement('i'));
+    for (let index = 0; index < 12; index += 1) structureArt.append(makeElement('i'));
     body.append(structureArt);
+    if (rule.structure === 'music') {
+        structureArt.removeAttribute('aria-hidden');
+        const pianoKeys = [...structureArt.querySelectorAll('i')];
+        pianoKeys.forEach((key, index) => {
+            key.classList.add('zrs-piano-key');
+            key.tabIndex = 0;
+            key.setAttribute('role', 'button');
+            key.setAttribute('aria-label', `琴键 ${index + 1}`);
+            const activate = () => {
+                pianoKeys.forEach(item => item.classList.toggle('is-active', item === key));
+                window.setTimeout(() => key.classList.remove('is-active'), 180);
+            };
+            key.addEventListener('click', activate);
+            key.addEventListener('keydown', event => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                activate();
+            });
+        });
+    }
+    if (rule.structure === 'quest') {
+        structureArt.removeAttribute('aria-hidden');
+        const questValues = pages[0]?.values || [];
+        [['当前区域', questValues[0]], ['下一节点', questValues[3]], ['任务目标', questValues[1]]].forEach(([label, value]) => {
+            const node = makeElement('button', 'zrs-map-node', label);
+            node.type = 'button';
+            node.title = String(value || label);
+            node.addEventListener('click', () => {
+                structureArt.querySelectorAll('.zrs-map-node').forEach(button => button.classList.toggle('is-active', button === node));
+            });
+            structureArt.append(node);
+        });
+    }
+    let phoneWallpaperImage = null;
+    if (rule.structure === 'phone') {
+        const wallpaper = makeElement('div', 'zrs-phone-wallpaper');
+        wallpaper.setAttribute('aria-hidden', 'true');
+        if (rule.phoneDesktop.wallpaperUrl) {
+            phoneWallpaperImage = makeElement('img');
+            phoneWallpaperImage.src = rule.phoneDesktop.wallpaperUrl;
+            phoneWallpaperImage.alt = '';
+            phoneWallpaperImage.draggable = false;
+            phoneWallpaperImage.style.objectPosition = `${rule.phoneDesktop.wallpaperPositionX}% ${rule.phoneDesktop.wallpaperPositionY}%`;
+            phoneWallpaperImage.addEventListener('error', () => phoneWallpaperImage.remove());
+            wallpaper.append(phoneWallpaperImage);
+        }
+        body.append(wallpaper);
+        if (rule.phoneDesktop.petalsEnabled !== false) {
+            const petals = makeElement('div', 'zrs-phone-petals');
+            petals.setAttribute('aria-hidden', 'true');
+            for (let index = 0; index < 15; index += 1) petals.append(makeElement('i'));
+            body.append(petals);
+        }
+    }
     const mediaHost = makeElement('div', 'status-atelier-preview-media zrs-structure-head');
+    const hasAvatarField = rule.sharedFields.some(item => item.kind === 'avatar')
+        || rule.pageFields.some(item => item.kind === 'avatar')
+        || rule.pages.some(page => page.fields?.some(item => item.kind === 'avatar'));
     const addPreviewImage = (url, className, alt) => {
         if (!url) return;
         const image = makeElement('img', className);
@@ -1550,7 +2238,7 @@ function renderStatusPreview(host) {
         image.addEventListener('error', () => image.remove());
         mediaHost.append(image);
     };
-    if (rule.structure !== 'forum') addPreviewImage(rule.media.avatarUrl, 'status-atelier-preview-avatar zrs-avatar', rule.media.imageAlt);
+    if (rule.structure !== 'forum' && !hasAvatarField) addPreviewImage(rule.media.avatarUrl, 'status-atelier-preview-avatar zrs-avatar', rule.media.imageAlt);
     addPreviewImage(rule.media.imageUrl, 'status-atelier-preview-cover zrs-cover', rule.media.imageAlt);
     if (rule.media.audioUrl) {
         const audio = makeElement('audio', 'status-atelier-preview-audio zrs-audio');
@@ -1560,33 +2248,169 @@ function renderStatusPreview(host) {
         mediaHost.append(audio);
     }
     if (mediaHost.children.length) body.append(mediaHost);
+    let phoneSharedHost = null;
     if (rule.sharedFields.length) {
         const sharedHost = makeElement('div', 'status-atelier-preview-shared zrs-shared');
-        rule.sharedFields.forEach((definition, index) => appendPreviewField(sharedHost, definition, shared[index], true, rule.glyph, rule));
+        const definitions = rule.sharedFields.map((definition, index) => ({ definition, value: shared[index] }));
+        if (rule.structure === 'phone') {
+            definitions.sort((a, b) => rule.phoneDesktop.widgetOrder.indexOf(a.definition.id) - rule.phoneDesktop.widgetOrder.indexOf(b.definition.id));
+            sharedHost.style.left = `${rule.phoneDesktop.widgetX}px`;
+            sharedHost.style.top = `${rule.phoneDesktop.widgetY}px`;
+            phoneSharedHost = sharedHost;
+        }
+        definitions.forEach(item => appendPreviewField(sharedHost, item.definition, item.value, true, rule.glyph, rule));
+        bindPreviewFieldReorder(sharedHost, rule, 'shared');
         body.append(sharedHost);
     }
 
     const tabs = makeElement('div', 'status-atelier-preview-tabs zrs-tabs');
+    const phonePagebar = makeElement('div', 'zrs-phone-pagebar');
+    const phoneBack = makeElement('button', 'zrs-phone-back', '‹');
+    phoneBack.type = 'button';
+    phoneBack.setAttribute('aria-label', '返回状态主页');
+    const phoneTitle = makeElement('h4', 'zrs-phone-page-title');
+    phonePagebar.append(phoneBack, phoneTitle);
     const pageHost = makeElement('div', 'status-atelier-preview-fields zrs-fields');
+    const phoneMode = rule.structure === 'phone';
+    const phoneText = (value, fallback = '') => {
+        const text = String(value || '').trim();
+        return !text || text === '无' ? fallback : text;
+    };
+    const phoneDataCard = (definition, value, extraClass = '') => {
+        const progress = definition?.kind === 'progress';
+        const card = makeElement('div', `zrs-phone-data-card${extraClass ? ` ${extraClass}` : ''}`);
+        const head = makeElement('div', 'zrs-phone-data-head');
+        const label = makeElement('span', 'zrs-phone-data-label', definition?.label || '未命名字段');
+        bindPhonePersonalFieldLabelEditor(label, definition);
+        head.append(label);
+        if (progress) head.append(makeElement('span', '', `${phoneText(value, '68')}/100`));
+        card.append(head);
+        if (progress) {
+            const bar = makeElement('div', 'zrs-phone-bar');
+            const fill = makeElement('i');
+            const parsed = Number(String(value || '').match(/-?\d+(?:\.\d+)?/)?.[0]);
+            fill.style.width = `${Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 68}%`;
+            bar.append(fill);
+            card.append(bar);
+        } else {
+            card.append(makeElement('div', 'zrs-phone-copy', phoneText(value, '暂无记录')));
+        }
+        return card;
+    };
+    const renderPhonePage = (page, values) => {
+        pageHost.replaceChildren();
+        root.dataset.phonePage = page.id;
+        phoneTitle.textContent = page.label;
+        if (page.id === 'Personal') {
+            const personalFields = page.fields || rule.phoneDesktop.personalFields || [];
+            const hero = makeElement('div', 'zrs-phone-personal-hero');
+            const avatarUrl = rule.phoneDesktop.personalAvatarUrl || rule.media.avatarUrl;
+            const avatar = makeElement('div', `zrs-phone-avatar${avatarUrl ? '' : ' is-placeholder'}`);
+            if (avatarUrl) {
+                const avatarImage = makeElement('img');
+                avatarImage.src = avatarUrl;
+                avatarImage.alt = rule.media.imageAlt || '当前角色头像';
+                avatarImage.style.objectPosition = `${rule.phoneDesktop.personalAvatarPositionX}% ${rule.phoneDesktop.personalAvatarPositionY}%`;
+                avatarImage.style.transform = `scale(${rule.phoneDesktop.personalAvatarScale})`;
+                avatarImage.addEventListener('error', () => {
+                    avatarImage.remove();
+                    avatar.classList.add('is-placeholder');
+                });
+                avatar.append(avatarImage);
+                bindPhoneAvatarDiy(avatar, avatarImage);
+            }
+            hero.append(avatar);
+            pageHost.append(
+                hero,
+                phoneDataCard(personalFields[0], values[0]),
+                phoneDataCard(personalFields[1], values[1], 'is-desire'),
+                phoneDataCard(personalFields[2], values[2], 'is-wide'),
+                phoneDataCard(personalFields[3], values[3], 'is-wide is-thought'),
+            );
+            return;
+        }
+        if (page.id === 'Memo') {
+            values.filter(value => phoneText(value)).forEach(value => pageHost.append(makeElement('div', 'zrs-phone-list-card', value)));
+            if (!pageHost.children.length) pageHost.append(makeElement('div', 'zrs-phone-empty', '暂无备忘事项'));
+            return;
+        }
+        if (page.id === 'Wechat') {
+            phoneTitle.textContent = phoneText(values[0], '未知');
+            values.slice(1).forEach((value, index) => {
+                if (phoneText(value)) pageHost.append(makeElement('div', `zrs-phone-chat ${index % 2 === 0 ? 'is-left' : 'is-right'}`, value));
+            });
+            if (!pageHost.children.length) pageHost.append(makeElement('div', 'zrs-phone-empty', '暂无聊天记录'));
+            return;
+        }
+        for (let index = 0; index < values.length; index += 2) {
+            const itemName = phoneText(values[index]);
+            if (!itemName) continue;
+            const detail = makeElement('details', 'zrs-phone-shop');
+            detail.append(
+                makeElement('summary', '', itemName),
+                makeElement('div', 'zrs-phone-shop-desc', phoneText(values[index + 1], '暂无说明')),
+            );
+            pageHost.append(detail);
+        }
+        if (!pageHost.children.length) pageHost.append(makeElement('div', 'zrs-phone-empty', '购物车空空如也'));
+    };
     const showPage = index => {
         pageHost.replaceChildren();
-        rule.pageFields.forEach((definition, fieldIndex) => {
-            appendPreviewField(pageHost, definition, pages[index]?.values[fieldIndex] || previewValue(definition), false, rule.glyph, rule);
+        const page = pages[index]?.page;
+        const values = pages[index]?.values || [];
+        if (phoneMode) renderPhonePage(page, values);
+        else (page?.fields || rule.pageFields).forEach((definition, fieldIndex) => {
+            appendPreviewField(pageHost, definition, values[fieldIndex] || previewValue(definition), false, rule.glyph, rule);
         });
+        if (!phoneMode) bindPreviewFieldReorder(pageHost, rule, 'page');
         [...tabs.children].forEach((button, buttonIndex) => button.classList.toggle('is-active', buttonIndex === index));
+        if (phoneMode) {
+            root.classList.remove('is-phone-home');
+        }
     };
     pages.forEach(({ page }, index) => {
-        const button = makeElement('button', 'status-atelier-preview-tab zrs-tab', page.label);
+        const button = makeElement('button', 'status-atelier-preview-tab zrs-tab');
         button.type = 'button';
+        if (phoneMode) {
+            const app = rule.phoneDesktop.apps.find(item => item.id === page.id);
+            const icon = makeElement('span', 'zrs-app-icon');
+            icon.dataset.appId = page.id;
+            icon.innerHTML = phoneAppIconMarkup(page.id);
+            if (app?.iconUrl) {
+                const image = makeElement('img', 'zrs-app-icon-image');
+                image.src = app.iconUrl;
+                image.alt = '';
+                image.addEventListener('error', () => {
+                    image.remove();
+                    icon.classList.remove('has-custom-icon');
+                });
+                icon.classList.add('has-custom-icon');
+                icon.append(image);
+            }
+            button.append(icon, makeElement('span', 'zrs-app-label', app?.name || page.label));
+        } else {
+            button.textContent = page.label;
+        }
         button.addEventListener('click', () => showPage(index));
         tabs.append(button);
     });
-    if (pages.length > 1) body.append(tabs);
+    phoneBack.addEventListener('click', () => {
+        root.classList.add('is-phone-home');
+        [...tabs.children].forEach(button => button.classList.remove('is-active'));
+    });
+    if (pages.length > 1 || phoneMode) body.append(tabs);
+    body.append(phonePagebar);
     body.append(pageHost);
     card.append(body);
     root.append(card);
     host.replaceChildren(root);
-    showPage(0);
+    if (phoneMode) {
+        root.classList.add('is-phone-home');
+        pageHost.replaceChildren();
+        bindPhoneDiyDrag(root, phoneSharedHost, phoneWallpaperImage);
+    } else {
+        showPage(0);
+    }
 }
 
 function updatePreview() {
@@ -1604,19 +2428,9 @@ function refreshStatusAppearancePreview() {
     roots.forEach(root => {
         root.dataset.theme = rule.theme;
         root.dataset.layout = rule.layout;
-        root.dataset.logo = rule.logoId;
-        root.dataset.logoFamily = rule.logoFamily;
-        root.dataset.logoEffect = rule.logoEffect;
-        root.dataset.fillMode = rule.fillMode;
         const glyph = root.querySelector('.status-atelier-preview-glyph');
         if (glyph) paintRuleLogo(glyph, rule);
         root.querySelector('.status-atelier-preview-style-name')?.replaceChildren(document.createTextNode(rule.styleName));
-        root.querySelectorAll('.status-atelier-preview-meter-marker').forEach(marker => {
-            paintRuleLogo(marker, rule);
-        });
-        root.querySelectorAll('.zrs-meter-trail span').forEach(marker => {
-            paintRuleLogo(marker, rule);
-        });
     });
 }
 
@@ -1738,17 +2552,41 @@ async function installStatusWorldbookRule() {
     return { bookName, uid: Number(entry.uid), created: result.created };
 }
 
+async function installGlobalStatusWorldbookRule() {
+    const bookName = '九一-状态栏-全局输出规则';
+    if (!(world_names || []).includes(bookName)) {
+        const created = await createNewWorldInfo(bookName, { interactive: false });
+        if (!created) throw new Error('无法创建全局状态栏世界书');
+    }
+
+    const current = await loadWorldInfo(bookName);
+    const generatedEntry = buildWorldbookJson(resolvedStatusInput()).entries[0];
+    const result = upsertStatusWorldbookData(current, generatedEntry);
+    await saveWorldInfo(bookName, result.data, true);
+    if (!selected_world_info.includes(bookName)) selected_world_info.push(bookName);
+    world_info.globalSelect = [...selected_world_info];
+    await saveSettings();
+
+    const confirmed = await loadWorldInfo(bookName);
+    const entry = Object.values(confirmed?.entries || {}).find(item => item?.automationId === STATUS_WORLDBOOK_ENTRY_ID);
+    if (!selected_world_info.includes(bookName) || !entry || entry.disable || !entry.constant || entry.content !== generatedEntry.content) {
+        throw new Error('全局世界书没有确认启用状态栏输出规则');
+    }
+    return { bookName, uid: Number(entry.uid), created: result.created };
+}
+
 async function installRegex(scope) {
-    let worldbook = null;
-    if (scope === 'scoped') worldbook = await installStatusWorldbookRule();
+    const worldbook = scope === 'scoped'
+        ? await installStatusWorldbookRule()
+        : await installGlobalStatusWorldbookRule();
     await installGeneratedRegex(buildRegexScript(resolvedStatusInput()), scope);
-    settings().promptEnabled = scope !== 'scoped';
+    settings().promptEnabled = false;
     const promptToggle = field('status-atelier-prompt-enabled');
     if (promptToggle) promptToggle.checked = settings().promptEnabled;
     updatePrompt();
     notify('success', scope === 'scoped'
         ? `当前角色状态栏已完整启用：世界书“${worldbook.bookName}”与局部正则均已更新`
-        : '全局状态栏已启用；下一条 AI 回复会按当前结构输出');
+        : `全局状态栏已完整启用：世界书“${worldbook.bookName}”与全局正则均已更新`);
     return worldbook;
 }
 
@@ -2332,8 +3170,6 @@ function renderGreetingThemeChooser() {
 function renderGreetingStatusChooser() {
     const select = greetingModal?.querySelector('#status-atelier-modal-status-style');
     const structureSelect = greetingModal?.querySelector('#status-atelier-modal-status-structure');
-    const fillModeSelect = greetingModal?.querySelector('#status-atelier-modal-status-fill-mode');
-    const logoHost = greetingModal?.querySelector('#status-atelier-modal-status-logos');
     const paletteHost = greetingModal?.querySelector('#status-atelier-modal-status-palettes');
     const state = greetingModal?.querySelector('.status-atelier-modal-status-state');
     if (!select) return;
@@ -2346,32 +3182,13 @@ function renderGreetingStatusChooser() {
     }
     select.value = settings().theme || 'classical';
     if (structureSelect && !structureSelect.options.length) {
-        STATUS_STRUCTURE_PRESETS.forEach(structure => {
+        STATUS_STRUCTURE_PRESETS.filter(structure => PHONE_STRUCTURE_IDS.includes(structure.id)).forEach(structure => {
             const option = makeElement('option', '', structure.name);
             option.value = structure.id;
             structureSelect.append(option);
         });
     }
     if (structureSelect) structureSelect.value = settings().structure || 'custom';
-    if (fillModeSelect) fillModeSelect.value = settings().fillMode === 'object' ? 'object' : 'solid';
-    if (logoHost && logoHost.children.length !== STATUS_LOGO_PRESETS.length) {
-        logoHost.replaceChildren();
-        STATUS_LOGO_PRESETS.forEach(logo => {
-            const button = makeElement('button', 'status-atelier-status-logo');
-            button.type = 'button';
-            button.dataset.modalStatusLogo = logo.id;
-            button.dataset.logoFamily = logo.family || 'auto';
-            button.dataset.logoEffect = logo.effect || 'plain';
-            const art = makeElement('span', 'status-atelier-logo-art', logo.svg ? '' : (logo.glyph || 'AUTO'));
-            if (logo.svg) art.innerHTML = logo.svg;
-            button.append(art, makeElement('small', '', logo.name));
-            logoHost.append(button);
-        });
-    }
-    const activeLogoId = normalizeRule(resolvedStatusInput()).logoId;
-    logoHost?.querySelectorAll('[data-modal-status-logo]').forEach(button => {
-        button.setAttribute('aria-pressed', String(button.dataset.modalStatusLogo === activeLogoId));
-    });
     if (paletteHost && paletteHost.children.length !== STATUS_PALETTE_PRESETS.length) {
         paletteHost.replaceChildren();
         STATUS_PALETTE_PRESETS.forEach(palette => {
@@ -2574,22 +3391,17 @@ function buildGreetingModal() {
                     </details>
                 </details>
                 <section class="status-atelier-greeting-status-step">
-                    <div class="status-atelier-greeting-step-heading"><strong>制作状态栏</strong><small>直接选择结构、字段和小物；预览满意后再一键应用。</small></div>
+                    <div class="status-atelier-greeting-step-heading"><strong>制作状态栏</strong><small>直接选择结构、字段和色卡；预览满意后再一键应用。</small></div>
                     <details class="status-atelier-modal-status-advanced">
-                        <summary><strong>调整状态栏</strong><small>结构、字段、小物与色卡</small></summary>
+                        <summary><strong>调整状态栏</strong><small>结构、字段与色卡</small></summary>
                         <div class="status-atelier-modal-status-controls">
-                            <label>组件结构<select id="status-atelier-modal-status-structure" class="text_pole"></select></label>
+                            <label>状态栏模板<select id="status-atelier-modal-status-structure" class="text_pole"></select></label>
                             <label>外观版式<select id="status-atelier-modal-status-style" class="text_pole"></select></label>
                         </div>
                         <details class="status-atelier-modal-schema-editor">
                             <summary><strong>字段与 AI 动态数值</strong><small>增加、改名、改类型或删除</small></summary>
                             <button type="button" class="menu_button" id="status-atelier-modal-add-field">＋ 新增字段</button>
                             <div id="status-atelier-modal-status-schema" class="status-atelier-modal-schema-list"></div>
-                        </details>
-                        <details class="status-atelier-status-logo-library">
-                            <summary><strong>动态数值小物</strong><small>12 个简化图形，不会盖住数值</small></summary>
-                            <label>轨道填充方式<select id="status-atelier-modal-status-fill-mode" class="text_pole"><option value="solid">纯色填充</option><option value="object">小物填充</option></select></label>
-                            <div id="status-atelier-modal-status-logos" class="status-atelier-status-logos"></div>
                         </details>
                         <details class="status-atelier-status-palette-library">
                             <summary><strong>色卡</strong><small>只改变颜色</small></summary>
@@ -2641,22 +3453,6 @@ function buildGreetingModal() {
         if (!style) return;
         Object.assign(settings(), { theme: style.id, layout: style.layout, preset: 'custom', statusTemplate: 'custom' });
         refreshStatusAppearancePreview();
-        saveSettingsSoon({ snapshotOpening: false });
-    });
-    greetingModal.querySelector('#status-atelier-modal-status-fill-mode').addEventListener('change', event => {
-        settings().fillMode = event.currentTarget.value === 'object' ? 'object' : 'solid';
-        refreshStatusAppearancePreview();
-        saveSettingsSoon({ snapshotOpening: false });
-    });
-    greetingModal.querySelector('#status-atelier-modal-status-logos').addEventListener('click', event => {
-        const button = event.target.closest('[data-modal-status-logo]');
-        const logo = STATUS_LOGO_PRESETS.find(item => item.id === button?.dataset.modalStatusLogo);
-        if (!logo) return;
-        settings().logoId = logo.id;
-        refreshStatusAppearancePreview();
-        greetingModal.querySelectorAll('[data-modal-status-logo]').forEach(item => {
-            item.setAttribute('aria-pressed', String(item === button));
-        });
         saveSettingsSoon({ snapshotOpening: false });
     });
     greetingModal.querySelector('#status-atelier-modal-status-palettes').addEventListener('click', event => {
@@ -3053,6 +3849,7 @@ async function addSettingsPanel() {
     settingsRoot.addEventListener('input', event => {
         readSettingsControl(event.target);
         readStatusMediaControl(event.target);
+        readPhoneDesktopControl(event.target);
     });
     settingsRoot.addEventListener('input', event => {
         readOpeningHomeControl(event.target);
@@ -3061,10 +3858,11 @@ async function addSettingsPanel() {
     });
     settingsRoot.addEventListener('change', event => {
         if (event.target.id !== 'status-atelier-preset' && event.target.id !== 'status-atelier-import-file') {
-            const isStatusControl = Boolean(SETTING_FIELDS[event.target.id] || STATUS_MEDIA_FIELDS[event.target.id]);
+            const isStatusControl = Boolean(SETTING_FIELDS[event.target.id] || STATUS_MEDIA_FIELDS[event.target.id] || PHONE_DESKTOP_FIELDS[event.target.id] || event.target.dataset?.phoneAppId);
             if (!isStatusControl) {
                 readSettingsControl(event.target);
                 readStatusMediaControl(event.target);
+                readPhoneDesktopControl(event.target);
             }
             readOpeningHomeControl(event.target);
             readOpeningSummaryControl(event.target);
@@ -3094,27 +3892,16 @@ async function addSettingsPanel() {
             saveSettingsSoon({ snapshotOpening: false });
             return;
         }
-        const statusLogoButton = event.target.closest('[data-status-logo]');
-        if (statusLogoButton) {
-            const logo = STATUS_LOGO_PRESETS.find(item => item.id === statusLogoButton.dataset.statusLogo);
-            if (!logo) return;
-            settings().logoId = logo.id;
-            statusAiTestRecords = null;
-            field('status-atelier-status-logos')?.querySelectorAll('[data-status-logo]').forEach(button => {
-                button.setAttribute('aria-pressed', String(button === statusLogoButton));
-            });
-            refreshStatusAppearancePreview();
-            saveSettingsSoon({ snapshotOpening: false });
-            return;
-        }
         const statusStyleButton = event.target.closest('[data-status-style]');
         if (statusStyleButton) {
             const style = STATUS_STYLE_PRESETS.find(item => item.id === statusStyleButton.dataset.statusStyle);
             if (!style) return;
             settings().theme = style.id;
-            field('status-atelier-theme').value = style.id;
+            const themeControl = field('status-atelier-theme');
+            if (themeControl) themeControl.value = style.id;
             settings().layout = style.layout;
-            field('status-atelier-layout').value = style.layout;
+            const layoutControl = field('status-atelier-layout');
+            if (layoutControl) layoutControl.value = style.layout;
             settings().preset = 'custom';
             field('status-atelier-preset').value = 'custom';
             statusAiTestRecords = null;

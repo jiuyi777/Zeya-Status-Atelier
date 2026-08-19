@@ -74,7 +74,7 @@ test('home templates apply complete and visibly distinct visual settings', () =>
         assert.match(styleSource, new RegExp(`status-atelier-opening-live\\[data-theme="${theme}"\\]`));
     }
     assert.match(styleSource, /writing-mode: vertical-rl/);
-    assert.match(styleSource, /grid-template-columns: 86px minmax\(0, 1fr\)/);
+    assert.match(styleSource, /grid-template-columns: minmax\(0, var\(--zop-media-width\)\) minmax\(0, 1fr\)/);
     assert.match(styleSource, /LAYOUT \/ DESIGN/);
 });
 
@@ -90,7 +90,7 @@ test('status workspace exposes component, palette, real avatar and audio control
     for (const id of ['status-atelier-structure', 'status-atelier-status-styles', 'status-atelier-status-palettes', 'status-atelier-avatar-source', 'status-atelier-avatar-url', 'status-atelier-image-url', 'status-atelier-audio-url', 'status-atelier-test-ai']) {
         assert.match(settingsMarkup, new RegExp(`id="${id}"`));
     }
-    assert.match(settingsMarkup, /50 套外观/);
+    assert.match(settingsMarkup, /20 套外观/);
     assert.match(settingsMarkup, /24 套色卡/);
     assert.match(source, /thumbnail\('avatar', avatar\)/);
     assert.match(source, /thumbnail\('persona', user_avatar\)/);
@@ -100,19 +100,19 @@ test('status workspace exposes component, palette, real avatar and audio control
 test('status appearance controls update in place and preserve readable selected text', () => {
     assert.match(source, /styleHost\.children\.length !== STATUS_STYLE_PRESETS\.length/);
     assert.match(source, /paletteHost\.children\.length !== STATUS_PALETTE_PRESETS\.length/);
-    assert.match(source, /logoHost\.children\.length !== STATUS_LOGO_PRESETS\.length/);
     const paletteClick = source.match(/const statusPaletteButton = event\.target\.closest\('\[data-status-palette\]'\);([\s\S]*?)const statusStyleButton/)?.[1] || '';
     assert.doesNotMatch(paletteClick, /renderStatusDesignControls\(\)/);
     assert.match(paletteClick, /refreshStatusPalettePreview\(\)/);
     const styleClick = source.match(/const statusStyleButton = event\.target\.closest\('\[data-status-style\]'\);([\s\S]*?)field\('status-atelier-test-ai'\)/)?.[1] || '';
     assert.match(styleClick, /refreshStatusAppearancePreview\(\)/);
     assert.doesNotMatch(styleClick, /updatePreview\(\)/);
-    assert.match(source, /style\.textContent = STATUS_THEME_CSS/);
+    assert.match(source, /style\.textContent = `\$\{STATUS_THEME_CSS\}\\n\$\{STATUS_PHONE_CSS\}`/);
+    assert.match(source, /scope: 'shared'/);
+    assert.match(source, /definitions\.filter\(item => item\.scope === 'shared'\)/);
     assert.match(source, /status-atelier-preview-card zrs-card/);
     assert.match(source, /status-atelier-preview-field zrs-field/);
-    assert.match(source, /status-atelier-preview-meter-marker zrs-meter-marker/);
-    assert.match(source, /marker\.style\.left = `clamp\(13px, \$\{percent\}%, calc\(100% - 13px\)\)`/);
-    assert.match(source, /zrs-meter-trail/);
+    assert.match(source, /meter\.append\(fill\)/);
+    assert.doesNotMatch(source, /status-atelier-preview-meter-marker|zrs-meter-trail/);
     assert.doesNotMatch(styleSource, /status-atelier-preview-flow/);
     const appliesCheck = source.match(/function statusRegexAppliesToCurrentContext\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.doesNotMatch(appliesCheck, /buildRegexScript/);
@@ -155,7 +155,7 @@ test('mobile greeting modal offers a stateless copy-only overview and directly i
     assert.match(source, /id="status-atelier-modal-status-style"/);
     assert.match(source, /id="status-atelier-modal-status-structure"/);
     assert.match(source, /id="status-atelier-modal-status-preview"/);
-    assert.match(source, /id="status-atelier-modal-status-logos"/);
+    assert.doesNotMatch(source, /id="status-atelier-modal-status-logos"/);
     assert.match(source, /id="status-atelier-modal-status-palettes"/);
     assert.match(source, /id="status-atelier-modal-apply-status"/);
     assert.match(source, /id="status-atelier-modal-add-field"/);
@@ -164,7 +164,7 @@ test('mobile greeting modal offers a stateless copy-only overview and directly i
     const statusBlock = source.match(/async function applyModalStatus\(button\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(statusBlock, /await installRegex\('scoped'\)/);
     assert.doesNotMatch(statusBlock, /title: style\.title|subtitle: style\.subtitle/);
-    assert.match(source, /logoId: stored\.logoId/);
+    assert.doesNotMatch(source, /logoId: stored\.logoId/);
     assert.doesNotMatch(source, /id="status-atelier-modal-download-regex"/);
 });
 
@@ -196,10 +196,12 @@ test('status quick editor updates fields without reloading the whole opening-hom
 
 test('modal and palettes stay inside mobile viewport and palette library is collapsible', () => {
     assert.match(settingsMarkup, /status-atelier-status-palette-library/);
-    assert.match(settingsMarkup, /status-atelier-status-logo-library/);
-    assert.match(source, /status-atelier-status-logo-library/);
-    assert.match(source, /structure: 'custom'/);
+    assert.doesNotMatch(settingsMarkup, /status-atelier-status-logo-library/);
+    assert.doesNotMatch(source, /status-atelier-status-logo-library/);
+    assert.match(source, /structure: 'phone'/);
+    assert.match(source, /PHONE_STRUCTURE_IDS = Object\.freeze\(\['phone', 'profile', 'social', 'forum', 'chat', 'music', 'casefile', 'quest'\]\)/);
     assert.match(settingsMarkup, /24 套色卡（可折叠）/);
+    assert.match(settingsMarkup, /20 套外观（可折叠）/);
     assert.match(styleSource, /max-height:\s*calc\(100dvh - 12px - env\(safe-area-inset-top\) - env\(safe-area-inset-bottom\)\)/);
     assert.match(styleSource, /\.status-atelier-dialog-body\s*\{[\s\S]*?overflow-y:\s*auto;[\s\S]*?overscroll-behavior:\s*contain;/);
 });
@@ -237,22 +239,63 @@ test('status workspace exposes a short one-click path and hides customization by
     assert.match(settingsMarkup, /id="status-atelier-install-scoped"[^>]*>一键生成并应用</);
     assert.doesNotMatch(settingsMarkup, /status-atelier-shuffle-recipe|完整 40 套|20 套自由面板/);
     assert.doesNotMatch(source, /status-atelier-modal-shuffle-recipe|applyStatusRecipe|shuffleStatusRecipe/);
-    assert.match(settingsMarkup, /id="status-atelier-fill-mode"/);
-    assert.match(source, /id="status-atelier-modal-status-fill-mode"/);
+    assert.doesNotMatch(settingsMarkup, /id="status-atelier-fill-mode"/);
+    assert.doesNotMatch(source, /id="status-atelier-modal-status-fill-mode"/);
     assert.match(source, /class="status-atelier-modal-status-advanced">/);
-    assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?状态栏字段/);
+    assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?字段显示与 AI 规则/);
     assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?更多外观与配色/);
-    assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-advanced">[\s\S]*?可选：头像、配图与音乐/);
+    assert.match(settingsMarkup, /id="status-atelier-template-media"[\s\S]*?当前模板素材/);
+    assert.doesNotMatch(settingsMarkup, /可选：头像、配图与音乐/);
     const block = source.match(/async function installRegex\(scope\) \{([\s\S]*?)\n\}/)?.[1] || '';
-    assert.match(block, /settings\(\)\.promptEnabled = scope !== 'scoped'/);
+    assert.match(block, /settings\(\)\.promptEnabled = false/);
     assert.match(block, /updatePrompt\(\)/);
 });
 
-test('dynamic number ornament updates the current preview without restoring old recipes', () => {
-    assert.match(source, /settings\(\)\.fillMode = event\.currentTarget\.value === 'object'/);
-    assert.match(source, /paintRuleLogo\(marker, rule/);
-    assert.match(source, /root\.dataset\.fillMode = rule\.fillMode/);
-    assert.match(source, /refreshStatusAppearancePreview\(\)/);
+test('status workbench separates templates, appearance and palettes and supports direct preview editing', () => {
+    assert.match(settingsMarkup, /选择状态栏模板/);
+    assert.doesNotMatch(settingsMarkup, /模板决定完整构图与交互/);
+    assert.doesNotMatch(settingsMarkup, /换素材与动效|都是独立模板/);
+    assert.match(settingsMarkup, /status-atelier-setting-section status-atelier-collapsible" open>[\s\S]*?选择状态栏模板/);
+    assert.match(settingsMarkup, /外观改字体、边框、材质、圆角和组件造型/);
+    assert.match(settingsMarkup, /色卡只改颜色/);
+    assert.match(settingsMarkup, /id="status-atelier-appearance-section"[^>]*>[\s\S]*?<h4>更多外观与配色<\/h4>/);
+    assert.match(source, /appearanceSection\.hidden = stored\.structure === 'phone'/);
+    assert.match(styleSource, /\.status-atelier-workbench \[hidden\] \{\s*display: none !important;/);
+    assert.match(settingsMarkup, /id="status-atelier-phone-petals-enabled"[^>]*type="checkbox"/);
+    assert.match(source, /'status-atelier-phone-petals-enabled': 'petalsEnabled'/);
+    assert.match(settingsMarkup, /id="status-atelier-phone-diy" class="status-atelier-setting-section status-atelier-collapsible">/);
+    assert.doesNotMatch(settingsMarkup, /选择本地壁纸|status-atelier-phone-wallpaper-file/);
+    assert.match(settingsMarkup, /双击字段名修改 · 拖动字段排序/);
+    for (const removedId of ['status-atelier-title', 'status-atelier-subtitle', 'status-atelier-layout', 'status-atelier-theme']) {
+        assert.doesNotMatch(settingsMarkup, new RegExp(`id="${removedId}"`));
+    }
+    assert.ok(settingsMarkup.indexOf('更多外观与配色') < settingsMarkup.indexOf('一键启用状态栏'));
+    assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-advanced" open>[\s\S]*?<summary>手动下载与全局安装<\/summary>/);
+    assert.match(source, /bindPreviewFieldLabelEditor/);
+    assert.match(source, /bindPreviewTitleEditor/);
+    assert.match(source, /bindPreviewFieldReorder/);
+    assert.match(source, /moveFieldDefinition/);
+    assert.match(source, /avatar:\s*'头像'/);
+    assert.match(source, /status-atelier-preview-field-avatar zrs-field-avatar/);
+    for (const removedSlider of ['wallpaper-x', 'wallpaper-y', 'widget-x', 'widget-y', 'avatar-x', 'avatar-y']) {
+        assert.doesNotMatch(settingsMarkup, new RegExp(`id="status-atelier-phone-${removedSlider}"`));
+    }
+    assert.match(settingsMarkup, /取景和缩放直接在右侧“个人”页头像上完成/);
+    assert.match(settingsMarkup, /图标留空时使用配套默认图标/);
+    assert.doesNotMatch(settingsMarkup, /data-phone-widget-nudge|data-phone-avatar-adjust|data-phone-widget-(?:up|down)/);
+    assert.match(source, /function bindPhonePersonalFieldLabelEditor/);
+    assert.match(source, /phoneDesktop\.personalFields/);
+    assert.match(source, /editLegend\.hidden = phoneMode/);
+    assert.match(source, /function bindPhoneAvatarDiy/);
+    assert.match(source, /pointers\.size >= 2/);
+    assert.match(source, /addEventListener\('wheel'/);
+    assert.match(source, /phoneDesktopSchemaVersion !== 2/);
+});
+
+test('dynamic numbers keep one solid progress treatment without object controls', () => {
+    assert.match(source, /meter\.append\(fill\)/);
+    assert.doesNotMatch(source, /fillMode|data-fill-mode|zrs-meter-trail|zrs-meter-marker/);
+    assert.doesNotMatch(settingsMarkup, /小物填充|动态数值小物/);
 });
 
 test('status prompt only runs where the generated status regex is installed', () => {

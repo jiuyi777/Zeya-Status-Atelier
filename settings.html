@@ -27,7 +27,7 @@
             <section class="status-atelier-library">
                 <div class="status-atelier-section-heading">
                     <div><strong>已收藏主页模板</strong><small>收藏后的模板只在这里显示。</small></div>
-                    <span>★ 已收藏</span>
+                    <span>点卡片右上角 ☆ 收藏</span>
                 </div>
                 <div id="status-atelier-home-favorites" class="status-atelier-template-grid"></div>
                 <details class="status-atelier-library-more">
@@ -55,6 +55,16 @@
                             </label>
                         </div>
                         <label class="status-atelier-wide-field">作品总简介（含世界观 / 背景）<textarea id="status-atelier-opening-home-intro" class="text_pole" rows="4" maxlength="1600"></textarea></label>
+                        <details class="status-atelier-inline-details">
+                            <summary>立绘 / 图片分割设置</summary>
+                            <div class="status-atelier-settings-grid">
+                                <label class="status-atelier-wide-field">图片 URL（留空则显示可替换占位区）<input id="status-atelier-opening-home-image-url" class="text_pole" type="url" maxlength="1200" placeholder="https://..."></label>
+                                <label>图片说明<input id="status-atelier-opening-home-image-alt" class="text_pole" type="text" maxlength="160"></label>
+                                <label>图片位置<select id="status-atelier-opening-home-image-position" class="text_pole"><option value="left">左侧</option><option value="right">右侧</option></select></label>
+                                <label>图片占比<select id="status-atelier-opening-home-image-width" class="text_pole"><option value="34">34%</option><option value="42">42%</option><option value="50">50%</option><option value="58">58%</option></select></label>
+                            </div>
+                            <small>“13 立绘分割”会使用这组设置；其他主页模板不会强行显示图片。</small>
+                        </details>
                         <input id="status-atelier-opening-home-theme" type="hidden">
                     </details>
 
@@ -140,10 +150,79 @@
         <section class="status-atelier-workspace" data-status-workspace-panel="status" hidden>
             <div class="status-atelier-workspace-grid">
                 <main>
+                    <details class="status-atelier-setting-section status-atelier-collapsible" open>
+                        <summary class="status-atelier-section-heading"><div><h4>选择状态栏模板</h4></div></summary>
+                        <label>状态栏模板<select id="status-atelier-structure" class="text_pole"></select></label>
+                    </details>
+
+                    <details id="status-atelier-phone-diy" class="status-atelier-setting-section status-atelier-collapsible">
+                        <summary class="status-atelier-section-heading"><div><h4>手机素材与功能</h4><small>只设置预览里不能直接完成的壁纸、动效、头像来源和 APP 图标。</small></div></summary>
+                        <div class="status-atelier-phone-diy-grid">
+                            <section class="status-atelier-phone-diy-card">
+                                <h5>桌面壁纸</h5>
+                                <label>壁纸图片 URL<input id="status-atelier-phone-wallpaper-url" class="text_pole" type="url" placeholder="留空使用中性浅蓝背景"></label>
+                            </section>
+                            <section class="status-atelier-phone-diy-card">
+                                <h5>桌面动效</h5>
+                                <label class="checkbox_label"><input id="status-atelier-phone-petals-enabled" type="checkbox" checked><span>开启向下飘落装饰</span></label>
+                            </section>
+                            <section class="status-atelier-phone-diy-card">
+                                <h5>“个人”页头像</h5>
+                                <label>头像来源<select id="status-atelier-phone-avatar-source" class="text_pole"><option value="character">当前角色头像</option><option value="user">当前 user 头像</option><option value="url">图片 URL</option><option value="none">不显示头像</option></select></label>
+                                <label id="status-atelier-phone-avatar-url-wrap" hidden>头像 URL<input id="status-atelier-phone-avatar-url" class="text_pole" type="url" placeholder="https://..."></label>
+                                <small class="status-atelier-phone-direct-help">取景和缩放直接在右侧“个人”页头像上完成。</small>
+                            </section>
+                            <section class="status-atelier-phone-diy-card status-atelier-phone-app-editor">
+                                <h5>四个 APP 名称与图标</h5>
+                                <div><strong>个人</strong><input id="status-atelier-phone-app-personal-name" data-phone-app-id="Personal" data-phone-app-key="name" class="text_pole" maxlength="12" aria-label="个人 APP 名称"><input id="status-atelier-phone-app-personal-icon" data-phone-app-id="Personal" data-phone-app-key="iconUrl" class="text_pole" type="url" placeholder="图标 URL（可留空）" aria-label="个人 APP 图标 URL"></div>
+                                <div><strong>备忘</strong><input id="status-atelier-phone-app-memo-name" data-phone-app-id="Memo" data-phone-app-key="name" class="text_pole" maxlength="12" aria-label="备忘录 APP 名称"><input id="status-atelier-phone-app-memo-icon" data-phone-app-id="Memo" data-phone-app-key="iconUrl" class="text_pole" type="url" placeholder="图标 URL（可留空）" aria-label="备忘录 APP 图标 URL"></div>
+                                <div><strong>微信</strong><input id="status-atelier-phone-app-wechat-name" data-phone-app-id="Wechat" data-phone-app-key="name" class="text_pole" maxlength="12" aria-label="微信 APP 名称"><input id="status-atelier-phone-app-wechat-icon" data-phone-app-id="Wechat" data-phone-app-key="iconUrl" class="text_pole" type="url" placeholder="图标 URL（可留空）" aria-label="微信 APP 图标 URL"></div>
+                                <div><strong>购物</strong><input id="status-atelier-phone-app-shop-name" data-phone-app-id="Shop" data-phone-app-key="name" class="text_pole" maxlength="12" aria-label="购物 APP 名称"><input id="status-atelier-phone-app-shop-icon" data-phone-app-id="Shop" data-phone-app-key="iconUrl" class="text_pole" type="url" placeholder="图标 URL（可留空）" aria-label="购物 APP 图标 URL"></div>
+                                <small>图标留空时使用配套默认图标；填写图片 URL 后会覆盖对应图标。APP 里面的备忘、聊天与商品仍由 AI 填写。</small>
+                            </section>
+                        </div>
+                    </details>
+
+                    <details id="status-atelier-template-media" class="status-atelier-setting-section status-atelier-collapsible" hidden>
+                        <summary class="status-atelier-section-heading"><div><h4 id="status-atelier-template-media-title">当前模板素材</h4><small id="status-atelier-template-media-help">这里只显示当前模板真正会用到的素材。</small></div></summary>
+                        <div class="status-atelier-settings-grid">
+                            <label id="status-atelier-media-avatar-source-wrap">头像来源<select id="status-atelier-avatar-source" class="text_pole">
+                                <option value="character">当前角色头像</option>
+                                <option value="user">当前 user 头像</option>
+                                <option value="url">直接 URL</option>
+                                <option value="none">不显示头像</option>
+                            </select></label>
+                            <label id="status-atelier-avatar-url-wrap" hidden>头像 URL<input id="status-atelier-avatar-url" class="text_pole" type="url" placeholder="https://example.com/avatar.png"></label>
+                            <label id="status-atelier-image-url-wrap">主图 / 封面 URL<input id="status-atelier-image-url" class="text_pole" type="url" placeholder="https://example.com/cover.png"></label>
+                            <label id="status-atelier-audio-url-wrap">音频 URL<input id="status-atelier-audio-url" class="text_pole" type="url" placeholder="https://example.com/audio.mp3"></label>
+                            <label id="status-atelier-image-alt-wrap">图片替代文字<input id="status-atelier-image-alt" class="text_pole" type="text" maxlength="80" placeholder="用于图片加载失败和无障碍阅读"></label>
+                        </div>
+                    </details>
+
                     <details class="status-atelier-setting-section status-atelier-collapsible">
-                        <summary class="status-atelier-section-heading"><div><h4>手动换结构</h4><small>一键方案不合适时再展开。</small></div></summary>
-                        <label>组件结构<select id="status-atelier-structure" class="text_pole"></select></label>
-                        <small>切换结构会载入一套真正不同的组件和字段；之后仍可逐项改名、改类型、增删和排序。</small>
+                        <summary class="status-atelier-section-heading">
+                            <div><h4 id="status-atelier-status-editor-title">字段显示与 AI 规则</h4><small id="status-atelier-status-editor-help">名称和顺序直接在预览修改；这里只设置显示类型和 AI 填写要求。</small></div>
+                        </summary>
+                        <button id="status-atelier-add-field" type="button" class="menu_button">＋ 新增字段</button>
+                        <div id="status-atelier-edit-legend" class="status-atelier-edit-legend">
+                            <span><b>可修改</b> 名称、类型、填写要求和顺序</span>
+                            <span><b>AI 填写</b> 好感度、生命值、地点、独白等动态内容</span>
+                            <span><b>自动锁定</b> 字段 key、标签和捕获结构</span>
+                        </div>
+                        <div id="status-atelier-status-schema" class="status-atelier-schema-list"></div>
+                    </details>
+
+                    <details id="status-atelier-appearance-section" class="status-atelier-setting-section status-atelier-collapsible">
+                        <summary class="status-atelier-section-heading"><div><h4>更多外观与配色</h4><small>外观改字体、边框、材质、圆角和组件造型；色卡只改颜色，都不改变模板构图。</small></div></summary>
+                        <details class="status-atelier-status-style-library">
+                            <summary><strong>20 套外观（可折叠）</strong><small>只改变字体、边框、材质、圆角和组件造型；能改变整套构图的方案归入“模板”。</small></summary>
+                            <div id="status-atelier-status-styles" class="status-atelier-status-styles" aria-label="状态栏外观"></div>
+                        </details>
+                        <details class="status-atelier-status-palette-library">
+                            <summary><strong>24 套色卡（可折叠）</strong><small>色卡只控制颜色，不改变形状与排版。</small></summary>
+                            <div id="status-atelier-status-palettes" class="status-atelier-status-palettes" aria-label="状态栏色卡"></div>
+                        </details>
+                        <input id="status-atelier-palette" type="hidden">
                     </details>
 
                     <section class="status-atelier-setting-section status-atelier-quick-apply">
@@ -153,60 +232,15 @@
                             <button id="status-atelier-test-ai" type="button" class="menu_button">先测试当前 AI</button>
                         </div>
                         <p id="status-atelier-ai-test-status" class="status-atelier-ai-test-status" role="status" aria-live="polite">无需先测试；一键应用会同时写入世界书输出规则和局部正则。</p>
-                        <details class="status-atelier-advanced">
-                            <summary>手动下载与全局安装</summary>
-                            <div class="status-atelier-setting-actions">
-                                <button id="status-atelier-copy-prompt" type="button" class="menu_button">复制 AI 输出规则</button>
-                                <button id="status-atelier-download-worldbook" type="button" class="menu_button">下载世界书</button>
-                                <button id="status-atelier-download-regex" type="button" class="menu_button">下载正则</button>
-                                <button id="status-atelier-install-global" type="button" class="menu_button">应用到全局</button>
-                            </div>
-                        </details>
                     </section>
 
-                    <details class="status-atelier-setting-section status-atelier-collapsible">
-                        <summary class="status-atelier-section-heading">
-                            <div><h4 id="status-atelier-status-editor-title">状态栏字段</h4><small>改显示名称和类型；真实数值始终由 AI 填写。</small></div>
-                        </summary>
-                        <button id="status-atelier-add-field" type="button" class="menu_button">＋ 新增字段</button>
-                        <div class="status-atelier-edit-legend">
-                            <span><b>可修改</b> 名称、类型、填写要求和顺序</span>
-                            <span><b>AI 填写</b> 好感度、生命值、地点、独白等动态内容</span>
-                            <span><b>自动锁定</b> 字段 key、标签和捕获结构</span>
-                        </div>
-                        <div id="status-atelier-status-schema" class="status-atelier-schema-list"></div>
-                    </details>
-
-                    <details class="status-atelier-setting-section status-atelier-collapsible">
-                        <summary class="status-atelier-section-heading"><div><h4>更多外观与配色</h4><small>完整外观库按需展开，默认不占视线。</small></div></summary>
-                        <div class="status-atelier-appearance-heading"><strong>50 套外观</strong><small>点击立即查看；只换外观，不会覆盖你编辑的字段。</small></div>
-                        <div id="status-atelier-status-styles" class="status-atelier-status-styles" aria-label="状态栏外观"></div>
-                        <details class="status-atelier-status-logo-library">
-                            <summary><strong>动态数值小物（可折叠）</strong><small>12 个简化图形，只标记位置，不覆盖文字</small></summary>
-                            <label>轨道填充方式<select id="status-atelier-fill-mode" class="text_pole"><option value="solid">纯色填充</option><option value="object">小物填充</option></select></label>
-                            <div id="status-atelier-status-logos" class="status-atelier-status-logos" aria-label="状态栏装饰 Logo"></div>
-                        </details>
-                        <details class="status-atelier-status-palette-library">
-                            <summary><strong>24 套色卡（可折叠）</strong><small>色卡只控制颜色，不改变形状与排版。</small></summary>
-                            <div id="status-atelier-status-palettes" class="status-atelier-status-palettes" aria-label="状态栏色卡"></div>
-                        </details>
-                        <input id="status-atelier-palette" type="hidden">
-                        <div class="status-atelier-settings-grid">
-                            <label>状态栏标题<input id="status-atelier-title" class="text_pole" type="text" maxlength="80"></label>
-                            <label>副标题<input id="status-atelier-subtitle" class="text_pole" type="text" maxlength="120"></label>
-                            <label>排版<select id="status-atelier-layout" class="text_pole"><option value="grid">信息网格</option><option value="stack">纵向长栏</option></select></label>
-                            <label>外观主题<select id="status-atelier-theme" class="text_pole">
-                                <option value="classical">01 古典对称</option><option value="glass">02 水色玻璃</option><option value="newspaper">03 复古报刊</option><option value="timeline">04 中轴时间线</option><option value="minimal">05 构成编辑</option>
-                                <option value="envelope">06 信封日记</option><option value="obsidian">07 黑银档案</option><option value="botanical">08 植物标本</option><option value="cyber">09 赛博终端</option><option value="terminal">10 绿屏终端</option>
-                                <option value="polaroid">11 拍立得墙</option><option value="ledger">12 账簿手记</option><option value="neon">13 霓虹夜城</option><option value="parchment">14 羊皮卷轴</option><option value="sakura">15 樱花便笺</option>
-                                <option value="ocean">16 深海观测</option><option value="dossier">17 特工卷宗</option><option value="comic">18 漫画分镜</option><option value="constellation">19 星象罗盘</option><option value="pixel">20 像素冒险</option>
-                                <option value="seed-note">21 贴纸种草</option><option value="barrage-video">22 弹幕放映</option><option value="retro-bbs">23 复古论坛</option><option value="candy-live">24 糖果直播</option><option value="mono-chat">25 黑白群聊</option>
-                                <option value="ink-diary">26 水墨日记</option><option value="vinyl-mag">27 七十年代唱片</option><option value="y2k-podcast">28 千禧播客</option><option value="dada-collage">29 达达拼贴</option><option value="rococo-zine">30 洛可可杂志</option>
-                                <option value="bauhaus-shop">31 包豪斯商品</option><option value="memphis-food">32 孟菲斯食评</option><option value="airline-passport">33 复古旅行护照</option><option value="swiss-rail">34 瑞士列车时刻</option><option value="aqua-weather">35 水色天气观测</option>
-                                <option value="illuminated-quest">36 古典任务手抄本</option><option value="noir-case">37 黑色电影案件</option><option value="nouveau-tarot">38 新艺术塔罗</option><option value="holo-terminal">39 全息赛博终端</option><option value="industrial-survival">40 工业生存监控</option>
-                                <option value="clinical-file">41 现代医疗档案</option><option value="brutal-paper">42 粗野主义论文</option><option value="prism-dashboard">43 棱镜企业仪表盘</option><option value="deco-auction">44 装饰艺术拍卖</option><option value="broadcast-sport">45 美式体育转播</option>
-                                <option value="victorian-news">46 维多利亚报纸</option><option value="naturalist-specimen">47 自然学家标本</option><option value="cafe-receipt">48 法式咖啡收据</option><option value="pop-ticket">49 波普电影票根</option><option value="porcelain-memory">50 青花关系纪念册</option>
-                            </select></label>
+                    <details class="status-atelier-setting-section status-atelier-advanced" open>
+                        <summary>手动下载与全局安装</summary>
+                        <div class="status-atelier-setting-actions">
+                            <button id="status-atelier-copy-prompt" type="button" class="menu_button">复制 AI 输出规则</button>
+                            <button id="status-atelier-download-worldbook" type="button" class="menu_button">下载世界书</button>
+                            <button id="status-atelier-download-regex" type="button" class="menu_button">下载正则</button>
+                            <button id="status-atelier-install-global" type="button" class="menu_button">应用到全局</button>
                         </div>
                     </details>
 
@@ -217,22 +251,6 @@
                             <label>规则名称<input id="status-atelier-rule-name" class="text_pole" type="text" maxlength="80"></label>
                             <label>锁定的输出标签<input id="status-atelier-tag-name" class="text_pole" type="text" maxlength="60" readonly></label>
                         </div>
-                        <details class="status-atelier-media-advanced">
-                            <summary>可选：头像、配图与音乐</summary>
-                            <div class="status-atelier-settings-grid">
-                                <label>头像来源<select id="status-atelier-avatar-source" class="text_pole">
-                                    <option value="character">当前角色头像</option>
-                                    <option value="user">当前 user 头像</option>
-                                    <option value="url">直接 URL</option>
-                                    <option value="none">不显示头像</option>
-                                </select></label>
-                                <label id="status-atelier-avatar-url-wrap" hidden>头像 URL<input id="status-atelier-avatar-url" class="text_pole" type="url" placeholder="https://example.com/avatar.png"></label>
-                                <label>主图 / 封面 URL<input id="status-atelier-image-url" class="text_pole" type="url" placeholder="可留空；适合拼贴、笔记或音乐封面"></label>
-                                <label>音乐 URL<input id="status-atelier-audio-url" class="text_pole" type="url" placeholder="https://example.com/audio.mp3"></label>
-                                <label>图片替代文字<input id="status-atelier-image-alt" class="text_pole" type="text" maxlength="80" placeholder="用于图片加载失败和无障碍阅读"></label>
-                            </div>
-                            <small>完全可选。角色 / user 头像会绑定酒馆中的真实头像；音频不会自动播放。</small>
-                        </details>
                         <input id="status-atelier-preset" type="hidden">
                         <textarea id="status-atelier-pages" hidden></textarea>
                         <textarea id="status-atelier-shared-fields" hidden></textarea>
@@ -247,7 +265,7 @@
 
                 </main>
                 <aside class="status-atelier-preview-shell">
-                    <div class="status-atelier-preview-heading"><small>AI 动态数值实时预览</small><span>数值由 AI 随剧情填写</span></div>
+                    <div class="status-atelier-preview-heading"><small>可直接编辑的实时预览</small><span>双击字段名修改 · 拖动字段排序 · 数值由 AI 填写</span></div>
                     <div id="status-atelier-preview"></div>
                 </aside>
             </div>
