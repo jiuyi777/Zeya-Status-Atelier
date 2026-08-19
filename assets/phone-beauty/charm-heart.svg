@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 180" role="img" aria-label="透明粉色爱心短挂饰">
+  <defs><linearGradient id="heart" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe9f2"/><stop offset=".5" stop-color="#f3a1bf"/><stop offset="1" stop-color="#cc648e"/></linearGradient></defs>
+  <g fill="none" stroke="#aaa1a6" stroke-width="7" stroke-linecap="round" stroke-dasharray="1 13"><path d="M45 5v83"/></g>
+  <path d="M45 89C13 60-8 111 45 163c53-52 32-103 0-74Z" fill="url(#heart)" stroke="#fff" stroke-width="5"/>
+  <path d="M32 104c10-13 25-12 32-2" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="6" stroke-linecap="round"/>
+</svg>

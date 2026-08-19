@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 260" role="img" aria-label="粉色蝴蝶结草莓与星星挂饰">
+  <defs><linearGradient id="pink" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe6f0"/><stop offset="1" stop-color="#de7ea4"/></linearGradient><linearGradient id="clear" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#dca1c0" stop-opacity=".75"/></linearGradient></defs>
+  <path d="M112 4c-13 36-4 63-34 92" fill="none" stroke="#aaa1a6" stroke-width="8" stroke-linecap="round" stroke-dasharray="1 14"/>
+  <g transform="translate(78 91)"><path d="M-4 7C-47-28-66 8-30 29c13 8 23-1 30-10 7 9 17 18 30 10C66 8 47-28 4 7Z" fill="url(#pink)" stroke="#fff" stroke-width="5"/><rect x="-13" y="2" width="26" height="25" rx="7" fill="#d66e9a" stroke="#fff" stroke-width="4"/></g>
+  <g transform="translate(27 112)"><path d="M0 5c25-24 53 4 29 39C14 66-17 42 0 5Z" fill="#e8799e" stroke="#fff" stroke-width="5"/><path d="M8 2c3-11 12-14 21-7" fill="none" stroke="#72a26f" stroke-width="6" stroke-linecap="round"/><g fill="#ffd8e6"><circle cx="7" cy="21" r="2"/><circle cx="17" cy="31" r="2"/><circle cx="24" cy="17" r="2"/></g></g>
+  <path d="M93 137 104 171l36 1-29 21 10 35-28-21-29 21 11-35-29-21 36-1Z" fill="url(#clear)" stroke="#fff" stroke-width="6"/>
+  <path d="M101 160 107 179l20 1-16 11 6 19-16-11-16 11 6-19-16-11 20-1Z" fill="#f2a5c1" fill-opacity=".72"/>
+</svg>
