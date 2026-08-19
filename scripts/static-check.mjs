@@ -1,7 +1,13 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { STATUS_LOGO_PRESETS, STATUS_STRUCTURE_PRESETS, STATUS_STYLE_PRESETS } from '../rule-generator.js';
+import {
+    RULE_PRESETS,
+    STATUS_STRUCTURE_PRESETS,
+    STATUS_STYLE_PRESETS,
+    buildRegexScript,
+    buildWorldbookJson,
+} from '../rule-generator.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const requiredFiles = [
@@ -104,8 +110,6 @@ const openingDefinitions = [
 ];
 const openingIds = new Set();
 const statusIds = new Set();
-const miniWebPalettes = new Set();
-const miniWebSchemas = new Set();
 for (const [code, name] of openingDefinitions) {
     const openingFolder = join(root, 'starter-packs', '开场白主页', `${code}-${name}`);
     try {
@@ -142,11 +146,19 @@ for (const [code, name] of openingDefinitions) {
 }
 
 for (const style of STATUS_STYLE_PRESETS) {
-    const { code, id, name } = style;
-    const statusFolder = join(root, 'starter-packs', '通用状态栏', `${code}-${name}`);
+    const { code, id, name, title, subtitle, layout } = style;
     try {
-        const statusRegex = JSON.parse(await readFile(join(statusFolder, `regex-通用状态栏${code}-${name}.json`), 'utf8'));
-        const worldbook = JSON.parse(await readFile(join(statusFolder, `世界书-通用状态栏${code}-${name}.json`), 'utf8'));
+        const input = {
+            ...RULE_PRESETS.universalClassical,
+            ruleId: `zeya-status-style-${code}`,
+            ruleName: `通用状态栏${code}·${name}`,
+            theme: id,
+            title,
+            subtitle,
+            layout,
+        };
+        const statusRegex = buildRegexScript(input);
+        const worldbook = buildWorldbookJson(input);
         statusIds.add(statusRegex.id);
         const entry = worldbook.entries?.[0];
         if (!statusRegex.replaceString.includes(`data-theme="${id}"`)) {
@@ -158,34 +170,16 @@ for (const style of STATUS_STYLE_PRESETS) {
         if (!statusRegex.replaceString.includes('textContent')) {
             errors.push(`通用状态栏${code}正则未安全写入动态数据`);
         }
-        if (Number(code) >= 21) {
-            const palettePattern = new RegExp(`data-theme="${id}"\\]\\{--z-accent:([^;}]+);--z-bg:([^;}]+);--z-card:([^;}]+);--z-text:([^;}]+);--z-muted:([^;}]+)\\}`);
-            const palette = statusRegex.replaceString.match(palettePattern)?.slice(1).join('|');
-            if (!palette) errors.push(`迷你网页${code}没有专属五色色卡`);
-            else miniWebPalettes.add(palette);
-            const schema = [...(style.shared || []), ...(style.fields || [])];
-            miniWebSchemas.add(schema.join('|'));
-            if (!style.glyph || !statusRegex.replaceString.includes('zrs-chrome')) {
-                errors.push(`迷你网页${code}缺少专属装饰 HTML`);
-            }
-            for (const label of schema) {
-                if (!entry?.content?.includes(label)) errors.push(`迷你网页${code}世界书缺少字段：${label}`);
-            }
-        }
     } catch (error) {
-        errors.push(`通用状态栏${code}成品缺失或 JSON 无效：${error.message}`);
+        errors.push(`通用状态栏${code}生成失败：${error.message}`);
     }
 }
 if (openingIds.size !== 4) errors.push('四套开场白主页必须使用四个独立正则 ID');
-if (STATUS_STYLE_PRESETS.length !== 50) errors.push('状态栏主题注册表必须正好包含50套');
-if (new Set(STATUS_STYLE_PRESETS.map(style => style.id)).size !== 50) errors.push('50套状态栏必须使用50个独立主题 ID');
-if (statusIds.size !== 50) errors.push('50套通用状态栏必须使用50个独立正则 ID');
-if (miniWebPalettes.size !== 30) errors.push('21-50 必须使用30套独立五色色卡');
-if (miniWebSchemas.size !== 30) errors.push('21-50 必须使用30套独立动态字段协议');
+if (STATUS_STYLE_PRESETS.length !== 20) errors.push('状态栏外观注册表必须正好包含20套');
+if (new Set(STATUS_STYLE_PRESETS.map(style => style.id)).size !== 20) errors.push('20套状态栏外观必须使用20个独立主题 ID');
+if (statusIds.size !== 20) errors.push('20套状态栏外观必须生成20个独立正则 ID');
 
-if (STATUS_STRUCTURE_PRESETS.length !== 9) errors.push('旧40套配方移除后，编辑器必须只保留9种基础结构');
-if (STATUS_LOGO_PRESETS.length !== 13) errors.push('动态数值小物必须包含跟随外观与12个简化图形');
-if (STATUS_LOGO_PRESETS.filter(item => item.id.startsWith('slider-')).length !== 12) errors.push('动态数值小物必须正好保留12个可选图形');
+if (STATUS_STRUCTURE_PRESETS.length !== 10) errors.push('旧40套配方移除后，编辑器必须保留9种基础结构与1种手机桌面结构');
 try {
     await readdir(join(root, 'starter-packs', '状态栏一键配方'));
     errors.push('已删除的40套状态栏一键配方不应继续生成');
