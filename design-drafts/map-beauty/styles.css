@@ -93,8 +93,8 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
 .canvas-toolbar strong { margin-bottom: 3px; font-size: .9rem; }
 .canvas-toolbar span { color: var(--muted); font-size: .72rem; }
 .canvas-toolbar-actions { flex-wrap: wrap; justify-content: flex-end; }
-.new-style-picker { display: grid; gap: 3px; color: var(--muted); font-size: .66rem; font-weight: 800; }
-.new-style-picker select {
+.new-style-picker, .map-template-picker { display: grid; gap: 3px; color: var(--muted); font-size: .66rem; font-weight: 800; }
+.new-style-picker select, .map-template-picker select {
   min-width: 118px;
   min-height: 44px;
   padding: 0 28px 0 10px;
@@ -103,6 +103,7 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   color: var(--text);
   background: #292e2a;
 }
+.map-template-picker select { min-width: 132px; }
 .toolbar-delete { border-color: rgba(223,110,91,.3); color: #ffb2a4; background: rgba(112,43,35,.22); }
 .toolbar-delete:not(:disabled):hover { background: rgba(143,54,45,.35); }
 
@@ -130,6 +131,20 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   box-shadow: 0 22px 55px rgba(0,0,0,.5);
   user-select: none;
 }
+.clue-map[data-template="travel-atlas"] {
+  border-color: #56412d;
+  background: #45362a url("./assets/map-backgrounds/travel-atlas.webp") center / cover no-repeat;
+}
+.clue-map[data-template="urban-research"] {
+  border-color: #b9b7ad;
+  background: #e5e5df url("./assets/map-backgrounds/urban-research.webp") center / cover no-repeat;
+  box-shadow: 0 18px 44px rgba(0,0,0,.34);
+}
+.clue-map[data-template="noir-network"] {
+  border-color: #3c3c3c;
+  background: #111 url("./assets/map-backgrounds/noir-network.webp") center / cover no-repeat;
+  box-shadow: 0 24px 60px rgba(0,0,0,.64);
+}
 
 .connection-layer { position: absolute; z-index: 4; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
 .route-thread { fill: none; stroke: #9a3d31; stroke-width: 4; stroke-linecap: round; filter: drop-shadow(0 2px 1px rgba(50,20,12,.38)); }
@@ -137,6 +152,25 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
 .route-thread[data-status="blocked"] { stroke: #5b211d; stroke-dasharray: 15 10; }
 .route-thread[data-status="unknown"] { stroke: #7a6b58; stroke-dasharray: 5 10; }
 .route-thread[data-status="available"] { stroke: #9a3d31; }
+.clue-map[data-template="travel-atlas"] .route-thread {
+  stroke: #9d362e;
+  stroke-width: 4.5;
+  filter: drop-shadow(0 1px 1px rgba(46,21,14,.5));
+}
+.clue-map[data-template="urban-research"] .route-thread {
+  stroke: #282a27;
+  stroke-width: 3;
+  stroke-dasharray: 11 8;
+  filter: none;
+}
+.clue-map[data-template="urban-research"] .route-thread[data-status="blocked"] { stroke: #9b3d2f; stroke-dasharray: 4 7; }
+.clue-map[data-template="noir-network"] .route-thread {
+  stroke: rgba(238,236,224,.84);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 3px rgba(255,255,255,.2));
+}
+.clue-map[data-template="noir-network"] .route-thread[data-status="blocked"] { stroke: #9e493f; stroke-dasharray: 5 7; }
+.clue-map[data-template="noir-network"] .route-thread[data-status="unknown"] { stroke: rgba(188,188,179,.52); stroke-dasharray: 2 8; }
 
 .place-layer { position: absolute; z-index: 6; inset: 0; }
 .place-card {
@@ -249,6 +283,75 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
 .place-card[data-status="unknown"] .place-state { background: #5d5a54; }
 .place-card[data-status="completed"] .place-state,
 .place-card[data-status="available"] .place-state { display: none; }
+.clue-map[data-template="travel-atlas"] .place-card {
+  width: clamp(106px, 16%, 176px);
+  padding: 7px 7px 23px;
+  border: 1px solid rgba(91,65,38,.3);
+  color: #493421;
+  background: #eee0c3;
+  box-shadow: 0 9px 18px rgba(40,26,13,.4);
+}
+.clue-map[data-template="travel-atlas"] .photo-window { aspect-ratio: 1.62 / 1; border-color: rgba(74,55,34,.35); }
+.clue-map[data-template="travel-atlas"] .photo-window img { filter: sepia(.28) saturate(.82) contrast(1.05); }
+.clue-map[data-template="travel-atlas"] .place-caption {
+  bottom: 5px;
+  font-family: "KaiTi", "STKaiti", serif;
+  font-style: italic;
+  letter-spacing: .04em;
+}
+.clue-map[data-template="travel-atlas"] .place-card[data-status="current"] {
+  box-shadow: 0 0 0 3px rgba(143,51,42,.22), 0 10px 19px rgba(40,26,13,.42);
+}
+.clue-map[data-template="urban-research"] .place-card {
+  width: clamp(94px, 13.5%, 146px);
+  padding: 5px 5px 29px;
+  border: 1px solid rgba(35,36,33,.55);
+  color: #191a18;
+  background: #f4f3ed;
+  box-shadow: 5px 6px 0 rgba(42,43,39,.16), 0 9px 18px rgba(26,27,25,.2);
+}
+.clue-map[data-template="urban-research"] .photo-window { aspect-ratio: 1.05 / 1; border: 0; }
+.clue-map[data-template="urban-research"] .photo-window img { filter: grayscale(1) contrast(1.18); }
+.clue-map[data-template="urban-research"] .place-caption {
+  left: 8px;
+  right: auto;
+  bottom: -8px;
+  max-width: calc(100% - 13px);
+  padding: 6px 9px;
+  color: #25241c;
+  background: #d8bf58;
+  box-shadow: 2px 3px 0 rgba(50,49,39,.24);
+  font: 800 clamp(.6rem, 1vw, .76rem)/1.1 "Noto Sans SC", sans-serif;
+  text-align: left;
+  transform: rotate(-1.5deg);
+}
+.clue-map[data-template="urban-research"] .place-attachment { filter: grayscale(.75) drop-shadow(1px 2px 1px rgba(30,30,28,.28)); }
+.clue-map[data-template="urban-research"] .place-state { right: 4px; bottom: auto; top: 4px; }
+.clue-map[data-template="urban-research"] .place-card[data-status="current"] {
+  box-shadow: 0 0 0 3px rgba(200,172,53,.42), 5px 6px 0 rgba(42,43,39,.16), 0 9px 18px rgba(26,27,25,.2);
+}
+.clue-map[data-template="noir-network"] .place-card {
+  width: clamp(98px, 14%, 154px);
+  padding: 5px 5px 22px;
+  border: 1px solid rgba(235,232,217,.72);
+  color: #ece9df;
+  background: #171817;
+  box-shadow: 0 0 0 2px rgba(0,0,0,.68), 0 10px 24px rgba(0,0,0,.7);
+}
+.clue-map[data-template="noir-network"] .photo-window { aspect-ratio: 1.48 / 1; border-color: rgba(236,234,224,.5); background-color: #20211f; }
+.clue-map[data-template="noir-network"] .photo-window img { filter: grayscale(1) contrast(1.22) brightness(.9); }
+.clue-map[data-template="noir-network"] .photo-window.is-empty::after { color: rgba(239,237,225,.5); }
+.clue-map[data-template="noir-network"] .place-caption {
+  bottom: 5px;
+  color: #ece9df;
+  font: 700 clamp(.6rem, 1vw, .78rem)/1.15 ui-monospace, Consolas, monospace;
+  letter-spacing: .08em;
+}
+.clue-map[data-template="noir-network"] .place-attachment { filter: grayscale(1) brightness(1.25) drop-shadow(1px 3px 2px rgba(0,0,0,.75)); }
+.clue-map[data-template="noir-network"] .place-card[data-status="current"] {
+  border-color: #f2dc93;
+  box-shadow: 0 0 0 3px rgba(225,202,121,.22), 0 12px 26px rgba(0,0,0,.76);
+}
 .map-editor[data-mode="edit"] .place-card[aria-pressed="true"] {
   outline: 2px solid rgba(205, 178, 116, .72);
   outline-offset: 3px;
@@ -279,6 +382,32 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
 .map-summary span { align-self: center; font: 800 .58rem/1 monospace; letter-spacing: .08em; }
 .map-summary strong { overflow: hidden; font: 800 .8rem/1.2 "Noto Serif SC", serif; text-overflow: ellipsis; white-space: nowrap; }
 .map-summary small { grid-column: 1 / -1; overflow: hidden; font-size: .63rem; text-overflow: ellipsis; white-space: nowrap; }
+.clue-map[data-template="travel-atlas"] .map-summary {
+  left: 5%;
+  bottom: 5%;
+  color: #4b3421;
+  background: rgba(239,222,184,.94);
+  border: 1px solid rgba(104,72,41,.24);
+  transform: rotate(1.2deg);
+}
+.clue-map[data-template="urban-research"] .map-summary {
+  left: 4%;
+  bottom: 4%;
+  color: #1f201d;
+  background: rgba(223,199,90,.94);
+  border-left: 5px solid #2e302c;
+  box-shadow: 4px 5px 0 rgba(44,46,42,.2);
+  transform: rotate(-.8deg);
+}
+.clue-map[data-template="noir-network"] .map-summary {
+  left: 4%;
+  bottom: 4%;
+  color: #f0eee5;
+  background: rgba(13,14,13,.86);
+  border-left: 3px solid #d9c77d;
+  box-shadow: 0 8px 20px rgba(0,0,0,.48);
+  transform: none;
+}
 
 .place-detail { position: absolute; z-index: 30; inset: 0; visibility: hidden; opacity: 0; pointer-events: none; transition: opacity 160ms ease, visibility 0s linear 160ms; }
 .place-detail.is-open { visibility: visible; opacity: 1; pointer-events: auto; transition-delay: 0s; }
@@ -405,20 +534,26 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
 }
 
 @media (max-width: 720px) {
+  html, body, .map-editor { max-width: 100%; overflow-x: hidden; }
   .editor-topbar { flex-wrap: wrap; min-height: 0; padding: 9px 10px; }
   .editor-title h1 { font-size: .95rem; }
-  .topbar-actions { order: 3; width: 100%; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .topbar-actions { order: 3; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); flex: 1 1 100%; width: 100%; max-width: 100%; min-width: 0; gap: 8px; }
   .topbar-actions button { min-width: 0; padding: 0 8px; font-size: .72rem; }
+  .topbar-actions .primary-button { grid-column: 1 / -1; }
   .topbar-actions svg { display: none; }
   .editor-workspace { display: block; padding: 8px; }
-  .canvas-toolbar { padding: 8px 9px 8px 12px; }
-  .canvas-toolbar-actions { gap: 8px; }
-  .new-style-picker { flex: 1 1 118px; }
-  .new-style-picker select { width: 100%; min-width: 0; }
+  .canvas-toolbar { display: block; padding: 10px; }
+  .canvas-toolbar-actions { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; max-width: 100%; min-width: 0; margin-top: 9px; gap: 8px; }
+  .canvas-toolbar-actions > * { width: 100%; min-width: 0; }
+  .new-style-picker, .map-template-picker { min-width: 0; }
+  .new-style-picker select, .map-template-picker select { width: 100%; min-width: 0; }
   .tool-button { padding-inline: 9px; font-size: .7rem; }
   .map-viewport { min-height: 0; padding: 7px; }
   .clue-map { aspect-ratio: 3 / 4; min-height: 0; }
   .place-card { width: clamp(82px, 26%, 112px); padding: 5px 5px 18px; }
+  .clue-map[data-template="travel-atlas"] .place-card { width: clamp(88px, 29%, 122px); padding-bottom: 20px; }
+  .clue-map[data-template="urban-research"] .place-card { width: clamp(76px, 23%, 100px); padding-bottom: 25px; }
+  .clue-map[data-template="noir-network"] .place-card { width: clamp(82px, 25%, 108px); padding-bottom: 19px; }
   .place-state { display: none; }
   .place-caption { font-size: .66rem; }
   .map-summary { left: 7%; bottom: 4%; max-width: 72%; }

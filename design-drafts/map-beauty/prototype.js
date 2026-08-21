@@ -8,8 +8,13 @@ const STATUS_LABELS = {
 };
 const FRAME_STYLE_LIST = ['pin', 'tape', 'clip'];
 const FRAME_STYLES = new Set(FRAME_STYLE_LIST);
+const MAP_TEMPLATE_LIST = ['desk-casebook', 'travel-atlas', 'urban-research', 'noir-network'];
+const MAP_TEMPLATES = new Set(MAP_TEMPLATE_LIST);
 const ASSET_URLS = {
-  background: './assets/detective-desk-blank.webp',
+  deskBackground: './assets/detective-desk-blank.webp',
+  travelBackground: './assets/map-backgrounds/travel-atlas.webp',
+  urbanBackground: './assets/map-backgrounds/urban-research.webp',
+  noirBackground: './assets/map-backgrounds/noir-network.webp',
   pin: './assets/attachments/brass-safety-pin.webp',
   tape: './assets/attachments/gingham-cross-muted.webp',
   clip: './assets/attachments/silver-binder-clip.webp',
@@ -22,6 +27,7 @@ const LEGACY_INTROS = {
 };
 
 const defaultState = {
+  templateId: 'desk-casebook',
   objective: '',
   objects: [
     {
@@ -92,6 +98,7 @@ const inspectorForm = document.querySelector('#inspector-form');
 const duplicateButton = document.querySelector('#duplicate-button');
 const quickDeleteButton = document.querySelector('#quick-delete-button');
 const newPlaceStyle = document.querySelector('#new-place-style');
+const mapTemplate = document.querySelector('#map-template');
 const previewToggle = document.querySelector('#preview-toggle');
 const saveState = document.querySelector('#save-state');
 const toast = document.querySelector('#toast');
@@ -111,6 +118,8 @@ const fields = {
 };
 
 let state = loadState();
+const requestedTemplate = new URLSearchParams(location.search).get('template');
+if (MAP_TEMPLATES.has(requestedTemplate)) state.templateId = requestedTemplate;
 let selectedId = null;
 let mode = new URLSearchParams(location.search).get('preview') === '1' ? 'preview' : 'edit';
 let dragState = null;
@@ -133,7 +142,11 @@ function loadState() {
       .slice(0, 16)
       .map((item, index) => normalizeObject(item, index));
     const objective = String(saved.objective || '');
-    return objects.length ? { objective: objective.startsWith('等待 AI 更新') ? '' : objective, objects } : clone(defaultState);
+    return objects.length ? {
+      templateId: MAP_TEMPLATES.has(saved.templateId) ? saved.templateId : defaultState.templateId,
+      objective: objective.startsWith('等待 AI 更新') ? '' : objective,
+      objects,
+    } : clone(defaultState);
   } catch {
     return clone(defaultState);
   }
@@ -422,6 +435,8 @@ function renderInspector() {
 
 function render() {
   editor.dataset.mode = mode;
+  canvas.dataset.template = state.templateId;
+  mapTemplate.value = state.templateId;
   previewToggle.setAttribute('aria-pressed', String(mode === 'preview'));
   previewToggle.querySelector('span').textContent = mode === 'preview' ? '返回编辑' : '成品预览';
   renderConnections();
@@ -578,7 +593,14 @@ function safeScriptJson(value) {
 }
 
 const EXPORTED_CSS = `
-*{box-sizing:border-box}html,body{min-width:320px;margin:0;background:transparent}button{font:inherit}.qm{position:relative;isolation:isolate;width:min(100%,760px);aspect-ratio:16/10;min-height:360px;margin:14px auto;overflow:hidden;border:1px solid #5e3926;background:#6a3820 url("__MAP_BACKGROUND__") center/cover no-repeat;box-shadow:0 18px 42px rgba(0,0,0,.4);font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.qm-routes{position:absolute;z-index:3;inset:0;width:100%;height:100%;pointer-events:none}.qm-route{fill:none;stroke:#983b31;stroke-width:4;stroke-linecap:round;filter:drop-shadow(0 2px 1px rgba(50,20,12,.38))}.qm-route[data-status=completed]{stroke:#73563a}.qm-route[data-status=blocked]{stroke:#5b211d;stroke-dasharray:15 10}.qm-route[data-status=unknown]{stroke:#7a6b58;stroke-dasharray:5 10}.qm-places{position:absolute;z-index:5;inset:0}.qm-place{--s:1;position:absolute;left:var(--x);top:var(--y);z-index:var(--z);width:clamp(88px,14.5%,145px);min-height:44px;padding:7px 7px 20px;border:0;color:#3d342c;background:#e7dfcf;box-shadow:0 7px 13px rgba(35,20,11,.36);cursor:pointer;transform:translate(-50%,-50%) rotate(var(--r)) scale(var(--s));touch-action:manipulation}.qm-place:before{content:"";position:absolute;z-index:3;left:50%;top:-7px;width:17px;height:17px;border-radius:50%;background:radial-gradient(circle at 33% 28%,#fff1cf 0 12%,#baa17a 38%,#6a5948 74%);box-shadow:0 2px 3px rgba(0,0,0,.45);transform:translateX(-50%)}.qm-place[data-status=current]:before{background:radial-gradient(circle at 33% 28%,#ffcfb7 0 12%,#b45242 38%,#62241f 74%);box-shadow:0 0 0 6px rgba(153,54,44,.2),0 2px 3px rgba(0,0,0,.45)}.qm-photo{position:relative;display:block;width:100%;aspect-ratio:1.38;overflow:hidden;border:1px solid rgba(55,47,39,.28);background:linear-gradient(145deg,transparent 0 45%,rgba(57,58,53,.68) 46% 58%,transparent 59%),linear-gradient(#bbb9af,#72756f)}.qm-photo img{display:block;width:100%;height:100%;object-fit:cover;filter:grayscale(1) sepia(.16) contrast(1.02)}.qm-photo:empty:after{content:"PHOTO";position:absolute;inset:0;display:grid;place-items:center;color:rgba(44,40,35,.5);font:800 .58rem/1 monospace;letter-spacing:.15em}.qm-name{position:absolute;left:5px;right:5px;bottom:4px;overflow:hidden;font:800 clamp(.62rem,1.1vw,.8rem)/1.2 "KaiTi",serif;text-align:center;text-overflow:ellipsis;white-space:nowrap}.qm-badge{position:absolute;right:-7px;bottom:-8px;padding:5px 7px;color:#f7ead4;background:#674a35;font:800 .52rem/1 monospace}.qm-place[data-status=completed] .qm-badge,.qm-place[data-status=available] .qm-badge{display:none}.qm-summary{position:absolute;z-index:7;left:12%;bottom:3%;max-width:58%;padding:7px 10px;color:#4c392a;background:rgba(231,213,177,.91);box-shadow:0 5px 10px rgba(36,20,10,.25);transform:rotate(-1deg)}.qm-summary span,.qm-summary strong,.qm-summary small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qm-summary span{font:800 .52rem/1 monospace}.qm-summary strong{margin:2px 0;font:800 .75rem/1.2 serif}.qm-summary small{font-size:.58rem}.qm-detail{position:absolute;z-index:20;inset:0;display:none;background:rgba(25,15,9,.66)}.qm-detail.open{display:grid;place-items:end center}.qm-card{width:min(86%,480px);margin-bottom:5%;padding:20px;color:#40352b;background:repeating-linear-gradient(0deg,transparent 0 26px,rgba(94,71,48,.09) 27px),#dfcfad;box-shadow:0 18px 44px rgba(0,0,0,.42)}.qm-back{min-height:44px;padding:0 10px;border:0;color:#4b392b;background:transparent;font-weight:800;cursor:pointer}.qm-card b{display:block;margin:12px 0 5px;color:#8d3e32;font:800 .62rem/1 monospace}.qm-card h2{margin:0 0 8px;font-family:serif}.qm-card p{margin:0;line-height:1.7}@media(max-width:520px){.qm{aspect-ratio:3/4}.qm-place{width:clamp(80px,26%,108px)}.qm-badge{display:none}.qm-summary{left:6%;max-width:74%}}`;
+*{box-sizing:border-box}html,body{min-width:320px;margin:0;background:transparent}button{font:inherit}.qm{position:relative;isolation:isolate;width:min(100%,760px);aspect-ratio:16/10;min-height:360px;margin:14px auto;overflow:hidden;border:1px solid #5e3926;background:#6a3820 url("__DESK_BACKGROUND__") center/cover no-repeat;box-shadow:0 18px 42px rgba(0,0,0,.4);font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.qm[data-template=travel-atlas]{border-color:#56412d;background:#45362a url("__TRAVEL_BACKGROUND__") center/cover no-repeat}.qm[data-template=urban-research]{border-color:#b9b7ad;background:#e5e5df url("__URBAN_BACKGROUND__") center/cover no-repeat;box-shadow:0 18px 44px rgba(0,0,0,.34)}.qm[data-template=noir-network]{border-color:#3c3c3c;background:#111 url("__NOIR_BACKGROUND__") center/cover no-repeat;box-shadow:0 24px 60px rgba(0,0,0,.64)}
+.qm-routes{position:absolute;z-index:3;inset:0;width:100%;height:100%;pointer-events:none}.qm-route{fill:none;stroke:#983b31;stroke-width:4;stroke-linecap:round;filter:drop-shadow(0 2px 1px rgba(50,20,12,.38))}.qm-route[data-status=completed]{stroke:#73563a}.qm-route[data-status=blocked]{stroke:#5b211d;stroke-dasharray:15 10}.qm-route[data-status=unknown]{stroke:#7a6b58;stroke-dasharray:5 10}.qm[data-template=travel-atlas] .qm-route{stroke:#9d362e;stroke-width:4.5;filter:drop-shadow(0 1px 1px rgba(46,21,14,.5))}.qm[data-template=urban-research] .qm-route{stroke:#282a27;stroke-width:3;stroke-dasharray:11 8;filter:none}.qm[data-template=urban-research] .qm-route[data-status=blocked]{stroke:#9b3d2f;stroke-dasharray:4 7}.qm[data-template=noir-network] .qm-route{stroke:rgba(238,236,224,.84);stroke-width:2.5;filter:drop-shadow(0 0 3px rgba(255,255,255,.2))}.qm[data-template=noir-network] .qm-route[data-status=blocked]{stroke:#9e493f;stroke-dasharray:5 7}.qm[data-template=noir-network] .qm-route[data-status=unknown]{stroke:rgba(188,188,179,.52);stroke-dasharray:2 8}
+.qm-places{position:absolute;z-index:5;inset:0}.qm-place{--s:1;position:absolute;left:var(--x);top:var(--y);z-index:var(--z);width:clamp(88px,14.5%,145px);min-height:44px;padding:7px 7px 20px;border:0;color:#3d342c;background:#e7dfcf;box-shadow:0 7px 13px rgba(35,20,11,.36);cursor:pointer;transform:translate(-50%,-50%) rotate(var(--r)) scale(var(--s));touch-action:manipulation}.qm-photo{position:relative;display:block;width:100%;aspect-ratio:1.38;overflow:hidden;border:1px solid rgba(55,47,39,.28);background:linear-gradient(145deg,transparent 0 45%,rgba(57,58,53,.68) 46% 58%,transparent 59%),linear-gradient(#bbb9af,#72756f)}.qm-photo img{display:block;width:100%;height:100%;object-fit:cover;filter:grayscale(1) sepia(.16) contrast(1.02)}.qm-photo:empty:after{content:"PHOTO";position:absolute;inset:0;display:grid;place-items:center;color:rgba(44,40,35,.5);font:800 .58rem/1 monospace;letter-spacing:.15em}.qm-name{position:absolute;left:5px;right:5px;bottom:4px;overflow:hidden;font:800 clamp(.62rem,1.1vw,.8rem)/1.2 "KaiTi",serif;text-align:center;text-overflow:ellipsis;white-space:nowrap}.qm-badge{position:absolute;right:-7px;bottom:-8px;padding:5px 7px;color:#f7ead4;background:#674a35;font:800 .52rem/1 monospace}.qm-place[data-status=completed] .qm-badge,.qm-place[data-status=available] .qm-badge{display:none}
+.qm[data-template=travel-atlas] .qm-place{width:clamp(100px,16%,166px);padding:7px 7px 23px;border:1px solid rgba(91,65,38,.3);color:#493421;background:#eee0c3;box-shadow:0 9px 18px rgba(40,26,13,.4)}.qm[data-template=travel-atlas] .qm-photo{aspect-ratio:1.62;border-color:rgba(74,55,34,.35)}.qm[data-template=travel-atlas] .qm-photo img{filter:sepia(.28) saturate(.82) contrast(1.05)}.qm[data-template=travel-atlas] .qm-name{bottom:5px;font-style:italic;letter-spacing:.04em}.qm[data-template=travel-atlas] .qm-place[data-status=current]{box-shadow:0 0 0 3px rgba(143,51,42,.22),0 10px 19px rgba(40,26,13,.42)}
+.qm[data-template=urban-research] .qm-place{width:clamp(90px,13.5%,140px);padding:5px 5px 29px;border:1px solid rgba(35,36,33,.55);color:#191a18;background:#f4f3ed;box-shadow:5px 6px 0 rgba(42,43,39,.16),0 9px 18px rgba(26,27,25,.2)}.qm[data-template=urban-research] .qm-photo{aspect-ratio:1.05;border:0}.qm[data-template=urban-research] .qm-photo img{filter:grayscale(1) contrast(1.18)}.qm[data-template=urban-research] .qm-name{left:8px;right:auto;bottom:-8px;max-width:calc(100% - 13px);padding:6px 9px;color:#25241c;background:#d8bf58;box-shadow:2px 3px 0 rgba(50,49,39,.24);font:800 clamp(.58rem,1vw,.74rem)/1.1 sans-serif;text-align:left;transform:rotate(-1.5deg)}.qm[data-template=urban-research] .qm-attachment{filter:grayscale(.75) drop-shadow(1px 2px 1px rgba(30,30,28,.28))}.qm[data-template=urban-research] .qm-badge{right:4px;bottom:auto;top:4px}.qm[data-template=urban-research] .qm-place[data-status=current]{box-shadow:0 0 0 3px rgba(200,172,53,.42),5px 6px 0 rgba(42,43,39,.16),0 9px 18px rgba(26,27,25,.2)}
+.qm[data-template=noir-network] .qm-place{width:clamp(94px,14%,148px);padding:5px 5px 22px;border:1px solid rgba(235,232,217,.72);color:#ece9df;background:#171817;box-shadow:0 0 0 2px rgba(0,0,0,.68),0 10px 24px rgba(0,0,0,.7)}.qm[data-template=noir-network] .qm-photo{aspect-ratio:1.48;border-color:rgba(236,234,224,.5);background-color:#20211f}.qm[data-template=noir-network] .qm-photo img{filter:grayscale(1) contrast(1.22) brightness(.9)}.qm[data-template=noir-network] .qm-photo:empty:after{color:rgba(239,237,225,.5)}.qm[data-template=noir-network] .qm-name{bottom:5px;color:#ece9df;font:700 clamp(.58rem,1vw,.75rem)/1.15 ui-monospace,Consolas,monospace;letter-spacing:.08em}.qm[data-template=noir-network] .qm-attachment{filter:grayscale(1) brightness(1.25) drop-shadow(1px 3px 2px rgba(0,0,0,.75))}.qm[data-template=noir-network] .qm-place[data-status=current]{border-color:#f2dc93;box-shadow:0 0 0 3px rgba(225,202,121,.22),0 12px 26px rgba(0,0,0,.76)}
+.qm-summary{position:absolute;z-index:7;left:12%;bottom:3%;max-width:58%;padding:7px 10px;color:#4c392a;background:rgba(231,213,177,.91);box-shadow:0 5px 10px rgba(36,20,10,.25);transform:rotate(-1deg)}.qm-summary span,.qm-summary strong,.qm-summary small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qm-summary span{font:800 .52rem/1 monospace}.qm-summary strong{margin:2px 0;font:800 .75rem/1.2 serif}.qm-summary small{font-size:.58rem}.qm[data-template=travel-atlas] .qm-summary{left:5%;bottom:5%;color:#4b3421;background:rgba(239,222,184,.94);border:1px solid rgba(104,72,41,.24);transform:rotate(1.2deg)}.qm[data-template=urban-research] .qm-summary{left:4%;bottom:4%;color:#1f201d;background:rgba(223,199,90,.94);border-left:5px solid #2e302c;box-shadow:4px 5px 0 rgba(44,46,42,.2);transform:rotate(-.8deg)}.qm[data-template=noir-network] .qm-summary{left:4%;bottom:4%;color:#f0eee5;background:rgba(13,14,13,.86);border-left:3px solid #d9c77d;box-shadow:0 8px 20px rgba(0,0,0,.48);transform:none}
+.qm-detail{position:absolute;z-index:20;inset:0;display:none;background:rgba(25,15,9,.66)}.qm-detail.open{display:grid;place-items:end center}.qm-card{width:min(86%,480px);margin-bottom:5%;padding:20px;color:#40352b;background:repeating-linear-gradient(0deg,transparent 0 26px,rgba(94,71,48,.09) 27px),#dfcfad;box-shadow:0 18px 44px rgba(0,0,0,.42)}.qm-back{min-height:44px;padding:0 10px;border:0;color:#4b392b;background:transparent;font-weight:800;cursor:pointer}.qm-card b{display:block;margin:12px 0 5px;color:#8d3e32;font:800 .62rem/1 monospace}.qm-card h2{margin:0 0 8px;font-family:serif}.qm-card p{margin:0;line-height:1.7}@media(max-width:520px){.qm{aspect-ratio:3/4}.qm-place{width:clamp(80px,26%,108px)}.qm[data-template=travel-atlas] .qm-place{width:clamp(86px,29%,118px)}.qm[data-template=urban-research] .qm-place{width:clamp(74px,23%,98px)}.qm[data-template=noir-network] .qm-place{width:clamp(80px,25%,106px)}.qm-badge{display:none}.qm-summary{left:6%;max-width:74%}}`;
 
 const EXPORTED_FRAME_CSS = `
 .qm-place:before{display:none}
@@ -623,13 +645,17 @@ function ensureAssetDataUris() {
 function buildRegexHtml(assets = assetDataUris) {
   if (!assets) throw new Error('地图素材尚未加载');
   const config = {
-    version: 1,
+    version: 2,
+    templateId: state.templateId,
     objective: state.objective,
     objects: state.objects.map(item => ({ ...item })),
   };
   const configJson = safeScriptJson(config);
   const exportedCss = `${EXPORTED_CSS}${EXPORTED_FRAME_CSS}`
-    .replace('__MAP_BACKGROUND__', assets.background)
+    .replace('__DESK_BACKGROUND__', assets.deskBackground)
+    .replace('__TRAVEL_BACKGROUND__', assets.travelBackground)
+    .replace('__URBAN_BACKGROUND__', assets.urbanBackground)
+    .replace('__NOIR_BACKGROUND__', assets.noirBackground)
     .replace('__PIN_ASSET__', assets.pin)
     .replace('__TAPE_ASSET__', assets.tape)
     .replace('__CLIP_ASSET__', assets.clip);
@@ -641,7 +667,7 @@ function buildRegexHtml(assets = assetDataUris) {
 <style>${exportedCss}</style>
 </head>
 <body>
-<article class="qm" id="qm">
+<article class="qm" id="qm" data-template="${state.templateId}">
   <svg class="qm-routes" viewBox="0 0 1000 625" preserveAspectRatio="none" aria-hidden="true"></svg>
   <div class="qm-places" role="group" aria-label="任务地点"></div>
   <aside class="qm-summary"><span>当前位置</span><strong>尚未设定</strong><small></small></aside>
@@ -745,6 +771,13 @@ fields.status.addEventListener('change', () => {
 });
 fields.rotation.addEventListener('input', () => updateSelected({ rotation: Number(fields.rotation.value) }));
 fields.size.addEventListener('input', () => updateSelected({ size: Number(fields.size.value) }));
+mapTemplate.addEventListener('change', () => {
+  if (!MAP_TEMPLATES.has(mapTemplate.value)) return;
+  state.templateId = mapTemplate.value;
+  save();
+  render();
+  showToast('地图模板已切换，地点数据与位置保持不变。');
+});
 document.querySelector('#add-place-button').addEventListener('click', () => addPlace(null, newPlaceStyle.value));
 duplicateButton.addEventListener('click', () => addPlace(selectedObject()));
 document.querySelector('#delete-place-button').addEventListener('click', deleteSelected);
@@ -764,8 +797,9 @@ previewToggle.addEventListener('click', () => {
 });
 
 document.querySelector('#reset-button').addEventListener('click', () => {
-  if (!window.confirm('恢复木桌线索簿初始布局？当前本机草稿会被覆盖。')) return;
-  state = clone(defaultState);
+  if (!window.confirm('恢复地点初始布局？当前地点草稿会被覆盖。')) return;
+  const templateId = state.templateId;
+  state = { ...clone(defaultState), templateId };
   selectedId = null;
   connectionStartId = null;
   save();
