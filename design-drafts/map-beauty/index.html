@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Status Atelier · 任务地图编辑器</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="map-editor" id="map-editor" data-mode="edit">
+    <header class="editor-topbar">
+      <button class="icon-button back-button" id="back-button" type="button" aria-label="返回插件界面" title="返回插件界面">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div class="editor-title">
+        <p>STATUS ATELIER</p>
+        <h1>任务地图编辑</h1>
+      </div>
+      <div class="topbar-actions">
+        <button class="secondary-button" id="reset-button" type="button">恢复模板</button>
+        <button class="secondary-button" id="preview-toggle" type="button" aria-pressed="false">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+          <span>成品预览</span>
+        </button>
+        <button class="primary-button" id="generate-button" type="button">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14"/></svg>
+          生成正则
+        </button>
+      </div>
+    </header>
+
+    <section class="editor-workspace" aria-label="任务地图编辑工作区">
+      <div class="canvas-column">
+        <div class="canvas-toolbar" aria-label="画布工具">
+          <div>
+            <strong>双击起点，再连续双击多个地点</strong>
+            <span id="save-state" role="status" aria-live="polite">布局已保存到本机</span>
+          </div>
+          <div class="canvas-toolbar-actions">
+            <label class="new-style-picker" for="new-place-style">
+              <span>新增款式</span>
+              <select id="new-place-style" aria-label="新增地点款式">
+                <option value="pin">黄铜别针</option>
+                <option value="tape">旧棕格绑带</option>
+                <option value="clip">银色票夹</option>
+              </select>
+            </label>
+            <button class="tool-button" id="add-place-button" type="button">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              添加地点
+            </button>
+            <button class="tool-button" id="duplicate-button" type="button" disabled>
+              <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+              复制地点
+            </button>
+            <button class="tool-button toolbar-delete" id="quick-delete-button" type="button" disabled>
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></svg>
+              删除地点
+            </button>
+          </div>
+        </div>
+
+        <div class="map-viewport" id="map-viewport">
+          <article class="clue-map" id="map-canvas" aria-label="可拖动的任务地图画布">
+            <svg class="connection-layer" id="connection-layer" viewBox="0 0 1000 625" preserveAspectRatio="none" aria-hidden="true"></svg>
+            <div class="place-layer" id="place-layer" role="group" aria-label="地图地点对象"></div>
+
+            <aside class="map-summary" aria-live="polite">
+              <span>当前位置</span>
+              <strong id="current-place-name">—</strong>
+              <small id="current-objective" hidden></small>
+            </aside>
+
+            <section class="place-detail" id="place-detail" aria-hidden="true" aria-labelledby="detail-title">
+              <div class="detail-scrim" data-close-detail></div>
+              <div class="detail-card" role="dialog" aria-modal="true" tabindex="-1">
+                <button class="detail-back" type="button" data-close-detail>
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+                  返回地图
+                </button>
+                <p id="detail-status">可前往</p>
+                <h2 id="detail-title">地点名称</h2>
+                <p id="detail-intro">地点介绍</p>
+              </div>
+            </section>
+          </article>
+        </div>
+
+        <p class="canvas-tip" id="canvas-tip">
+          先选新增款式，再添加地点；新地点会自动找空位。双击一个起点后，可连续双击多个地点连接红线；重复双击目标撤线，双击起点结束。
+        </p>
+      </div>
+
+      <aside class="inspector" id="inspector" aria-label="地点属性">
+        <div class="inspector-empty" id="inspector-empty">
+          <span class="empty-pin" aria-hidden="true"></span>
+          <h2>选择一张地点照片</h2>
+          <p>选中后可改名字、短介绍、照片 URL、款式与路线状态，也可以复制或删除地点。</p>
+        </div>
+
+        <form class="inspector-form" id="inspector-form" hidden>
+          <div class="inspector-heading">
+            <div>
+              <p>当前对象</p>
+              <h2 id="selected-object-title">地点照片</h2>
+            </div>
+            <span class="selection-dot" aria-hidden="true"></span>
+          </div>
+
+          <label class="field-label" for="place-name">地点名称</label>
+          <input id="place-name" name="name" type="text" maxlength="28" autocomplete="off">
+
+          <label class="field-label" for="place-image-url">照片 URL</label>
+          <input id="place-image-url" name="imageUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://example.com/photo.jpg" aria-describedby="url-help url-error">
+          <p class="field-help" id="url-help">支持 http / https；留空时显示档案占位图。</p>
+          <p class="field-error" id="url-error" role="alert" hidden>URL 必须以 http:// 或 https:// 开头。</p>
+
+          <label class="field-label" for="place-intro">地点介绍（可选）</label>
+          <input id="place-intro" name="intro" type="text" maxlength="60" autocomplete="off" placeholder="例如：通往北境的废弃驿站">
+          <p class="field-help">只是一句显示说明，不会写入世界书，也不会控制剧情。</p>
+
+          <label class="field-label" for="place-style">照片款式</label>
+          <select id="place-style" name="frameStyle">
+            <option value="pin">黄铜别针</option>
+            <option value="tape">旧棕格绑带</option>
+            <option value="clip">银色票夹</option>
+          </select>
+
+          <label class="field-label" for="place-status">默认路线状态</label>
+          <select id="place-status" name="status">
+            <option value="current">当前位置</option>
+            <option value="completed">已走过</option>
+            <option value="available">可前往</option>
+            <option value="blocked">已阻断</option>
+            <option value="unknown">未探明</option>
+          </select>
+
+          <div class="range-row">
+            <label for="place-rotation">旋转 <output id="rotation-output">0°</output></label>
+            <input id="place-rotation" name="rotation" type="range" min="-12" max="12" step="1">
+          </div>
+          <div class="range-row">
+            <label for="place-size">照片大小 <output id="size-output">100%</output></label>
+            <input id="place-size" name="size" type="range" min="72" max="132" step="2">
+          </div>
+
+          <div class="layer-actions" role="group" aria-label="地点层级">
+            <button type="button" id="layer-down-button">下移一层</button>
+            <button type="button" id="layer-up-button">上移一层</button>
+          </div>
+          <button class="delete-button" id="delete-place-button" type="button">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></svg>
+            删除地点
+          </button>
+        </form>
+      </aside>
+    </section>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <dialog class="export-dialog" id="export-dialog" aria-labelledby="export-title">
+      <form method="dialog" class="export-panel">
+        <header>
+          <div>
+            <p>IMPORTABLE REGEX</p>
+            <h2 id="export-title">任务地图正则已生成</h2>
+          </div>
+          <button class="icon-button" value="cancel" aria-label="关闭生成结果"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+        </header>
+        <p>编辑器控件不会写进成品。正则只显示 <code>&lt;quest_map&gt;</code> 中已有的地点、当前位置、路线状态与可选短介绍，不负责写世界书或推进剧情。</p>
+        <label for="regex-output">正则 JSON</label>
+        <textarea id="regex-output" readonly spellcheck="false"></textarea>
+        <div class="export-actions">
+          <button class="secondary-button" id="copy-regex-button" type="button">复制 JSON</button>
+          <button class="primary-button" id="download-regex-button" type="button">下载正则 JSON</button>
+        </div>
+      </form>
+    </dialog>
+  </main>
+
+  <script src="./prototype.js"></script>
+</body>
+</html>
