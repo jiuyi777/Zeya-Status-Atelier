@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>Status Atelier · 复古旅行档案地图模板</title>
+  <title>Status Atelier · 任务地图模板集</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="./styles.css">
 </head>
@@ -13,8 +13,8 @@
     <section class="prototype-intro" aria-labelledby="prototype-title">
       <div>
         <p class="eyebrow">STATUS ATELIER / ARCHIVE MAP</p>
-        <h1 id="prototype-title">复古旅行档案地图</h1>
-        <p>旧地图、拍立得、图钉红线与旅行剪报组成同一张可交互任务地图；照片和节点读取同一份地点数据。</p>
+        <h1 id="prototype-title">任务地图模板集</h1>
+        <p>五套地图版式共享同一份 AI 地点、路线和当前位置数据；切换模板只改变构图与材质，不会丢失交互状态。</p>
       </div>
 
       <div class="prototype-controls" aria-label="原型数据控制">
@@ -31,7 +31,18 @@
       </div>
     </section>
 
-    <article class="quest-map" id="quest-map" aria-labelledby="map-title">
+    <nav class="map-template-switcher" aria-label="选择任务地图模板">
+      <span>地图模板</span>
+      <div role="group" aria-label="地图模板列表">
+        <button type="button" data-map-template="archive" aria-pressed="true">旅行档案</button>
+        <button type="button" data-map-template="urban">城市研究</button>
+        <button type="button" data-map-template="detective">侦探线索</button>
+        <button type="button" data-map-template="analysis">分析拼贴</button>
+        <button type="button" data-map-template="noir">黑幕关系</button>
+      </div>
+    </nav>
+
+    <article class="quest-map" id="quest-map" data-template="archive" aria-labelledby="map-title">
       <div class="archive-decor" aria-hidden="true">
         <div class="newspaper-scrap scrap-left"><b>THE NORTHERN POST</b><span>Field notes · route archive · weather report</span></div>
         <div class="newspaper-scrap scrap-right"><b>THE INDIGO DOOR</b><span>October 21 · Late edition · $7.00</span></div>
@@ -41,6 +52,13 @@
         <div class="pressed-flower flower-left"><i></i><i></i><i></i><i></i><i></i></div>
         <div class="pressed-flower flower-right"><i></i><i></i><i></i><i></i></div>
         <div class="luggage-tag"><span>FIELD</span><b>042</b></div>
+        <div class="template-artifacts">
+          <i class="artifact-note note-a">1951—1960<br>ROUTE RECORD</i>
+          <i class="artifact-note note-b">CURRENT<br>FIELD SITE</i>
+          <i class="artifact-clipping">THE DAILY ARCHIVE<br><small>Route, weather and witness notes</small></i>
+          <i class="artifact-film"></i>
+          <i class="artifact-label">CASE 042 · CONNECTION BOARD</i>
+        </div>
       </div>
 
       <div class="map-paper">
@@ -154,7 +172,7 @@
       </section>
     </article>
 
-    <p class="prototype-note">地图节点与拍立得照片都可点击；照片来自同一份动态地点数据。红线、虚线、节点形状与文字共同表达路线状态。</p>
+    <p class="prototype-note">五套模板共享同一份动态地点数据；地图节点与照片都可点击。路线状态同时用线型、节点形状与文字表达，不依赖单一颜色。</p>
     <div class="prototype-toast" id="prototype-toast" role="status" aria-live="polite"></div>
   </main>
   <script src="./prototype.js"></script>

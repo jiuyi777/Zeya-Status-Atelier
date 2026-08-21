@@ -77,7 +77,21 @@ const datasets = {
   },
 };
 
-const state = { dataset: 'standard', selected: null, trigger: null, toastTimer: null };
+const templateNames = {
+  archive: '旅行档案',
+  urban: '城市研究',
+  detective: '侦探线索',
+  analysis: '分析拼贴',
+  noir: '黑幕关系',
+};
+const requestedTemplate = new URLSearchParams(location.search).get('template');
+const state = {
+  dataset: 'standard',
+  template: templateNames[requestedTemplate] ? requestedTemplate : 'archive',
+  selected: null,
+  trigger: null,
+  toastTimer: null,
+};
 const map = document.querySelector('#quest-map');
 const nodesHost = document.querySelector('#node-layer');
 const routeHost = document.querySelector('#route-layer');
@@ -229,8 +243,17 @@ function renderSummary(data) {
   document.querySelector('#risk-value').textContent = data.risk;
 }
 
+function renderTemplate() {
+  map.dataset.template = state.template;
+  document.body.dataset.mapTemplate = state.template;
+  document.querySelectorAll('[data-map-template]').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.mapTemplate === state.template));
+  });
+}
+
 function render() {
   const data = datasets[state.dataset];
+  renderTemplate();
   renderSummary(data);
   renderRoutes(data);
   renderNodes(data);
@@ -312,6 +335,14 @@ document.querySelectorAll('[data-dataset]').forEach(button => {
     document.querySelectorAll('[data-dataset]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
     render();
     showToast(`已切换为 ${datasets[state.dataset].nodes.length} 个 AI 动态地点。`);
+  });
+});
+
+document.querySelectorAll('[data-map-template]').forEach(button => {
+  button.addEventListener('click', () => {
+    state.template = button.dataset.mapTemplate;
+    renderTemplate();
+    showToast(`已切换为“${templateNames[state.template]}”任务地图。`);
   });
 });
 
