@@ -35,7 +35,7 @@
       <div class="canvas-column">
         <div class="canvas-toolbar" aria-label="画布工具">
           <div>
-            <strong>双击两张照片连接红线</strong>
+            <strong>双击起点，再连续双击多个地点</strong>
             <span id="save-state" role="status" aria-live="polite">布局已保存到本机</span>
           </div>
           <div class="canvas-toolbar-actions">
@@ -43,7 +43,7 @@
               <span>新增款式</span>
               <select id="new-place-style" aria-label="新增地点款式">
                 <option value="pin">黄铜别针</option>
-                <option value="tape">红格绑带</option>
+                <option value="tape">旧棕格绑带</option>
                 <option value="clip">银色票夹</option>
                 <option value="collage">旧报纸相框</option>
               </select>
@@ -90,7 +90,7 @@
         </div>
 
         <p class="canvas-tip" id="canvas-tip">
-          先选新增款式，再添加地点；新地点会自动找空位。直接拖动调整位置，双击两张照片连接红线。
+          先选新增款式，再添加地点；新地点会自动找空位。双击一个起点后，可连续双击多个地点连接红线；重复双击目标撤线，双击起点结束。
         </p>
       </div>
 
@@ -125,7 +125,7 @@
           <label class="field-label" for="place-style">照片款式</label>
           <select id="place-style" name="frameStyle">
             <option value="pin">黄铜别针</option>
-            <option value="tape">红格绑带</option>
+            <option value="tape">旧棕格绑带</option>
             <option value="clip">银色票夹</option>
             <option value="collage">旧报纸相框</option>
           </select>

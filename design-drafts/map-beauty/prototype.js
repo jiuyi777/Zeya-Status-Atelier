@@ -10,7 +10,7 @@ const FRAME_STYLES = new Set(['pin', 'tape', 'clip', 'collage']);
 const ASSET_URLS = {
   background: './assets/detective-desk-blank.webp',
   pin: './assets/attachments/brass-safety-pin.webp',
-  tape: './assets/attachments/gingham-cross.webp',
+  tape: './assets/attachments/gingham-cross-muted.webp',
   clip: './assets/attachments/silver-binder-clip.webp',
   collage: './assets/attachments/newspaper-frame.webp',
 };
@@ -31,7 +31,7 @@ const defaultState = {
       intro: '已经调查过的地点。',
       frameStyle: 'pin',
       status: 'completed',
-      connectFrom: '',
+      connectFrom: [],
       x: 31,
       y: 32,
       rotation: -4,
@@ -45,7 +45,7 @@ const defaultState = {
       intro: '角色当前所在地点。',
       frameStyle: 'tape',
       status: 'current',
-      connectFrom: 'place-1',
+      connectFrom: ['place-1'],
       x: 63,
       y: 32,
       rotation: 3,
@@ -59,7 +59,7 @@ const defaultState = {
       intro: '当前可以前往的下一处地点。',
       frameStyle: 'clip',
       status: 'available',
-      connectFrom: 'place-2',
+      connectFrom: ['place-2'],
       x: 43,
       y: 68,
       rotation: -3,
@@ -73,7 +73,7 @@ const defaultState = {
       intro: '尚未探明。',
       frameStyle: 'collage',
       status: 'unknown',
-      connectFrom: 'place-2',
+      connectFrom: ['place-2'],
       x: 78,
       y: 69,
       rotation: 5,
@@ -142,20 +142,29 @@ function loadState() {
 function normalizeObject(item, index = 0) {
   const legacyIntro = String(item.intro ?? item.description ?? '');
   const intro = LEGACY_INTROS[legacyIntro] ?? (legacyIntro.startsWith('等待 AI 补充') ? '' : legacyIntro);
+  const id = String(item.id || `place-${Date.now()}-${index}`).replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 48);
   return {
-    id: String(item.id || `place-${Date.now()}-${index}`).replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 48),
+    id,
     name: String(item.name || `地点 ${String(index + 1).padStart(2, '0')}`).slice(0, 28),
     imageUrl: isSafeHttpUrl(item.imageUrl) ? String(item.imageUrl) : '',
     intro: intro.slice(0, 60),
     frameStyle: FRAME_STYLES.has(item.frameStyle) ? item.frameStyle : ['pin', 'tape', 'clip', 'collage'][index % 4],
     status: STATUS_LABELS[item.status] ? item.status : 'unknown',
-    connectFrom: String(item.connectFrom || ''),
+    connectFrom: normalizeConnectionIds(item.connectFrom, id),
     x: clamp(Number(item.x), 7, 93, 50),
     y: clamp(Number(item.y), 10, 90, 50),
     rotation: clamp(Number(item.rotation), -12, 12, 0),
     size: clamp(Number(item.size), 72, 132, 100),
     z: clamp(Number(item.z), 1, 99, index + 1),
   };
+}
+
+function normalizeConnectionIds(value, ownId = '') {
+  const values = Array.isArray(value) ? value : [value];
+  return [...new Set(values
+    .map(item => String(item || '').replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 48))
+    .filter(id => id && id !== ownId))]
+    .slice(0, 15);
 }
 
 function clamp(value, min, max, fallback) {
@@ -197,22 +206,39 @@ function svgElement(name, attributes = {}) {
 
 function renderConnections() {
   connectionLayer.replaceChildren();
-  state.objects.forEach(object => {
-    if (!object.connectFrom) return;
-    const from = state.objects.find(item => item.id === object.connectFrom);
-    if (!from || from.id === object.id) return;
-    const x1 = from.x * 10;
-    const y1 = from.y * 6.25;
-    const x2 = object.x * 10;
-    const y2 = object.y * 6.25;
-    const bend = Math.min(46, Math.abs(x2 - x1) * .08) * (state.objects.indexOf(object) % 2 ? 1 : -1);
-    const path = svgElement('path', {
-      d: `M ${x1} ${y1} Q ${(x1 + x2) / 2} ${(y1 + y2) / 2 + bend} ${x2} ${y2}`,
-      class: 'route-thread',
-      'data-status': object.status,
+  state.objects.forEach((object, objectIndex) => {
+    object.connectFrom.forEach((fromId, connectionIndex) => {
+      const from = state.objects.find(item => item.id === fromId);
+      if (!from || from.id === object.id) return;
+      const x1 = from.x * 10;
+      const y1 = from.y * 6.25;
+      const x2 = object.x * 10;
+      const y2 = object.y * 6.25;
+      const direction = (objectIndex + connectionIndex) % 2 ? 1 : -1;
+      const bend = Math.min(46, Math.abs(x2 - x1) * .08) * direction;
+      const path = svgElement('path', {
+        d: `M ${x1} ${y1} Q ${(x1 + x2) / 2} ${(y1 + y2) / 2 + bend} ${x2} ${y2}`,
+        class: 'route-thread',
+        'data-status': object.status,
+      });
+      connectionLayer.append(path);
     });
-    connectionLayer.append(path);
   });
+}
+
+function toggleConnection(source, target) {
+  const directIndex = target.connectFrom.indexOf(source.id);
+  if (directIndex >= 0) {
+    target.connectFrom.splice(directIndex, 1);
+    return false;
+  }
+  const reverseIndex = source.connectFrom.indexOf(target.id);
+  if (reverseIndex >= 0) {
+    source.connectFrom.splice(reverseIndex, 1);
+    return false;
+  }
+  target.connectFrom.push(source.id);
+  return true;
 }
 
 function renderPlaces() {
@@ -292,7 +318,7 @@ function bindPlaceInteractions(button, object) {
     if (!connectionStartId) {
       connectionStartId = object.id;
       renderPlaces();
-      showToast('再双击另一张照片连接红线。');
+      showToast('连续连线已开始：继续双击任意地点，双击起点结束。');
       return;
     }
     const source = state.objects.find(item => item.id === connectionStartId);
@@ -301,12 +327,13 @@ function bindPlaceInteractions(button, object) {
       renderPlaces();
       return;
     }
-    object.connectFrom = source.id;
-    connectionStartId = null;
+    const connected = toggleConnection(source, object);
     selectedId = object.id;
     save();
     render();
-    showToast(`已连接“${source.name}”与“${object.name}”。`);
+    showToast(connected
+      ? `已连接“${source.name}”与“${object.name}”；可继续连接其他地点。`
+      : `已撤掉“${source.name}”与“${object.name}”之间的红线。`);
   });
 
   button.addEventListener('keydown', event => {
@@ -460,7 +487,7 @@ function addPlace(source = null, requestedStyle = 'pin') {
     frameStyle: source ? source.frameStyle : (FRAME_STYLES.has(requestedStyle) ? requestedStyle : 'pin'),
     x: position.x,
     y: position.y,
-    connectFrom: '',
+    connectFrom: [],
     z: Math.max(0, ...state.objects.map(item => item.z)) + 1,
     status: source ? 'unknown' : 'available',
   }, index - 1);
@@ -477,9 +504,10 @@ function deleteSelected() {
   if (!object) return;
   const index = state.objects.indexOf(object);
   const snapshot = clone(object);
+  const connectionSnapshots = new Map(state.objects.map(item => [item.id, clone(item.connectFrom)]));
   state.objects.splice(index, 1);
   state.objects.forEach(item => {
-    if (item.connectFrom === object.id) item.connectFrom = '';
+    item.connectFrom = item.connectFrom.filter(id => id !== object.id);
   });
   if (connectionStartId === object.id) connectionStartId = null;
   selectedId = null;
@@ -487,6 +515,9 @@ function deleteSelected() {
   render();
   showToast(`已删除地点“${snapshot.name}”。`, '撤销', () => {
     state.objects.splice(index, 0, snapshot);
+    state.objects.forEach(item => {
+      item.connectFrom = clone(connectionSnapshots.get(item.id) || []);
+    });
     selectedId = snapshot.id;
     save();
     render();
@@ -625,15 +656,16 @@ var labels={current:'当前位置',completed:'已走过',available:'可前往',b
 var dynamic={};try{dynamic=JSON.parse(document.getElementById('qm-data').textContent.trim()||'{}')}catch(error){dynamic={}}
 var overrides=Array.isArray(dynamic.places)?dynamic.places:[];
 var places=config.objects.map(function(base){var change=overrides.find(function(item){return item&&item.id===base.id})||{};return Object.assign({},base,change)});
-overrides.forEach(function(item,index){if(!item||!item.id||places.some(function(place){return place.id===item.id}))return;places.push(Object.assign({name:'新地点',imageUrl:'',intro:'',frameStyle:'pin',status:'unknown',connectFrom:'',x:16+(index%4)*22,y:18+(index%3)*31,rotation:0,size:92,z:places.length+1},item))});
+overrides.forEach(function(item,index){if(!item||!item.id||places.some(function(place){return place.id===item.id}))return;places.push(Object.assign({name:'新地点',imageUrl:'',intro:'',frameStyle:'pin',status:'unknown',connectFrom:[],x:16+(index%4)*22,y:18+(index%3)*31,rotation:0,size:92,z:places.length+1},item))});
 if(dynamic.statuses&&typeof dynamic.statuses==='object'){places.forEach(function(place){if(labels[dynamic.statuses[place.id]])place.status=dynamic.statuses[place.id]})}
 if(dynamic.currentId){places.forEach(function(place){if(place.id===dynamic.currentId)place.status='current';else if(place.status==='current')place.status='completed'})}
 var root=document.getElementById('qm'),host=root.querySelector('.qm-places'),routes=root.querySelector('.qm-routes'),detail=root.querySelector('.qm-detail'),card=detail.querySelector('.qm-card');
 function safeUrl(value){try{var url=new URL(String(value||''));return url.protocol==='http:'||url.protocol==='https:'?url.href:''}catch(error){return''}}
+function connectionIds(value,ownId){return(Array.isArray(value)?value:[value]).map(function(id){return String(id||'')}).filter(function(id,index,list){return id&&id!==ownId&&list.indexOf(id)===index})}
 function close(){detail.classList.remove('open');detail.setAttribute('aria-hidden','true')}
 detail.addEventListener('click',function(event){if(event.target===detail)close()});detail.querySelector('.qm-back').addEventListener('click',close);
-places.forEach(function(place){
- if(place.connectFrom){var from=places.find(function(item){return item.id===place.connectFrom});if(from){var x1=from.x*10,y1=from.y*6.25,x2=place.x*10,y2=place.y*6.25,bend=Math.min(46,Math.abs(x2-x1)*.08);var path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d','M '+x1+' '+y1+' Q '+((x1+x2)/2)+' '+(((y1+y2)/2)+bend)+' '+x2+' '+y2);path.setAttribute('class','qm-route');path.dataset.status=place.status;routes.append(path)}}
+places.forEach(function(place,placeIndex){
+ connectionIds(place.connectFrom,place.id).forEach(function(fromId,connectionIndex){var from=places.find(function(item){return item.id===fromId});if(from){var x1=from.x*10,y1=from.y*6.25,x2=place.x*10,y2=place.y*6.25,direction=(placeIndex+connectionIndex)%2?1:-1,bend=Math.min(46,Math.abs(x2-x1)*.08)*direction;var path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d','M '+x1+' '+y1+' Q '+((x1+x2)/2)+' '+(((y1+y2)/2)+bend)+' '+x2+' '+y2);path.setAttribute('class','qm-route');path.dataset.status=place.status;routes.append(path)}});
  var button=document.createElement('button');button.type='button';button.className='qm-place';button.dataset.status=labels[place.status]?place.status:'unknown';button.dataset.frame=['pin','tape','clip','collage'].includes(place.frameStyle)?place.frameStyle:'pin';button.style.setProperty('--x',Math.max(7,Math.min(93,Number(place.x)||50))+'%');button.style.setProperty('--y',Math.max(10,Math.min(90,Number(place.y)||50))+'%');button.style.setProperty('--r',Math.max(-12,Math.min(12,Number(place.rotation)||0))+'deg');button.style.setProperty('--s',Math.max(.72,Math.min(1.32,(Number(place.size)||100)/100)));button.style.setProperty('--z',Number(place.z)||1);button.setAttribute('aria-label',String(place.name||'未命名地点')+'，'+(labels[button.dataset.status]||labels.unknown));
  var attachment=document.createElement('span');attachment.className='qm-attachment';attachment.setAttribute('aria-hidden','true');
  var photo=document.createElement('span');photo.className='qm-photo';var url=safeUrl(place.imageUrl);if(url){var image=document.createElement('img');image.src=url;image.alt='';image.loading='lazy';image.referrerPolicy='no-referrer';photo.append(image)}
@@ -724,7 +756,10 @@ document.querySelectorAll('[data-close-detail]').forEach(button => button.addEve
 
 previewToggle.addEventListener('click', () => {
   mode = mode === 'edit' ? 'preview' : 'edit';
-  if (mode === 'preview') selectedId = null;
+  if (mode === 'preview') {
+    selectedId = null;
+    connectionStartId = null;
+  }
   closeDetail();
   render();
 });
@@ -733,6 +768,7 @@ document.querySelector('#reset-button').addEventListener('click', () => {
   if (!window.confirm('恢复木桌线索簿初始布局？当前本机草稿会被覆盖。')) return;
   state = clone(defaultState);
   selectedId = null;
+  connectionStartId = null;
   save();
   render();
   showToast('已恢复初始地图模板。');
@@ -745,7 +781,7 @@ document.querySelector('#generate-button').addEventListener('click', async event
     await refreshExport();
     exportDialog.showModal();
   } catch {
-    showToast('底图无法内嵌，请从插件预览入口通过本地服务打开后再生成。');
+    showToast('地图素材无法内嵌，请从插件预览入口通过本地服务打开后再生成。');
   } finally {
     button.disabled = false;
   }
@@ -784,7 +820,15 @@ document.addEventListener('keydown', event => {
     closeDetail();
     return;
   }
-  if (exportDialog.open) exportDialog.close();
+  if (exportDialog.open) {
+    exportDialog.close();
+    return;
+  }
+  if (connectionStartId) {
+    connectionStartId = null;
+    renderPlaces();
+    showToast('已结束连续连线。');
+  }
 });
 
 window.__mapEditorTestApi = {

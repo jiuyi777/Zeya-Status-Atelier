@@ -185,7 +185,7 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   top: -14px;
   width: 57%;
   height: 36px;
-  background-image: url("./assets/attachments/gingham-cross.webp");
+  background-image: url("./assets/attachments/gingham-cross-muted.webp");
   transform: translateX(-50%) rotate(-2deg);
 }
 .place-card[data-frame="clip"] { background: #e9e2d6; }
@@ -279,7 +279,7 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   box-shadow: 0 0 0 9px rgba(165,63,50,.22), 0 8px 14px rgba(35,20,11,.4);
 }
 .map-editor[data-mode="edit"] .place-card.is-connection-source::after {
-  content: "连线起点";
+  content: "起点";
   background: #a53f32;
   color: #fff8e9;
 }
