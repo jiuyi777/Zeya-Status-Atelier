@@ -197,14 +197,16 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   background-image: url("./assets/attachments/silver-binder-clip.webp");
   transform: rotate(-5deg);
 }
-.place-card[data-frame="collage"] { padding: 13px 12px 24px; background: #d8c9ad; box-shadow: 0 12px 18px rgba(35,20,11,.4); }
-.place-card[data-frame="collage"] .photo-window { border: 0; transform: none; }
+.place-card[data-frame="collage"] { padding: 10px 10px 20px; background: #d8c9ad; box-shadow: 0 9px 15px rgba(35,20,11,.32); }
+.place-card[data-frame="collage"] .photo-window { border: 0; background: linear-gradient(145deg, rgba(89,79,65,.13), rgba(89,79,65,.28)), #b8ad94; transform: none; }
+.place-card[data-frame="collage"] .photo-window.is-empty::after { content: ""; }
 .place-card[data-frame="collage"] .place-attachment {
   z-index: 9;
-  inset: -12px -11px -16px;
+  inset: -7px -6px -10px;
   background-image: url("./assets/attachments/newspaper-frame.webp");
   background-size: 100% 100%;
-  filter: drop-shadow(2px 4px 3px rgba(33, 20, 12, .38));
+  opacity: .92;
+  filter: drop-shadow(1px 3px 2px rgba(33, 20, 12, .3));
 }
 .place-card[data-status="blocked"]::after {
   content: "";
@@ -256,32 +258,18 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
 .place-card[data-status="available"] .place-state { background: #806138; }
 .place-card[data-status="blocked"] .place-state { background: #562725; }
 .place-card[data-status="unknown"] .place-state { background: #5d5a54; }
+.place-card[data-status="completed"] .place-state,
+.place-card[data-status="available"] .place-state,
+.place-card[data-frame="collage"] .place-state { display: none; }
 .map-editor[data-mode="edit"] .place-card[aria-pressed="true"] {
-  outline: 3px solid var(--focus);
-  outline-offset: 5px;
-  box-shadow: 0 0 0 8px rgba(245,215,135,.19), 0 8px 14px rgba(35,20,11,.4);
-}
-.map-editor[data-mode="edit"] .place-card[aria-pressed="true"]::after {
-  content: "拖动";
-  position: absolute;
-  left: 50%;
-  top: -35px;
-  padding: 5px 8px;
-  border-radius: 5px;
-  color: #2b241c;
-  background: var(--focus);
-  font: 800 .62rem/1 sans-serif;
-  transform: translateX(-50%);
+  outline: 2px solid rgba(205, 178, 116, .72);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px rgba(205,178,116,.12), 0 8px 14px rgba(35,20,11,.36);
 }
 .map-editor[data-mode="edit"] .place-card.is-connection-source {
-  outline: 3px solid #a53f32;
-  outline-offset: 6px;
-  box-shadow: 0 0 0 9px rgba(165,63,50,.22), 0 8px 14px rgba(35,20,11,.4);
-}
-.map-editor[data-mode="edit"] .place-card.is-connection-source::after {
-  content: "起点";
-  background: #a53f32;
-  color: #fff8e9;
+  outline: 2px solid #9c4a3c;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 4px rgba(156,74,60,.14), 0 8px 14px rgba(35,20,11,.38);
 }
 
 .map-summary {
