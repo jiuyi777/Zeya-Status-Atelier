@@ -7,6 +7,13 @@ const STATUS_LABELS = {
   unknown: '未探明',
 };
 const FRAME_STYLES = new Set(['pin', 'tape', 'clip', 'collage']);
+const ASSET_URLS = {
+  background: './assets/detective-desk-blank.webp',
+  pin: './assets/attachments/brass-safety-pin.webp',
+  tape: './assets/attachments/gingham-cross.webp',
+  clip: './assets/attachments/silver-binder-clip.webp',
+  collage: './assets/attachments/newspaper-frame.webp',
+};
 const LEGACY_INTROS = {
   '已经调查过的地点，线索会继续保留在地图上。': '已经调查过的地点。',
   '角色当前所在地点。AI 可通过 currentId 动态切换当前位置。': '角色当前所在地点。',
@@ -110,8 +117,8 @@ let dragState = null;
 let toastTimer = 0;
 let lastDetailTrigger = null;
 let connectionStartId = null;
-let backgroundDataUri = '';
-let backgroundLoadPromise = null;
+let assetDataUris = null;
+let assetLoadPromise = null;
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -543,7 +550,13 @@ const EXPORTED_CSS = `
 *{box-sizing:border-box}html,body{min-width:320px;margin:0;background:transparent}button{font:inherit}.qm{position:relative;isolation:isolate;width:min(100%,760px);aspect-ratio:16/10;min-height:360px;margin:14px auto;overflow:hidden;border:1px solid #5e3926;background:#6a3820 url("__MAP_BACKGROUND__") center/cover no-repeat;box-shadow:0 18px 42px rgba(0,0,0,.4);font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.qm-routes{position:absolute;z-index:3;inset:0;width:100%;height:100%;pointer-events:none}.qm-route{fill:none;stroke:#983b31;stroke-width:4;stroke-linecap:round;filter:drop-shadow(0 2px 1px rgba(50,20,12,.38))}.qm-route[data-status=completed]{stroke:#73563a}.qm-route[data-status=blocked]{stroke:#5b211d;stroke-dasharray:15 10}.qm-route[data-status=unknown]{stroke:#7a6b58;stroke-dasharray:5 10}.qm-places{position:absolute;z-index:5;inset:0}.qm-place{--s:1;position:absolute;left:var(--x);top:var(--y);z-index:var(--z);width:clamp(88px,14.5%,145px);min-height:44px;padding:7px 7px 20px;border:0;color:#3d342c;background:#e7dfcf;box-shadow:0 7px 13px rgba(35,20,11,.36);cursor:pointer;transform:translate(-50%,-50%) rotate(var(--r)) scale(var(--s));touch-action:manipulation}.qm-place:before{content:"";position:absolute;z-index:3;left:50%;top:-7px;width:17px;height:17px;border-radius:50%;background:radial-gradient(circle at 33% 28%,#fff1cf 0 12%,#baa17a 38%,#6a5948 74%);box-shadow:0 2px 3px rgba(0,0,0,.45);transform:translateX(-50%)}.qm-place[data-status=current]:before{background:radial-gradient(circle at 33% 28%,#ffcfb7 0 12%,#b45242 38%,#62241f 74%);box-shadow:0 0 0 6px rgba(153,54,44,.2),0 2px 3px rgba(0,0,0,.45)}.qm-photo{position:relative;display:block;width:100%;aspect-ratio:1.38;overflow:hidden;border:1px solid rgba(55,47,39,.28);background:linear-gradient(145deg,transparent 0 45%,rgba(57,58,53,.68) 46% 58%,transparent 59%),linear-gradient(#bbb9af,#72756f)}.qm-photo img{display:block;width:100%;height:100%;object-fit:cover;filter:grayscale(1) sepia(.16) contrast(1.02)}.qm-photo:empty:after{content:"PHOTO";position:absolute;inset:0;display:grid;place-items:center;color:rgba(44,40,35,.5);font:800 .58rem/1 monospace;letter-spacing:.15em}.qm-name{position:absolute;left:5px;right:5px;bottom:4px;overflow:hidden;font:800 clamp(.62rem,1.1vw,.8rem)/1.2 "KaiTi",serif;text-align:center;text-overflow:ellipsis;white-space:nowrap}.qm-badge{position:absolute;right:-7px;bottom:-8px;padding:5px 7px;color:#f7ead4;background:#674a35;font:800 .52rem/1 monospace}.qm-summary{position:absolute;z-index:7;left:12%;bottom:3%;max-width:58%;padding:7px 10px;color:#4c392a;background:rgba(231,213,177,.91);box-shadow:0 5px 10px rgba(36,20,10,.25);transform:rotate(-1deg)}.qm-summary span,.qm-summary strong,.qm-summary small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qm-summary span{font:800 .52rem/1 monospace}.qm-summary strong{margin:2px 0;font:800 .75rem/1.2 serif}.qm-summary small{font-size:.58rem}.qm-detail{position:absolute;z-index:20;inset:0;display:none;background:rgba(25,15,9,.66)}.qm-detail.open{display:grid;place-items:end center}.qm-card{width:min(86%,480px);margin-bottom:5%;padding:20px;color:#40352b;background:repeating-linear-gradient(0deg,transparent 0 26px,rgba(94,71,48,.09) 27px),#dfcfad;box-shadow:0 18px 44px rgba(0,0,0,.42)}.qm-back{min-height:44px;padding:0 10px;border:0;color:#4b392b;background:transparent;font-weight:800;cursor:pointer}.qm-card b{display:block;margin:12px 0 5px;color:#8d3e32;font:800 .62rem/1 monospace}.qm-card h2{margin:0 0 8px;font-family:serif}.qm-card p{margin:0;line-height:1.7}@media(max-width:520px){.qm{aspect-ratio:3/4}.qm-place{width:clamp(80px,26%,108px)}.qm-badge{display:none}.qm-summary{left:6%;max-width:74%}}`;
 
 const EXPORTED_FRAME_CSS = `
-.qm-place:before{display:none}.qm-attachment{position:absolute;z-index:8;display:block;left:50%;pointer-events:none}.qm-place[data-frame=pin] .qm-attachment{top:-10px;width:20px;height:20px;border:1px solid #47351f;border-radius:50%;background:radial-gradient(circle at 33% 24%,#fff2bc 0 9%,#cda55a 23%,#85622f 55%,#3b2a19 100%);box-shadow:inset -2px -3px 4px rgba(39,24,10,.42),inset 2px 2px 3px rgba(255,239,180,.5),1px 4px 5px rgba(20,12,7,.52);transform:translateX(-50%)}.qm-place[data-frame=pin] .qm-attachment:after{content:"";position:absolute;left:9px;top:15px;width:2px;height:8px;background:linear-gradient(90deg,#443827,#d2c39f 48%,#514431)}.qm-place[data-frame=pin][data-status=current] .qm-attachment{background:radial-gradient(circle at 33% 24%,#ffd4bf 0 9%,#bc5b49 25%,#702c25 58%,#351715 100%);box-shadow:inset -2px -3px 4px rgba(50,13,10,.45),inset 2px 2px 3px rgba(255,206,188,.42),0 0 0 5px rgba(153,54,44,.18),1px 4px 5px rgba(20,12,7,.52)}.qm-place[data-frame=tape]{background:#ddd0b7}.qm-place[data-frame=tape] .qm-attachment{top:-7px;width:54%;height:18px;background:repeating-linear-gradient(90deg,rgba(111,86,49,.08) 0 2px,transparent 2px 7px),rgba(222,197,142,.78);box-shadow:0 2px 4px rgba(45,28,13,.18);transform:translateX(-50%) rotate(-2deg)}.qm-place[data-frame=clip]{border-left:2px solid rgba(94,85,72,.38)}.qm-place[data-frame=clip] .qm-attachment{left:22%;top:-13px;width:18px;height:34px;border:3px solid #a9a79f;border-bottom-color:transparent;border-radius:10px 10px 7px 7px;box-shadow:inset 1px 0 #ece9dd,2px 2px 3px rgba(35,28,23,.28);transform:rotate(-7deg)}.qm-place[data-frame=collage]{background:#d5c5a6;box-shadow:-7px 8px 0 rgba(94,67,42,.24),0 12px 18px rgba(35,20,11,.4)}.qm-place[data-frame=collage] .qm-photo{border:4px solid #f0e5cf;transform:rotate(-1deg)}.qm-place[data-frame=collage] .qm-attachment{left:auto;right:8px;top:-10px;width:24px;height:24px;border:3px double rgba(255,221,196,.42);border-radius:50%;background:radial-gradient(circle at 35% 30%,#bd6250,#783128 63%,#431b18);box-shadow:1px 4px 5px rgba(40,18,12,.42);transform:rotate(8deg)}`;
+.qm-place:before{display:none}
+.qm-attachment{position:absolute;z-index:8;display:block;pointer-events:none;background-position:center;background-repeat:no-repeat;background-size:contain;filter:drop-shadow(1px 3px 2px rgba(33,20,12,.35))}
+.qm-place[data-frame=pin] .qm-attachment{left:50%;top:-19px;width:76%;height:34px;background-image:url("__PIN_ASSET__");transform:translateX(-50%) rotate(-3deg)}
+.qm-place[data-frame=pin][data-status=current] .qm-attachment{filter:drop-shadow(0 0 5px rgba(146,45,35,.8)) drop-shadow(1px 3px 2px rgba(33,20,12,.4))}
+.qm-place[data-frame=tape]{background:#e5dccd}.qm-place[data-frame=tape] .qm-attachment{left:50%;top:-14px;width:57%;height:36px;background-image:url("__TAPE_ASSET__");transform:translateX(-50%) rotate(-2deg)}
+.qm-place[data-frame=clip]{background:#e9e2d6}.qm-place[data-frame=clip] .qm-attachment{left:12%;top:-17px;width:36px;height:42px;background-image:url("__CLIP_ASSET__");transform:rotate(-5deg)}
+.qm-place[data-frame=collage]{padding:13px 12px 24px;background:#d8c9ad;box-shadow:0 12px 18px rgba(35,20,11,.4)}.qm-place[data-frame=collage] .qm-photo{border:0}.qm-place[data-frame=collage] .qm-attachment{z-index:9;inset:-12px -11px -16px;background-image:url("__COLLAGE_ASSET__");background-size:100% 100%;filter:drop-shadow(2px 4px 3px rgba(33,20,12,.38))}`;
 
 function blobToDataUri(blob) {
   return new Promise((resolve, reject) => {
@@ -554,36 +567,42 @@ function blobToDataUri(blob) {
   });
 }
 
-function ensureBackgroundDataUri() {
-  if (backgroundDataUri) return Promise.resolve(backgroundDataUri);
-  if (!backgroundLoadPromise) {
-    backgroundLoadPromise = fetch('./assets/detective-desk-blank.webp')
-      .then(response => {
-        if (!response.ok) throw new Error(`底图加载失败：${response.status}`);
-        return response.arrayBuffer();
-      })
-      .then(buffer => blobToDataUri(new Blob([buffer], { type: 'image/webp' })))
-      .then(dataUri => {
-        if (!dataUri.startsWith('data:image/webp;base64,')) throw new Error('底图格式无效');
-        backgroundDataUri = dataUri;
-        return dataUri;
+function ensureAssetDataUris() {
+  if (assetDataUris) return Promise.resolve(assetDataUris);
+  if (!assetLoadPromise) {
+    assetLoadPromise = Promise.all(Object.entries(ASSET_URLS).map(async ([key, url]) => {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`素材加载失败：${key} (${response.status})`);
+      const dataUri = await blobToDataUri(new Blob([await response.arrayBuffer()], { type: 'image/webp' }));
+      if (!dataUri.startsWith('data:image/webp;base64,')) throw new Error(`素材格式无效：${key}`);
+      return [key, dataUri];
+    }))
+      .then(entries => {
+        assetDataUris = Object.fromEntries(entries);
+        return assetDataUris;
       })
       .catch(error => {
-        backgroundLoadPromise = null;
+        assetLoadPromise = null;
         throw error;
       });
   }
-  return backgroundLoadPromise;
+  return assetLoadPromise;
 }
 
-function buildRegexHtml(mapBackground = backgroundDataUri) {
+function buildRegexHtml(assets = assetDataUris) {
+  if (!assets) throw new Error('地图素材尚未加载');
   const config = {
     version: 1,
     objective: state.objective,
     objects: state.objects.map(item => ({ ...item })),
   };
   const configJson = safeScriptJson(config);
-  const exportedCss = `${EXPORTED_CSS}${EXPORTED_FRAME_CSS}`.replace('__MAP_BACKGROUND__', mapBackground);
+  const exportedCss = `${EXPORTED_CSS}${EXPORTED_FRAME_CSS}`
+    .replace('__MAP_BACKGROUND__', assets.background)
+    .replace('__PIN_ASSET__', assets.pin)
+    .replace('__TAPE_ASSET__', assets.tape)
+    .replace('__CLIP_ASSET__', assets.clip)
+    .replace('__COLLAGE_ASSET__', assets.collage);
   return `<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -628,7 +647,7 @@ var current=places.find(function(place){return place.status==='current'}),summar
 </html>`;
 }
 
-function buildRegexScript(mapBackground = backgroundDataUri) {
+function buildRegexScript(assets = assetDataUris) {
   return {
     id: `status-atelier-quest-map-${Date.now().toString(36)}`,
     scriptName: '九一 · 可视化任务地图',
@@ -636,7 +655,7 @@ function buildRegexScript(mapBackground = backgroundDataUri) {
     runOnEdit: true,
     findRegex: '/<quest_map>\\s*([\\s\\S]*?)\\s*<\\/quest_map>/i',
     trimStrings: [],
-    replaceString: `\`\`\`html\n${buildRegexHtml(mapBackground)}\n\`\`\``,
+    replaceString: `\`\`\`html\n${buildRegexHtml(assets)}\n\`\`\``,
     placement: [2],
     substituteRegex: 0,
     minDepth: null,
@@ -647,8 +666,8 @@ function buildRegexScript(mapBackground = backgroundDataUri) {
 }
 
 async function refreshExport() {
-  const mapBackground = await ensureBackgroundDataUri();
-  regexOutput.value = JSON.stringify(buildRegexScript(mapBackground), null, 2);
+  const assets = await ensureAssetDataUris();
+  regexOutput.value = JSON.stringify(buildRegexScript(assets), null, 2);
 }
 
 fields.name.addEventListener('input', () => {
@@ -775,5 +794,5 @@ window.__mapEditorTestApi = {
   selectObject,
 };
 
-ensureBackgroundDataUri().catch(() => {});
+ensureAssetDataUris().catch(() => {});
 render();

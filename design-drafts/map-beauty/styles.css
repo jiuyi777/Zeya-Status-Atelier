@@ -162,68 +162,49 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   position: absolute;
   z-index: 8;
   display: block;
-  left: 50%;
   pointer-events: none;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  filter: drop-shadow(1px 3px 2px rgba(33, 20, 12, .35));
 }
 .place-card[data-frame="pin"] .place-attachment {
-  top: -10px;
-  width: 20px;
-  height: 20px;
-  border: 1px solid #47351f;
-  border-radius: 50%;
-  background: radial-gradient(circle at 33% 24%, #fff2bc 0 9%, #cda55a 23%, #85622f 55%, #3b2a19 100%);
-  box-shadow: inset -2px -3px 4px rgba(39,24,10,.42), inset 2px 2px 3px rgba(255,239,180,.5), 1px 4px 5px rgba(20,12,7,.52);
-  transform: translateX(-50%);
-}
-.place-card[data-frame="pin"] .place-attachment::after {
-  content: "";
-  position: absolute;
-  left: 9px;
-  top: 15px;
-  width: 2px;
-  height: 8px;
-  border-radius: 0 0 2px 2px;
-  background: linear-gradient(90deg, #443827, #d2c39f 48%, #514431);
-  box-shadow: 1px 2px 2px rgba(0,0,0,.3);
+  left: 50%;
+  top: -19px;
+  width: 76%;
+  height: 34px;
+  background-image: url("./assets/attachments/brass-safety-pin.webp");
+  transform: translateX(-50%) rotate(-3deg);
 }
 .place-card[data-frame="pin"][data-status="current"] .place-attachment {
-  background: radial-gradient(circle at 33% 24%, #ffd4bf 0 9%, #bc5b49 25%, #702c25 58%, #351715 100%);
-  box-shadow: inset -2px -3px 4px rgba(50,13,10,.45), inset 2px 2px 3px rgba(255,206,188,.42), 0 0 0 5px rgba(153,54,44,.18), 1px 4px 5px rgba(20,12,7,.52);
+  filter: drop-shadow(0 0 5px rgba(146, 45, 35, .8)) drop-shadow(1px 3px 2px rgba(33, 20, 12, .4));
 }
-.place-card[data-frame="tape"] { background: #ddd0b7; }
+.place-card[data-frame="tape"] { background: #e5dccd; }
 .place-card[data-frame="tape"] .place-attachment {
-  top: -7px;
-  width: 54%;
-  height: 18px;
-  background: repeating-linear-gradient(90deg, rgba(111,86,49,.08) 0 2px, transparent 2px 7px), rgba(222,197,142,.78);
-  box-shadow: 0 2px 4px rgba(45,28,13,.18);
+  left: 50%;
+  top: -14px;
+  width: 57%;
+  height: 36px;
+  background-image: url("./assets/attachments/gingham-cross.webp");
   transform: translateX(-50%) rotate(-2deg);
 }
-.place-card[data-frame="clip"] { border-left: 2px solid rgba(94,85,72,.38); }
+.place-card[data-frame="clip"] { background: #e9e2d6; }
 .place-card[data-frame="clip"] .place-attachment {
-  left: 22%;
-  top: -13px;
-  width: 18px;
-  height: 34px;
-  border: 3px solid #a9a79f;
-  border-bottom-color: transparent;
-  border-radius: 10px 10px 7px 7px;
-  box-shadow: inset 1px 0 #ece9dd, 2px 2px 3px rgba(35,28,23,.28);
-  transform: rotate(-7deg);
+  left: 12%;
+  top: -17px;
+  width: 36px;
+  height: 42px;
+  background-image: url("./assets/attachments/silver-binder-clip.webp");
+  transform: rotate(-5deg);
 }
-.place-card[data-frame="collage"] { background: #d5c5a6; box-shadow: -7px 8px 0 rgba(94,67,42,.24), 0 12px 18px rgba(35,20,11,.4); }
-.place-card[data-frame="collage"] .photo-window { border: 4px solid #f0e5cf; transform: rotate(-1deg); }
+.place-card[data-frame="collage"] { padding: 13px 12px 24px; background: #d8c9ad; box-shadow: 0 12px 18px rgba(35,20,11,.4); }
+.place-card[data-frame="collage"] .photo-window { border: 0; transform: none; }
 .place-card[data-frame="collage"] .place-attachment {
-  left: auto;
-  right: 8px;
-  top: -10px;
-  width: 24px;
-  height: 24px;
-  border: 3px double rgba(255,221,196,.42);
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #bd6250, #783128 63%, #431b18);
-  box-shadow: 1px 4px 5px rgba(40,18,12,.42);
-  transform: rotate(8deg);
+  z-index: 9;
+  inset: -12px -11px -16px;
+  background-image: url("./assets/attachments/newspaper-frame.webp");
+  background-size: 100% 100%;
+  filter: drop-shadow(2px 4px 3px rgba(33, 20, 12, .38));
 }
 .place-card[data-status="blocked"]::after {
   content: "";
