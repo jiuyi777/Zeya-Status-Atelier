@@ -6,15 +6,23 @@ const STATUS_LABELS = {
   blocked: '已阻断',
   unknown: '未探明',
 };
+const FRAME_STYLES = new Set(['pin', 'tape', 'clip', 'collage']);
+const LEGACY_INTROS = {
+  '已经调查过的地点，线索会继续保留在地图上。': '已经调查过的地点。',
+  '角色当前所在地点。AI 可通过 currentId 动态切换当前位置。': '角色当前所在地点。',
+  '当前可以前往的下一处地点。': '当前可以前往的下一处地点。',
+  '尚未探明的地点，照片可在得到线索后再填写。': '尚未探明。',
+};
 
 const defaultState = {
-  objective: '等待 AI 更新当前任务',
+  objective: '',
   objects: [
     {
       id: 'place-1',
       name: '地点 01',
       imageUrl: 'https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?auto=format&fit=crop&w=640&q=80',
-      description: '已经调查过的地点，线索会继续保留在地图上。',
+      intro: '已经调查过的地点。',
+      frameStyle: 'pin',
       status: 'completed',
       connectFrom: '',
       x: 31,
@@ -27,7 +35,8 @@ const defaultState = {
       id: 'place-2',
       name: '地点 02',
       imageUrl: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&w=640&q=80',
-      description: '角色当前所在地点。AI 可通过 currentId 动态切换当前位置。',
+      intro: '角色当前所在地点。',
+      frameStyle: 'tape',
       status: 'current',
       connectFrom: 'place-1',
       x: 63,
@@ -40,7 +49,8 @@ const defaultState = {
       id: 'place-3',
       name: '地点 03',
       imageUrl: 'https://images.unsplash.com/photo-1519682337058-a94d519337bc?auto=format&fit=crop&w=640&q=80',
-      description: '当前可以前往的下一处地点。',
+      intro: '当前可以前往的下一处地点。',
+      frameStyle: 'clip',
       status: 'available',
       connectFrom: 'place-2',
       x: 43,
@@ -53,7 +63,8 @@ const defaultState = {
       id: 'place-4',
       name: '地点 04',
       imageUrl: '',
-      description: '尚未探明的地点，照片可在得到线索后再填写。',
+      intro: '尚未探明。',
+      frameStyle: 'collage',
       status: 'unknown',
       connectFrom: 'place-2',
       x: 78,
@@ -72,6 +83,8 @@ const connectionLayer = document.querySelector('#connection-layer');
 const inspectorEmpty = document.querySelector('#inspector-empty');
 const inspectorForm = document.querySelector('#inspector-form');
 const duplicateButton = document.querySelector('#duplicate-button');
+const quickDeleteButton = document.querySelector('#quick-delete-button');
+const newPlaceStyle = document.querySelector('#new-place-style');
 const previewToggle = document.querySelector('#preview-toggle');
 const saveState = document.querySelector('#save-state');
 const toast = document.querySelector('#toast');
@@ -83,7 +96,8 @@ const regexOutput = document.querySelector('#regex-output');
 const fields = {
   name: document.querySelector('#place-name'),
   imageUrl: document.querySelector('#place-image-url'),
-  description: document.querySelector('#place-description'),
+  intro: document.querySelector('#place-intro'),
+  frameStyle: document.querySelector('#place-style'),
   status: document.querySelector('#place-status'),
   rotation: document.querySelector('#place-rotation'),
   size: document.querySelector('#place-size'),
@@ -111,18 +125,22 @@ function loadState() {
       .filter(item => item && typeof item.id === 'string')
       .slice(0, 16)
       .map((item, index) => normalizeObject(item, index));
-    return objects.length ? { objective: String(saved.objective || defaultState.objective), objects } : clone(defaultState);
+    const objective = String(saved.objective || '');
+    return objects.length ? { objective: objective.startsWith('等待 AI 更新') ? '' : objective, objects } : clone(defaultState);
   } catch {
     return clone(defaultState);
   }
 }
 
 function normalizeObject(item, index = 0) {
+  const legacyIntro = String(item.intro ?? item.description ?? '');
+  const intro = LEGACY_INTROS[legacyIntro] ?? (legacyIntro.startsWith('等待 AI 补充') ? '' : legacyIntro);
   return {
     id: String(item.id || `place-${Date.now()}-${index}`).replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 48),
     name: String(item.name || `地点 ${String(index + 1).padStart(2, '0')}`).slice(0, 28),
     imageUrl: isSafeHttpUrl(item.imageUrl) ? String(item.imageUrl) : '',
-    description: String(item.description || '等待 AI 补充地点详情。').slice(0, 160),
+    intro: intro.slice(0, 60),
+    frameStyle: FRAME_STYLES.has(item.frameStyle) ? item.frameStyle : ['pin', 'tape', 'clip', 'collage'][index % 4],
     status: STATUS_LABELS[item.status] ? item.status : 'unknown',
     connectFrom: String(item.connectFrom || ''),
     x: clamp(Number(item.x), 7, 93, 50),
@@ -199,6 +217,7 @@ function renderPlaces() {
     button.classList.toggle('is-connection-source', mode === 'edit' && object.id === connectionStartId);
     button.dataset.placeId = object.id;
     button.dataset.status = object.status;
+    button.dataset.frame = object.frameStyle;
     button.setAttribute('aria-label', `${object.name}，${statusLabel(object.status)}`);
     button.setAttribute('aria-pressed', String(mode === 'edit' && object.id === selectedId));
     button.style.setProperty('--x', `${object.x}%`);
@@ -206,6 +225,10 @@ function renderPlaces() {
     button.style.setProperty('--rotation', `${object.rotation}deg`);
     button.style.setProperty('--object-scale', object.size / 100);
     button.style.setProperty('--z', object.z);
+
+    const attachment = document.createElement('span');
+    attachment.className = 'place-attachment';
+    attachment.setAttribute('aria-hidden', 'true');
 
     const windowElement = document.createElement('span');
     windowElement.className = `photo-window${object.imageUrl ? '' : ' is-empty'}`;
@@ -229,7 +252,7 @@ function renderPlaces() {
     const stateTag = document.createElement('span');
     stateTag.className = 'place-state';
     stateTag.textContent = statusLabel(object.status);
-    button.append(windowElement, caption, stateTag);
+    button.append(attachment, windowElement, caption, stateTag);
     bindPlaceInteractions(button, object);
     placeLayer.append(button);
   });
@@ -335,7 +358,9 @@ function bindPlaceInteractions(button, object) {
 function renderSummary() {
   const current = state.objects.find(item => item.status === 'current');
   document.querySelector('#current-place-name').textContent = current?.name || '尚未设定';
-  document.querySelector('#current-objective').textContent = state.objective;
+  const objective = document.querySelector('#current-objective');
+  objective.textContent = state.objective;
+  objective.hidden = !state.objective;
 }
 
 function renderInspector() {
@@ -343,12 +368,14 @@ function renderInspector() {
   inspectorEmpty.hidden = Boolean(object);
   inspectorForm.hidden = !object;
   duplicateButton.disabled = !object;
+  quickDeleteButton.disabled = !object;
   if (!object) return;
 
   document.querySelector('#selected-object-title').textContent = object.name;
   fields.name.value = object.name;
   fields.imageUrl.value = object.imageUrl;
-  fields.description.value = object.description;
+  fields.intro.value = object.intro;
+  fields.frameStyle.value = object.frameStyle;
   fields.status.value = object.status;
   fields.rotation.value = object.rotation;
   fields.size.value = object.size;
@@ -396,20 +423,36 @@ function moveSelected(dx, dy) {
   document.querySelector(`[data-place-id="${CSS.escape(object.id)}"]`)?.focus();
 }
 
-function addPlace(source = null) {
+function findOpenPosition() {
+  const slots = [
+    { x: 20, y: 24 }, { x: 50, y: 24 }, { x: 80, y: 24 },
+    { x: 24, y: 50 }, { x: 50, y: 50 }, { x: 76, y: 50 },
+    { x: 20, y: 76 }, { x: 50, y: 76 }, { x: 80, y: 76 },
+  ];
+  if (!state.objects.length) return slots[4];
+  return slots.reduce((best, slot) => {
+    const nearest = Math.min(...state.objects.map(item => ((item.x - slot.x) ** 2) + ((item.y - slot.y) ** 2)));
+    return nearest > best.nearest ? { ...slot, nearest } : best;
+  }, { ...slots[0], nearest: -1 });
+}
+
+function addPlace(source = null, requestedStyle = 'pin') {
   if (state.objects.length >= 16) {
     showToast('一张地图最多放置 16 个地点。');
     return;
   }
   const index = state.objects.length + 1;
   const base = source || {};
+  const position = findOpenPosition();
   const id = `place-${Date.now().toString(36)}-${index}`;
   const object = normalizeObject({
     ...base,
     id,
     name: source ? `${source.name} 副本`.slice(0, 28) : `地点 ${String(index).padStart(2, '0')}`,
-    x: clamp(Number(base.x ?? 50) + (source ? 4 : 0), 7, 93, 50),
-    y: clamp(Number(base.y ?? 50) + (source ? 4 : 0), 10, 90, 50),
+    intro: source ? source.intro : '',
+    frameStyle: source ? source.frameStyle : (FRAME_STYLES.has(requestedStyle) ? requestedStyle : 'pin'),
+    x: position.x,
+    y: position.y,
     connectFrom: '',
     z: Math.max(0, ...state.objects.map(item => item.z)) + 1,
     status: source ? 'unknown' : 'available',
@@ -419,7 +462,7 @@ function addPlace(source = null) {
   save();
   render();
   fields.name.focus();
-  showToast(source ? '已复制地点照片。' : '已添加地点照片，请填写名称和 URL。');
+  showToast(source ? '已复制地点。' : '已添加地点，请填写名称和照片 URL。');
 }
 
 function deleteSelected() {
@@ -435,7 +478,7 @@ function deleteSelected() {
   selectedId = null;
   save();
   render();
-  showToast(`已删除“${snapshot.name}”。`, '撤销', () => {
+  showToast(`已删除地点“${snapshot.name}”。`, '撤销', () => {
     state.objects.splice(index, 0, snapshot);
     selectedId = snapshot.id;
     save();
@@ -477,7 +520,9 @@ function openDetail(object, trigger) {
   lastDetailTrigger = trigger;
   document.querySelector('#detail-status').textContent = statusLabel(object.status);
   document.querySelector('#detail-title').textContent = object.name;
-  document.querySelector('#detail-description').textContent = object.description;
+  const intro = document.querySelector('#detail-intro');
+  intro.textContent = object.intro;
+  intro.hidden = !object.intro;
   detail.classList.add('is-open');
   detail.setAttribute('aria-hidden', 'false');
   detailCard.focus();
@@ -496,6 +541,9 @@ function safeScriptJson(value) {
 
 const EXPORTED_CSS = `
 *{box-sizing:border-box}html,body{min-width:320px;margin:0;background:transparent}button{font:inherit}.qm{position:relative;isolation:isolate;width:min(100%,760px);aspect-ratio:16/10;min-height:360px;margin:14px auto;overflow:hidden;border:1px solid #5e3926;background:#6a3820 url("__MAP_BACKGROUND__") center/cover no-repeat;box-shadow:0 18px 42px rgba(0,0,0,.4);font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.qm-routes{position:absolute;z-index:3;inset:0;width:100%;height:100%;pointer-events:none}.qm-route{fill:none;stroke:#983b31;stroke-width:4;stroke-linecap:round;filter:drop-shadow(0 2px 1px rgba(50,20,12,.38))}.qm-route[data-status=completed]{stroke:#73563a}.qm-route[data-status=blocked]{stroke:#5b211d;stroke-dasharray:15 10}.qm-route[data-status=unknown]{stroke:#7a6b58;stroke-dasharray:5 10}.qm-places{position:absolute;z-index:5;inset:0}.qm-place{--s:1;position:absolute;left:var(--x);top:var(--y);z-index:var(--z);width:clamp(88px,14.5%,145px);min-height:44px;padding:7px 7px 20px;border:0;color:#3d342c;background:#e7dfcf;box-shadow:0 7px 13px rgba(35,20,11,.36);cursor:pointer;transform:translate(-50%,-50%) rotate(var(--r)) scale(var(--s));touch-action:manipulation}.qm-place:before{content:"";position:absolute;z-index:3;left:50%;top:-7px;width:17px;height:17px;border-radius:50%;background:radial-gradient(circle at 33% 28%,#fff1cf 0 12%,#baa17a 38%,#6a5948 74%);box-shadow:0 2px 3px rgba(0,0,0,.45);transform:translateX(-50%)}.qm-place[data-status=current]:before{background:radial-gradient(circle at 33% 28%,#ffcfb7 0 12%,#b45242 38%,#62241f 74%);box-shadow:0 0 0 6px rgba(153,54,44,.2),0 2px 3px rgba(0,0,0,.45)}.qm-photo{position:relative;display:block;width:100%;aspect-ratio:1.38;overflow:hidden;border:1px solid rgba(55,47,39,.28);background:linear-gradient(145deg,transparent 0 45%,rgba(57,58,53,.68) 46% 58%,transparent 59%),linear-gradient(#bbb9af,#72756f)}.qm-photo img{display:block;width:100%;height:100%;object-fit:cover;filter:grayscale(1) sepia(.16) contrast(1.02)}.qm-photo:empty:after{content:"PHOTO";position:absolute;inset:0;display:grid;place-items:center;color:rgba(44,40,35,.5);font:800 .58rem/1 monospace;letter-spacing:.15em}.qm-name{position:absolute;left:5px;right:5px;bottom:4px;overflow:hidden;font:800 clamp(.62rem,1.1vw,.8rem)/1.2 "KaiTi",serif;text-align:center;text-overflow:ellipsis;white-space:nowrap}.qm-badge{position:absolute;right:-7px;bottom:-8px;padding:5px 7px;color:#f7ead4;background:#674a35;font:800 .52rem/1 monospace}.qm-summary{position:absolute;z-index:7;left:12%;bottom:3%;max-width:58%;padding:7px 10px;color:#4c392a;background:rgba(231,213,177,.91);box-shadow:0 5px 10px rgba(36,20,10,.25);transform:rotate(-1deg)}.qm-summary span,.qm-summary strong,.qm-summary small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qm-summary span{font:800 .52rem/1 monospace}.qm-summary strong{margin:2px 0;font:800 .75rem/1.2 serif}.qm-summary small{font-size:.58rem}.qm-detail{position:absolute;z-index:20;inset:0;display:none;background:rgba(25,15,9,.66)}.qm-detail.open{display:grid;place-items:end center}.qm-card{width:min(86%,480px);margin-bottom:5%;padding:20px;color:#40352b;background:repeating-linear-gradient(0deg,transparent 0 26px,rgba(94,71,48,.09) 27px),#dfcfad;box-shadow:0 18px 44px rgba(0,0,0,.42)}.qm-back{min-height:44px;padding:0 10px;border:0;color:#4b392b;background:transparent;font-weight:800;cursor:pointer}.qm-card b{display:block;margin:12px 0 5px;color:#8d3e32;font:800 .62rem/1 monospace}.qm-card h2{margin:0 0 8px;font-family:serif}.qm-card p{margin:0;line-height:1.7}@media(max-width:520px){.qm{aspect-ratio:3/4}.qm-place{width:clamp(80px,26%,108px)}.qm-badge{display:none}.qm-summary{left:6%;max-width:74%}}`;
+
+const EXPORTED_FRAME_CSS = `
+.qm-place:before{display:none}.qm-attachment{position:absolute;z-index:8;display:block;left:50%;pointer-events:none}.qm-place[data-frame=pin] .qm-attachment{top:-10px;width:20px;height:20px;border:1px solid #47351f;border-radius:50%;background:radial-gradient(circle at 33% 24%,#fff2bc 0 9%,#cda55a 23%,#85622f 55%,#3b2a19 100%);box-shadow:inset -2px -3px 4px rgba(39,24,10,.42),inset 2px 2px 3px rgba(255,239,180,.5),1px 4px 5px rgba(20,12,7,.52);transform:translateX(-50%)}.qm-place[data-frame=pin] .qm-attachment:after{content:"";position:absolute;left:9px;top:15px;width:2px;height:8px;background:linear-gradient(90deg,#443827,#d2c39f 48%,#514431)}.qm-place[data-frame=pin][data-status=current] .qm-attachment{background:radial-gradient(circle at 33% 24%,#ffd4bf 0 9%,#bc5b49 25%,#702c25 58%,#351715 100%);box-shadow:inset -2px -3px 4px rgba(50,13,10,.45),inset 2px 2px 3px rgba(255,206,188,.42),0 0 0 5px rgba(153,54,44,.18),1px 4px 5px rgba(20,12,7,.52)}.qm-place[data-frame=tape]{background:#ddd0b7}.qm-place[data-frame=tape] .qm-attachment{top:-7px;width:54%;height:18px;background:repeating-linear-gradient(90deg,rgba(111,86,49,.08) 0 2px,transparent 2px 7px),rgba(222,197,142,.78);box-shadow:0 2px 4px rgba(45,28,13,.18);transform:translateX(-50%) rotate(-2deg)}.qm-place[data-frame=clip]{border-left:2px solid rgba(94,85,72,.38)}.qm-place[data-frame=clip] .qm-attachment{left:22%;top:-13px;width:18px;height:34px;border:3px solid #a9a79f;border-bottom-color:transparent;border-radius:10px 10px 7px 7px;box-shadow:inset 1px 0 #ece9dd,2px 2px 3px rgba(35,28,23,.28);transform:rotate(-7deg)}.qm-place[data-frame=collage]{background:#d5c5a6;box-shadow:-7px 8px 0 rgba(94,67,42,.24),0 12px 18px rgba(35,20,11,.4)}.qm-place[data-frame=collage] .qm-photo{border:4px solid #f0e5cf;transform:rotate(-1deg)}.qm-place[data-frame=collage] .qm-attachment{left:auto;right:8px;top:-10px;width:24px;height:24px;border:3px double rgba(255,221,196,.42);border-radius:50%;background:radial-gradient(circle at 35% 30%,#bd6250,#783128 63%,#431b18);box-shadow:1px 4px 5px rgba(40,18,12,.42);transform:rotate(8deg)}`;
 
 function blobToDataUri(blob) {
   return new Promise((resolve, reject) => {
@@ -535,7 +583,7 @@ function buildRegexHtml(mapBackground = backgroundDataUri) {
     objects: state.objects.map(item => ({ ...item })),
   };
   const configJson = safeScriptJson(config);
-  const exportedCss = EXPORTED_CSS.replace('__MAP_BACKGROUND__', mapBackground);
+  const exportedCss = `${EXPORTED_CSS}${EXPORTED_FRAME_CSS}`.replace('__MAP_BACKGROUND__', mapBackground);
   return `<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -558,7 +606,7 @@ var labels={current:'当前位置',completed:'已走过',available:'可前往',b
 var dynamic={};try{dynamic=JSON.parse(document.getElementById('qm-data').textContent.trim()||'{}')}catch(error){dynamic={}}
 var overrides=Array.isArray(dynamic.places)?dynamic.places:[];
 var places=config.objects.map(function(base){var change=overrides.find(function(item){return item&&item.id===base.id})||{};return Object.assign({},base,change)});
-overrides.forEach(function(item,index){if(!item||!item.id||places.some(function(place){return place.id===item.id}))return;places.push(Object.assign({name:'新地点',imageUrl:'',description:'等待补充地点详情。',status:'unknown',connectFrom:'',x:16+(index%4)*22,y:18+(index%3)*31,rotation:0,size:92,z:places.length+1},item))});
+overrides.forEach(function(item,index){if(!item||!item.id||places.some(function(place){return place.id===item.id}))return;places.push(Object.assign({name:'新地点',imageUrl:'',intro:'',frameStyle:'pin',status:'unknown',connectFrom:'',x:16+(index%4)*22,y:18+(index%3)*31,rotation:0,size:92,z:places.length+1},item))});
 if(dynamic.statuses&&typeof dynamic.statuses==='object'){places.forEach(function(place){if(labels[dynamic.statuses[place.id]])place.status=dynamic.statuses[place.id]})}
 if(dynamic.currentId){places.forEach(function(place){if(place.id===dynamic.currentId)place.status='current';else if(place.status==='current')place.status='completed'})}
 var root=document.getElementById('qm'),host=root.querySelector('.qm-places'),routes=root.querySelector('.qm-routes'),detail=root.querySelector('.qm-detail'),card=detail.querySelector('.qm-card');
@@ -567,12 +615,13 @@ function close(){detail.classList.remove('open');detail.setAttribute('aria-hidde
 detail.addEventListener('click',function(event){if(event.target===detail)close()});detail.querySelector('.qm-back').addEventListener('click',close);
 places.forEach(function(place){
  if(place.connectFrom){var from=places.find(function(item){return item.id===place.connectFrom});if(from){var x1=from.x*10,y1=from.y*6.25,x2=place.x*10,y2=place.y*6.25,bend=Math.min(46,Math.abs(x2-x1)*.08);var path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d','M '+x1+' '+y1+' Q '+((x1+x2)/2)+' '+(((y1+y2)/2)+bend)+' '+x2+' '+y2);path.setAttribute('class','qm-route');path.dataset.status=place.status;routes.append(path)}}
- var button=document.createElement('button');button.type='button';button.className='qm-place';button.dataset.status=labels[place.status]?place.status:'unknown';button.style.setProperty('--x',Math.max(7,Math.min(93,Number(place.x)||50))+'%');button.style.setProperty('--y',Math.max(10,Math.min(90,Number(place.y)||50))+'%');button.style.setProperty('--r',Math.max(-12,Math.min(12,Number(place.rotation)||0))+'deg');button.style.setProperty('--s',Math.max(.72,Math.min(1.32,(Number(place.size)||100)/100)));button.style.setProperty('--z',Number(place.z)||1);button.setAttribute('aria-label',String(place.name||'未命名地点')+'，'+(labels[button.dataset.status]||labels.unknown));
+ var button=document.createElement('button');button.type='button';button.className='qm-place';button.dataset.status=labels[place.status]?place.status:'unknown';button.dataset.frame=['pin','tape','clip','collage'].includes(place.frameStyle)?place.frameStyle:'pin';button.style.setProperty('--x',Math.max(7,Math.min(93,Number(place.x)||50))+'%');button.style.setProperty('--y',Math.max(10,Math.min(90,Number(place.y)||50))+'%');button.style.setProperty('--r',Math.max(-12,Math.min(12,Number(place.rotation)||0))+'deg');button.style.setProperty('--s',Math.max(.72,Math.min(1.32,(Number(place.size)||100)/100)));button.style.setProperty('--z',Number(place.z)||1);button.setAttribute('aria-label',String(place.name||'未命名地点')+'，'+(labels[button.dataset.status]||labels.unknown));
+ var attachment=document.createElement('span');attachment.className='qm-attachment';attachment.setAttribute('aria-hidden','true');
  var photo=document.createElement('span');photo.className='qm-photo';var url=safeUrl(place.imageUrl);if(url){var image=document.createElement('img');image.src=url;image.alt='';image.loading='lazy';image.referrerPolicy='no-referrer';photo.append(image)}
- var name=document.createElement('span');name.className='qm-name';name.textContent=place.name||'未命名地点';var badge=document.createElement('span');badge.className='qm-badge';badge.textContent=labels[button.dataset.status]||labels.unknown;button.append(photo,name,badge);
- button.addEventListener('click',function(){card.querySelector('b').textContent=labels[button.dataset.status]||labels.unknown;card.querySelector('h2').textContent=place.name||'未命名地点';card.querySelector('p').textContent=place.description||'等待补充地点详情。';detail.classList.add('open');detail.setAttribute('aria-hidden','false');card.focus()});host.append(button);
+ var name=document.createElement('span');name.className='qm-name';name.textContent=place.name||'未命名地点';var badge=document.createElement('span');badge.className='qm-badge';badge.textContent=labels[button.dataset.status]||labels.unknown;button.append(attachment,photo,name,badge);
+ button.addEventListener('click',function(){var intro=String(place.intro||place.description||'');card.querySelector('b').textContent=labels[button.dataset.status]||labels.unknown;card.querySelector('h2').textContent=place.name||'未命名地点';card.querySelector('p').textContent=intro;card.querySelector('p').hidden=!intro;detail.classList.add('open');detail.setAttribute('aria-hidden','false');card.focus()});host.append(button);
 });
-var current=places.find(function(place){return place.status==='current'});root.querySelector('.qm-summary strong').textContent=current?current.name:'尚未设定';root.querySelector('.qm-summary small').textContent=String(dynamic.objective||config.objective||'');
+var current=places.find(function(place){return place.status==='current'}),summaryText=String(dynamic.objective||config.objective||''),summarySmall=root.querySelector('.qm-summary small');root.querySelector('.qm-summary strong').textContent=current?current.name:'尚未设定';summarySmall.textContent=summaryText;summarySmall.hidden=!summaryText;
 })();
 </script>
 </body>
@@ -625,12 +674,13 @@ fields.imageUrl.addEventListener('input', () => {
   updateSelected({ imageUrl: value });
 });
 
-fields.description.addEventListener('input', () => {
+fields.intro.addEventListener('input', () => {
   const object = selectedObject();
   if (!object) return;
-  object.description = fields.description.value.slice(0, 160);
+  object.intro = fields.intro.value.slice(0, 60);
   save();
 });
+fields.frameStyle.addEventListener('change', () => updateSelected({ frameStyle: fields.frameStyle.value }));
 fields.status.addEventListener('change', () => {
   const object = selectedObject();
   if (!object) return;
@@ -645,9 +695,10 @@ fields.status.addEventListener('change', () => {
 });
 fields.rotation.addEventListener('input', () => updateSelected({ rotation: Number(fields.rotation.value) }));
 fields.size.addEventListener('input', () => updateSelected({ size: Number(fields.size.value) }));
-document.querySelector('#add-place-button').addEventListener('click', () => addPlace());
+document.querySelector('#add-place-button').addEventListener('click', () => addPlace(null, newPlaceStyle.value));
 duplicateButton.addEventListener('click', () => addPlace(selectedObject()));
 document.querySelector('#delete-place-button').addEventListener('click', deleteSelected);
+quickDeleteButton.addEventListener('click', deleteSelected);
 document.querySelector('#layer-up-button').addEventListener('click', () => moveLayer(1));
 document.querySelector('#layer-down-button').addEventListener('click', () => moveLayer(-1));
 document.querySelectorAll('[data-close-detail]').forEach(button => button.addEventListener('click', closeDetail));

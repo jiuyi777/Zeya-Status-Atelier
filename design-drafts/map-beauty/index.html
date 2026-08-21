@@ -39,13 +39,26 @@
             <span id="save-state" role="status" aria-live="polite">布局已保存到本机</span>
           </div>
           <div class="canvas-toolbar-actions">
+            <label class="new-style-picker" for="new-place-style">
+              <span>新增款式</span>
+              <select id="new-place-style" aria-label="新增地点款式">
+                <option value="pin">黄铜图钉</option>
+                <option value="tape">旧纸胶带</option>
+                <option value="clip">银色纸夹</option>
+                <option value="collage">案卷拼贴</option>
+              </select>
+            </label>
             <button class="tool-button" id="add-place-button" type="button">
               <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
               添加地点
             </button>
             <button class="tool-button" id="duplicate-button" type="button" disabled>
               <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
-              复制
+              复制地点
+            </button>
+            <button class="tool-button toolbar-delete" id="quick-delete-button" type="button" disabled>
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></svg>
+              删除地点
             </button>
           </div>
         </div>
@@ -58,7 +71,7 @@
             <aside class="map-summary" aria-live="polite">
               <span>当前位置</span>
               <strong id="current-place-name">—</strong>
-              <small id="current-objective">等待 AI 更新任务</small>
+              <small id="current-objective" hidden></small>
             </aside>
 
             <section class="place-detail" id="place-detail" aria-hidden="true" aria-labelledby="detail-title">
@@ -70,14 +83,14 @@
                 </button>
                 <p id="detail-status">可前往</p>
                 <h2 id="detail-title">地点名称</h2>
-                <p id="detail-description">地点说明</p>
+                <p id="detail-intro">地点介绍</p>
               </div>
             </section>
           </article>
         </div>
 
         <p class="canvas-tip" id="canvas-tip">
-          直接拖动照片调整位置。双击第一张照片，再双击第二张照片，即可连接红线；成品预览中点击照片打开地点详情。
+          先选新增款式，再添加地点；新地点会自动找空位。直接拖动调整位置，双击两张照片连接红线。
         </p>
       </div>
 
@@ -85,7 +98,7 @@
         <div class="inspector-empty" id="inspector-empty">
           <span class="empty-pin" aria-hidden="true"></span>
           <h2>选择一张地点照片</h2>
-          <p>选中后可改名字、图片 URL、AI 状态绑定和位置，也可以删除或复制。</p>
+          <p>选中后可改名字、短介绍、照片 URL、款式与路线状态，也可以复制或删除地点。</p>
         </div>
 
         <form class="inspector-form" id="inspector-form" hidden>
@@ -105,8 +118,17 @@
           <p class="field-help" id="url-help">支持 http / https；留空时显示档案占位图。</p>
           <p class="field-error" id="url-error" role="alert" hidden>URL 必须以 http:// 或 https:// 开头。</p>
 
-          <label class="field-label" for="place-description">地点详情</label>
-          <textarea id="place-description" name="description" rows="3" maxlength="160"></textarea>
+          <label class="field-label" for="place-intro">地点介绍（可选）</label>
+          <input id="place-intro" name="intro" type="text" maxlength="60" autocomplete="off" placeholder="例如：通往北境的废弃驿站">
+          <p class="field-help">只是一句显示说明，不会写入世界书，也不会控制剧情。</p>
+
+          <label class="field-label" for="place-style">照片款式</label>
+          <select id="place-style" name="frameStyle">
+            <option value="pin">黄铜图钉</option>
+            <option value="tape">旧纸胶带</option>
+            <option value="clip">银色纸夹</option>
+            <option value="collage">案卷拼贴</option>
+          </select>
 
           <label class="field-label" for="place-status">默认路线状态</label>
           <select id="place-status" name="status">
@@ -126,13 +148,13 @@
             <input id="place-size" name="size" type="range" min="72" max="132" step="2">
           </div>
 
-          <div class="layer-actions" role="group" aria-label="照片层级">
+          <div class="layer-actions" role="group" aria-label="地点层级">
             <button type="button" id="layer-down-button">下移一层</button>
             <button type="button" id="layer-up-button">上移一层</button>
           </div>
           <button class="delete-button" id="delete-place-button" type="button">
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></svg>
-            删除这张照片
+            删除地点
           </button>
         </form>
       </aside>
@@ -149,7 +171,7 @@
           </div>
           <button class="icon-button" value="cancel" aria-label="关闭生成结果"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
         </header>
-        <p>编辑器控件不会写进成品。AI 在 <code>&lt;quest_map&gt;</code> 中输出 JSON，可更新当前位置、任务目标、路线状态和地点详情。</p>
+        <p>编辑器控件不会写进成品。正则只显示 <code>&lt;quest_map&gt;</code> 中已有的地点、当前位置、路线状态与可选短介绍，不负责写世界书或推进剧情。</p>
         <label for="regex-output">正则 JSON</label>
         <textarea id="regex-output" readonly spellcheck="false"></textarea>
         <div class="export-actions">

@@ -92,6 +92,19 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
 .canvas-toolbar strong, .canvas-toolbar span { display: block; }
 .canvas-toolbar strong { margin-bottom: 3px; font-size: .9rem; }
 .canvas-toolbar span { color: var(--muted); font-size: .72rem; }
+.canvas-toolbar-actions { flex-wrap: wrap; justify-content: flex-end; }
+.new-style-picker { display: grid; gap: 3px; color: var(--muted); font-size: .66rem; font-weight: 800; }
+.new-style-picker select {
+  min-width: 118px;
+  min-height: 44px;
+  padding: 0 28px 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--text);
+  background: #292e2a;
+}
+.toolbar-delete { border-color: rgba(223,110,91,.3); color: #ffb2a4; background: rgba(112,43,35,.22); }
+.toolbar-delete:not(:disabled):hover { background: rgba(143,54,45,.35); }
 
 .map-viewport {
   width: 100%;
@@ -145,20 +158,73 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   touch-action: none;
 }
 .place-card:active { cursor: grabbing; }
-.place-card::before {
-  content: "";
+.place-attachment {
   position: absolute;
-  z-index: 3;
+  z-index: 8;
+  display: block;
   left: 50%;
-  top: -7px;
-  width: 17px;
-  height: 17px;
+  pointer-events: none;
+}
+.place-card[data-frame="pin"] .place-attachment {
+  top: -10px;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #47351f;
   border-radius: 50%;
-  background: radial-gradient(circle at 33% 28%, #fff1cf 0 12%, #baa17a 38%, #6a5948 74%);
-  box-shadow: 0 2px 3px rgba(0,0,0,.45);
+  background: radial-gradient(circle at 33% 24%, #fff2bc 0 9%, #cda55a 23%, #85622f 55%, #3b2a19 100%);
+  box-shadow: inset -2px -3px 4px rgba(39,24,10,.42), inset 2px 2px 3px rgba(255,239,180,.5), 1px 4px 5px rgba(20,12,7,.52);
   transform: translateX(-50%);
 }
-.place-card[data-status="current"]::before { background: radial-gradient(circle at 33% 28%, #ffcfb7 0 12%, #b45242 38%, #62241f 74%); box-shadow: 0 0 0 6px rgba(153,54,44,.2), 0 2px 3px rgba(0,0,0,.45); }
+.place-card[data-frame="pin"] .place-attachment::after {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 15px;
+  width: 2px;
+  height: 8px;
+  border-radius: 0 0 2px 2px;
+  background: linear-gradient(90deg, #443827, #d2c39f 48%, #514431);
+  box-shadow: 1px 2px 2px rgba(0,0,0,.3);
+}
+.place-card[data-frame="pin"][data-status="current"] .place-attachment {
+  background: radial-gradient(circle at 33% 24%, #ffd4bf 0 9%, #bc5b49 25%, #702c25 58%, #351715 100%);
+  box-shadow: inset -2px -3px 4px rgba(50,13,10,.45), inset 2px 2px 3px rgba(255,206,188,.42), 0 0 0 5px rgba(153,54,44,.18), 1px 4px 5px rgba(20,12,7,.52);
+}
+.place-card[data-frame="tape"] { background: #ddd0b7; }
+.place-card[data-frame="tape"] .place-attachment {
+  top: -7px;
+  width: 54%;
+  height: 18px;
+  background: repeating-linear-gradient(90deg, rgba(111,86,49,.08) 0 2px, transparent 2px 7px), rgba(222,197,142,.78);
+  box-shadow: 0 2px 4px rgba(45,28,13,.18);
+  transform: translateX(-50%) rotate(-2deg);
+}
+.place-card[data-frame="clip"] { border-left: 2px solid rgba(94,85,72,.38); }
+.place-card[data-frame="clip"] .place-attachment {
+  left: 22%;
+  top: -13px;
+  width: 18px;
+  height: 34px;
+  border: 3px solid #a9a79f;
+  border-bottom-color: transparent;
+  border-radius: 10px 10px 7px 7px;
+  box-shadow: inset 1px 0 #ece9dd, 2px 2px 3px rgba(35,28,23,.28);
+  transform: rotate(-7deg);
+}
+.place-card[data-frame="collage"] { background: #d5c5a6; box-shadow: -7px 8px 0 rgba(94,67,42,.24), 0 12px 18px rgba(35,20,11,.4); }
+.place-card[data-frame="collage"] .photo-window { border: 4px solid #f0e5cf; transform: rotate(-1deg); }
+.place-card[data-frame="collage"] .place-attachment {
+  left: auto;
+  right: 8px;
+  top: -10px;
+  width: 24px;
+  height: 24px;
+  border: 3px double rgba(255,221,196,.42);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #bd6250, #783128 63%, #431b18);
+  box-shadow: 1px 4px 5px rgba(40,18,12,.42);
+  transform: rotate(8deg);
+}
 .place-card[data-status="blocked"]::after {
   content: "";
   position: absolute;
@@ -390,6 +456,8 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   .editor-workspace { display: block; padding: 8px; }
   .canvas-toolbar { padding: 8px 9px 8px 12px; }
   .canvas-toolbar-actions { gap: 8px; }
+  .new-style-picker { flex: 1 1 118px; }
+  .new-style-picker select { width: 100%; min-width: 0; }
   .tool-button { padding-inline: 9px; font-size: .7rem; }
   .map-viewport { min-height: 0; padding: 7px; }
   .clue-map { aspect-ratio: 3 / 4; min-height: 0; }
