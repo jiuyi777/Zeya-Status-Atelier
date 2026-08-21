@@ -197,17 +197,6 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   background-image: url("./assets/attachments/silver-binder-clip.webp");
   transform: rotate(-5deg);
 }
-.place-card[data-frame="collage"] { padding: 10px 10px 20px; background: #d8c9ad; box-shadow: 0 9px 15px rgba(35,20,11,.32); }
-.place-card[data-frame="collage"] .photo-window { border: 0; background: linear-gradient(145deg, rgba(89,79,65,.13), rgba(89,79,65,.28)), #b8ad94; transform: none; }
-.place-card[data-frame="collage"] .photo-window.is-empty::after { content: ""; }
-.place-card[data-frame="collage"] .place-attachment {
-  z-index: 9;
-  inset: -7px -6px -10px;
-  background-image: url("./assets/attachments/newspaper-frame.webp");
-  background-size: 100% 100%;
-  opacity: .92;
-  filter: drop-shadow(1px 3px 2px rgba(33, 20, 12, .3));
-}
 .place-card[data-status="blocked"]::after {
   content: "";
   position: absolute;
@@ -259,8 +248,7 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
 .place-card[data-status="blocked"] .place-state { background: #562725; }
 .place-card[data-status="unknown"] .place-state { background: #5d5a54; }
 .place-card[data-status="completed"] .place-state,
-.place-card[data-status="available"] .place-state,
-.place-card[data-frame="collage"] .place-state { display: none; }
+.place-card[data-status="available"] .place-state { display: none; }
 .map-editor[data-mode="edit"] .place-card[aria-pressed="true"] {
   outline: 2px solid rgba(205, 178, 116, .72);
   outline-offset: 3px;
