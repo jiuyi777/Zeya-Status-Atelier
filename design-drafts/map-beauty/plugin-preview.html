@@ -63,11 +63,11 @@
       src="/status-atelier-current-preview.html?workspace=status"
     ></iframe>
 
-    <section class="map-overlay" id="map-overlay" aria-label="复古任务地图" aria-hidden="true">
+    <section class="map-overlay" id="map-overlay" aria-label="任务地图正则编辑器" aria-hidden="true">
       <iframe
         class="map-frame"
         id="map-frame"
-        title="复古旅行档案地图"
+        title="可视化任务地图正则编辑器"
         src="./index.html?embedded=1"
         tabindex="-1"
       ></iframe>
@@ -129,15 +129,17 @@
       nodes.forEach(node => {
         if (node.dataset.mapBeautyBound === 'true') return;
         node.dataset.mapBeautyBound = 'true';
-        node.setAttribute('aria-label', `${node.textContent.trim()}，打开地图画面`);
-        node.title = '打开复古任务地图';
+        node.setAttribute('aria-label', `${node.textContent.trim()}，打开任务地图编辑器`);
+        node.title = '打开任务地图编辑器';
         node.addEventListener('click', () => openMap(node));
       });
 
       if (!preview.querySelector('.map-beauty-entry-help')) {
-        const help = pluginDocument.createElement('p');
+        const help = pluginDocument.createElement('button');
+        help.type = 'button';
         help.className = 'map-beauty-entry-help';
-        help.textContent = '点击上方任一地图节点，打开完整地图画面';
+        help.textContent = '打开可视化任务地图编辑器';
+        help.addEventListener('click', () => openMap(help));
         if (!pluginDocument.querySelector('#map-beauty-entry-style')) {
           const style = pluginDocument.createElement('style');
           style.id = 'map-beauty-entry-style';
@@ -253,7 +255,7 @@
             .map-beauty-compass::before,.map-beauty-compass::after { content:"";position:absolute;left:50%;top:4px;width:1px;height:34px;background:#665846;transform-origin:center; }
             .map-beauty-compass::after { transform:rotate(90deg); }
             .map-beauty-compass i { position:absolute;left:15px;top:6px;width:11px;height:28px;border:1px solid #665846;transform:rotate(24deg); }
-            .map-beauty-entry-help { margin:4px 5px 11px!important;padding:9px 12px!important;border:1px dashed #8b392a!important;color:#7b3327!important;background:rgba(230,217,190,.65)!important;font-weight:800!important;font-size:12px!important;text-align:center!important; }
+            .map-beauty-entry-help { display:block!important;width:calc(100% - 10px)!important;min-height:44px!important;margin:4px 5px 11px!important;padding:9px 12px!important;border:1px dashed #8b392a!important;color:#7b3327!important;background:rgba(230,217,190,.65)!important;font-weight:800!important;font-size:12px!important;text-align:center!important;cursor:pointer!important; }
             .map-beauty-quest-preview .zrs-fields { gap:0!important;padding:10px 8px 14px!important;background:repeating-linear-gradient(0deg,transparent 0 25px,rgba(78,60,40,.08) 26px),#dfd2b7!important; }
             .map-beauty-quest-preview .zrs-field { margin:0!important;padding:10px 9px!important;border:0!important;border-bottom:1px dashed rgba(82,63,43,.3)!important;background:transparent!important;box-shadow:none!important; }
             .map-beauty-quest-preview .zrs-field::before { color:#8b392a!important; }

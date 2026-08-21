@@ -3,178 +3,202 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light">
-  <title>Status Atelier · 任务地图模板集</title>
+  <meta name="color-scheme" content="dark light">
+  <title>Status Atelier · 任务地图编辑器</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <main class="prototype-shell">
-    <section class="prototype-intro" aria-labelledby="prototype-title">
-      <div>
-        <p class="eyebrow">STATUS ATELIER / ARCHIVE MAP</p>
-        <h1 id="prototype-title">任务地图模板集</h1>
-        <p>五套地图版式共享同一份 AI 地点、路线和当前位置数据；切换模板只改变构图与材质，不会丢失交互状态。</p>
+  <main class="map-editor" id="map-editor" data-mode="edit">
+    <header class="editor-topbar">
+      <button class="icon-button back-button" id="back-button" type="button" aria-label="返回插件界面" title="返回插件界面">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div class="editor-title">
+        <p>STATUS ATELIER</p>
+        <h1>任务地图编辑</h1>
       </div>
-
-      <div class="prototype-controls" aria-label="原型数据控制">
-        <fieldset class="density-switch">
-          <legend>地点数量</legend>
-          <button type="button" data-dataset="compact">4 个</button>
-          <button type="button" data-dataset="standard" aria-pressed="true">7 个</button>
-          <button type="button" data-dataset="expanded">11 个</button>
-        </fieldset>
-        <button class="advance-button" id="advance-button" type="button">
-          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h12m-5-5 5 5-5 5"/></svg>
-          模拟 AI 推进一轮
+      <div class="topbar-actions">
+        <button class="secondary-button" id="reset-button" type="button">恢复模板</button>
+        <button class="secondary-button" id="preview-toggle" type="button" aria-pressed="false">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+          <span>成品预览</span>
+        </button>
+        <button class="primary-button" id="generate-button" type="button">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14"/></svg>
+          生成正则
         </button>
       </div>
+    </header>
+
+    <section class="editor-workspace" aria-label="任务地图编辑工作区">
+      <div class="canvas-column">
+        <div class="canvas-toolbar" aria-label="画布工具">
+          <div>
+            <strong>木桌线索簿</strong>
+            <span id="save-state" role="status" aria-live="polite">布局已保存到本机</span>
+          </div>
+          <div class="canvas-toolbar-actions">
+            <button class="tool-button" id="add-place-button" type="button">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              添加地点
+            </button>
+            <button class="tool-button" id="duplicate-button" type="button" disabled>
+              <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+              复制
+            </button>
+          </div>
+        </div>
+
+        <div class="map-viewport" id="map-viewport">
+          <article class="clue-map" id="map-canvas" aria-label="可拖动的任务地图画布">
+            <div class="desk-props" aria-hidden="true">
+              <span class="typewriter"></span>
+              <span class="watch"><i></i></span>
+              <span class="magnifier"></span>
+              <span class="pencil"></span>
+              <span class="paper-stack paper-stack-a"></span>
+              <span class="paper-stack paper-stack-b"></span>
+            </div>
+            <div class="open-dossier" aria-hidden="true">
+              <span class="page page-left"></span>
+              <span class="page page-right"></span>
+              <span class="book-spine"></span>
+              <span class="page-grid grid-a"></span>
+              <span class="page-grid grid-b"></span>
+              <span class="page-grid grid-c"></span>
+              <span class="page-grid grid-d"></span>
+              <span class="page-arrow arrow-left"></span>
+              <span class="page-arrow arrow-right"></span>
+            </div>
+
+            <svg class="connection-layer" id="connection-layer" viewBox="0 0 1000 625" preserveAspectRatio="none" aria-hidden="true"></svg>
+            <div class="place-layer" id="place-layer" role="group" aria-label="地图地点对象"></div>
+
+            <aside class="map-summary" aria-live="polite">
+              <span>当前位置</span>
+              <strong id="current-place-name">—</strong>
+              <small id="current-objective">等待 AI 更新任务</small>
+            </aside>
+
+            <section class="place-detail" id="place-detail" aria-hidden="true" aria-labelledby="detail-title">
+              <div class="detail-scrim" data-close-detail></div>
+              <div class="detail-card" role="dialog" aria-modal="true" tabindex="-1">
+                <button class="detail-back" type="button" data-close-detail>
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+                  返回地图
+                </button>
+                <p id="detail-status">可前往</p>
+                <h2 id="detail-title">地点名称</h2>
+                <p id="detail-description">地点说明</p>
+              </div>
+            </section>
+          </article>
+        </div>
+
+        <p class="canvas-tip" id="canvas-tip">
+          点击照片后拖动；手机可直接按住照片移动，也可用右侧方向按钮微调。成品预览中点击照片会打开地点详情。
+        </p>
+      </div>
+
+      <aside class="inspector" id="inspector" aria-label="地点属性">
+        <div class="inspector-empty" id="inspector-empty">
+          <span class="empty-pin" aria-hidden="true"></span>
+          <h2>选择一张地点照片</h2>
+          <p>选中后可改名字、图片 URL、AI 状态绑定和位置，也可以删除或复制。</p>
+        </div>
+
+        <form class="inspector-form" id="inspector-form" hidden>
+          <div class="inspector-heading">
+            <div>
+              <p>当前对象</p>
+              <h2 id="selected-object-title">地点照片</h2>
+            </div>
+            <span class="selection-dot" aria-hidden="true"></span>
+          </div>
+
+          <label class="field-label" for="place-name">地点名称</label>
+          <input id="place-name" name="name" type="text" maxlength="28" autocomplete="off">
+
+          <label class="field-label" for="place-image-url">照片 URL</label>
+          <input id="place-image-url" name="imageUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://example.com/photo.jpg" aria-describedby="url-help url-error">
+          <p class="field-help" id="url-help">支持 http / https；留空时显示档案占位图。</p>
+          <p class="field-error" id="url-error" role="alert" hidden>URL 必须以 http:// 或 https:// 开头。</p>
+
+          <label class="field-label" for="place-description">地点详情</label>
+          <textarea id="place-description" name="description" rows="3" maxlength="160"></textarea>
+
+          <div class="field-grid">
+            <div>
+              <label class="field-label" for="place-status">默认路线状态</label>
+              <select id="place-status" name="status">
+                <option value="current">当前位置</option>
+                <option value="completed">已走过</option>
+                <option value="available">可前往</option>
+                <option value="blocked">已阻断</option>
+                <option value="unknown">未探明</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" for="place-connect-from">路线连接自</label>
+              <select id="place-connect-from" name="connectFrom"></select>
+            </div>
+          </div>
+
+          <fieldset class="position-controls">
+            <legend>位置微调</legend>
+            <div class="position-readout"><span id="position-x">X 0%</span><span id="position-y">Y 0%</span></div>
+            <div class="nudge-pad" aria-label="移动选中照片">
+              <button type="button" data-nudge="0,-1" aria-label="向上移动"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg></button>
+              <button type="button" data-nudge="-1,0" aria-label="向左移动"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button>
+              <button type="button" data-nudge="1,0" aria-label="向右移动"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
+              <button type="button" data-nudge="0,1" aria-label="向下移动"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+            </div>
+          </fieldset>
+
+          <div class="range-row">
+            <label for="place-rotation">旋转 <output id="rotation-output">0°</output></label>
+            <input id="place-rotation" name="rotation" type="range" min="-12" max="12" step="1">
+          </div>
+          <div class="range-row">
+            <label for="place-size">照片大小 <output id="size-output">100%</output></label>
+            <input id="place-size" name="size" type="range" min="72" max="132" step="2">
+          </div>
+
+          <div class="layer-actions" role="group" aria-label="照片层级">
+            <button type="button" id="layer-down-button">下移一层</button>
+            <button type="button" id="layer-up-button">上移一层</button>
+          </div>
+          <button class="delete-button" id="delete-place-button" type="button">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></svg>
+            删除这张照片
+          </button>
+        </form>
+      </aside>
     </section>
 
-    <nav class="map-template-switcher" aria-label="选择任务地图模板">
-      <span>地图模板</span>
-      <div role="group" aria-label="地图模板列表">
-        <button type="button" data-map-template="archive" aria-pressed="true">旅行档案</button>
-        <button type="button" data-map-template="urban">城市研究</button>
-        <button type="button" data-map-template="detective">侦探线索</button>
-        <button type="button" data-map-template="analysis">分析拼贴</button>
-        <button type="button" data-map-template="noir">黑幕关系</button>
-      </div>
-    </nav>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <article class="quest-map" id="quest-map" data-template="archive" aria-labelledby="map-title">
-      <div class="archive-decor" aria-hidden="true">
-        <div class="newspaper-scrap scrap-left"><b>THE NORTHERN POST</b><span>Field notes · route archive · weather report</span></div>
-        <div class="newspaper-scrap scrap-right"><b>THE INDIGO DOOR</b><span>October 21 · Late edition · $7.00</span></div>
-        <div class="binder-clip"><i></i><i></i></div>
-        <div class="tape tape-left"></div>
-        <div class="tape tape-right"></div>
-        <div class="pressed-flower flower-left"><i></i><i></i><i></i><i></i><i></i></div>
-        <div class="pressed-flower flower-right"><i></i><i></i><i></i><i></i></div>
-        <div class="luggage-tag"><span>FIELD</span><b>042</b></div>
-        <div class="template-artifacts">
-          <i class="artifact-note note-a">1951—1960<br>ROUTE RECORD</i>
-          <i class="artifact-note note-b">CURRENT<br>FIELD SITE</i>
-          <i class="artifact-clipping">THE DAILY ARCHIVE<br><small>Route, weather and witness notes</small></i>
-          <i class="artifact-film"></i>
-          <i class="artifact-label">CASE 042 · CONNECTION BOARD</i>
-        </div>
-      </div>
-
-      <div class="map-paper">
-      <header class="map-header">
-        <button class="map-exit" id="map-exit" type="button" aria-label="返回上层状态页">
-          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
-          <span>返回状态</span>
-        </button>
-        <div class="map-heading">
-          <p class="map-kicker">FIELD ARCHIVE · AI ROUTE DOSSIER</p>
-          <h2 id="map-title">雾脊古道</h2>
-          <p id="map-subtitle">沿废弃驿道抵达北境观星台</p>
-        </div>
-        <div class="weather-badge" aria-label="当前天气">
-          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 15.5h13.5a3.5 3.5 0 0 0 .4-7A6 6 0 0 0 6.6 9.8 3 3 0 0 0 4 15.5Z"/><path d="m8 19-1 2m5-2-1 2m5-2-1 2"/></svg>
-          <span id="weather-value">薄雾 · 11℃</span>
-        </div>
-      </header>
-
-      <div class="map-status-row">
-        <div class="current-readout">
-          <span class="readout-label">当前位置</span>
-          <strong id="current-location">风蚀关</strong>
-          <small id="current-note">已确认补给，东线可通行</small>
-        </div>
-        <div class="progress-readout" aria-label="任务进度">
-          <div><span>任务进度</span><strong id="progress-value">42%</strong></div>
-          <span class="progress-track"><i id="progress-fill"></i></span>
-        </div>
-      </div>
-
-      <section class="map-stage" aria-label="可点击地点与路线地图">
-        <svg class="terrain" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
-          <defs>
-            <pattern id="paper-grain" width="54" height="54" patternUnits="userSpaceOnUse">
-              <path d="M0 11c12-5 27 7 54-2M0 36c18 8 32-5 54 3" fill="none" stroke="currentColor" stroke-width="2" opacity=".09"/>
-              <circle cx="12" cy="26" r="1.6" fill="currentColor" opacity=".13"/>
-              <circle cx="43" cy="47" r="1" fill="currentColor" opacity=".1"/>
-            </pattern>
-            <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity=".16"/>
-            </filter>
-          </defs>
-          <rect width="1000" height="620" class="paper-base"/>
-          <rect width="1000" height="620" class="paper-texture" fill="url(#paper-grain)"/>
-          <path class="coastline" d="M-20 410C90 355 150 465 252 413s123-153 231-126 78 148 180 132c122-19 155-171 357-130v351H-20Z"/>
-          <path class="ridge ridge-a" d="m40 260 92-124 74 84 78-138 92 140 68-74 86 108"/>
-          <path class="ridge ridge-b" d="m626 215 72-92 57 67 58-109 105 146"/>
-          <g class="forest">
-            <path d="m91 414 28-60 28 60h-18l25 46H84l25-46Zm104 30 23-51 23 51h-14l18 35h-55l18-35Zm580-39 27-59 27 59h-17l23 43h-67l23-43Zm91 34 22-48 22 48h-14l19 35h-56l18-35Z"/>
-          </g>
-          <g class="map-landmarks" filter="url(#soft-shadow)">
-            <path d="M71 510h92v16H71Zm13-9v-58l33-25 33 25v58h-18v-39h-30v39Z"/>
-            <path d="M833 166h98v15h-98Zm17-10 8-73h48l8 73h-22v-34h-20v34Z"/>
-          </g>
-        </svg>
-
-        <svg class="route-layer" id="route-layer" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true"></svg>
-        <div class="node-layer" id="node-layer" role="group" aria-label="地点列表"></div>
-
-        <div class="compass" aria-hidden="true">
-          <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="25"/><path d="m32 8 7 24-7 24-7-24Z"/><path d="M8 32h48"/></svg>
-          <span>北</span>
-        </div>
-        <span class="map-scale" aria-hidden="true">TOPOGRAPHIC RECORD · SCALE 1:250,000</span>
-      </section>
-
-      <div class="route-legend" aria-label="路线图例">
-        <span><i class="legend-line is-travelled"></i>已走过</span>
-        <span><i class="legend-line is-available"></i>可前往</span>
-        <span><i class="legend-line is-blocked"></i>已阻断</span>
-        <span><i class="legend-line is-unknown"></i>未探明</span>
-      </div>
-
-      <footer class="map-footer">
-        <div class="objective-copy">
-          <span>当前任务</span>
-          <strong id="objective-value">在夜潮抵达前修复观星台的引路灯</strong>
-        </div>
-        <div class="risk-copy">
-          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 2.8 20h18.4Zm0 6v5m0 3h.01"/></svg>
-          <span><b>风险</b><span id="risk-value">北坡出现不稳定落石</span></span>
-        </div>
-      </footer>
-      </div>
-
-      <div class="photo-layer" id="photo-layer" role="group" aria-label="地点照片索引"></div>
-
-      <section class="location-sheet" id="location-sheet" aria-labelledby="sheet-title" aria-hidden="true">
-        <div class="sheet-scrim" data-close-sheet></div>
-        <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">
-          <div class="sheet-handle" aria-hidden="true"></div>
-          <div class="sheet-toolbar">
-            <button class="sheet-back" type="button" data-close-sheet>
-              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
-              返回地图
-            </button>
-            <span class="sheet-route-state" id="sheet-route-state">可前往</span>
+    <dialog class="export-dialog" id="export-dialog" aria-labelledby="export-title">
+      <form method="dialog" class="export-panel">
+        <header>
+          <div>
+            <p>IMPORTABLE REGEX</p>
+            <h2 id="export-title">任务地图正则已生成</h2>
           </div>
-          <div class="sheet-copy">
-            <p id="sheet-eyebrow">NEXT LOCATION</p>
-            <h3 id="sheet-title">灰栎驿站</h3>
-            <p id="sheet-description">旧驿站的屋顶仍能遮雨，炉膛中残留着不久前燃烧过的灰烬。</p>
-          </div>
-          <dl class="sheet-facts">
-            <div><dt>预计路程</dt><dd id="sheet-distance">1.8 km</dd></div>
-            <div><dt>环境</dt><dd id="sheet-weather">薄雾 / 林地</dd></div>
-            <div><dt>路线提示</dt><dd id="sheet-hint">沿石标向东北，避开北侧塌方。</dd></div>
-          </dl>
+          <button class="icon-button" value="cancel" aria-label="关闭生成结果"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+        </header>
+        <p>编辑器控件不会写进成品。AI 在 <code>&lt;quest_map&gt;</code> 中输出 JSON，可更新当前位置、任务目标、路线状态和地点详情。</p>
+        <label for="regex-output">正则 JSON</label>
+        <textarea id="regex-output" readonly spellcheck="false"></textarea>
+        <div class="export-actions">
+          <button class="secondary-button" id="copy-regex-button" type="button">复制 JSON</button>
+          <button class="primary-button" id="download-regex-button" type="button">下载正则 JSON</button>
         </div>
-      </section>
-    </article>
-
-    <p class="prototype-note">五套模板共享同一份动态地点数据；地图节点与照片都可点击。路线状态同时用线型、节点形状与文字表达，不依赖单一颜色。</p>
-    <div class="prototype-toast" id="prototype-toast" role="status" aria-live="polite"></div>
+      </form>
+    </dialog>
   </main>
+
   <script src="./prototype.js"></script>
 </body>
 </html>
