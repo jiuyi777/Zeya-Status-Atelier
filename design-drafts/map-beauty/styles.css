@@ -113,126 +113,10 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   margin: 0 auto;
   overflow: hidden;
   border: 1px solid #5e3926;
-  background:
-    linear-gradient(90deg, rgba(48,23,11,.12), transparent 24%, rgba(255,218,159,.04) 56%, transparent 78%),
-    repeating-linear-gradient(2deg, rgba(255,255,255,.018) 0 1px, transparent 1px 5px),
-    #6a3820;
-  box-shadow: 0 22px 55px rgba(0,0,0,.5), inset 0 0 90px rgba(40,14,5,.45);
+  background: #6a3820 url("./assets/detective-desk-blank.webp") center / cover no-repeat;
+  box-shadow: 0 22px 55px rgba(0,0,0,.5);
   user-select: none;
 }
-.clue-map::before {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  opacity: .38;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 8% 84%, rgba(19,8,4,.55), transparent 17%),
-    radial-gradient(circle at 88% 12%, rgba(255,202,128,.17), transparent 21%),
-    repeating-linear-gradient(87deg, transparent 0 22px, rgba(46,20,10,.08) 23px 25px);
-  mix-blend-mode: multiply;
-}
-
-.desk-props span { position: absolute; z-index: 1; display: block; pointer-events: none; }
-.typewriter {
-  left: -4%;
-  top: -8%;
-  width: 22%;
-  height: 31%;
-  border: 12px solid #171512;
-  border-radius: 22% 18% 30% 12%;
-  background:
-    repeating-linear-gradient(90deg, #d0b994 0 7%, #28231e 7.5% 12%),
-    #27221d;
-  box-shadow: 10px 10px 20px rgba(0,0,0,.35);
-  transform: rotate(-18deg);
-}
-.watch {
-  left: 4%;
-  bottom: -5%;
-  width: 10%;
-  aspect-ratio: 1;
-  border: 5px double #b58b37;
-  border-radius: 50%;
-  background: radial-gradient(circle, #e3d4a0 0 7%, #c0a862 8% 11%, #675026 12% 14%, #d1bd7f 15% 62%, #9d752d 63%);
-  box-shadow: 3px 5px 12px rgba(0,0,0,.4);
-}
-.watch::before, .watch::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 2px;
-  height: 35%;
-  background: #483519;
-  transform-origin: 50% 0;
-}
-.watch::before { transform: rotate(145deg); }
-.watch::after { transform: rotate(25deg); height: 26%; }
-.magnifier {
-  right: 23%;
-  top: -3%;
-  width: 9%;
-  aspect-ratio: 1;
-  border: 5px solid #92753f;
-  border-radius: 50%;
-  background: rgba(220,205,160,.23);
-  box-shadow: inset 0 0 9px rgba(255,255,255,.3), 4px 7px 10px rgba(0,0,0,.27);
-  transform: rotate(-20deg);
-}
-.magnifier::after {
-  content: "";
-  position: absolute;
-  left: 85%;
-  top: 78%;
-  width: 120%;
-  height: 8px;
-  border-radius: 99px;
-  background: #a37a33;
-  transform: rotate(38deg);
-  transform-origin: left center;
-}
-.pencil {
-  right: 8%;
-  top: 7%;
-  width: 23%;
-  height: 9px;
-  border-radius: 99px;
-  background: linear-gradient(90deg, #1c1917 0 4%, #d5a240 5% 89%, #be6a45 90% 96%, #2a2320 97%);
-  box-shadow: 0 3px 5px rgba(0,0,0,.26);
-  transform: rotate(-17deg);
-}
-.paper-stack { width: 25%; height: 34%; background: #c7ae80; box-shadow: 4px 7px 13px rgba(0,0,0,.25); opacity: .72; }
-.paper-stack-a { right: -5%; top: 15%; transform: rotate(8deg); }
-.paper-stack-b { left: 10%; bottom: -12%; transform: rotate(-7deg); }
-
-.open-dossier { position: absolute; z-index: 2; inset: 13% 11% 9%; filter: drop-shadow(0 10px 13px rgba(30,12,5,.38)); pointer-events: none; }
-.page {
-  position: absolute;
-  inset-block: 0;
-  width: 50.2%;
-  border: 1px solid rgba(91,68,44,.45);
-  background:
-    repeating-radial-gradient(circle at 0 0, rgba(87,62,36,.06) 0 1px, transparent 1px 7px),
-    linear-gradient(110deg, rgba(255,255,255,.3), transparent 20%, rgba(117,83,49,.08) 85%),
-    #d8c4a0;
-  box-shadow: inset 0 0 30px rgba(108,74,39,.19);
-}
-.page-left { left: 0; border-radius: 16px 2px 2px 12px; transform: perspective(900px) rotateY(2deg); }
-.page-right { right: 0; border-radius: 2px 16px 12px 2px; transform: perspective(900px) rotateY(-2deg); }
-.book-spine { position: absolute; z-index: 2; left: 49.2%; top: 1%; bottom: 1%; width: 2%; background: linear-gradient(90deg, rgba(78,51,28,.28), rgba(255,255,255,.18), rgba(78,51,28,.24)); opacity: .65; }
-.page-grid { position: absolute; width: 42%; height: 37%; border: 1px dashed rgba(78,57,38,.35); }
-.grid-a { left: 5%; top: 7%; }
-.grid-b { right: 5%; top: 7%; }
-.grid-c { left: 5%; bottom: 7%; }
-.grid-d { right: 5%; bottom: 7%; }
-.page-arrow { bottom: 2.5%; width: 18px; height: 12px; }
-.page-arrow::before, .page-arrow::after { content: ""; position: absolute; background: #67452c; }
-.page-arrow::before { left: 0; top: 5px; width: 18px; height: 3px; }
-.page-arrow::after { top: 1px; width: 9px; height: 9px; transform: rotate(45deg); }
-.arrow-left { left: 2%; transform: scaleX(-1); }
-.arrow-right { right: 2%; }
 
 .connection-layer { position: absolute; z-index: 4; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
 .route-thread { fill: none; stroke: #9a3d31; stroke-width: 4; stroke-linecap: round; filter: drop-shadow(0 2px 1px rgba(50,20,12,.38)); }
@@ -342,6 +226,16 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   font: 800 .62rem/1 sans-serif;
   transform: translateX(-50%);
 }
+.map-editor[data-mode="edit"] .place-card.is-connection-source {
+  outline: 3px solid #a53f32;
+  outline-offset: 6px;
+  box-shadow: 0 0 0 9px rgba(165,63,50,.22), 0 8px 14px rgba(35,20,11,.4);
+}
+.map-editor[data-mode="edit"] .place-card.is-connection-source::after {
+  content: "连线起点";
+  background: #a53f32;
+  color: #fff8e9;
+}
 
 .map-summary {
   position: absolute;
@@ -427,15 +321,6 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
 .field-help { color: var(--muted); }
 .field-error { color: #ff9f92; }
 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.position-controls { margin: 17px 0; padding: 12px; border: 1px solid var(--line); border-radius: 9px; }
-.position-controls legend { padding: 0 6px; color: #ded1bd; font-size: .75rem; font-weight: 800; }
-.position-readout { display: flex; justify-content: center; gap: 12px; margin-bottom: 8px; color: var(--muted); font: 700 .7rem/1 monospace; }
-.nudge-pad { display: grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(2, 44px); justify-content: center; gap: 8px; }
-.nudge-pad button { display: grid; min-width: 44px; min-height: 44px; padding: 0; place-items: center; border: 1px solid var(--line); border-radius: 8px; color: var(--text); background: #2c312d; cursor: pointer; }
-.nudge-pad button:nth-child(1) { grid-column: 2; }
-.nudge-pad button:nth-child(2) { grid-column: 1; grid-row: 2; }
-.nudge-pad button:nth-child(3) { grid-column: 3; grid-row: 2; }
-.nudge-pad button:nth-child(4) { grid-column: 2; grid-row: 2; }
 .range-row { margin: 17px 0; }
 .range-row label { display: flex; justify-content: space-between; margin-bottom: 7px; color: #ded1bd; font-size: .75rem; font-weight: 800; }
 .range-row output { color: var(--muted); font-family: monospace; }
@@ -508,23 +393,10 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   .tool-button { padding-inline: 9px; font-size: .7rem; }
   .map-viewport { min-height: 0; padding: 7px; }
   .clue-map { aspect-ratio: 3 / 4; min-height: 0; }
-  .open-dossier { inset: 8% 5% 10%; }
-  .page-left, .page-right { width: 100%; left: 0; right: 0; }
-  .page-left { top: 0; bottom: 50%; height: 50.4%; border-radius: 12px 12px 2px 2px; transform: none; }
-  .page-right { top: 50%; bottom: 0; height: 50.4%; border-radius: 2px 2px 12px 12px; transform: none; }
-  .book-spine { left: 1%; right: 1%; top: 49.2%; bottom: auto; width: 98%; height: 1.6%; background: linear-gradient(0deg, rgba(78,51,28,.28), rgba(255,255,255,.18), rgba(78,51,28,.24)); }
-  .grid-a { left: 6%; top: 4%; width: 41%; height: 20%; }
-  .grid-b { right: 6%; top: 4%; width: 41%; height: 20%; }
-  .grid-c { left: 6%; bottom: 4%; width: 41%; height: 20%; }
-  .grid-d { right: 6%; bottom: 4%; width: 41%; height: 20%; }
   .place-card { width: clamp(82px, 26%, 112px); padding: 5px 5px 18px; }
   .place-state { display: none; }
   .place-caption { font-size: .66rem; }
   .map-summary { left: 7%; bottom: 4%; max-width: 72%; }
-  .typewriter { width: 32%; height: 19%; }
-  .watch { width: 17%; }
-  .magnifier { right: 14%; width: 14%; }
-  .pencil { width: 34%; }
   .inspector { position: static; max-height: none; min-height: 0; margin-top: 8px; }
   .inspector-empty { min-height: 210px; }
   .field-grid { grid-template-columns: 1fr 1fr; gap: 10px; }

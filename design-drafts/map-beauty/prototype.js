@@ -85,7 +85,6 @@ const fields = {
   imageUrl: document.querySelector('#place-image-url'),
   description: document.querySelector('#place-description'),
   status: document.querySelector('#place-status'),
-  connectFrom: document.querySelector('#place-connect-from'),
   rotation: document.querySelector('#place-rotation'),
   size: document.querySelector('#place-size'),
 };
@@ -96,6 +95,9 @@ let mode = new URLSearchParams(location.search).get('preview') === '1' ? 'previe
 let dragState = null;
 let toastTimer = 0;
 let lastDetailTrigger = null;
+let connectionStartId = null;
+let backgroundDataUri = '';
+let backgroundLoadPromise = null;
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -194,6 +196,7 @@ function renderPlaces() {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'place-card';
+    button.classList.toggle('is-connection-source', mode === 'edit' && object.id === connectionStartId);
     button.dataset.placeId = object.id;
     button.dataset.status = object.status;
     button.setAttribute('aria-label', `${object.name}，${statusLabel(object.status)}`);
@@ -246,6 +249,36 @@ function bindPlaceInteractions(button, object) {
     selectObject(object.id);
   });
 
+  button.addEventListener('dblclick', event => {
+    if (mode !== 'edit' || button.dataset.dragged === 'true') return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (connectionStartId === object.id) {
+      connectionStartId = null;
+      renderPlaces();
+      showToast('已取消红线起点。');
+      return;
+    }
+    if (!connectionStartId) {
+      connectionStartId = object.id;
+      renderPlaces();
+      showToast('再双击另一张照片连接红线。');
+      return;
+    }
+    const source = state.objects.find(item => item.id === connectionStartId);
+    if (!source) {
+      connectionStartId = object.id;
+      renderPlaces();
+      return;
+    }
+    object.connectFrom = source.id;
+    connectionStartId = null;
+    selectedId = object.id;
+    save();
+    render();
+    showToast(`已连接“${source.name}”与“${object.name}”。`);
+  });
+
   button.addEventListener('keydown', event => {
     if (mode !== 'edit') return;
     const movements = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
@@ -287,7 +320,6 @@ function bindPlaceInteractions(button, object) {
     object.y = clamp(dragState.startY + deltaY, 10, 90, object.y);
     button.style.setProperty('--x', `${object.x}%`);
     button.style.setProperty('--y', `${object.y}%`);
-    updatePositionReadout(object);
     renderConnections();
   });
   const endDrag = event => {
@@ -323,19 +355,6 @@ function renderInspector() {
   document.querySelector('#url-error').hidden = true;
   fields.imageUrl.removeAttribute('aria-invalid');
 
-  fields.connectFrom.replaceChildren();
-  const emptyOption = document.createElement('option');
-  emptyOption.value = '';
-  emptyOption.textContent = '不连接';
-  fields.connectFrom.append(emptyOption);
-  state.objects.filter(item => item.id !== object.id).forEach(item => {
-    const option = document.createElement('option');
-    option.value = item.id;
-    option.textContent = item.name;
-    fields.connectFrom.append(option);
-  });
-  fields.connectFrom.value = state.objects.some(item => item.id === object.connectFrom) ? object.connectFrom : '';
-  updatePositionReadout(object);
   document.querySelector('#rotation-output').textContent = `${object.rotation}°`;
   document.querySelector('#size-output').textContent = `${object.size}%`;
 }
@@ -352,13 +371,11 @@ function render() {
 
 function selectObject(id, focusInspector = false) {
   selectedId = state.objects.some(item => item.id === id) ? id : null;
-  render();
+  placeLayer.querySelectorAll('.place-card').forEach(button => {
+    button.setAttribute('aria-pressed', String(mode === 'edit' && button.dataset.placeId === selectedId));
+  });
+  renderInspector();
   if (focusInspector && selectedId) fields.name.focus();
-}
-
-function updatePositionReadout(object) {
-  document.querySelector('#position-x').textContent = `X ${Math.round(object.x)}%`;
-  document.querySelector('#position-y').textContent = `Y ${Math.round(object.y)}%`;
 }
 
 function updateSelected(changes, { rerender = true } = {}) {
@@ -393,7 +410,7 @@ function addPlace(source = null) {
     name: source ? `${source.name} 副本`.slice(0, 28) : `地点 ${String(index).padStart(2, '0')}`,
     x: clamp(Number(base.x ?? 50) + (source ? 4 : 0), 7, 93, 50),
     y: clamp(Number(base.y ?? 50) + (source ? 4 : 0), 10, 90, 50),
-    connectFrom: source ? source.id : (state.objects.at(-1)?.id || ''),
+    connectFrom: '',
     z: Math.max(0, ...state.objects.map(item => item.z)) + 1,
     status: source ? 'unknown' : 'available',
   }, index - 1);
@@ -412,8 +429,9 @@ function deleteSelected() {
   const snapshot = clone(object);
   state.objects.splice(index, 1);
   state.objects.forEach(item => {
-    if (item.connectFrom === object.id) item.connectFrom = object.connectFrom || '';
+    if (item.connectFrom === object.id) item.connectFrom = '';
   });
+  if (connectionStartId === object.id) connectionStartId = null;
   selectedId = null;
   save();
   render();
@@ -477,25 +495,56 @@ function safeScriptJson(value) {
 }
 
 const EXPORTED_CSS = `
-*{box-sizing:border-box}html,body{min-width:320px;margin:0;background:transparent}button{font:inherit}.qm{--paper:#d8c4a0;--ink:#43382d;position:relative;isolation:isolate;width:min(100%,760px);aspect-ratio:16/10;min-height:360px;margin:14px auto;overflow:hidden;border:1px solid #5e3926;background:repeating-linear-gradient(2deg,rgba(255,255,255,.018) 0 1px,transparent 1px 5px),#6a3820;box-shadow:0 18px 42px rgba(0,0,0,.4),inset 0 0 70px rgba(40,14,5,.42);font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.qm:before{content:"";position:absolute;z-index:0;inset:0;background:radial-gradient(circle at 88% 12%,rgba(255,202,128,.16),transparent 21%),repeating-linear-gradient(87deg,transparent 0 22px,rgba(46,20,10,.08) 23px 25px)}.qm-book{position:absolute;z-index:1;inset:12% 10% 8%;filter:drop-shadow(0 10px 13px rgba(30,12,5,.38))}.qm-page{position:absolute;top:0;bottom:0;width:50.2%;border:1px solid rgba(91,68,44,.45);background:repeating-radial-gradient(circle at 0 0,rgba(87,62,36,.06) 0 1px,transparent 1px 7px),#d8c4a0;box-shadow:inset 0 0 30px rgba(108,74,39,.19)}.qm-page:first-child{left:0;border-radius:16px 2px 2px 12px}.qm-page:last-child{right:0;border-radius:2px 16px 12px 2px}.qm-grid{position:absolute;z-index:2;inset:7%;background:linear-gradient(90deg,transparent 49.8%,rgba(78,57,38,.2) 50%,transparent 50.2%),linear-gradient(transparent 49.8%,rgba(78,57,38,.16) 50%,transparent 50.2%);background-size:50% 50%;border:1px dashed rgba(78,57,38,.3)}.qm-routes{position:absolute;z-index:3;inset:0;width:100%;height:100%;pointer-events:none}.qm-route{fill:none;stroke:#983b31;stroke-width:4;stroke-linecap:round;filter:drop-shadow(0 2px 1px rgba(50,20,12,.38))}.qm-route[data-status=completed]{stroke:#73563a}.qm-route[data-status=blocked]{stroke:#5b211d;stroke-dasharray:15 10}.qm-route[data-status=unknown]{stroke:#7a6b58;stroke-dasharray:5 10}.qm-places{position:absolute;z-index:5;inset:0}.qm-place{--s:1;position:absolute;left:var(--x);top:var(--y);z-index:var(--z);width:clamp(88px,14.5%,145px);min-height:44px;padding:7px 7px 20px;border:0;color:#3d342c;background:#e7dfcf;box-shadow:0 7px 13px rgba(35,20,11,.36);cursor:pointer;transform:translate(-50%,-50%) rotate(var(--r)) scale(var(--s));touch-action:manipulation}.qm-place:before{content:"";position:absolute;z-index:3;left:50%;top:-7px;width:17px;height:17px;border-radius:50%;background:radial-gradient(circle at 33% 28%,#fff1cf 0 12%,#baa17a 38%,#6a5948 74%);box-shadow:0 2px 3px rgba(0,0,0,.45);transform:translateX(-50%)}.qm-place[data-status=current]:before{background:radial-gradient(circle at 33% 28%,#ffcfb7 0 12%,#b45242 38%,#62241f 74%);box-shadow:0 0 0 6px rgba(153,54,44,.2),0 2px 3px rgba(0,0,0,.45)}.qm-photo{position:relative;display:block;width:100%;aspect-ratio:1.38;overflow:hidden;border:1px solid rgba(55,47,39,.28);background:linear-gradient(145deg,transparent 0 45%,rgba(57,58,53,.68) 46% 58%,transparent 59%),linear-gradient(#bbb9af,#72756f)}.qm-photo img{display:block;width:100%;height:100%;object-fit:cover;filter:grayscale(1) sepia(.16) contrast(1.02)}.qm-photo:empty:after{content:"PHOTO";position:absolute;inset:0;display:grid;place-items:center;color:rgba(44,40,35,.5);font:800 .58rem/1 monospace;letter-spacing:.15em}.qm-name{position:absolute;left:5px;right:5px;bottom:4px;overflow:hidden;font:800 clamp(.62rem,1.1vw,.8rem)/1.2 "KaiTi",serif;text-align:center;text-overflow:ellipsis;white-space:nowrap}.qm-badge{position:absolute;right:-7px;bottom:-8px;padding:5px 7px;color:#f7ead4;background:#674a35;font:800 .52rem/1 monospace}.qm-summary{position:absolute;z-index:7;left:12%;bottom:3%;max-width:58%;padding:7px 10px;color:#4c392a;background:rgba(231,213,177,.91);box-shadow:0 5px 10px rgba(36,20,10,.25);transform:rotate(-1deg)}.qm-summary span,.qm-summary strong,.qm-summary small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qm-summary span{font:800 .52rem/1 monospace}.qm-summary strong{margin:2px 0;font:800 .75rem/1.2 serif}.qm-summary small{font-size:.58rem}.qm-detail{position:absolute;z-index:20;inset:0;display:none;background:rgba(25,15,9,.66)}.qm-detail.open{display:grid;place-items:end center}.qm-card{width:min(86%,480px);margin-bottom:5%;padding:20px;color:#40352b;background:repeating-linear-gradient(0deg,transparent 0 26px,rgba(94,71,48,.09) 27px),#dfcfad;box-shadow:0 18px 44px rgba(0,0,0,.42)}.qm-back{min-height:44px;padding:0 10px;border:0;color:#4b392b;background:transparent;font-weight:800;cursor:pointer}.qm-card b{display:block;margin:12px 0 5px;color:#8d3e32;font:800 .62rem/1 monospace}.qm-card h2{margin:0 0 8px;font-family:serif}.qm-card p{margin:0;line-height:1.7}@media(max-width:520px){.qm{aspect-ratio:3/4}.qm-book{inset:7% 5% 9%}.qm-page{left:0!important;right:0!important;width:100%;height:50.2%}.qm-page:first-child{top:0;bottom:auto;border-radius:12px 12px 2px 2px}.qm-page:last-child{top:auto;bottom:0;border-radius:2px 2px 12px 12px}.qm-grid{background-size:50% 25%}.qm-place{width:clamp(80px,26%,108px)}.qm-badge{display:none}.qm-summary{left:6%;max-width:74%}}`;
+*{box-sizing:border-box}html,body{min-width:320px;margin:0;background:transparent}button{font:inherit}.qm{position:relative;isolation:isolate;width:min(100%,760px);aspect-ratio:16/10;min-height:360px;margin:14px auto;overflow:hidden;border:1px solid #5e3926;background:#6a3820 url("__MAP_BACKGROUND__") center/cover no-repeat;box-shadow:0 18px 42px rgba(0,0,0,.4);font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.qm-routes{position:absolute;z-index:3;inset:0;width:100%;height:100%;pointer-events:none}.qm-route{fill:none;stroke:#983b31;stroke-width:4;stroke-linecap:round;filter:drop-shadow(0 2px 1px rgba(50,20,12,.38))}.qm-route[data-status=completed]{stroke:#73563a}.qm-route[data-status=blocked]{stroke:#5b211d;stroke-dasharray:15 10}.qm-route[data-status=unknown]{stroke:#7a6b58;stroke-dasharray:5 10}.qm-places{position:absolute;z-index:5;inset:0}.qm-place{--s:1;position:absolute;left:var(--x);top:var(--y);z-index:var(--z);width:clamp(88px,14.5%,145px);min-height:44px;padding:7px 7px 20px;border:0;color:#3d342c;background:#e7dfcf;box-shadow:0 7px 13px rgba(35,20,11,.36);cursor:pointer;transform:translate(-50%,-50%) rotate(var(--r)) scale(var(--s));touch-action:manipulation}.qm-place:before{content:"";position:absolute;z-index:3;left:50%;top:-7px;width:17px;height:17px;border-radius:50%;background:radial-gradient(circle at 33% 28%,#fff1cf 0 12%,#baa17a 38%,#6a5948 74%);box-shadow:0 2px 3px rgba(0,0,0,.45);transform:translateX(-50%)}.qm-place[data-status=current]:before{background:radial-gradient(circle at 33% 28%,#ffcfb7 0 12%,#b45242 38%,#62241f 74%);box-shadow:0 0 0 6px rgba(153,54,44,.2),0 2px 3px rgba(0,0,0,.45)}.qm-photo{position:relative;display:block;width:100%;aspect-ratio:1.38;overflow:hidden;border:1px solid rgba(55,47,39,.28);background:linear-gradient(145deg,transparent 0 45%,rgba(57,58,53,.68) 46% 58%,transparent 59%),linear-gradient(#bbb9af,#72756f)}.qm-photo img{display:block;width:100%;height:100%;object-fit:cover;filter:grayscale(1) sepia(.16) contrast(1.02)}.qm-photo:empty:after{content:"PHOTO";position:absolute;inset:0;display:grid;place-items:center;color:rgba(44,40,35,.5);font:800 .58rem/1 monospace;letter-spacing:.15em}.qm-name{position:absolute;left:5px;right:5px;bottom:4px;overflow:hidden;font:800 clamp(.62rem,1.1vw,.8rem)/1.2 "KaiTi",serif;text-align:center;text-overflow:ellipsis;white-space:nowrap}.qm-badge{position:absolute;right:-7px;bottom:-8px;padding:5px 7px;color:#f7ead4;background:#674a35;font:800 .52rem/1 monospace}.qm-summary{position:absolute;z-index:7;left:12%;bottom:3%;max-width:58%;padding:7px 10px;color:#4c392a;background:rgba(231,213,177,.91);box-shadow:0 5px 10px rgba(36,20,10,.25);transform:rotate(-1deg)}.qm-summary span,.qm-summary strong,.qm-summary small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qm-summary span{font:800 .52rem/1 monospace}.qm-summary strong{margin:2px 0;font:800 .75rem/1.2 serif}.qm-summary small{font-size:.58rem}.qm-detail{position:absolute;z-index:20;inset:0;display:none;background:rgba(25,15,9,.66)}.qm-detail.open{display:grid;place-items:end center}.qm-card{width:min(86%,480px);margin-bottom:5%;padding:20px;color:#40352b;background:repeating-linear-gradient(0deg,transparent 0 26px,rgba(94,71,48,.09) 27px),#dfcfad;box-shadow:0 18px 44px rgba(0,0,0,.42)}.qm-back{min-height:44px;padding:0 10px;border:0;color:#4b392b;background:transparent;font-weight:800;cursor:pointer}.qm-card b{display:block;margin:12px 0 5px;color:#8d3e32;font:800 .62rem/1 monospace}.qm-card h2{margin:0 0 8px;font-family:serif}.qm-card p{margin:0;line-height:1.7}@media(max-width:520px){.qm{aspect-ratio:3/4}.qm-place{width:clamp(80px,26%,108px)}.qm-badge{display:none}.qm-summary{left:6%;max-width:74%}}`;
 
-function buildRegexHtml() {
+function blobToDataUri(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener('load', () => resolve(String(reader.result || '')), { once: true });
+    reader.addEventListener('error', () => reject(reader.error || new Error('底图读取失败')), { once: true });
+    reader.readAsDataURL(blob);
+  });
+}
+
+function ensureBackgroundDataUri() {
+  if (backgroundDataUri) return Promise.resolve(backgroundDataUri);
+  if (!backgroundLoadPromise) {
+    backgroundLoadPromise = fetch('./assets/detective-desk-blank.webp')
+      .then(response => {
+        if (!response.ok) throw new Error(`底图加载失败：${response.status}`);
+        return response.arrayBuffer();
+      })
+      .then(buffer => blobToDataUri(new Blob([buffer], { type: 'image/webp' })))
+      .then(dataUri => {
+        if (!dataUri.startsWith('data:image/webp;base64,')) throw new Error('底图格式无效');
+        backgroundDataUri = dataUri;
+        return dataUri;
+      })
+      .catch(error => {
+        backgroundLoadPromise = null;
+        throw error;
+      });
+  }
+  return backgroundLoadPromise;
+}
+
+function buildRegexHtml(mapBackground = backgroundDataUri) {
   const config = {
     version: 1,
     objective: state.objective,
     objects: state.objects.map(item => ({ ...item })),
   };
   const configJson = safeScriptJson(config);
+  const exportedCss = EXPORTED_CSS.replace('__MAP_BACKGROUND__', mapBackground);
   return `<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<style>${EXPORTED_CSS}</style>
+<style>${exportedCss}</style>
 </head>
 <body>
 <article class="qm" id="qm">
-  <div class="qm-book" aria-hidden="true"><span class="qm-page"></span><span class="qm-page"></span><span class="qm-grid"></span></div>
   <svg class="qm-routes" viewBox="0 0 1000 625" preserveAspectRatio="none" aria-hidden="true"></svg>
   <div class="qm-places" role="group" aria-label="任务地点"></div>
   <aside class="qm-summary"><span>当前位置</span><strong>尚未设定</strong><small></small></aside>
@@ -530,7 +579,7 @@ var current=places.find(function(place){return place.status==='current'});root.q
 </html>`;
 }
 
-function buildRegexScript() {
+function buildRegexScript(mapBackground = backgroundDataUri) {
   return {
     id: `status-atelier-quest-map-${Date.now().toString(36)}`,
     scriptName: '九一 · 可视化任务地图',
@@ -538,7 +587,7 @@ function buildRegexScript() {
     runOnEdit: true,
     findRegex: '/<quest_map>\\s*([\\s\\S]*?)\\s*<\\/quest_map>/i',
     trimStrings: [],
-    replaceString: `\`\`\`html\n${buildRegexHtml()}\n\`\`\``,
+    replaceString: `\`\`\`html\n${buildRegexHtml(mapBackground)}\n\`\`\``,
     placement: [2],
     substituteRegex: 0,
     minDepth: null,
@@ -548,8 +597,9 @@ function buildRegexScript() {
   };
 }
 
-function refreshExport() {
-  regexOutput.value = JSON.stringify(buildRegexScript(), null, 2);
+async function refreshExport() {
+  const mapBackground = await ensureBackgroundDataUri();
+  regexOutput.value = JSON.stringify(buildRegexScript(mapBackground), null, 2);
 }
 
 fields.name.addEventListener('input', () => {
@@ -560,10 +610,6 @@ fields.name.addEventListener('input', () => {
   renderPlaces();
   renderSummary();
   document.querySelector('#selected-object-title').textContent = object.name;
-  fields.connectFrom.querySelectorAll('option').forEach(option => {
-    const related = state.objects.find(item => item.id === option.value);
-    if (related) option.textContent = related.name;
-  });
 });
 
 fields.imageUrl.addEventListener('input', () => {
@@ -597,16 +643,8 @@ fields.status.addEventListener('change', () => {
   save();
   render();
 });
-fields.connectFrom.addEventListener('change', () => updateSelected({ connectFrom: fields.connectFrom.value }));
 fields.rotation.addEventListener('input', () => updateSelected({ rotation: Number(fields.rotation.value) }));
 fields.size.addEventListener('input', () => updateSelected({ size: Number(fields.size.value) }));
-
-document.querySelectorAll('[data-nudge]').forEach(button => {
-  button.addEventListener('click', () => {
-    const [dx, dy] = button.dataset.nudge.split(',').map(Number);
-    moveSelected(dx, dy);
-  });
-});
 document.querySelector('#add-place-button').addEventListener('click', () => addPlace());
 duplicateButton.addEventListener('click', () => addPlace(selectedObject()));
 document.querySelector('#delete-place-button').addEventListener('click', deleteSelected);
@@ -630,9 +668,17 @@ document.querySelector('#reset-button').addEventListener('click', () => {
   showToast('已恢复初始地图模板。');
 });
 
-document.querySelector('#generate-button').addEventListener('click', () => {
-  refreshExport();
-  exportDialog.showModal();
+document.querySelector('#generate-button').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  try {
+    await refreshExport();
+    exportDialog.showModal();
+  } catch {
+    showToast('底图无法内嵌，请从插件预览入口通过本地服务打开后再生成。');
+  } finally {
+    button.disabled = false;
+  }
 });
 document.querySelector('#copy-regex-button').addEventListener('click', async () => {
   try {
@@ -678,4 +724,5 @@ window.__mapEditorTestApi = {
   selectObject,
 };
 
+ensureBackgroundDataUri().catch(() => {});
 render();

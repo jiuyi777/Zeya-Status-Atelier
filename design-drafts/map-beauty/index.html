@@ -35,7 +35,7 @@
       <div class="canvas-column">
         <div class="canvas-toolbar" aria-label="画布工具">
           <div>
-            <strong>木桌线索簿</strong>
+            <strong>双击两张照片连接红线</strong>
             <span id="save-state" role="status" aria-live="polite">布局已保存到本机</span>
           </div>
           <div class="canvas-toolbar-actions">
@@ -52,26 +52,6 @@
 
         <div class="map-viewport" id="map-viewport">
           <article class="clue-map" id="map-canvas" aria-label="可拖动的任务地图画布">
-            <div class="desk-props" aria-hidden="true">
-              <span class="typewriter"></span>
-              <span class="watch"><i></i></span>
-              <span class="magnifier"></span>
-              <span class="pencil"></span>
-              <span class="paper-stack paper-stack-a"></span>
-              <span class="paper-stack paper-stack-b"></span>
-            </div>
-            <div class="open-dossier" aria-hidden="true">
-              <span class="page page-left"></span>
-              <span class="page page-right"></span>
-              <span class="book-spine"></span>
-              <span class="page-grid grid-a"></span>
-              <span class="page-grid grid-b"></span>
-              <span class="page-grid grid-c"></span>
-              <span class="page-grid grid-d"></span>
-              <span class="page-arrow arrow-left"></span>
-              <span class="page-arrow arrow-right"></span>
-            </div>
-
             <svg class="connection-layer" id="connection-layer" viewBox="0 0 1000 625" preserveAspectRatio="none" aria-hidden="true"></svg>
             <div class="place-layer" id="place-layer" role="group" aria-label="地图地点对象"></div>
 
@@ -97,7 +77,7 @@
         </div>
 
         <p class="canvas-tip" id="canvas-tip">
-          点击照片后拖动；手机可直接按住照片移动，也可用右侧方向按钮微调。成品预览中点击照片会打开地点详情。
+          直接拖动照片调整位置。双击第一张照片，再双击第二张照片，即可连接红线；成品预览中点击照片打开地点详情。
         </p>
       </div>
 
@@ -128,33 +108,14 @@
           <label class="field-label" for="place-description">地点详情</label>
           <textarea id="place-description" name="description" rows="3" maxlength="160"></textarea>
 
-          <div class="field-grid">
-            <div>
-              <label class="field-label" for="place-status">默认路线状态</label>
-              <select id="place-status" name="status">
-                <option value="current">当前位置</option>
-                <option value="completed">已走过</option>
-                <option value="available">可前往</option>
-                <option value="blocked">已阻断</option>
-                <option value="unknown">未探明</option>
-              </select>
-            </div>
-            <div>
-              <label class="field-label" for="place-connect-from">路线连接自</label>
-              <select id="place-connect-from" name="connectFrom"></select>
-            </div>
-          </div>
-
-          <fieldset class="position-controls">
-            <legend>位置微调</legend>
-            <div class="position-readout"><span id="position-x">X 0%</span><span id="position-y">Y 0%</span></div>
-            <div class="nudge-pad" aria-label="移动选中照片">
-              <button type="button" data-nudge="0,-1" aria-label="向上移动"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg></button>
-              <button type="button" data-nudge="-1,0" aria-label="向左移动"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button>
-              <button type="button" data-nudge="1,0" aria-label="向右移动"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
-              <button type="button" data-nudge="0,1" aria-label="向下移动"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
-            </div>
-          </fieldset>
+          <label class="field-label" for="place-status">默认路线状态</label>
+          <select id="place-status" name="status">
+            <option value="current">当前位置</option>
+            <option value="completed">已走过</option>
+            <option value="available">可前往</option>
+            <option value="blocked">已阻断</option>
+            <option value="unknown">未探明</option>
+          </select>
 
           <div class="range-row">
             <label for="place-rotation">旋转 <output id="rotation-output">0°</output></label>
