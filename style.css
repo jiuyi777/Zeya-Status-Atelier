@@ -1139,7 +1139,7 @@
     border-radius: 0;
     background: var(--sap-card);
     box-shadow: 6px 6px 0 color-mix(in srgb, var(--sap-text) 18%, transparent);
-    font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    font-family: "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", sans-serif;
 }
 
 .status-atelier-rule-preview[data-theme="minimal"] .status-atelier-rule-preview-header {
@@ -2831,7 +2831,8 @@ summary.status-atelier-section-heading {
 .status-atelier-workbench h4,
 .status-atelier-library strong {
     color: var(--saw-ink);
-    font-family: "Noto Serif SC", "Songti SC", serif;
+    font-family: "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", sans-serif;
+    letter-spacing: -.02em;
 }
 
 .status-atelier-workbench button,
@@ -2928,7 +2929,8 @@ summary.status-atelier-section-heading {
 
 .status-atelier-workbench-header p {
     margin-top: 6px;
-    letter-spacing: .08em;
+    line-height: 1.55;
+    letter-spacing: .01em;
 }
 
 .status-atelier-data-flow {
@@ -3072,6 +3074,7 @@ summary.status-atelier-section-heading {
 .status-atelier-section-heading small {
     display: block;
     margin-top: 3px;
+    line-height: 1.5;
 }
 
 .status-atelier-template-grid {

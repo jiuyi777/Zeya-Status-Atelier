@@ -368,9 +368,9 @@ function settings() {
     if (!stored.phoneDesktop || typeof stored.phoneDesktop !== 'object' || Array.isArray(stored.phoneDesktop)) {
         stored.phoneDesktop = clone(DEFAULT_SETTINGS.phoneDesktop);
     }
-    if (stored.phoneDesktopSchemaVersion !== 4) {
+    if (stored.phoneDesktopSchemaVersion !== 5) {
         stored.phoneDesktop = normalizePhoneDesktop({ phoneDesktop: stored.phoneDesktop, media: stored.media });
-        stored.phoneDesktopSchemaVersion = 4;
+        stored.phoneDesktopSchemaVersion = 5;
     }
     if (!PHONE_STRUCTURE_IDS.includes(stored.structure)) {
         stored.structure = PHONE_STRUCTURE_DEFAULT.id;
@@ -776,10 +776,10 @@ function renderStatusSchema() {
     if (editLegend) editLegend.hidden = phoneMode;
     const editorTitle = field('status-atelier-status-editor-title');
     const editorHelp = field('status-atelier-status-editor-help');
-    if (editorTitle) editorTitle.textContent = phoneMode ? '个人页显示与 AI 规则' : '字段显示与 AI 规则';
+    if (editorTitle) editorTitle.textContent = phoneMode ? '个人页数据' : '字段设置';
     if (editorHelp) editorHelp.textContent = phoneMode
-        ? '字段名称在右侧“个人”页双击修改；这里只设置显示类型和 AI 填写要求。'
-        : '名称和顺序直接在预览修改；这里只设置显示类型和 AI 填写要求。';
+        ? '显示方式与 AI 内容。'
+        : '显示方式与 AI 内容。';
     if (phoneMode) {
         const phone = settings().phoneDesktop;
         phone.personalFields ??= clone(PHONE_DESKTOP_DEFAULTS.personalFields);
@@ -2164,14 +2164,6 @@ function renderStatusPreview(host) {
         style.id = 'status-atelier-exported-theme-css';
         style.textContent = `${STATUS_THEME_CSS}\n${STATUS_PHONE_CSS}`;
         document.head.append(style);
-    }
-    if (!document.querySelector('#status-atelier-phone-font')) {
-        const phoneFont = document.createElement('link');
-        phoneFont.id = 'status-atelier-phone-font';
-        phoneFont.rel = 'stylesheet';
-        phoneFont.href = 'https://fontsapi.zeoseven.com/813/main/result.css';
-        phoneFont.crossOrigin = 'anonymous';
-        document.head.append(phoneFont);
     }
     const previewInput = resolvedStatusInput();
     const previewRecords = statusAiTestRecords || makePreviewRecords(previewInput);

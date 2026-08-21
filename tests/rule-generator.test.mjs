@@ -145,7 +145,7 @@ test('phone desktop is editable and exports real app navigation with a back acti
     assert.doesNotMatch(generated, /img\.remit\.ee/);
     assert.match(STATUS_PHONE_CSS, /data-phone-page="Personal"/);
     assert.match(STATUS_PHONE_CSS, /data-phone-page="Wechat"/);
-    assert.deepEqual(PHONE_SHELL_STYLES, ['classic', 'clamshell', 'orbit', 'slider', 'handheld']);
+    assert.deepEqual(PHONE_SHELL_STYLES, ['classic', 'handheld']);
     for (const shellStyle of PHONE_SHELL_STYLES) {
         const shellRule = normalizeRule({ ...phoneInput, phoneDesktop: { shellStyle } });
         assert.equal(shellRule.phoneDesktop.shellStyle, shellStyle);
@@ -156,26 +156,24 @@ test('phone desktop is editable and exports real app navigation with a back acti
     assert.match(generated, /<\/section>\s*<nav class="zrs-tabs"/);
     assert.match(generated, /while\(root&&!root\.classList\.contains\('zeya-regex-status'\)\)/);
     assert.doesNotMatch(generated, /script\.previousElementSibling\.previousElementSibling/);
-    assert.match(STATUS_PHONE_CSS, /data-phone-shell="clamshell"/);
-    assert.match(STATUS_PHONE_CSS, /data-phone-shell="orbit"/);
-    assert.match(STATUS_PHONE_CSS, /data-phone-shell="slider"/);
     assert.match(STATUS_PHONE_CSS, /data-phone-shell="handheld"/);
-    assert.match(STATUS_PHONE_CSS, /min-height:76px/);
+    assert.match(STATUS_PHONE_CSS, /--z-snow-duration/);
     assert.match(STATUS_PHONE_CSS, /focus-visible/);
     assert.match(STATUS_PHONE_CSS, /prefers-reduced-motion:reduce/);
 });
 
-test('handheld is additive and keeps every original phone shell renderer intact', () => {
+test('handheld and the original phone are the only selectable phone shells', () => {
     const preset = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'phone');
     const input = {
         ...RULE_PRESETS.custom,
         structure: 'phone',
         sharedFieldsText: preset.shared.map(field => field.join('|')).join('\n'),
     };
-    for (const shellStyle of ['classic', 'clamshell', 'orbit', 'slider']) {
-        const output = buildRegexScript({ ...input, phoneDesktop: { shellStyle } }).replaceString;
-        assert.match(output, new RegExp(`data-phone-shell="${shellStyle}"`));
-        assert.doesNotMatch(output, /class="zrs-phone-frame"/);
+    const original = buildRegexScript({ ...input, phoneDesktop: { shellStyle: 'classic' } }).replaceString;
+    assert.match(original, /data-phone-shell="classic"/);
+    assert.doesNotMatch(original, /class="zrs-phone-frame"/);
+    for (const removedStyle of ['clamshell', 'orbit', 'slider']) {
+        assert.equal(normalizePhoneDesktop({ shellStyle: removedStyle }).shellStyle, 'classic');
     }
     const handheld = buildRegexScript({
         ...input,
@@ -199,7 +197,7 @@ test('handheld is additive and keeps every original phone shell renderer intact'
 test('phone DIY settings are normalized separately from AI story values', () => {
     const phone = normalizePhoneDesktop({
         phoneDesktop: {
-            shellStyle: 'slider',
+            shellStyle: 'handheld',
             shellColor: '#e6a5c4',
             wallpaperUrl: 'https://example.com/wallpaper.jpg',
             wallpaperPositionX: 140,
@@ -222,7 +220,7 @@ test('phone DIY settings are normalized separately from AI story values', () => 
             ],
         },
     });
-    assert.equal(phone.shellStyle, 'slider');
+    assert.equal(phone.shellStyle, 'handheld');
     assert.equal(phone.shellColor, '#e6a5c4');
     assert.equal(phone.wallpaperPositionX, 100);
     assert.equal(phone.wallpaperPositionY, 0);

@@ -236,13 +236,13 @@ test('one-click homepage updates the local regex and character greeting without 
 });
 
 test('status workspace exposes a short one-click path and hides customization by default', () => {
-    assert.match(settingsMarkup, /id="status-atelier-install-scoped"[^>]*>一键生成并应用</);
+    assert.match(settingsMarkup, /id="status-atelier-install-scoped"[^>]*>生成并应用</);
     assert.doesNotMatch(settingsMarkup, /status-atelier-shuffle-recipe|完整 40 套|20 套自由面板/);
     assert.doesNotMatch(source, /status-atelier-modal-shuffle-recipe|applyStatusRecipe|shuffleStatusRecipe/);
     assert.doesNotMatch(settingsMarkup, /id="status-atelier-fill-mode"/);
     assert.doesNotMatch(source, /id="status-atelier-modal-status-fill-mode"/);
     assert.match(source, /class="status-atelier-modal-status-advanced">/);
-    assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?字段显示与 AI 规则/);
+    assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?字段设置/);
     assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?更多外观与配色/);
     assert.match(settingsMarkup, /id="status-atelier-template-media"[\s\S]*?当前模板素材/);
     assert.doesNotMatch(settingsMarkup, /可选：头像、配图与音乐/);
@@ -263,7 +263,8 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(styleSource, /\.status-atelier-workbench \[hidden\] \{\s*display: none !important;/);
     assert.match(settingsMarkup, /id="status-atelier-phone-petals-enabled"[^>]*type="checkbox"/);
     assert.match(source, /'status-atelier-phone-petals-enabled': 'petalsEnabled'/);
-    assert.match(settingsMarkup, /id="status-atelier-phone-shell-style"[\s\S]*?value="classic"[\s\S]*?value="clamshell"[\s\S]*?value="orbit"[\s\S]*?value="slider"[\s\S]*?value="handheld"/);
+    assert.match(settingsMarkup, /id="status-atelier-phone-shell-style"[\s\S]*?value="classic"[\s\S]*?value="handheld"/);
+    assert.doesNotMatch(settingsMarkup, /value="(?:clamshell|orbit|slider)"|横向掌机（新增款）/);
     assert.match(source, /'status-atelier-phone-shell-style': 'shellStyle'/);
     assert.match(settingsMarkup, /id="status-atelier-phone-shell-color"[^>]*type="color"/);
     assert.match(source, /'status-atelier-phone-shell-color': 'shellColor'/);
@@ -273,7 +274,7 @@ test('status workbench separates templates, appearance and palettes and supports
     for (const removedId of ['status-atelier-title', 'status-atelier-subtitle', 'status-atelier-layout', 'status-atelier-theme']) {
         assert.doesNotMatch(settingsMarkup, new RegExp(`id="${removedId}"`));
     }
-    assert.ok(settingsMarkup.indexOf('更多外观与配色') < settingsMarkup.indexOf('一键启用状态栏'));
+    assert.ok(settingsMarkup.indexOf('更多外观与配色') < settingsMarkup.indexOf('启用状态栏'));
     assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-advanced" open>[\s\S]*?<summary>手动下载与全局安装<\/summary>/);
     assert.match(source, /bindPreviewFieldLabelEditor/);
     assert.match(source, /bindPreviewTitleEditor/);
@@ -284,8 +285,8 @@ test('status workbench separates templates, appearance and palettes and supports
     for (const removedSlider of ['wallpaper-x', 'wallpaper-y', 'widget-x', 'widget-y', 'avatar-x', 'avatar-y']) {
         assert.doesNotMatch(settingsMarkup, new RegExp(`id="status-atelier-phone-${removedSlider}"`));
     }
-    assert.match(settingsMarkup, /取景和缩放直接在右侧“个人”页头像上完成/);
-    assert.match(settingsMarkup, /图标留空时使用配套默认图标/);
+    assert.match(settingsMarkup, /在右侧头像上拖动和缩放/);
+    assert.match(settingsMarkup, /每枚图标都能单独拖动/);
     assert.doesNotMatch(settingsMarkup, /data-phone-widget-nudge|data-phone-avatar-adjust|data-phone-widget-(?:up|down)/);
     assert.match(source, /function bindPhonePersonalFieldLabelEditor/);
     assert.match(source, /phoneDesktop\.personalFields/);
@@ -293,7 +294,7 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /function bindPhoneAvatarDiy/);
     assert.match(source, /pointers\.size >= 2/);
     assert.match(source, /addEventListener\('wheel'/);
-    assert.match(source, /phoneDesktopSchemaVersion !== 4/);
+    assert.match(source, /phoneDesktopSchemaVersion !== 5/);
 });
 
 test('dynamic numbers keep one solid progress treatment without object controls', () => {

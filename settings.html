@@ -156,42 +156,38 @@
                     </details>
 
                     <details id="status-atelier-phone-diy" class="status-atelier-setting-section status-atelier-collapsible">
-                        <summary class="status-atelier-section-heading"><div><h4>手机素材与功能</h4><small>只设置预览里不能直接完成的壁纸、动效、头像来源和 APP 图标。</small></div></summary>
+                        <summary class="status-atelier-section-heading"><div><h4>手机设置</h4><small>外壳、壁纸、雪花和 APP。</small></div></summary>
                         <div class="status-atelier-phone-diy-grid">
                             <section class="status-atelier-phone-diy-card status-atelier-phone-shell-picker">
                                 <h5>手机款式</h5>
-                                <label>外壳与桌面构图<select id="status-atelier-phone-shell-style" class="text_pole">
-                                    <option value="classic">经典直板机（原款）</option>
-                                    <option value="clamshell">贝壳折叠机</option>
-                                    <option value="orbit">透明轨道机</option>
-                                    <option value="slider">贴纸滑盖机</option>
-                                    <option value="handheld">横向掌机（新增款）</option>
+                                <label>款式<select id="status-atelier-phone-shell-style" class="text_pole">
+                                    <option value="classic">原始手机</option>
+                                    <option value="handheld">横向掌机</option>
                                 </select></label>
-                                <label>外壳主色<input id="status-atelier-phone-shell-color" type="color" value="#e6a5c4" aria-label="手机外壳主色"></label>
-                                <label>横向掌机挂饰 URL<input id="status-atelier-phone-charm-url" class="text_pole" type="url" placeholder="可选：透明背景挂饰图片"></label>
-                                <small>原有四款保持原外观与操作；横向掌机是新增的独立款式。</small>
+                                <label>外壳颜色<input id="status-atelier-phone-shell-color" type="color" value="#e6a5c4" aria-label="手机外壳颜色"></label>
+                                <label>掌机挂饰 URL<input id="status-atelier-phone-charm-url" class="text_pole" type="url" placeholder="透明背景图片，可留空"></label>
                             </section>
                             <section class="status-atelier-phone-diy-card">
                                 <h5>桌面壁纸</h5>
-                                <label>壁纸图片 URL<input id="status-atelier-phone-wallpaper-url" class="text_pole" type="url" placeholder="留空使用中性浅蓝背景"></label>
+                                <label>壁纸 URL<input id="status-atelier-phone-wallpaper-url" class="text_pole" type="url" placeholder="可留空"></label>
                             </section>
                             <section class="status-atelier-phone-diy-card">
                                 <h5>桌面动效</h5>
-                                <label class="checkbox_label"><input id="status-atelier-phone-petals-enabled" type="checkbox" checked><span>开启向下飘落装饰</span></label>
+                                <label class="checkbox_label"><input id="status-atelier-phone-petals-enabled" type="checkbox" checked><span>雪花</span></label>
                             </section>
                             <section class="status-atelier-phone-diy-card">
-                                <h5>“个人”页头像</h5>
+                                <h5>个人页头像</h5>
                                 <label>头像来源<select id="status-atelier-phone-avatar-source" class="text_pole"><option value="character">当前角色头像</option><option value="user">当前 user 头像</option><option value="url">图片 URL</option><option value="none">不显示头像</option></select></label>
                                 <label id="status-atelier-phone-avatar-url-wrap" hidden>头像 URL<input id="status-atelier-phone-avatar-url" class="text_pole" type="url" placeholder="https://..."></label>
-                                <small class="status-atelier-phone-direct-help">取景和缩放直接在右侧“个人”页头像上完成。</small>
+                                <small class="status-atelier-phone-direct-help">在右侧头像上拖动和缩放。</small>
                             </section>
                             <section class="status-atelier-phone-diy-card status-atelier-phone-app-editor">
-                                <h5>APP 名称、图标与掌机显示</h5>
+                                <h5>桌面 APP</h5>
                                 <div><label title="横向掌机显示个人 APP"><input id="status-atelier-phone-app-personal-enabled" data-phone-app-id="Personal" data-phone-app-key="enabled" type="checkbox" checked><span>个人</span></label><input id="status-atelier-phone-app-personal-name" data-phone-app-id="Personal" data-phone-app-key="name" class="text_pole" maxlength="12" aria-label="个人 APP 名称"><input id="status-atelier-phone-app-personal-icon" data-phone-app-id="Personal" data-phone-app-key="iconUrl" class="text_pole" type="url" placeholder="图标 URL（可留空）" aria-label="个人 APP 图标 URL"></div>
                                 <div><label title="横向掌机显示日记 APP"><input id="status-atelier-phone-app-memo-enabled" data-phone-app-id="Memo" data-phone-app-key="enabled" type="checkbox" checked><span>备忘</span></label><input id="status-atelier-phone-app-memo-name" data-phone-app-id="Memo" data-phone-app-key="name" class="text_pole" maxlength="12" aria-label="备忘录 APP 名称"><input id="status-atelier-phone-app-memo-icon" data-phone-app-id="Memo" data-phone-app-key="iconUrl" class="text_pole" type="url" placeholder="图标 URL（可留空）" aria-label="备忘录 APP 图标 URL"></div>
                                 <div><label title="横向掌机显示微信 APP"><input id="status-atelier-phone-app-wechat-enabled" data-phone-app-id="Wechat" data-phone-app-key="enabled" type="checkbox" checked><span>微信</span></label><input id="status-atelier-phone-app-wechat-name" data-phone-app-id="Wechat" data-phone-app-key="name" class="text_pole" maxlength="12" aria-label="微信 APP 名称"><input id="status-atelier-phone-app-wechat-icon" data-phone-app-id="Wechat" data-phone-app-key="iconUrl" class="text_pole" type="url" placeholder="图标 URL（可留空）" aria-label="微信 APP 图标 URL"></div>
                                 <div><label title="横向掌机显示购物 APP"><input id="status-atelier-phone-app-shop-enabled" data-phone-app-id="Shop" data-phone-app-key="enabled" type="checkbox" checked><span>购物</span></label><input id="status-atelier-phone-app-shop-name" data-phone-app-id="Shop" data-phone-app-key="name" class="text_pole" maxlength="12" aria-label="购物 APP 名称"><input id="status-atelier-phone-app-shop-icon" data-phone-app-id="Shop" data-phone-app-key="iconUrl" class="text_pole" type="url" placeholder="图标 URL（可留空）" aria-label="购物 APP 图标 URL"></div>
-                                <small>图标留空时使用配套默认图标。原有四款仍显示原 APP 桌面；横向掌机会按勾选项显示入口，并支持逐枚拖动。</small>
+                                <small>勾选显示；每枚图标都能单独拖动。</small>
                             </section>
                         </div>
                     </details>
@@ -214,7 +210,7 @@
 
                     <details class="status-atelier-setting-section status-atelier-collapsible">
                         <summary class="status-atelier-section-heading">
-                            <div><h4 id="status-atelier-status-editor-title">字段显示与 AI 规则</h4><small id="status-atelier-status-editor-help">名称和顺序直接在预览修改；这里只设置显示类型和 AI 填写要求。</small></div>
+                            <div><h4 id="status-atelier-status-editor-title">字段设置</h4><small id="status-atelier-status-editor-help">显示方式与 AI 内容。</small></div>
                         </summary>
                         <button id="status-atelier-add-field" type="button" class="menu_button">＋ 新增字段</button>
                         <div id="status-atelier-edit-legend" class="status-atelier-edit-legend">
@@ -239,12 +235,12 @@
                     </details>
 
                     <section class="status-atelier-setting-section status-atelier-quick-apply">
-                        <div class="status-atelier-section-heading"><div><h4>一键启用状态栏</h4><small>把 AI 输出规则写进当前角色世界书，并更新当前角色的局部正则。</small></div></div>
+                        <div class="status-atelier-section-heading"><div><h4>启用状态栏</h4><small>应用到当前角色。</small></div></div>
                         <div class="status-atelier-setting-actions">
-                            <button id="status-atelier-install-scoped" type="button" class="menu_button status-atelier-primary-action">一键生成并应用</button>
-                            <button id="status-atelier-test-ai" type="button" class="menu_button">先测试当前 AI</button>
+                            <button id="status-atelier-install-scoped" type="button" class="menu_button status-atelier-primary-action">生成并应用</button>
+                            <button id="status-atelier-test-ai" type="button" class="menu_button">测试 AI</button>
                         </div>
-                        <p id="status-atelier-ai-test-status" class="status-atelier-ai-test-status" role="status" aria-live="polite">无需先测试；一键应用会同时写入世界书输出规则和局部正则。</p>
+                        <p id="status-atelier-ai-test-status" class="status-atelier-ai-test-status" role="status" aria-live="polite"></p>
                     </section>
 
                     <details class="status-atelier-setting-section status-atelier-advanced" open>
