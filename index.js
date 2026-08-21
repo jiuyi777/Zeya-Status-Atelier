@@ -285,6 +285,8 @@ let greetingBindingPromise = null;
 let openingReadToast = null;
 let statusAiTestRecords = null;
 let activeOpeningProfileKey = '';
+let questMapEditorOverlay = null;
+let questMapEditorTrigger = null;
 
 function context() {
     return globalThis.SillyTavern?.getContext?.();
@@ -300,6 +302,46 @@ function notify(level, message) {
     } else {
         console[level === 'error' ? 'error' : 'log'](`[九一 正则状态工坊] ${message}`);
     }
+}
+
+function syncQuestMapEditorEntry() {
+    const entry = field('status-atelier-quest-map-entry');
+    if (entry) entry.hidden = settings().structure !== 'quest';
+}
+
+function closeQuestMapEditor() {
+    if (!questMapEditorOverlay || questMapEditorOverlay.hidden) return;
+    questMapEditorOverlay.hidden = true;
+    questMapEditorOverlay.setAttribute('aria-hidden', 'true');
+    questMapEditorTrigger?.focus?.();
+}
+
+function ensureQuestMapEditor() {
+    if (questMapEditorOverlay) return questMapEditorOverlay;
+    const overlay = document.createElement('section');
+    overlay.id = 'status-atelier-map-editor-overlay';
+    overlay.className = 'status-atelier-map-editor-overlay';
+    overlay.hidden = true;
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.innerHTML = '<iframe class="status-atelier-map-editor-frame" title="可视化任务地图编辑器"></iframe>';
+    overlay.querySelector('.status-atelier-map-editor-frame').src = new URL('./design-drafts/map-beauty/index.html?embedded=1', import.meta.url).href;
+    document.body.append(overlay);
+    questMapEditorOverlay = overlay;
+    return overlay;
+}
+
+function openQuestMapEditor(trigger) {
+    const overlay = ensureQuestMapEditor();
+    questMapEditorTrigger = trigger || field('status-atelier-open-map-editor');
+    overlay.hidden = false;
+    overlay.setAttribute('aria-hidden', 'false');
+    overlay.querySelector('.status-atelier-map-editor-frame')?.focus();
+}
+
+function handleQuestMapEditorMessage(event) {
+    const frame = questMapEditorOverlay?.querySelector('.status-atelier-map-editor-frame');
+    if (!frame || event.source !== frame.contentWindow || event.data?.type !== 'status-atelier-map-close') return;
+    closeQuestMapEditor();
 }
 
 function showOpeningReadProgress(message) {
@@ -632,6 +674,7 @@ function renderStatusDesignControls() {
     const avatarUrlLabel = field('status-atelier-avatar-url-wrap');
     if (avatarUrlLabel) avatarUrlLabel.hidden = media.avatarSource !== 'url';
     renderPhoneDesktopControls();
+    syncQuestMapEditorEntry();
 }
 
 function renderPhoneDesktopControls() {
@@ -718,6 +761,7 @@ function applyStatusStructure(structureId) {
     renderStatusSchema();
     renderModalStatusSchema();
     renderPhoneDesktopControls();
+    syncQuestMapEditorEntry();
     scheduleStatusPreviewUpdate();
 }
 
@@ -3913,6 +3957,7 @@ async function addSettingsPanel() {
         }
     });
     field('status-atelier-test-ai').addEventListener('click', event => testStatusAiGeneration(event.currentTarget));
+    field('status-atelier-open-map-editor').addEventListener('click', event => openQuestMapEditor(event.currentTarget));
     field('status-atelier-copy-prompt').addEventListener('click', async () => {
         await copyText(buildAiInstruction(settings()));
         notify('success', 'AI 输出规则已复制');
@@ -4026,6 +4071,7 @@ function bindEvents() {
 }
 
 async function initialize() {
+    globalThis.addEventListener('message', handleQuestMapEditorMessage);
     settings();
     switchOpeningProfileForCurrentCharacter();
     updatePrompt();
