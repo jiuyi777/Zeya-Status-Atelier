@@ -6,7 +6,6 @@ import {
     STATUS_THEME_CSS,
     STATUS_PHONE_CSS,
     PHONE_FRAME_ASSETS,
-    PHONE_CHARM_ASSETS,
     buildAiInstruction,
     buildRegexScript,
     buildWorldbookJson,
@@ -164,18 +163,25 @@ const PHONE_DESKTOP_DEFAULTS = Object.freeze({
     ],
     apps: [
         { id: 'Personal', name: '个人', iconUrl: '', enabled: true, desktopX: 24, desktopY: 50 },
-        { id: 'Memo', name: '日记', iconUrl: '', enabled: true, desktopX: 50, desktopY: 80 },
+        { id: 'Memo', name: '备忘录', iconUrl: '', enabled: true, desktopX: 50, desktopY: 80 },
         { id: 'Wechat', name: '微信', iconUrl: '', enabled: true, desktopX: 50, desktopY: 20 },
         { id: 'Shop', name: '购物', iconUrl: '', enabled: true, desktopX: 76, desktopY: 50 },
     ],
 });
 const PHONE_APP_ICON_PATHS = Object.freeze({
+    Personal: '<circle cx="12" cy="8" r="3.1"></circle><path d="M5.7 19.2c.8-3.4 3-5.3 6.3-5.3s5.5 1.9 6.3 5.3"></path>',
+    Memo: '<rect x="5.5" y="3.5" width="13" height="17" rx="3"></rect><path d="M9 8h6M9 12h6M9 16h4"></path>',
+    Wechat: '<path d="M4.2 10.1c0-3.1 3-5.6 6.7-5.6s6.7 2.5 6.7 5.6-3 5.6-6.7 5.6c-.8 0-1.6-.1-2.3-.4l-3.3 1.6.8-3.1a5.1 5.1 0 0 1-1.9-3.7Z"></path><path d="M13.4 14.8c.5 2.1 2.6 3.7 5.1 3.7.6 0 1.1-.1 1.6-.3l2.1 1-.5-2c.8-.7 1.3-1.7 1.3-2.8 0-2-1.7-3.7-4.1-4.1"></path>',
+    Shop: '<path d="M5.2 8.5h13.6l-1 11H6.2l-1-11Z"></path><path d="M8.6 9V7.1a3.4 3.4 0 0 1 6.8 0V9"></path>',
+});
+const phoneAppIconMarkup = id => `<svg class="zrs-app-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${PHONE_APP_ICON_PATHS[id] || PHONE_APP_ICON_PATHS.Personal}</svg>`;
+const HANDHELD_APP_ICON_PATHS = Object.freeze({
     Personal: '<path d="M8 3.5h8a3 3 0 0 1 3 3v10a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-10a3 3 0 0 1 3-3Z"></path><circle cx="12" cy="9" r="2.3"></circle><path d="M8.7 16.5c.5-2 1.6-3 3.3-3s2.8 1 3.3 3M10 3.5V2h4v1.5"></path>',
     Memo: '<path d="M7 4h11v16H7z"></path><path d="M10 8h5M10 12h5M10 16h3M4.5 7h4M4.5 11h4M4.5 15h4"></path><path d="m16.2 17.8 1.3-1.3 1.3 1.3-1.3 1.4Z"></path>',
     Wechat: '<path d="M3.8 9.3c0-3 2.7-5.3 6.2-5.3s6.2 2.3 6.2 5.3-2.7 5.3-6.2 5.3c-.8 0-1.5-.1-2.2-.4L5 15.6l.7-2.6a4.8 4.8 0 0 1-1.9-3.7Z"></path><path d="M12.8 13.2c.4 2.5 2.7 4.4 5.5 4.4.6 0 1.2-.1 1.7-.3l2 1-.5-2c.7-.7 1.2-1.7 1.2-2.7 0-2.6-2.4-4.7-5.5-4.7"></path><path d="M8 8h.1M12 8h.1M17 13h.1M20 13h.1"></path>',
     Shop: '<path d="M5 9h14v11H5z"></path><path d="m4 9 2-5h12l2 5M7 9v-5M11 9v-5M15 9v-5M8 20v-6h4v6M15 14h2"></path><path d="M4 9c0 1.4 1 2.5 2.2 2.5S8.5 10.4 8.5 9c0 1.4 1 2.5 2.2 2.5S13 10.4 13 9c0 1.4 1 2.5 2.2 2.5S17.5 10.4 17.5 9c0 1.4 1 2.5 2.2 2.5"></path>',
 });
-const phoneAppIconMarkup = id => `<svg class="zrs-app-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${PHONE_APP_ICON_PATHS[id] || PHONE_APP_ICON_PATHS.Personal}</svg>`;
+const handheldPhoneAppIconMarkup = id => `<svg class="zrs-app-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${HANDHELD_APP_ICON_PATHS[id] || HANDHELD_APP_ICON_PATHS.Personal}</svg>`;
 const PHONE_STRUCTURE_DEFAULT = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'phone');
 
 const OPENING_PALETTES = Object.freeze({
@@ -362,9 +368,9 @@ function settings() {
     if (!stored.phoneDesktop || typeof stored.phoneDesktop !== 'object' || Array.isArray(stored.phoneDesktop)) {
         stored.phoneDesktop = clone(DEFAULT_SETTINGS.phoneDesktop);
     }
-    if (stored.phoneDesktopSchemaVersion !== 6) {
+    if (stored.phoneDesktopSchemaVersion !== 4) {
         stored.phoneDesktop = normalizePhoneDesktop({ phoneDesktop: stored.phoneDesktop, media: stored.media });
-        stored.phoneDesktopSchemaVersion = 6;
+        stored.phoneDesktopSchemaVersion = 4;
     }
     if (!PHONE_STRUCTURE_IDS.includes(stored.structure)) {
         stored.structure = PHONE_STRUCTURE_DEFAULT.id;
@@ -659,12 +665,12 @@ function renderPhoneDesktopControls() {
     const avatarUrlWrap = field('status-atelier-phone-avatar-url-wrap');
     if (avatarUrlWrap) avatarUrlWrap.hidden = phone.personalAvatarSource !== 'url';
     phone.apps.forEach(app => {
-        const enabled = field(`status-atelier-phone-app-${app.id.toLowerCase()}-enabled`);
         const name = field(`status-atelier-phone-app-${app.id.toLowerCase()}-name`);
         const icon = field(`status-atelier-phone-app-${app.id.toLowerCase()}-icon`);
-        if (enabled) enabled.checked = app.enabled !== false;
+        const enabled = field(`status-atelier-phone-app-${app.id.toLowerCase()}-enabled`);
         if (name) name.value = app.name;
         if (icon) icon.value = app.iconUrl;
+        if (enabled) enabled.checked = app.enabled !== false;
     });
 }
 
@@ -2024,8 +2030,8 @@ function bindPhoneDiyDrag(root, sharedHost, wallpaperImage) {
     bindDrag(sharedHost, (deltaX, deltaY) => {
         phone.widgetX = Math.max(8, Math.min(42, widgetStart.x + deltaX));
         phone.widgetY = Math.max(45, Math.min(300, widgetStart.y + deltaY));
-        sharedHost.style.setProperty('--z-phone-widget-x', `${phone.widgetX}px`);
-        sharedHost.style.setProperty('--z-phone-widget-y', `${phone.widgetY}px`);
+        sharedHost.style.left = `${phone.widgetX}px`;
+        sharedHost.style.top = `${phone.widgetY}px`;
     }, () => saveSettingsSoon({ snapshotOpening: false }));
     if (wallpaperImage) {
         wallpaperImage.classList.add('is-diy-draggable');
@@ -2177,6 +2183,7 @@ function renderStatusPreview(host) {
     root.dataset.layout = rule.layout;
     root.dataset.hasImage = rule.media.imageUrl ? 'true' : 'false';
     if (rule.structure === 'phone') root.dataset.phoneShell = rule.phoneDesktop.shellStyle;
+    const handheldMode = rule.structure === 'phone' && rule.phoneDesktop.shellStyle === 'handheld';
     if (rule.palette) {
         root.style.setProperty('--sap-accent', rule.palette.accent);
         root.style.setProperty('--sap-layer', rule.palette.background);
@@ -2192,15 +2199,12 @@ function renderStatusPreview(host) {
     if (rule.structure === 'phone') root.style.setProperty('--z-phone-shell', rule.phoneDesktop.shellColor);
 
     let phoneFrame = null;
-    if (rule.structure === 'phone' && PHONE_FRAME_ASSETS[rule.phoneDesktop.shellStyle]) {
+    if (handheldMode) {
         phoneFrame = makeElement('img', 'zrs-phone-frame');
-        phoneFrame.src = PHONE_FRAME_ASSETS[rule.phoneDesktop.shellStyle];
+        phoneFrame.src = PHONE_FRAME_ASSETS.handheld;
         phoneFrame.alt = '';
         phoneFrame.draggable = false;
-        phoneFrame.decoding = 'async';
-        phoneFrame.referrerPolicy = 'no-referrer';
         phoneFrame.setAttribute('aria-hidden', 'true');
-        phoneFrame.addEventListener('error', () => phoneFrame.remove());
     }
 
     const card = makeElement('section', 'status-atelier-preview-card zrs-card');
@@ -2225,7 +2229,6 @@ function renderStatusPreview(host) {
     card.append(header);
 
     const body = makeElement('div', 'status-atelier-rule-preview-body zrs-content');
-    const snowflakeMarkup = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2v20M3.34 7l17.32 10M3.34 17l17.32-10M12 2l-2.2 2.2M12 2l2.2 2.2M12 22l-2.2-2.2M12 22l2.2-2.2M3.34 7l3-.8M3.34 7l.8 3M20.66 17l-3 .8M20.66 17l-.8-3M3.34 17l.8-3M3.34 17l3 .8M20.66 7l-3-.8M20.66 7l-.8 3"></path></svg>';
     const structureArt = makeElement('div', 'status-atelier-preview-structure-art zrs-structure-art');
     structureArt.setAttribute('aria-hidden', 'true');
     for (let index = 0; index < 12; index += 1) structureArt.append(makeElement('i'));
@@ -2281,9 +2284,9 @@ function renderStatusPreview(host) {
             const petals = makeElement('div', 'zrs-phone-petals');
             petals.setAttribute('aria-hidden', 'true');
             for (let index = 0; index < 15; index += 1) {
-                const snowflake = makeElement('i');
-                snowflake.innerHTML = snowflakeMarkup;
-                petals.append(snowflake);
+                const decoration = makeElement('i');
+                if (handheldMode) decoration.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M4.8 6.2l14.4 11.6M19.2 6.2 4.8 17.8M12 2l-2 2.7M12 2l2 2.7M12 22l-2-2.7M12 22l2-2.7M4.8 6.2l3.3.3M4.8 6.2l.7 3.2M19.2 17.8l-3.3-.3M19.2 17.8l-.7-3.2M19.2 6.2l-3.3.3M19.2 6.2l-.7 3.2M4.8 17.8l3.3-.3M4.8 17.8l.7-3.2"></path></svg>';
+                petals.append(decoration);
             }
             body.append(petals);
         }
@@ -2317,8 +2320,8 @@ function renderStatusPreview(host) {
         const definitions = rule.sharedFields.map((definition, index) => ({ definition, value: shared[index] }));
         if (rule.structure === 'phone') {
             definitions.sort((a, b) => rule.phoneDesktop.widgetOrder.indexOf(a.definition.id) - rule.phoneDesktop.widgetOrder.indexOf(b.definition.id));
-            sharedHost.style.setProperty('--z-phone-widget-x', `${rule.phoneDesktop.widgetX}px`);
-            sharedHost.style.setProperty('--z-phone-widget-y', `${rule.phoneDesktop.widgetY}px`);
+            sharedHost.style.left = `${rule.phoneDesktop.widgetX}px`;
+            sharedHost.style.top = `${rule.phoneDesktop.widgetY}px`;
             phoneSharedHost = sharedHost;
         }
         definitions.forEach(item => appendPreviewField(sharedHost, item.definition, item.value, true, rule.glyph, rule));
@@ -2327,28 +2330,19 @@ function renderStatusPreview(host) {
     }
 
     const tabs = makeElement('div', 'status-atelier-preview-tabs zrs-tabs');
+    const phoneHomeGuide = handheldMode ? makeElement('div', 'zrs-phone-home-guide') : null;
+    if (phoneHomeGuide) {
+        phoneHomeGuide.setAttribute('aria-label', '可拖动的掌机图标桌面');
+        body.append(phoneHomeGuide);
+    }
     const phonePagebar = makeElement('div', 'zrs-phone-pagebar');
-    const phoneBack = makeElement('button', 'zrs-phone-back', 'B 返回');
+    const phoneBack = makeElement('button', 'zrs-phone-back', handheldMode ? 'B 返回' : '‹');
     phoneBack.type = 'button';
-    phoneBack.setAttribute('aria-label', 'B 键返回状态主页');
+    phoneBack.setAttribute('aria-label', handheldMode ? 'B 键返回状态主页' : '返回状态主页');
     const phoneTitle = makeElement('h4', 'zrs-phone-page-title');
     phonePagebar.append(phoneBack, phoneTitle);
     const pageHost = makeElement('div', 'status-atelier-preview-fields zrs-fields');
     const phoneMode = rule.structure === 'phone';
-    const phoneHomeGuide = makeElement('div', 'zrs-phone-home-guide');
-    [['Y', 'Wechat'], ['X', 'Personal'], ['B', 'Shop'], ['A', 'Memo']].forEach(([key, appId]) => {
-        const item = makeElement('div', 'zrs-phone-home-key');
-        item.dataset.phoneKey = key;
-        item.dataset.appId = appId;
-        const app = rule.phoneDesktop.apps.find(entry => entry.id === appId);
-        item.style.setProperty('--z-phone-app-x', `${app?.desktopX ?? 50}%`);
-        item.style.setProperty('--z-phone-app-y', `${app?.desktopY ?? 50}%`);
-        const icon = makeElement('span', 'zrs-app-icon');
-        icon.dataset.appId = appId;
-        icon.innerHTML = phoneAppIconMarkup(appId);
-        item.append(icon);
-        phoneHomeGuide.append(item);
-    });
     const phoneText = (value, fallback = '') => {
         const text = String(value || '').trim();
         return !text || text === '无' ? fallback : text;
@@ -2407,32 +2401,38 @@ function renderStatusPreview(host) {
             return;
         }
         if (page.id === 'Memo') {
-            const diary = makeElement('article', 'zrs-phone-diary');
-            const diaryHead = makeElement('header', 'zrs-phone-diary-head');
-            diaryHead.append(makeElement('small', '', `PRIVATE DIARY · ${phoneText(shared[1], '此刻')}`));
-            diary.append(diaryHead);
-            const diaryText = values.map(value => phoneText(value)).filter(Boolean).join('\n\n');
-            const diaryBody = makeElement('p', 'zrs-phone-diary-body', diaryText);
-            diaryBody.contentEditable = 'true';
-            diaryBody.spellcheck = true;
-            diaryBody.setAttribute('role', 'textbox');
-            diaryBody.setAttribute('aria-label', '编辑日记正文');
-            diaryBody.dataset.placeholder = '在这里写下今天的日记……';
-            diary.append(diaryBody);
-            pageHost.append(diary);
+            if (handheldMode) {
+                phoneTitle.textContent = '日记';
+                const diary = makeElement('article', 'zrs-phone-diary');
+                const diaryHead = makeElement('header', 'zrs-phone-diary-head');
+                diaryHead.append(makeElement('small', '', `PRIVATE DIARY · ${phoneText(shared[1], '此刻')}`));
+                const diaryText = values.map(value => phoneText(value)).filter(Boolean).join('\n\n');
+                const diaryBody = makeElement('p', 'zrs-phone-diary-body', diaryText);
+                diaryBody.contentEditable = 'true';
+                diaryBody.spellcheck = true;
+                diaryBody.setAttribute('role', 'textbox');
+                diaryBody.setAttribute('aria-label', '编辑日记正文');
+                diaryBody.dataset.placeholder = '在这里写下今天的日记……';
+                diary.append(diaryHead, diaryBody);
+                pageHost.append(diary);
+                return;
+            }
+            values.filter(value => phoneText(value)).forEach(value => pageHost.append(makeElement('div', 'zrs-phone-list-card', value)));
+            if (!pageHost.children.length) pageHost.append(makeElement('div', 'zrs-phone-empty', '暂无备忘事项'));
             return;
         }
         if (page.id === 'Wechat') {
-            const target = phoneText(values[0], '未知');
-            phoneTitle.textContent = target;
+            phoneTitle.textContent = phoneText(values[0], '未知');
             values.slice(1).forEach((value, index) => {
-                const message = phoneText(value);
-                if (!message) return;
+                if (!phoneText(value)) return;
                 const side = index % 2 === 0 ? 'is-left' : 'is-right';
+                if (!handheldMode) {
+                    pageHost.append(makeElement('div', `zrs-phone-chat ${side}`, value));
+                    return;
+                }
                 const row = makeElement('div', `zrs-phone-chat-row ${side}`);
-                const avatar = makeElement('span', 'zrs-phone-chat-avatar', side === 'is-left' ? target.slice(0, 1) : '我');
-                avatar.setAttribute('aria-hidden', 'true');
-                const bubble = makeElement('div', `zrs-phone-chat ${side}`, message);
+                const avatar = makeElement('span', 'zrs-phone-chat-avatar', side === 'is-left' ? phoneTitle.textContent.slice(0, 1) : '我');
+                const bubble = makeElement('div', `zrs-phone-chat ${side}`, value);
                 if (side === 'is-left') row.append(avatar, bubble);
                 else row.append(bubble, avatar);
                 pageHost.append(row);
@@ -2452,47 +2452,30 @@ function renderStatusPreview(host) {
         }
         if (!pageHost.children.length) pageHost.append(makeElement('div', 'zrs-phone-empty', '购物车空空如也'));
     };
-    const showHome = () => {
-        root.classList.add('is-phone-home');
-        delete root.dataset.phonePage;
-        pageHost.replaceChildren();
-        pageHost.scrollTop = 0;
-        phoneTitle.textContent = '';
-        [...tabs.children].forEach(button => {
-            button.classList.remove('is-active');
-            button.setAttribute('aria-pressed', 'false');
-        });
-    };
     const showPage = index => {
         pageHost.replaceChildren();
         const page = pages[index]?.page;
         const values = pages[index]?.values || [];
-        if (!page) return;
         if (phoneMode) renderPhonePage(page, values);
         else (page?.fields || rule.pageFields).forEach((definition, fieldIndex) => {
             appendPreviewField(pageHost, definition, values[fieldIndex] || previewValue(definition), false, rule.glyph, rule);
         });
         if (!phoneMode) bindPreviewFieldReorder(pageHost, rule, 'page');
-        [...tabs.children].forEach((button, buttonIndex) => {
-            const active = phoneMode ? Number(button.dataset.pageIndex) === index : buttonIndex === index;
-            button.classList.toggle('is-active', active);
-            if (phoneMode) button.setAttribute('aria-pressed', String(active));
-        });
+        [...tabs.children].forEach((button, buttonIndex) => button.classList.toggle('is-active', handheldMode ? Number(button.dataset.pageIndex) === index : buttonIndex === index));
         if (phoneMode) {
             root.classList.remove('is-phone-home');
         }
     };
     pages.forEach(({ page }, index) => {
         const app = phoneMode ? rule.phoneDesktop.apps.find(item => item.id === page.id) : null;
-        if (phoneMode && app?.enabled === false) return;
+        if (handheldMode && app?.enabled === false) return;
         const button = makeElement('button', 'status-atelier-preview-tab zrs-tab');
         button.type = 'button';
         if (phoneMode) {
-            button.dataset.pageIndex = String(index);
-            button.setAttribute('aria-pressed', 'false');
+            if (handheldMode) button.dataset.pageIndex = String(index);
             const icon = makeElement('span', 'zrs-app-icon');
             icon.dataset.appId = page.id;
-            icon.innerHTML = phoneAppIconMarkup(page.id);
+            icon.innerHTML = handheldMode ? handheldPhoneAppIconMarkup(page.id) : phoneAppIconMarkup(page.id);
             if (app?.iconUrl) {
                 const image = makeElement('img', 'zrs-app-icon-image');
                 image.src = app.iconUrl;
@@ -2511,9 +2494,66 @@ function renderStatusPreview(host) {
         button.addEventListener('click', () => showPage(index));
         tabs.append(button);
     });
-    phoneBack.addEventListener('click', showHome);
+    const showPhoneHome = () => {
+        root.classList.add('is-phone-home');
+        delete root.dataset.phonePage;
+        pageHost.replaceChildren();
+        [...tabs.children].forEach(button => button.classList.remove('is-active'));
+    };
+    phoneBack.addEventListener('click', showPhoneHome);
+    let phoneControls = null;
+    let phoneCharm = null;
+    if (handheldMode) {
+        [['Y', 'Wechat'], ['X', 'Personal'], ['B', 'Shop'], ['A', 'Memo']].forEach(([key, appId]) => {
+            const app = rule.phoneDesktop.apps.find(item => item.id === appId);
+            if (app?.enabled === false) return;
+            const tile = makeElement('span', 'zrs-phone-home-key');
+            tile.dataset.appId = appId;
+            tile.style.setProperty('--z-phone-app-x', `${app?.desktopX ?? 50}%`);
+            tile.style.setProperty('--z-phone-app-y', `${app?.desktopY ?? 50}%`);
+            const icon = makeElement('span', 'zrs-app-icon');
+            icon.dataset.appId = appId;
+            icon.innerHTML = handheldPhoneAppIconMarkup(appId);
+            if (app?.iconUrl) {
+                const image = makeElement('img', 'zrs-app-icon-image');
+                image.src = app.iconUrl;
+                image.alt = '';
+                icon.classList.add('has-custom-icon');
+                icon.append(image);
+            }
+            tile.append(icon);
+            phoneHomeGuide.append(tile);
+        });
+        phoneControls = makeElement('div', 'zrs-phone-controls');
+        phoneControls.setAttribute('aria-label', '掌机实体按键');
+        [['X', '个人'], ['Y', '微信'], ['B', '购物或返回'], ['A', '日记']].forEach(([key, label]) => {
+            const control = makeElement('button', 'zrs-phone-control');
+            control.type = 'button';
+            control.dataset.phoneControl = key;
+            control.setAttribute('aria-label', `${key} 键：${label}`);
+            control.addEventListener('click', () => {
+                if (key === 'B' && !root.classList.contains('is-phone-home')) {
+                    showPhoneHome();
+                    return;
+                }
+                const pageId = key === 'X' ? 'Personal' : key === 'Y' ? 'Wechat' : key === 'B' ? 'Shop' : 'Memo';
+                const targetApp = rule.phoneDesktop.apps.find(item => item.id === pageId);
+                if (targetApp?.enabled === false) return;
+                const pageIndex = pages.findIndex(item => item.page.id === pageId);
+                if (pageIndex >= 0) showPage(pageIndex);
+            });
+            phoneControls.append(control);
+        });
+        phoneCharm = makeElement('div', 'zrs-phone-charm');
+        phoneCharm.setAttribute('aria-hidden', 'true');
+        if (rule.phoneDesktop.charmUrl) {
+            const charmImage = makeElement('img');
+            charmImage.src = rule.phoneDesktop.charmUrl;
+            charmImage.alt = '';
+            phoneCharm.append(charmImage);
+        }
+    }
     if ((pages.length > 1 || phoneMode) && !phoneMode) body.append(tabs);
-    if (phoneMode) body.append(phoneHomeGuide);
     body.append(phonePagebar);
     body.append(pageHost);
     card.append(body);
@@ -2522,45 +2562,12 @@ function renderStatusPreview(host) {
     host.replaceChildren(root);
     if (phoneMode) {
         root.append(tabs);
-        const phoneControls = makeElement('div', 'zrs-phone-controls');
-        [['X', 'Personal', '个人'], ['Y', 'Wechat', '微信'], ['B', 'Shop', '购物'], ['A', 'Memo', '日记']].forEach(([key, pageId, label]) => {
-            const control = makeElement('button', 'zrs-phone-control');
-            control.type = 'button';
-            control.dataset.phoneControl = key;
-            control.setAttribute('aria-label', key === 'B' ? 'B 键：主页打开购物，页面内返回' : `${key} 键：${label}`);
-            control.addEventListener('click', () => {
-                if (key === 'B' && !root.classList.contains('is-phone-home')) {
-                    showHome();
-                    return;
-                }
-                const pageIndex = pages.findIndex(item => item.page.id === pageId);
-                if (pageIndex >= 0) showPage(pageIndex);
-            });
-            phoneControls.append(control);
-        });
-        root.append(phoneControls);
-        const phoneCharm = makeElement('div', 'zrs-phone-charm');
-        phoneCharm.setAttribute('aria-hidden', 'true');
-        const charmUrl = rule.phoneDesktop.charmUrl || PHONE_CHARM_ASSETS[rule.phoneDesktop.shellStyle];
-        if (charmUrl) {
-            const charmImage = makeElement('img', 'zrs-phone-charm-image');
-            charmImage.src = charmUrl;
-            charmImage.alt = '';
-            charmImage.draggable = false;
-            charmImage.loading = 'lazy';
-            charmImage.decoding = 'async';
-            charmImage.referrerPolicy = 'no-referrer';
-            charmImage.addEventListener('error', () => {
-                charmImage.remove();
-                phoneCharm.classList.remove('has-custom-charm');
-            });
-            if (rule.phoneDesktop.charmUrl) phoneCharm.classList.add('has-custom-charm');
-            phoneCharm.append(charmImage);
-        }
-        root.append(phoneCharm);
-        showHome();
+        if (phoneControls) root.append(phoneControls);
+        if (phoneCharm) root.append(phoneCharm);
+        root.classList.add('is-phone-home');
+        pageHost.replaceChildren();
         bindPhoneDiyDrag(root, phoneSharedHost, phoneWallpaperImage);
-        bindPhoneHomeIconDrag(phoneHomeGuide);
+        if (handheldMode) bindPhoneHomeIconDrag(phoneHomeGuide);
     } else {
         showPage(0);
     }
