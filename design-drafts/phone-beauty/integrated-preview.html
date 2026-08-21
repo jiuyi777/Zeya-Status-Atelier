@@ -14,10 +14,12 @@
     p { max-width: 760px; line-height: 1.65; }
     .badge { width: fit-content; padding: 5px 9px; border: 2px solid currentColor; background: #fff; font: 800 11px/1.2 ui-monospace, monospace; letter-spacing: .08em; }
     .gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .gallery.is-single { grid-template-columns: minmax(0, 1fr); }
     article { min-width: 0; padding: 14px; border: 2px solid #282534; background: #fffdf8; box-shadow: 7px 7px 0 #282534; }
     h2 { margin: 0 0 10px; font-size: 17px; }
     iframe { display: block; width: 100%; height: 650px; border: 0; background: transparent; }
     @media (max-width: 760px) { .gallery { grid-template-columns: 1fr; } article { padding-inline: 4px; } iframe { height: 640px; } }
+    @media (max-height: 500px) and (orientation: landscape) { body { padding: 8px 0; } body > header { display: none; } article { padding: 4px; } h2 { margin: 2px 8px 4px; } iframe { height: calc(100vh - 42px); } }
     @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
   </style>
 </head>
@@ -28,6 +30,6 @@
     <p>每个预览框都由当前 worktree 的 <code>buildRegexScript()</code> 现场生成；点击 APP、返回、购物折叠均运行最终导出的脚本，不是另写的演示组件。</p>
   </header>
   <main id="gallery" class="gallery" aria-label="插件真实导出手机预览"></main>
-  <script type="module" src="./integrated-preview.js"></script>
+  <script type="module" src="./integrated-preview.js?v=20260822-2"></script>
 </body>
 </html>

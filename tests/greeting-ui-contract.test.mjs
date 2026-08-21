@@ -267,6 +267,8 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /'status-atelier-phone-shell-style': 'shellStyle'/);
     assert.match(settingsMarkup, /id="status-atelier-phone-shell-color"[^>]*type="color"/);
     assert.match(source, /'status-atelier-phone-shell-color': 'shellColor'/);
+    assert.match(settingsMarkup, /id="status-atelier-phone-charm-url"[^>]*type="url"/);
+    assert.match(source, /'status-atelier-phone-charm-url': 'charmUrl'/);
     assert.match(settingsMarkup, /id="status-atelier-phone-diy" class="status-atelier-setting-section status-atelier-collapsible">/);
     assert.doesNotMatch(settingsMarkup, /选择本地壁纸|status-atelier-phone-wallpaper-file/);
     assert.match(settingsMarkup, /双击字段名修改 · 拖动字段排序/);
@@ -293,7 +295,9 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /function bindPhoneAvatarDiy/);
     assert.match(source, /pointers\.size >= 2/);
     assert.match(source, /addEventListener\('wheel'/);
-    assert.match(source, /phoneDesktopSchemaVersion !== 3/);
+    assert.match(source, /phoneDesktopSchemaVersion !== 6/);
+    assert.match(settingsMarkup, /id="status-atelier-phone-app-personal-enabled"[^>]*data-phone-app-key="enabled"[^>]*type="checkbox"/);
+    assert.match(source, /\['name', 'iconUrl', 'enabled'\]\.includes\(appKey\)/);
 });
 
 test('dynamic numbers keep one solid progress treatment without object controls', () => {

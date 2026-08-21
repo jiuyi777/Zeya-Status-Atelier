@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     RULE_PRESETS,
+    PHONE_CHARM_ASSETS,
+    PHONE_FRAME_ASSETS,
     PHONE_SHELL_STYLES,
     STATUS_PALETTE_PRESETS,
     STATUS_STRUCTURE_PRESETS,
@@ -99,8 +101,8 @@ test('phone desktop is editable and exports real app navigation with a back acti
         structure: 'phone',
         sharedFieldsText: preset.shared.map(field => field.join('|')).join('\n'),
     });
-    assert.deepEqual(phoneRule.pages.map(page => page.label), ['个人', '备忘录', '微信', '购物']);
-    assert.deepEqual(phoneRule.pages.map(page => page.fields.length), [4, 3, 5, 6]);
+    assert.deepEqual(phoneRule.pages.map(page => page.label), ['个人', '日记', '微信', '购物']);
+    assert.deepEqual(phoneRule.pages.map(page => page.fields.length), [4, 3, 9, 6]);
     assert.deepEqual(phoneRule.pages.map(page => page.fields[0].id), ['favor', 'memo_1', 'chat_target', 'item_1']);
     const phoneInput = {
         ...RULE_PRESETS.custom,
@@ -111,10 +113,10 @@ test('phone desktop is editable and exports real app navigation with a back acti
 [Shared|旧港钟楼|22:10|细雨]
 [Personal|68|47|深色外套|我会等他回来]
 [Memo|取回钥匙|调查信封|赴约]
-[Wechat|温瑟|到家了吗|刚到|我等你|马上来]
+    [Wechat|温瑟|到家了吗|刚到|我等你|马上来|门口风大|我带了围巾|看见你了|我也看见你了]
 [Shop|旧城通行证|进入封锁区|银柄折叠伞|藏有便笺|蓝花信纸|十二张]
 </zeya_status>`);
-    assert.deepEqual(parsed.pages.map(page => page.values.length), [4, 3, 5, 6]);
+    assert.deepEqual(parsed.pages.map(page => page.values.length), [4, 3, 9, 6]);
     assert.match(buildAiInstruction(phoneInput), /\[Personal\|/);
     assert.match(buildAiInstruction(phoneInput), /\[Shop\|/);
     const generated = buildRegexScript({
@@ -130,6 +132,18 @@ test('phone desktop is editable and exports real app navigation with a back acti
     assert.match(generated, /classList\.remove\('is-phone-home'\)/);
     assert.match(generated, /zrs-app-icon/);
     assert.match(generated, /icon\.dataset\.appId=page\.id/);
+    assert.match(generated, /aria-pressed/);
+    assert.match(generated, /function showHome\(\)\{root\.classList\.add\('is-phone-home'\);delete root\.dataset\.phonePage;fields\.replaceChildren\(\);fields\.scrollTop=0/);
+    assert.match(generated, /zrs-phone-back'\)\.addEventListener\('click',showHome\)/);
+    assert.match(generated, /data-phone-control="X"[^>]*aria-label="X 键：个人"/);
+    assert.match(generated, /data-phone-control="Y"[^>]*aria-label="Y 键：微信"/);
+    assert.match(generated, /data-phone-control="B"[^>]*aria-label="B 键：购物"/);
+    assert.match(generated, /data-phone-control="A"[^>]*aria-label="A 键：日记"/);
+    assert.match(generated, /key==='B'\?'Shop':'Memo'/);
+    assert.match(generated, /zrs-phone-diary/);
+    assert.match(generated, /PRIVATE DIARY/);
+    assert.doesNotMatch(generated, /showPhoneGame|phoneGameScore|接住雪花/);
+    assert.doesNotMatch(STATUS_PHONE_CSS, /zrs-phone-game/);
     assert.match(generated, /phoneIconMarkup/);
     assert.match(generated, /zrs-app-glyph/);
     assert.match(STATUS_PHONE_CSS, /data-app-id="Personal"/);
@@ -137,9 +151,18 @@ test('phone desktop is editable and exports real app navigation with a back acti
     assert.match(STATUS_PHONE_CSS, /data-app-id="Wechat"/);
     assert.match(STATUS_PHONE_CSS, /data-app-id="Shop"/);
     assert.match(generated, /zrs-phone-chat/);
+    assert.match(generated, /zrs-phone-chat-row/);
     assert.match(generated, /zrs-phone-shop/);
     assert.match(generated, /zrs-phone-personal-hero/);
     assert.match(generated, /zrs-phone-petals/);
+    assert.match(generated, /snowflakeMarkup='<svg/);
+    assert.match(STATUS_PHONE_CSS, /zrs-phone-snow-fall/);
+    assert.match(STATUS_PHONE_CSS, /zrs-phone-controls/);
+    assert.match(STATUS_PHONE_CSS, /zrs-phone-home-guide/);
+    assert.match(generated, /desktopX/);
+    assert.match(generated, /moveIcon/);
+    assert.match(generated, /contentEditable='true'/);
+    assert.match(STATUS_PHONE_CSS, /\.is-phone-home \.zrs-fields/);
     assert.match(generated, /phoneDesktop\.petalsEnabled===false/);
     assert.match(generated, /zrs-phone-wallpaper/);
     assert.doesNotMatch(generated, /img\.remit\.ee/);
@@ -159,9 +182,41 @@ test('phone desktop is editable and exports real app navigation with a back acti
     assert.match(STATUS_PHONE_CSS, /data-phone-shell="clamshell"/);
     assert.match(STATUS_PHONE_CSS, /data-phone-shell="orbit"/);
     assert.match(STATUS_PHONE_CSS, /data-phone-shell="slider"/);
-    assert.match(STATUS_PHONE_CSS, /min-height:76px/);
+    assert.match(STATUS_PHONE_CSS, /aspect-ratio:1502\/661/);
+    assert.match(STATUS_PHONE_CSS, /repeat\(auto-fit,minmax\(44px,68px\)\)/);
+    assert.match(STATUS_PHONE_CSS, /scrollbar-width:none/);
+    assert.match(STATUS_PHONE_CSS, /\.zrs-fields::\-webkit-scrollbar\{display:none;width:0;height:0\}/);
+    assert.match(STATUS_PHONE_CSS, /:not\(\.is-phone-home\)>\.zrs-tabs\{display:none\}/);
+    assert.match(STATUS_PHONE_CSS, /zrs-phone-frame/);
+    assert.doesNotMatch(STATUS_PHONE_CSS, /zrs-phone-orbit-turn|zrs-phone-orbit-counter|top:188px|height:173px/);
     assert.match(STATUS_PHONE_CSS, /focus-visible/);
     assert.match(STATUS_PHONE_CSS, /prefers-reduced-motion:reduce/);
+});
+
+test('new phone shells use fixed GitHub frame assets and preserve default or custom charms', () => {
+    const phonePreset = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'phone');
+    const base = {
+        ...RULE_PRESETS.custom,
+        structure: 'phone',
+        pagesText: phonePreset.pagesText,
+        sharedFieldsText: phonePreset.shared.map(field => field.join('|')).join('\n'),
+        pageFieldsText: phonePreset.fields.map(field => field.join('|')).join('\n'),
+    };
+    assert.deepEqual(Object.keys(PHONE_FRAME_ASSETS), ['clamshell', 'orbit', 'slider']);
+    assert.match(PHONE_FRAME_ASSETS.clamshell, /cc18929\/assets\/phone-beauty\/frame-handheld-reference-v2-alpha\.png$/);
+    for (const shellStyle of Object.keys(PHONE_FRAME_ASSETS)) {
+        const generated = buildRegexScript({ ...base, phoneDesktop: { shellStyle } }).replaceString;
+        assert.match(generated, new RegExp(PHONE_FRAME_ASSETS[shellStyle].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+        assert.match(generated, /class="zrs-phone-frame"[^>]*aria-hidden="true"/);
+    }
+    const orbit = buildRegexScript({ ...base, phoneDesktop: { shellStyle: 'orbit' } }).replaceString;
+    assert.match(orbit, new RegExp(PHONE_CHARM_ASSETS.orbit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    const slider = buildRegexScript({ ...base, phoneDesktop: { shellStyle: 'slider' } }).replaceString;
+    assert.match(slider, new RegExp(PHONE_CHARM_ASSETS.slider.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    const custom = buildRegexScript({ ...base, phoneDesktop: { shellStyle: 'slider', charmUrl: 'https://example.com/custom-charm.svg' } }).replaceString;
+    assert.match(custom, /https:\/\/example\.com\/custom-charm\.svg/);
+    assert.doesNotMatch(custom, new RegExp(PHONE_CHARM_ASSETS.slider.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    assert.match(custom, /charmHost\.replaceChildren\(charmImage\)/);
 });
 
 test('phone DIY settings are normalized separately from AI story values', () => {
@@ -169,6 +224,7 @@ test('phone DIY settings are normalized separately from AI story values', () => 
         phoneDesktop: {
             shellStyle: 'slider',
             shellColor: '#e6a5c4',
+            charmUrl: 'https://example.com/charm.png',
             wallpaperUrl: 'https://example.com/wallpaper.jpg',
             wallpaperPositionX: 140,
             wallpaperPositionY: -10,
@@ -185,19 +241,21 @@ test('phone DIY settings are normalized separately from AI story values', () => 
                 { id: 'desire', label: '牵挂度', kind: 'progress', instruction: '填写0到100的数字' },
             ],
             apps: [
-                { id: 'Personal', name: '档案', iconUrl: 'https://example.com/me.png' },
-                { id: 'Memo', name: '线索', iconUrl: 'javascript:alert(1)' },
+                { id: 'Personal', name: '档案', iconUrl: 'https://example.com/me.png', enabled: true },
+                { id: 'Memo', name: '线索', iconUrl: 'javascript:alert(1)', enabled: false },
             ],
         },
     });
     assert.equal(phone.shellStyle, 'slider');
     assert.equal(phone.shellColor, '#e6a5c4');
+    assert.equal(phone.charmUrl, 'https://example.com/charm.png');
     assert.equal(phone.wallpaperPositionX, 100);
     assert.equal(phone.wallpaperPositionY, 0);
     assert.equal(phone.petalsEnabled, true);
     assert.equal(phone.personalAvatarScale, 3);
     assert.deepEqual(phone.widgetOrder, ['current_weather', 'current_location', 'current_time']);
     assert.deepEqual(phone.apps.map(app => app.name), ['档案', '线索', '微信', '购物']);
+    assert.deepEqual(phone.apps.map(app => app.enabled), [true, false, true, true]);
     assert.equal(phone.apps[1].iconUrl, '');
     assert.deepEqual(phone.personalFields.map(field => field.label), ['信赖度', '牵挂度', '当前衣着', '实时想法']);
     assert.deepEqual(phone.personalFields.map(field => field.kind), ['text', 'progress', 'long', 'long']);
@@ -217,17 +275,35 @@ test('phone DIY settings are normalized separately from AI story values', () => 
     assert.doesNotMatch(instruction, /shellStyle|slider/);
     const generated = buildRegexScript(input).replaceString;
     assert.match(generated, /https:\/\/example\.com\/wallpaper\.jpg/);
+    assert.match(generated, /https:\/\/example\.com\/charm\.png/);
     assert.match(generated, /https:\/\/example\.com\/me\.png/);
+    assert.match(generated, /zrs-phone-charm/);
+    assert.match(generated, /has-custom-charm/);
     assert.match(generated, /widgetOrder/);
     assert.match(generated, /style\.transform='scale\('\+config\.phoneDesktop\.personalAvatarScale\+'\)'/);
     assert.match(generated, /field&&field\.kind==='progress'/);
     assert.match(generated, /personalFields\[0\]/);
+    assert.match(generated, /app&&app\.enabled===false/);
+    assert.match(generated, /button\.dataset\.pageIndex=String\(index\)/);
+    assert.match(generated, /Number\(button\.dataset\.pageIndex\)===index/);
     assert.doesNotMatch(generated, /phoneDataCard\('好感度'/);
 });
 
 test('phone shell style falls back to the original classic phone', () => {
     assert.equal(normalizePhoneDesktop().shellStyle, 'classic');
+    assert.equal(normalizePhoneDesktop().apps.find(app => app.id === 'Memo').enabled, true);
+    assert.equal(normalizePhoneDesktop().apps.find(app => app.id === 'Memo').name, '日记');
+    assert.deepEqual(
+        normalizePhoneDesktop().apps.map(app => [app.id, app.desktopX, app.desktopY]),
+        [['Personal', 24, 50], ['Memo', 50, 80], ['Wechat', 50, 20], ['Shop', 76, 50]],
+    );
+    assert.deepEqual(
+        normalizePhoneDesktop({ phoneDesktop: { apps: [{ id: 'Personal', desktopX: -20, desktopY: 120 }] } }).apps.find(app => app.id === 'Personal'),
+        { id: 'Personal', name: '个人', iconUrl: '', enabled: true, desktopX: 12, desktopY: 86 },
+    );
+    assert.equal(normalizePhoneDesktop({ phoneDesktop: { apps: [{ id: 'Memo', name: '备忘录' }] } }).apps.find(app => app.id === 'Memo').name, '日记');
     assert.equal(normalizePhoneDesktop({ phoneDesktop: { shellStyle: 'unknown-shell' } }).shellStyle, 'classic');
+    assert.equal(normalizePhoneDesktop({ phoneDesktop: { charmUrl: 'javascript:alert(1)' } }).charmUrl, '');
 });
 
 test('phone falling decoration can be disabled without exposing the general appearance library', () => {
