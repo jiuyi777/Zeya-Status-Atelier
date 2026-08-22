@@ -239,6 +239,7 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   background-size: contain;
   filter: drop-shadow(1px 3px 2px rgba(33, 20, 12, .35));
 }
+.place-frame-asset { display: none; }
 .place-card[data-frame="pin"] .place-attachment {
   left: 50%;
   top: -19px;
@@ -443,206 +444,78 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
 .clue-map[data-template="crime-collage"] .place-card[data-frame="clip"] .photo-window.is-empty::after { color: rgba(238,236,228,.56); }
 .clue-map[data-template="crime-collage"] .place-card[data-frame="clip"] .place-caption { bottom: 6px; color: #f0eee8; font: 800 .64rem/1 ui-monospace, Consolas, monospace; letter-spacing: .1em; }
 
-/* 旅行纪念路线：明信片、车票、行李牌、邮票与折叠地图。 */
-.clue-map[data-template="travel-souvenir"] .place-attachment { display: none; }
-.clue-map[data-template="travel-souvenir"] .place-card { color: #4d3824; font-family: "KaiTi", "STKaiti", serif; }
-.clue-map[data-template="travel-souvenir"] .place-card[data-frame="pin"] {
-  width: clamp(126px, 18%, 196px);
-  padding: 7px 7px 27px;
-  border: 1px solid rgba(91,65,38,.3);
-  background: #ead5ad;
-  box-shadow: 0 9px 18px rgba(61,38,18,.38);
-}
-.clue-map[data-template="travel-souvenir"] .place-card[data-frame="pin"] .place-attachment {
-  display: block;
-  left: 7%;
-  top: -17px;
-  width: 38px;
-  height: 44px;
-  background-image: url("./assets/attachments/silver-binder-clip.webp");
-  filter: sepia(.18) drop-shadow(1px 3px 2px rgba(42,27,15,.45));
-  transform: rotate(-7deg);
-}
-.clue-map[data-template="travel-souvenir"] .place-card[data-frame="pin"] .photo-window { aspect-ratio: 1.55 / 1; border-color: rgba(82,57,32,.35); }
-.clue-map[data-template="travel-souvenir"] .place-card[data-frame="tape"] {
-  width: clamp(144px, 21%, 226px);
-  padding: 9px 13px 28px;
-  border: 1px solid #8f6843;
-  border-radius: 4px 15px 4px 15px;
-  color: #4b301e;
-  background: #d5a978;
-  box-shadow: 5px 7px 0 rgba(91,55,25,.2), 0 10px 20px rgba(55,34,18,.3);
-}
-.clue-map[data-template="travel-souvenir"] .place-card[data-frame="tape"]::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 22%;
-  border-left: 2px dashed rgba(94,56,29,.5);
-}
-.clue-map[data-template="travel-souvenir"] .place-card[data-frame="tape"] .photo-window { width: 72%; aspect-ratio: 1.45 / 1; border-color: rgba(76,48,26,.42); }
-.clue-map[data-template="travel-souvenir"] .place-card[data-frame="tape"] .place-caption { right: 25%; text-align: left; }
-.clue-map[data-template="travel-souvenir"] .place-card[data-frame="clip"] {
-  width: clamp(116px, 16%, 178px);
-  padding: 9px 9px 28px 17px;
+/* 三套参考图复刻：视觉外壳均来自透明 WebP 素材，CSS 只负责放置照片与文字。 */
+.clue-map[data-template="travel-souvenir"] .place-card.uses-place-frame-asset,
+.clue-map[data-template="urban-investigation"] .place-card.uses-place-frame-asset,
+.clue-map[data-template="retro-archive"] .place-card.uses-place-frame-asset {
+  width: var(--frame-width);
+  min-height: 0;
+  aspect-ratio: var(--frame-aspect);
+  padding: 0;
   border: 0;
-  clip-path: polygon(10% 0,100% 0,100% 100%,10% 100%,0 50%);
-  background: #caa779;
-  box-shadow: 0 10px 20px rgba(58,38,21,.38);
-}
-.clue-map[data-template="travel-souvenir"] .place-card[data-frame="clip"] .place-attachment {
-  display: block;
-  left: -6%;
-  top: 13%;
-  width: 48%;
-  height: 42px;
-  background-image: url("./assets/attachments/gingham-cross-muted.webp");
-  transform: rotate(-8deg);
-}
-.clue-map[data-template="travel-souvenir"] .place-card[data-frame="clip"] .photo-window { aspect-ratio: 1.42 / 1; }
-.clue-map[data-template="travel-souvenir"] .place-card[data-frame="ticket"] {
-  width: clamp(104px, 14%, 158px);
-  padding: 8px 8px 30px;
-  border: 6px dotted #ead9b8;
-  color: #4d3924;
-  background: #d9c09a;
-  box-shadow: 0 8px 17px rgba(59,39,21,.34);
-}
-.clue-map[data-template="travel-souvenir"] .place-card[data-frame="ticket"] .photo-window { aspect-ratio: 1 / 1; }
-.clue-map[data-template="travel-souvenir"] .place-card[data-frame="lens"] {
-  width: clamp(134px, 19%, 208px);
-  padding: 8px 8px 27px;
-  border: 1px solid rgba(84,62,39,.42);
   border-radius: 0;
-  background: #dfc9a3;
-  box-shadow: 0 9px 18px rgba(59,40,23,.36);
+  clip-path: none;
+  background: transparent;
+  box-shadow: none;
 }
-.clue-map[data-template="travel-souvenir"] .place-card[data-frame="lens"]::before { content: ""; position: absolute; z-index: 3; left: 50%; top: 7px; bottom: 27px; border-left: 1px solid rgba(87,64,41,.45); box-shadow: 2px 0 4px rgba(77,52,28,.18); }
-.clue-map[data-template="travel-souvenir"] .place-card[data-frame="lens"] .photo-window { aspect-ratio: 1.62 / 1; border-radius: 0; }
-.clue-map[data-template="travel-souvenir"] .place-card[data-frame="lens"] .place-caption { bottom: 5px; padding: 0; background: transparent; box-shadow: none; }
-.clue-map[data-template="travel-souvenir"] .photo-window img { filter: sepia(.24) saturate(.85) contrast(1.05); }
-
-/* 城市调查蓝图：报纸、监控、胶片、案件夹与镜头。 */
-.clue-map[data-template="urban-investigation"] .place-attachment { display: none; }
-.clue-map[data-template="urban-investigation"] .place-card { color: #20272c; font-family: ui-monospace, Consolas, monospace; }
-.clue-map[data-template="urban-investigation"] .place-card[data-frame="pin"] {
-  width: clamp(120px, 17%, 188px);
-  padding: 16px 12px 30px;
+.place-card.uses-place-frame-asset .place-frame-asset {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 7px rgba(30,20,12,.34));
+}
+.place-card.uses-place-frame-asset .place-attachment { display: none; }
+.place-card.uses-place-frame-asset.has-frame-attachment .place-attachment {
+  z-index: 5;
+  left: var(--attachment-left);
+  top: var(--attachment-top);
+  display: block;
+  width: var(--attachment-width);
+  height: var(--attachment-height);
+  background-image: var(--frame-attachment-image);
+  transform: rotate(var(--attachment-rotation));
+  filter: drop-shadow(1px 3px 2px rgba(28,22,17,.48));
+}
+.place-card.uses-place-frame-asset .photo-window {
+  position: absolute;
+  z-index: 2;
+  left: var(--photo-left);
+  top: var(--photo-top);
+  width: var(--photo-width);
+  height: var(--photo-height);
+  aspect-ratio: auto;
   border: 0;
-  clip-path: polygon(2% 4%,95% 0,100% 91%,92% 100%,4% 96%,0 14%);
-  background: #d7d4ca;
-  box-shadow: 7px 8px 0 rgba(36,48,57,.2), 0 12px 25px rgba(27,37,45,.28);
+  border-radius: var(--photo-radius);
+  background: rgba(64,61,54,.62);
 }
-.clue-map[data-template="urban-investigation"] .place-card[data-frame="pin"] .place-attachment { display: block; left: 5%; top: -17px; width: 68%; height: 31px; filter: grayscale(1) brightness(.72) drop-shadow(1px 2px 1px rgba(0,0,0,.5)); }
-.clue-map[data-template="urban-investigation"] .place-card[data-frame="pin"] .photo-window { aspect-ratio: 1.2 / 1; border: 1px solid #5b6266; }
-.clue-map[data-template="urban-investigation"] .place-card[data-frame="tape"] {
-  width: clamp(142px, 21%, 224px);
-  padding: 25px 7px 27px;
-  border: 4px double #2e373d;
-  border-radius: 3px;
-  color: #e6e7e2;
-  background: #48545c;
-  box-shadow: 7px 9px 0 rgba(28,38,45,.3), 0 12px 24px rgba(20,28,34,.36);
+.place-card.uses-place-frame-asset .photo-window.is-empty::after { content: ""; }
+.place-card.uses-place-frame-asset .place-caption {
+  z-index: 4;
+  left: var(--caption-left);
+  right: var(--caption-right);
+  bottom: var(--caption-bottom);
+  padding: 0;
+  color: var(--frame-caption-color, #2d261f);
+  background: transparent;
+  box-shadow: none;
+  font: 800 clamp(.58rem,1vw,.78rem)/1.1 "KaiTi", "STKaiti", serif;
+  text-shadow: 0 1px rgba(255,255,255,.42);
 }
-.clue-map[data-template="urban-investigation"] .place-card[data-frame="tape"]::before { content: "CAM.FEED"; position: absolute; left: 5px; right: 5px; top: 4px; height: 17px; padding: 3px 6px; color: #dce0dd; background: #20282d; font: 800 .5rem/1 monospace; letter-spacing: .08em; text-align: left; }
-.clue-map[data-template="urban-investigation"] .place-card[data-frame="tape"] .photo-window { aspect-ratio: 1.78 / 1; border-color: #1e252a; }
-.clue-map[data-template="urban-investigation"] .place-card[data-frame="tape"] .place-caption { bottom: 6px; color: #eceee9; text-align: left; }
-.clue-map[data-template="urban-investigation"] .place-card[data-frame="clip"] {
-  width: clamp(152px, 23%, 240px);
-  padding: 16px 8px 28px;
-  border: 0;
-  color: #eceee9;
-  background: #151b1f;
-  box-shadow: 0 0 0 2px #30383e, 0 10px 22px rgba(17,24,29,.42);
-}
-.clue-map[data-template="urban-investigation"] .place-card[data-frame="clip"]::before { content: ""; position: absolute; left: 7px; right: 7px; top: 4px; height: 7px; background: repeating-linear-gradient(90deg,#d9dcda 0 7px,transparent 7px 14px); }
-.clue-map[data-template="urban-investigation"] .place-card[data-frame="clip"] .photo-window { aspect-ratio: 2.4 / 1; border-color: #c9ceca; }
-.clue-map[data-template="urban-investigation"] .place-card[data-frame="clip"] .place-caption { bottom: 6px; color: #e9ece7; }
-.clue-map[data-template="urban-investigation"] .place-card[data-frame="ticket"] {
-  width: clamp(134px, 19%, 208px);
-  padding: 10px 10px 29px;
-  border: 0;
-  color: #252b2f;
-  background: #c7bca4;
-  box-shadow: 7px 8px 0 rgba(38,49,57,.22), 0 10px 22px rgba(27,37,45,.28);
-}
-.clue-map[data-template="urban-investigation"] .place-card[data-frame="ticket"]::before { content: ""; position: absolute; left: 10px; top: -13px; width: 44%; height: 16px; background: #b9ae96; clip-path: polygon(0 100%,15% 0,100% 0,100% 100%); }
-.clue-map[data-template="urban-investigation"] .place-card[data-frame="ticket"] .place-attachment { display: block; left: 50%; top: -20px; width: 45px; height: 48px; background-image: url("./assets/attachments/silver-binder-clip.webp"); filter: grayscale(1) brightness(.75) drop-shadow(1px 3px 2px rgba(0,0,0,.45)); transform: translateX(-50%); }
-.clue-map[data-template="urban-investigation"] .place-card[data-frame="ticket"] .photo-window { aspect-ratio: 1.5 / 1; }
-.clue-map[data-template="urban-investigation"] .place-card[data-frame="lens"] {
-  width: clamp(106px, 14%, 164px);
-  padding: 9px 9px 27px;
-  border: 8px double #444f56;
-  border-radius: 50%;
-  color: #20272c;
-  background: #aeb7bc;
-  box-shadow: 8px 9px 0 rgba(33,44,52,.22), 0 10px 23px rgba(22,31,38,.34);
-}
-.clue-map[data-template="urban-investigation"] .place-card[data-frame="lens"] .photo-window { aspect-ratio: 1 / 1; border: 0; border-radius: 50%; }
-.clue-map[data-template="urban-investigation"] .place-card[data-frame="lens"] .place-caption { bottom: -22px; color: #20272c; background: #d2d3cd; }
-.clue-map[data-template="urban-investigation"] .photo-window img { filter: grayscale(1) contrast(1.16) brightness(.92); }
-
-/* 复古数字档案：文件窗口、CRT、扫描页、文件夹与暗房袋。 */
-.clue-map[data-template="retro-archive"] .place-attachment { display: none; }
-.clue-map[data-template="retro-archive"] .place-card { font-family: ui-monospace, Consolas, monospace; }
-.clue-map[data-template="retro-archive"] .place-card[data-frame="pin"] {
-  width: clamp(142px, 21%, 224px);
-  padding: 26px 6px 26px;
-  border: 4px double #202321;
-  color: #171a18;
-  background: #a8aaa5;
-  box-shadow: 8px 9px 0 rgba(0,0,0,.36), 0 14px 28px rgba(0,0,0,.52);
-}
-.clue-map[data-template="retro-archive"] .place-card[data-frame="pin"]::before { content: "ARCHIVE.FILE"; position: absolute; left: 3px; right: 3px; top: 3px; height: 18px; padding: 4px 6px; color: #e5e6e1; background: #343734; font: 800 .5rem/1 monospace; letter-spacing: .05em; text-align: left; }
-.clue-map[data-template="retro-archive"] .place-card[data-frame="pin"] .photo-window { aspect-ratio: 1.62 / 1; border-color: #2d302e; }
-.clue-map[data-template="retro-archive"] .place-card[data-frame="pin"] .place-caption { bottom: 6px; text-align: left; }
-.clue-map[data-template="retro-archive"] .place-card[data-frame="tape"] {
-  width: clamp(132px, 19%, 208px);
-  padding: 13px 13px 29px;
-  border: 8px solid #353a37;
-  border-radius: 17px;
-  color: #e1e4df;
-  background: #242825;
-  box-shadow: inset 0 0 0 2px #0c0e0d, 8px 10px 0 rgba(0,0,0,.35), 0 14px 30px rgba(0,0,0,.58);
-}
-.clue-map[data-template="retro-archive"] .place-card[data-frame="tape"] .photo-window { aspect-ratio: 1.32 / 1; border: 2px solid #080a09; border-radius: 13px; }
-.clue-map[data-template="retro-archive"] .place-card[data-frame="tape"] .place-caption { bottom: 5px; color: #e4e6e1; }
-.clue-map[data-template="retro-archive"] .place-card[data-frame="clip"] {
-  width: clamp(118px, 16%, 184px);
-  padding: 26px 10px 28px;
-  border: 2px solid #717671;
-  color: #252824;
-  background: #b8bbb5;
-  box-shadow: 8px 9px 0 rgba(0,0,0,.3), 0 13px 27px rgba(0,0,0,.5);
-}
-.clue-map[data-template="retro-archive"] .place-card[data-frame="clip"]::before { content: "SCAN.PREVIEW"; position: absolute; left: 10px; top: 7px; color: #333732; font: 800 .48rem/1 monospace; letter-spacing: .06em; }
-.clue-map[data-template="retro-archive"] .place-card[data-frame="clip"] .photo-window { aspect-ratio: 1 / 1.18; border: 2px solid #2d302d; }
-.clue-map[data-template="retro-archive"] .place-card[data-frame="ticket"] {
-  width: clamp(154px, 23%, 244px);
-  padding: 20px 9px 28px;
-  border: 1px solid #494b47;
-  color: #262824;
-  background: #b8ae9b;
-  box-shadow: 8px 10px 0 rgba(0,0,0,.32), 0 14px 28px rgba(0,0,0,.5);
-}
-.clue-map[data-template="retro-archive"] .place-card[data-frame="ticket"]::before { content: "ARCHIVE.THUMBNAILS"; position: absolute; left: 14px; top: -12px; width: 58%; height: 24px; padding: 8px 8px 0; color: #30322f; background: #aea48f; font: 800 .46rem/1 monospace; text-align: left; clip-path: polygon(0 100%,9% 0,100% 0,100% 100%); }
-.clue-map[data-template="retro-archive"] .place-card[data-frame="ticket"] .photo-window { aspect-ratio: 2.2 / 1; border-color: #3a3d39; }
-.clue-map[data-template="retro-archive"] .place-card[data-frame="lens"] {
-  width: clamp(130px, 18%, 204px);
-  padding: 34px 10px 28px;
-  border: 1px solid #4c504c;
-  border-radius: 2px;
-  color: #dfe1db;
-  background: #252825;
-  box-shadow: 8px 10px 0 rgba(0,0,0,.38), 0 15px 30px rgba(0,0,0,.58);
-}
-.clue-map[data-template="retro-archive"] .place-card[data-frame="lens"]::before { content: "CONTACT.PRINT"; position: absolute; left: 0; right: 0; top: 0; height: 25px; padding: 8px 10px; color: #d5d8d1; background: #343834; font: 800 .48rem/1 monospace; letter-spacing: .06em; text-align: left; clip-path: polygon(0 0,100% 0,93% 100%,7% 100%); }
-.clue-map[data-template="retro-archive"] .place-card[data-frame="lens"] .photo-window { aspect-ratio: 1.45 / 1; border: 1px solid #c5c8c1; border-radius: 0; }
-.clue-map[data-template="retro-archive"] .place-card[data-frame="lens"] .place-caption { bottom: 6px; color: #e1e3de; background: transparent; box-shadow: none; text-align: left; }
-.clue-map[data-template="retro-archive"] .photo-window { background: #070908; }
-.clue-map[data-template="retro-archive"] .photo-window img { filter: grayscale(1) contrast(1.25) brightness(.82); }
-.clue-map[data-template="retro-archive"] .photo-window.is-empty::after { color: rgba(218,221,214,.45); }
+.place-card.uses-place-frame-asset[data-status="blocked"]::after { display: none; }
+.clue-map[data-template="travel-souvenir"] .place-card.uses-place-frame-asset { --frame-caption-color: #3e2c1d; }
+.clue-map[data-template="travel-souvenir"] .place-card.uses-place-frame-asset .photo-window { background: #aaa092; }
+.clue-map[data-template="travel-souvenir"] .place-card.uses-place-frame-asset .photo-window img { filter: sepia(.24) saturate(.86) contrast(1.05); }
+.clue-map[data-template="urban-investigation"] .place-card.uses-place-frame-asset { --frame-caption-color: #262a2c; }
+.clue-map[data-template="urban-investigation"] .place-card.uses-place-frame-asset .photo-window { background: #747a7d; }
+.clue-map[data-template="urban-investigation"] .place-card.uses-place-frame-asset .photo-window img { filter: grayscale(1) contrast(1.16) brightness(.92); }
+.clue-map[data-template="retro-archive"] .place-card.uses-place-frame-asset { --frame-caption-color: #171917; }
+.clue-map[data-template="retro-archive"] .place-card.uses-place-frame-asset .photo-window { background: #070908; }
+.clue-map[data-template="retro-archive"] .place-card.uses-place-frame-asset .photo-window img { filter: grayscale(1) contrast(1.2) brightness(.84); }
 .map-editor[data-mode="edit"] .place-card[aria-pressed="true"] {
   outline: 2px solid rgba(205, 178, 116, .72);
   outline-offset: 3px;
@@ -652,6 +525,17 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   outline: 2px solid #9c4a3c;
   outline-offset: 4px;
   box-shadow: 0 0 0 4px rgba(156,74,60,.14), 0 8px 14px rgba(35,20,11,.38);
+}
+.map-editor[data-mode="edit"] .place-card.uses-place-frame-asset[aria-pressed="true"],
+.map-editor[data-mode="edit"] .place-card.uses-place-frame-asset.is-connection-source {
+  outline: 0;
+  box-shadow: none;
+}
+.map-editor[data-mode="edit"] .place-card.uses-place-frame-asset[aria-pressed="true"] .place-frame-asset {
+  filter: drop-shadow(0 0 5px rgba(205,178,116,.92)) drop-shadow(0 8px 7px rgba(30,20,12,.34));
+}
+.map-editor[data-mode="edit"] .place-card.uses-place-frame-asset.is-connection-source .place-frame-asset {
+  filter: drop-shadow(0 0 5px rgba(156,74,60,.9)) drop-shadow(0 8px 7px rgba(30,20,12,.34));
 }
 
 .place-detail { position: absolute; z-index: 30; inset: 0; visibility: hidden; opacity: 0; pointer-events: none; transition: opacity 160ms ease, visibility 0s linear 160ms; }
@@ -801,21 +685,9 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   .clue-map[data-template="crime-collage"] .place-card[data-frame="pin"] { width: clamp(84px, 27%, 112px); padding-bottom: 27px; }
   .clue-map[data-template="crime-collage"] .place-card[data-frame="tape"] { width: clamp(102px, 33%, 136px); }
   .clue-map[data-template="crime-collage"] .place-card[data-frame="clip"] { width: clamp(82px, 25%, 106px); }
-  .clue-map[data-template="travel-souvenir"] .place-card[data-frame="pin"] { width: clamp(96px, 31%, 128px); }
-  .clue-map[data-template="travel-souvenir"] .place-card[data-frame="tape"] { width: clamp(112px, 36%, 148px); }
-  .clue-map[data-template="travel-souvenir"] .place-card[data-frame="clip"] { width: clamp(88px, 28%, 118px); }
-  .clue-map[data-template="travel-souvenir"] .place-card[data-frame="ticket"] { width: clamp(80px, 25%, 106px); }
-  .clue-map[data-template="travel-souvenir"] .place-card[data-frame="lens"] { width: clamp(104px, 33%, 138px); }
-  .clue-map[data-template="urban-investigation"] .place-card[data-frame="pin"] { width: clamp(92px, 29%, 122px); }
-  .clue-map[data-template="urban-investigation"] .place-card[data-frame="tape"] { width: clamp(110px, 35%, 146px); }
-  .clue-map[data-template="urban-investigation"] .place-card[data-frame="clip"] { width: clamp(118px, 38%, 156px); }
-  .clue-map[data-template="urban-investigation"] .place-card[data-frame="ticket"] { width: clamp(102px, 32%, 136px); }
-  .clue-map[data-template="urban-investigation"] .place-card[data-frame="lens"] { width: clamp(82px, 26%, 108px); }
-  .clue-map[data-template="retro-archive"] .place-card[data-frame="pin"] { width: clamp(112px, 36%, 148px); }
-  .clue-map[data-template="retro-archive"] .place-card[data-frame="tape"] { width: clamp(104px, 33%, 138px); }
-  .clue-map[data-template="retro-archive"] .place-card[data-frame="clip"] { width: clamp(90px, 29%, 120px); }
-  .clue-map[data-template="retro-archive"] .place-card[data-frame="ticket"] { width: clamp(120px, 39%, 160px); }
-  .clue-map[data-template="retro-archive"] .place-card[data-frame="lens"] { width: clamp(100px, 32%, 134px); }
+  .clue-map[data-template="travel-souvenir"] .place-card.uses-place-frame-asset,
+  .clue-map[data-template="urban-investigation"] .place-card.uses-place-frame-asset,
+  .clue-map[data-template="retro-archive"] .place-card.uses-place-frame-asset { width: var(--frame-mobile-width); }
   .place-caption { font-size: .66rem; }
   .inspector { position: static; max-height: none; min-height: 0; margin-top: 8px; }
   .inspector-empty { min-height: 210px; }
