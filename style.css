@@ -1139,7 +1139,7 @@
     border-radius: 0;
     background: var(--sap-card);
     box-shadow: 6px 6px 0 color-mix(in srgb, var(--sap-text) 18%, transparent);
-    font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    font-family: "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", sans-serif;
 }
 
 .status-atelier-rule-preview[data-theme="minimal"] .status-atelier-rule-preview-header {
@@ -2812,7 +2812,8 @@ summary.status-atelier-section-heading {
 .status-atelier-workbench h4,
 .status-atelier-library strong {
     color: var(--saw-ink);
-    font-family: "Noto Serif SC", "Songti SC", serif;
+    font-family: "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", sans-serif;
+    letter-spacing: -.02em;
 }
 
 .status-atelier-workbench button,
@@ -2909,7 +2910,8 @@ summary.status-atelier-section-heading {
 
 .status-atelier-workbench-header p {
     margin-top: 6px;
-    letter-spacing: .08em;
+    line-height: 1.55;
+    letter-spacing: .01em;
 }
 
 .status-atelier-data-flow {
@@ -3053,6 +3055,7 @@ summary.status-atelier-section-heading {
 .status-atelier-section-heading small {
     display: block;
     margin-top: 3px;
+    line-height: 1.5;
 }
 
 .status-atelier-template-grid {
@@ -3612,6 +3615,10 @@ summary.status-atelier-section-heading {
     font-size: 14px;
 }
 
+.status-atelier-phone-shell-picker {
+    grid-column: 1 / -1;
+}
+
 .status-atelier-phone-diy-card label,
 .status-atelier-phone-diy-card > small {
     display: block;
@@ -3620,6 +3627,21 @@ summary.status-atelier-section-heading {
 
 .status-atelier-phone-direct-help {
     line-height: 1.65;
+}
+
+.status-atelier-phone-layout-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.status-atelier-phone-layout-actions button {
+    min-height: 42px;
+    border: 1px solid color-mix(in srgb, var(--SmartThemeBodyColor, #574b40) 26%, transparent);
+    border-radius: 10px;
+    color: inherit;
+    background: color-mix(in srgb, var(--SmartThemeBlurTintColor, #fff) 92%, transparent);
+    cursor: pointer;
 }
 
 .status-atelier-file-button {
@@ -3646,6 +3668,45 @@ summary.status-atelier-section-heading {
     margin-top: 7px;
 }
 
+.status-atelier-phone-icon-scale {
+    display: grid !important;
+    grid-template-columns: auto minmax(110px, 1fr) 48px;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-atelier-phone-icon-scale input[type="range"] {
+    min-height: 44px;
+}
+
+.status-atelier-phone-icon-scale output {
+    color: var(--saw-ink-soft);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.status-atelier-phone-page-rules {
+    margin-top: 8px;
+    border: 1px solid var(--saw-line-soft);
+    background: color-mix(in srgb, var(--saw-panel) 84%, var(--saw-paper));
+}
+
+.status-atelier-phone-page-rules > summary {
+    min-height: 44px;
+    padding: 11px 12px;
+    color: var(--saw-ink);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.status-atelier-phone-page-rules[open] > summary {
+    border-bottom: 1px solid var(--saw-line-soft);
+}
+
+.status-atelier-phone-page-rules .status-atelier-phone-rule-row {
+    margin: 8px;
+}
+
 .status-atelier-rule-preview[data-structure="phone"] .zrs-shared.is-diy-draggable,
 .status-atelier-rule-preview[data-structure="phone"] .zrs-phone-wallpaper img.is-diy-draggable,
 .status-atelier-rule-preview[data-structure="phone"] .zrs-phone-avatar.is-diy-draggable {
@@ -3655,6 +3716,11 @@ summary.status-atelier-section-heading {
 }
 
 .status-atelier-rule-preview[data-structure="phone"] .zrs-phone-avatar.is-diy-draggable img {
+    transform-origin: center;
+    will-change: transform, object-position;
+}
+
+.status-atelier-rule-preview[data-structure="phone"] .zrs-phone-wallpaper img.is-diy-draggable {
     transform-origin: center;
     will-change: transform, object-position;
 }

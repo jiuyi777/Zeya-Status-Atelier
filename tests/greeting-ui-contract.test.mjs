@@ -236,13 +236,13 @@ test('one-click homepage updates the local regex and character greeting without 
 });
 
 test('status workspace exposes a short one-click path and hides customization by default', () => {
-    assert.match(settingsMarkup, /id="status-atelier-install-scoped"[^>]*>一键生成并应用</);
+    assert.match(settingsMarkup, /id="status-atelier-install-scoped"[^>]*>生成并应用</);
     assert.doesNotMatch(settingsMarkup, /status-atelier-shuffle-recipe|完整 40 套|20 套自由面板/);
     assert.doesNotMatch(source, /status-atelier-modal-shuffle-recipe|applyStatusRecipe|shuffleStatusRecipe/);
     assert.doesNotMatch(settingsMarkup, /id="status-atelier-fill-mode"/);
     assert.doesNotMatch(source, /id="status-atelier-modal-status-fill-mode"/);
     assert.match(source, /class="status-atelier-modal-status-advanced">/);
-    assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?字段显示与 AI 规则/);
+    assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?APP 页面数据/);
     assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?更多外观与配色/);
     assert.match(settingsMarkup, /id="status-atelier-template-media"[\s\S]*?当前模板素材/);
     assert.doesNotMatch(settingsMarkup, /可选：头像、配图与音乐/);
@@ -268,10 +268,23 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /AI 怎么写这项（可选）/);
     assert.match(source, /isRestrictedPage[\s\S]*?深\(\?:页\|夜\)档案/);
     assert.match(styleSource, /\.status-atelier-workbench \[hidden\] \{\s*display: none !important;/);
-    assert.match(settingsMarkup, /id="status-atelier-phone-petals-enabled"[^>]*type="checkbox"/);
-    assert.match(source, /'status-atelier-phone-petals-enabled': 'petalsEnabled'/);
+    assert.match(settingsMarkup, /id="status-atelier-phone-decoration-style"[\s\S]*?value="snow"[\s\S]*?value="sakura"[\s\S]*?value="petals"[\s\S]*?value="stars"/);
+    assert.match(source, /'status-atelier-phone-decoration-style': 'decorationStyle'/);
+    assert.match(settingsMarkup, /id="status-atelier-phone-icon-scale"[^>]*type="range"/);
+    assert.match(source, /'status-atelier-phone-icon-scale': 'iconScale'/);
+    assert.match(source, /ownerDocument\.addEventListener\('pointermove', move, \{ passive: false \}\)/);
+    assert.match(source, /moveEvent\.pointerId !== event\.pointerId/);
+    assert.match(settingsMarkup, /id="status-atelier-phone-shell-style"[\s\S]*?value="classic"[\s\S]*?value="handheld"[\s\S]*?value="handheld-pink"[\s\S]*?value="handheld-white"[\s\S]*?value="bandage-pop"[\s\S]*?value="mint-archive"/);
+    assert.match(settingsMarkup, /02 粉色心形掌机/);
+    assert.match(settingsMarkup, /03 白色竖键掌机/);
+    assert.match(settingsMarkup, /04 黑粉贴纸小手机/);
+    assert.match(settingsMarkup, /05 薄荷格纹小手机/);
+    assert.doesNotMatch(settingsMarkup, /value="(?:clamshell|orbit|slider)"|横向掌机（新增款）/);
+    assert.match(source, /'status-atelier-phone-shell-style': 'shellStyle'/);
+    assert.match(source, /displayOnlyRegex: source\.displayOnlyRegex !== false/);
+    assert.match(settingsMarkup, /id="status-atelier-phone-shell-color"[^>]*type="color"/);
+    assert.match(source, /'status-atelier-phone-shell-color': 'shellColor'/);
     assert.match(settingsMarkup, /id="status-atelier-phone-diy" class="status-atelier-setting-section status-atelier-collapsible">/);
-    assert.doesNotMatch(settingsMarkup, /选择本地壁纸|status-atelier-phone-wallpaper-file/);
     assert.match(source, /forumPreviewDraftForSkin/);
     assert.doesNotMatch(source, /status-atelier-forum-edit-toggle|forumPreviewEditMode/);
     assert.match(source, /dataForumPreviewEditable|forumPreviewEditable/);
@@ -280,10 +293,23 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /updateForumPageLabel/);
     assert.match(styleSource, /status-atelier-forum-preview \[data-forum-preview-editable="true"\]:focus/);
     assert.match(styleSource, /@media \(max-width: 720px\)[\s\S]*?status-atelier-forum-skins[\s\S]*?repeat\(2, minmax\(0, 1fr\)\)/);
+    assert.match(settingsMarkup, /id="status-atelier-phone-wallpaper-file"[^>]*type="file"/);
+    assert.match(settingsMarkup, /本地图片（仅预览）/);
+    assert.match(settingsMarkup, /在右侧壁纸上拖动；滚轮或双指缩放/);
+    assert.match(settingsMarkup, /id="status-atelier-phone-auto-align"[\s\S]*?自动对齐/);
+    assert.match(settingsMarkup, /id="status-atelier-phone-reset-layout"[\s\S]*?重置布局/);
+    assert.match(settingsMarkup, /地点、时间、天气可以分别拖动/);
+    assert.match(source, /function arrangePhoneDesktopLayout\(resetBasePosition = false\)/);
+    assert.match(source, /bindPhoneWidgetItemDrag\(phoneSharedHost\)/);
+    assert.match(settingsMarkup, /id="status-atelier-regex-display-only"[^>]*type="checkbox"/);
+    assert.match(settingsMarkup, /美化只显示，不发送给 AI/);
+    assert.match(settingsMarkup, /APP 页面数据/);
+    assert.match(settingsMarkup, /四个页面都写入同一条世界书规则/);
+    assert.match(settingsMarkup, /双击字段名修改 · 拖动字段排序/);
     for (const removedId of ['status-atelier-title', 'status-atelier-subtitle', 'status-atelier-layout', 'status-atelier-theme']) {
         assert.doesNotMatch(settingsMarkup, new RegExp(`id="${removedId}"`));
     }
-    assert.ok(settingsMarkup.indexOf('更多外观与配色') < settingsMarkup.indexOf('一键启用状态栏'));
+    assert.ok(settingsMarkup.indexOf('更多外观与配色') < settingsMarkup.indexOf('启用状态栏'));
     assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-advanced" open>[\s\S]*?<summary>手动下载与全局安装<\/summary>/);
     assert.match(source, /bindPreviewFieldLabelEditor/);
     assert.match(source, /bindPreviewTitleEditor/);
@@ -294,8 +320,8 @@ test('status workbench separates templates, appearance and palettes and supports
     for (const removedSlider of ['wallpaper-x', 'wallpaper-y', 'widget-x', 'widget-y', 'avatar-x', 'avatar-y']) {
         assert.doesNotMatch(settingsMarkup, new RegExp(`id="status-atelier-phone-${removedSlider}"`));
     }
-    assert.doesNotMatch(settingsMarkup, /取景和缩放直接在右侧“个人”页头像上完成/);
-    assert.doesNotMatch(settingsMarkup, /图标留空时使用配套默认图标/);
+    assert.match(settingsMarkup, /在右侧头像上拖动和缩放/);
+    assert.match(settingsMarkup, /每枚图标都能单独拖动/);
     assert.doesNotMatch(settingsMarkup, /data-phone-widget-nudge|data-phone-avatar-adjust|data-phone-widget-(?:up|down)/);
     assert.match(source, /function bindPhonePersonalFieldLabelEditor/);
     assert.match(source, /phoneDesktop\.personalFields/);
@@ -303,7 +329,10 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /function bindPhoneAvatarDiy/);
     assert.match(source, /pointers\.size >= 2/);
     assert.match(source, /addEventListener\('wheel'/);
-    assert.match(source, /phoneDesktopSchemaVersion !== 2/);
+    assert.match(source, /phoneDesktopSchemaVersion !== 7/);
+    assert.match(source, /function previewLocalPhoneWallpaper/);
+    assert.match(source, /PHONE_PAGE_SCHEMAS\.forEach/);
+    assert.match(source, /wallpaperScale/);
 });
 
 test('dynamic numbers keep one solid progress treatment without object controls', () => {

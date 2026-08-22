@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+    PHONE_APP_ICON_ASSETS,
+    PHONE_PAGE_SCHEMAS,
+    PHONE_SHELL_VISUAL_DEFAULTS,
     RULE_PRESETS,
+    PHONE_SHELL_STYLES,
     STATUS_PALETTE_PRESETS,
     STATUS_STRUCTURE_PRESETS,
     STATUS_STYLE_PRESETS,
@@ -141,8 +145,8 @@ test('phone desktop is editable and exports real app navigation with a back acti
 [Shop|旧城通行证|进入封锁区|银柄折叠伞|藏有便笺|蓝花信纸|十二张]
 </zeya_status>`);
     assert.deepEqual(parsed.pages.map(page => page.values.length), [4, 3, 5, 6]);
-    assert.match(buildAiInstruction(phoneInput), /\[Personal\|/);
-    assert.match(buildAiInstruction(phoneInput), /\[Shop\|/);
+    const phoneInstruction = buildAiInstruction(phoneInput);
+    for (const page of PHONE_PAGE_SCHEMAS) assert.match(phoneInstruction, new RegExp(`\\[${page.id}\\|`));
     const generated = buildRegexScript({
         ...RULE_PRESETS.custom,
         structure: 'phone',
@@ -171,17 +175,99 @@ test('phone desktop is editable and exports real app navigation with a back acti
     assert.doesNotMatch(generated, /img\.remit\.ee/);
     assert.match(STATUS_PHONE_CSS, /data-phone-page="Personal"/);
     assert.match(STATUS_PHONE_CSS, /data-phone-page="Wechat"/);
+    assert.deepEqual(PHONE_SHELL_STYLES, ['classic', 'handheld', 'handheld-pink', 'handheld-white', 'bandage-pop', 'mint-archive']);
+    for (const shellStyle of PHONE_SHELL_STYLES) {
+        const shellRule = normalizeRule({ ...phoneInput, phoneDesktop: { shellStyle } });
+        assert.equal(shellRule.phoneDesktop.shellStyle, shellStyle);
+        assert.deepEqual(shellRule.pages.map(page => page.id), ['Personal', 'Memo', 'Wechat', 'Shop']);
+        const shellOutput = buildRegexScript({ ...phoneInput, phoneDesktop: { shellStyle } }).replaceString;
+        assert.match(shellOutput, new RegExp(`data-phone-shell="${shellStyle}"`));
+    }
+    assert.match(generated, /<\/section>\s*<nav class="zrs-tabs"/);
+    assert.match(generated, /while\(root&&!root\.classList\.contains\('zeya-regex-status'\)\)/);
+    assert.doesNotMatch(generated, /script\.previousElementSibling\.previousElementSibling/);
+    assert.match(STATUS_PHONE_CSS, /data-phone-layout="handheld"/);
+    assert.match(STATUS_PHONE_CSS, /--z-snow-duration/);
+    assert.match(STATUS_PHONE_CSS, /focus-visible/);
+    assert.match(STATUS_PHONE_CSS, /prefers-reduced-motion:reduce/);
+});
+
+test('the original phone, three handheld shells, and two touch phone styles are selectable', () => {
+    const preset = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'phone');
+    const input = {
+        ...RULE_PRESETS.custom,
+        structure: 'phone',
+        sharedFieldsText: preset.shared.map(field => field.join('|')).join('\n'),
+    };
+    const original = buildRegexScript({ ...input, phoneDesktop: { shellStyle: 'classic' } }).replaceString;
+    assert.match(original, /data-phone-shell="classic"/);
+    assert.doesNotMatch(original, /class="zrs-phone-frame"/);
+    for (const removedStyle of ['clamshell', 'orbit', 'slider']) {
+        assert.equal(normalizePhoneDesktop({ shellStyle: removedStyle }).shellStyle, 'classic');
+    }
+    const handheld = buildRegexScript({
+        ...input,
+        phoneDesktop: {
+            shellStyle: 'handheld',
+            apps: [
+                { id: 'Personal', enabled: true, desktopX: 24, desktopY: 50 },
+                { id: 'Memo', enabled: false, desktopX: 50, desktopY: 80 },
+            ],
+        },
+    }).replaceString;
+    assert.match(handheld, /data-phone-shell="handheld"/);
+    assert.match(handheld, /class="zrs-phone-frame"/);
+    assert.match(handheld, /class="zrs-phone-controls"/);
+    assert.match(handheld, /zrs-phone-home-guide/);
+    assert.match(handheld, /zrs-phone-diary/);
+    assert.match(handheld, /desktopX/);
+    assert.match(handheld, /app\.enabled===false/);
+    const pink = buildRegexScript({ ...input, phoneDesktop: { shellStyle: 'handheld-pink' } }).replaceString;
+    assert.match(pink, /frame-handheld-pink-02-alpha\.png/);
+    assert.match(pink, /app-personal-glossy\.png/);
+    assert.match(pink, /app-diary-glossy\.png/);
+    assert.match(pink, /data-phone-decoration="sakura"/);
+    assert.match(pink, /--z-phone-icon-scale:1\.38/);
+    assert.match(pink, /data-phone-control="Personal"/);
+    assert.match(pink, /data-phone-control="Back"/);
+    const white = buildRegexScript({ ...input, phoneDesktop: { shellStyle: 'handheld-white' } }).replaceString;
+    assert.match(white, /frame-handheld-white-03-alpha\.png/);
+    assert.match(white, /app-shop-glossy\.png/);
+    assert.match(white, /data-phone-decoration="petals"/);
+    assert.match(white, /data-phone-control="Shop"/);
+    assert.match(white, /data-phone-layout="handheld"/);
+    const bandage = buildRegexScript({ ...input, phoneDesktop: { shellStyle: 'bandage-pop' } }).replaceString;
+    assert.match(bandage, /data-phone-shell="bandage-pop"/);
+    assert.match(bandage, /Loading\.\.\./);
+    assert.doesNotMatch(bandage, /frame-handheld-[^"']+\.png/);
+    const mint = buildRegexScript({ ...input, phoneDesktop: { shellStyle: 'mint-archive' } }).replaceString;
+    assert.match(mint, /data-phone-shell="mint-archive"/);
+    assert.match(mint, /good things/);
+    assert.match(mint, /finishEvent\.type==='pointerup'/);
+    assert.match(mint, /ownerDocument\.addEventListener\('pointermove',moveIcon,\{passive:false\}\)/);
+    assert.match(mint, /moveEvent\.pointerId!==event\.pointerId/);
+    assert.match(STATUS_PHONE_CSS, /zrs-phone-home-key \*\{pointer-events:none/);
+    assert.match(mint, /config\.phoneDesktop\.widgetOffsets\[item\.dataset\.field\]/);
+    assert.match(mint, /ownerDocument\.addEventListener\('pointermove',moveWidget,\{passive:false\}\)/);
+    assert.match(STATUS_PHONE_CSS, /--z-phone-widget-x/);
 });
 
 test('phone DIY settings are normalized separately from AI story values', () => {
     const phone = normalizePhoneDesktop({
         phoneDesktop: {
+            shellStyle: 'handheld',
+            shellColor: '#e6a5c4',
             wallpaperUrl: 'https://example.com/wallpaper.jpg',
             wallpaperPositionX: 140,
             wallpaperPositionY: -10,
+            wallpaperScale: 8,
             widgetX: 30,
             widgetY: 180,
             widgetOrder: ['current_weather', 'current_location'],
+            widgetOffsets: {
+                current_location: { x: 24, y: -18 },
+                current_time: { x: 999, y: -999 },
+            },
             personalAvatarSource: 'url',
             personalAvatarUrl: 'https://example.com/avatar.png',
             personalAvatarPositionX: 22,
@@ -191,21 +277,35 @@ test('phone DIY settings are normalized separately from AI story values', () => 
                 { id: 'favor', label: '信赖度', kind: 'text', instruction: '填写当前信赖阶段' },
                 { id: 'desire', label: '牵挂度', kind: 'progress', instruction: '填写0到100的数字' },
             ],
+            pageFields: {
+                Memo: [{ id: 'memo_1', label: '首要日记', kind: 'long', instruction: '写成一整篇完整日记' }],
+                Wechat: [{ id: 'chat_target', label: '联系人', kind: 'text', instruction: '填写当前聊天联系人' }],
+                Shop: [{ id: 'item_1', label: '首件商品', kind: 'text', instruction: '填写第一件剧情商品' }],
+            },
             apps: [
                 { id: 'Personal', name: '档案', iconUrl: 'https://example.com/me.png' },
                 { id: 'Memo', name: '线索', iconUrl: 'javascript:alert(1)' },
             ],
         },
     });
+    assert.equal(phone.shellStyle, 'handheld');
+    assert.equal(phone.shellColor, '#e6a5c4');
     assert.equal(phone.wallpaperPositionX, 100);
     assert.equal(phone.wallpaperPositionY, 0);
+    assert.equal(phone.wallpaperScale, 3);
     assert.equal(phone.petalsEnabled, true);
     assert.equal(phone.personalAvatarScale, 3);
     assert.deepEqual(phone.widgetOrder, ['current_weather', 'current_location', 'current_time']);
+    assert.deepEqual(phone.widgetOffsets.current_location, { x: 24, y: -18 });
+    assert.deepEqual(phone.widgetOffsets.current_time, { x: 180, y: -300 });
+    assert.deepEqual(phone.widgetOffsets.current_weather, { x: 0, y: 0 });
     assert.deepEqual(phone.apps.map(app => app.name), ['档案', '线索', '微信', '购物']);
     assert.equal(phone.apps[1].iconUrl, '');
     assert.deepEqual(phone.personalFields.map(field => field.label), ['信赖度', '牵挂度', '当前衣着', '实时想法']);
     assert.deepEqual(phone.personalFields.map(field => field.kind), ['text', 'progress', 'long', 'long']);
+    assert.equal(phone.pageFields.Memo[0].label, '首要日记');
+    assert.equal(phone.pageFields.Wechat[0].label, '联系人');
+    assert.equal(phone.pageFields.Shop[0].label, '首件商品');
     const input = {
         ...RULE_PRESETS.custom,
         structure: 'phone',
@@ -218,15 +318,28 @@ test('phone DIY settings are normalized separately from AI story values', () => 
     assert.match(instruction, /当前时间/);
     assert.match(instruction, /信赖度/);
     assert.match(instruction, /填写当前信赖阶段/);
+    assert.match(instruction, /首要日记/);
+    assert.match(instruction, /写成一整篇完整日记/);
+    assert.match(instruction, /联系人/);
+    assert.match(instruction, /首件商品/);
     assert.doesNotMatch(instruction, /wallpaper|iconUrl|壁纸图片 URL/);
+    assert.doesNotMatch(instruction, /shellStyle|slider/);
     const generated = buildRegexScript(input).replaceString;
     assert.match(generated, /https:\/\/example\.com\/wallpaper\.jpg/);
     assert.match(generated, /https:\/\/example\.com\/me\.png/);
     assert.match(generated, /widgetOrder/);
     assert.match(generated, /style\.transform='scale\('\+config\.phoneDesktop\.personalAvatarScale\+'\)'/);
+    assert.match(generated, /style\.transform='scale\('\+config\.phoneDesktop\.wallpaperScale\+'\)'/);
     assert.match(generated, /field&&field\.kind==='progress'/);
     assert.match(generated, /personalFields\[0\]/);
     assert.doesNotMatch(generated, /phoneDataCard\('好感度'/);
+    assert.equal(buildRegexScript({ ...input, displayOnlyRegex: true }).markdownOnly, true);
+    assert.equal(buildRegexScript({ ...input, displayOnlyRegex: false }).markdownOnly, false);
+});
+
+test('phone shell style falls back to the original classic phone', () => {
+    assert.equal(normalizePhoneDesktop().shellStyle, 'classic');
+    assert.equal(normalizePhoneDesktop({ phoneDesktop: { shellStyle: 'unknown-shell' } }).shellStyle, 'classic');
 });
 
 test('phone falling decoration can be disabled without exposing the general appearance library', () => {
@@ -239,6 +352,17 @@ test('phone falling decoration can be disabled without exposing the general appe
     }).replaceString;
     assert.match(generated, /phoneDesktop\.petalsEnabled===false/);
     assert.match(generated, /phonePetals\.remove\(\)/);
+});
+
+test('phone shells provide distinct palettes, decorations, icon assets and scalable app icons', () => {
+    assert.equal(PHONE_SHELL_VISUAL_DEFAULTS['handheld-pink'].paletteId, 'berry-milk');
+    assert.equal(PHONE_SHELL_VISUAL_DEFAULTS['handheld-pink'].decorationStyle, 'sakura');
+    assert.equal(PHONE_SHELL_VISUAL_DEFAULTS['handheld-white'].decorationStyle, 'petals');
+    assert.match(PHONE_APP_ICON_ASSETS['handheld-pink'].Personal, /app-personal-glossy\.png$/);
+    assert.match(PHONE_APP_ICON_ASSETS['handheld-white'].Wechat, /app-wechat-glossy\.png$/);
+    const phone = normalizePhoneDesktop({ shellStyle: 'handheld-pink', iconScale: 9, decorationStyle: 'stars' });
+    assert.equal(phone.iconScale, 1.7);
+    assert.equal(phone.decorationStyle, 'stars');
 });
 
 test('free component canvas is the fallback instead of a hard-coded relationship card', () => {
