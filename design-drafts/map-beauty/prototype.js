@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'status-atelier-map-editor-v2';
 const STATUS_LABELS = {
-  current: '当前位置',
+  current: '进行中',
   completed: '已走过',
   available: '可前往',
   blocked: '已阻断',
@@ -8,20 +8,21 @@ const STATUS_LABELS = {
 };
 const FRAME_STYLE_LIST = ['pin', 'tape', 'clip'];
 const FRAME_STYLES = new Set(FRAME_STYLE_LIST);
-const MAP_TEMPLATE_LIST = ['desk-casebook', 'travel-atlas', 'urban-research', 'noir-network'];
+const MAP_TEMPLATE_LIST = ['desk-casebook', 'travel-atlas', 'urban-research', 'noir-network', 'crime-collage'];
 const MAP_TEMPLATES = new Set(MAP_TEMPLATE_LIST);
 const ASSET_URLS = {
   deskBackground: './assets/detective-desk-blank.webp',
   travelBackground: './assets/map-backgrounds/travel-atlas.webp',
   urbanBackground: './assets/map-backgrounds/urban-research.webp',
   noirBackground: './assets/map-backgrounds/noir-network.webp',
+  crimeBackground: './assets/map-backgrounds/crime-collage.webp',
   pin: './assets/attachments/brass-safety-pin.webp',
   tape: './assets/attachments/gingham-cross-muted.webp',
   clip: './assets/attachments/silver-binder-clip.webp',
 };
 const LEGACY_INTROS = {
   '已经调查过的地点，线索会继续保留在地图上。': '已经调查过的地点。',
-  '角色当前所在地点。AI 可通过 currentId 动态切换当前位置。': '角色当前所在地点。',
+  '角色当前所在地点。AI 可通过 currentId 动态切换当前位置。': '当前正在处理的任务节点。',
   '当前可以前往的下一处地点。': '当前可以前往的下一处地点。',
   '尚未探明的地点，照片可在得到线索后再填写。': '尚未探明。',
 };
@@ -48,7 +49,7 @@ const defaultState = {
       id: 'place-2',
       name: '地点 02',
       imageUrl: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&w=640&q=80',
-      intro: '角色当前所在地点。',
+      intro: '当前正在处理的任务节点。',
       frameStyle: 'tape',
       status: 'current',
       connectFrom: ['place-1'],
@@ -295,10 +296,7 @@ function renderPlaces() {
     const caption = document.createElement('span');
     caption.className = 'place-caption';
     caption.textContent = object.name;
-    const stateTag = document.createElement('span');
-    stateTag.className = 'place-state';
-    stateTag.textContent = statusLabel(object.status);
-    button.append(attachment, windowElement, caption, stateTag);
+    button.append(attachment, windowElement, caption);
     bindPlaceInteractions(button, object);
     placeLayer.append(button);
   });
@@ -402,14 +400,6 @@ function bindPlaceInteractions(button, object) {
   button.addEventListener('pointercancel', endDrag);
 }
 
-function renderSummary() {
-  const current = state.objects.find(item => item.status === 'current');
-  document.querySelector('#current-place-name').textContent = current?.name || '尚未设定';
-  const objective = document.querySelector('#current-objective');
-  objective.textContent = state.objective;
-  objective.hidden = !state.objective;
-}
-
 function renderInspector() {
   const object = selectedObject();
   inspectorEmpty.hidden = Boolean(object);
@@ -441,7 +431,6 @@ function render() {
   previewToggle.querySelector('span').textContent = mode === 'preview' ? '返回编辑' : '成品预览';
   renderConnections();
   renderPlaces();
-  renderSummary();
   renderInspector();
 }
 
@@ -571,7 +560,6 @@ function hideToast() {
 
 function openDetail(object, trigger) {
   lastDetailTrigger = trigger;
-  document.querySelector('#detail-status').textContent = statusLabel(object.status);
   document.querySelector('#detail-title').textContent = object.name;
   const intro = document.querySelector('#detail-intro');
   intro.textContent = object.intro;
@@ -595,21 +583,28 @@ function safeScriptJson(value) {
 const EXPORTED_CSS = `
 *{box-sizing:border-box}html,body{min-width:320px;margin:0;background:transparent}button{font:inherit}.qm{position:relative;isolation:isolate;width:min(100%,760px);aspect-ratio:16/10;min-height:360px;margin:14px auto;overflow:hidden;border:1px solid #5e3926;background:#6a3820 url("__DESK_BACKGROUND__") center/cover no-repeat;box-shadow:0 18px 42px rgba(0,0,0,.4);font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.qm[data-template=travel-atlas]{border-color:#56412d;background:#45362a url("__TRAVEL_BACKGROUND__") center/cover no-repeat}.qm[data-template=urban-research]{border-color:#b9b7ad;background:#e5e5df url("__URBAN_BACKGROUND__") center/cover no-repeat;box-shadow:0 18px 44px rgba(0,0,0,.34)}.qm[data-template=noir-network]{border-color:#3c3c3c;background:#111 url("__NOIR_BACKGROUND__") center/cover no-repeat;box-shadow:0 24px 60px rgba(0,0,0,.64)}
 .qm-routes{position:absolute;z-index:3;inset:0;width:100%;height:100%;pointer-events:none}.qm-route{fill:none;stroke:#983b31;stroke-width:4;stroke-linecap:round;filter:drop-shadow(0 2px 1px rgba(50,20,12,.38))}.qm-route[data-status=completed]{stroke:#73563a}.qm-route[data-status=blocked]{stroke:#5b211d;stroke-dasharray:15 10}.qm-route[data-status=unknown]{stroke:#7a6b58;stroke-dasharray:5 10}.qm[data-template=travel-atlas] .qm-route{stroke:#9d362e;stroke-width:4.5;filter:drop-shadow(0 1px 1px rgba(46,21,14,.5))}.qm[data-template=urban-research] .qm-route{stroke:#282a27;stroke-width:3;stroke-dasharray:11 8;filter:none}.qm[data-template=urban-research] .qm-route[data-status=blocked]{stroke:#9b3d2f;stroke-dasharray:4 7}.qm[data-template=noir-network] .qm-route{stroke:rgba(238,236,224,.84);stroke-width:2.5;filter:drop-shadow(0 0 3px rgba(255,255,255,.2))}.qm[data-template=noir-network] .qm-route[data-status=blocked]{stroke:#9e493f;stroke-dasharray:5 7}.qm[data-template=noir-network] .qm-route[data-status=unknown]{stroke:rgba(188,188,179,.52);stroke-dasharray:2 8}
-.qm-places{position:absolute;z-index:5;inset:0}.qm-place{--s:1;position:absolute;left:var(--x);top:var(--y);z-index:var(--z);width:clamp(88px,14.5%,145px);min-height:44px;padding:7px 7px 20px;border:0;color:#3d342c;background:#e7dfcf;box-shadow:0 7px 13px rgba(35,20,11,.36);cursor:pointer;transform:translate(-50%,-50%) rotate(var(--r)) scale(var(--s));touch-action:manipulation}.qm-photo{position:relative;display:block;width:100%;aspect-ratio:1.38;overflow:hidden;border:1px solid rgba(55,47,39,.28);background:linear-gradient(145deg,transparent 0 45%,rgba(57,58,53,.68) 46% 58%,transparent 59%),linear-gradient(#bbb9af,#72756f)}.qm-photo img{display:block;width:100%;height:100%;object-fit:cover;filter:grayscale(1) sepia(.16) contrast(1.02)}.qm-photo:empty:after{content:"PHOTO";position:absolute;inset:0;display:grid;place-items:center;color:rgba(44,40,35,.5);font:800 .58rem/1 monospace;letter-spacing:.15em}.qm-name{position:absolute;left:5px;right:5px;bottom:4px;overflow:hidden;font:800 clamp(.62rem,1.1vw,.8rem)/1.2 "KaiTi",serif;text-align:center;text-overflow:ellipsis;white-space:nowrap}.qm-badge{position:absolute;right:-7px;bottom:-8px;padding:5px 7px;color:#f7ead4;background:#674a35;font:800 .52rem/1 monospace}.qm-place[data-status=completed] .qm-badge,.qm-place[data-status=available] .qm-badge{display:none}
-.qm[data-template=travel-atlas] .qm-place{width:clamp(100px,16%,166px);padding:7px 7px 23px;border:1px solid rgba(91,65,38,.3);color:#493421;background:#eee0c3;box-shadow:0 9px 18px rgba(40,26,13,.4)}.qm[data-template=travel-atlas] .qm-photo{aspect-ratio:1.62;border-color:rgba(74,55,34,.35)}.qm[data-template=travel-atlas] .qm-photo img{filter:sepia(.28) saturate(.82) contrast(1.05)}.qm[data-template=travel-atlas] .qm-name{bottom:5px;font-style:italic;letter-spacing:.04em}.qm[data-template=travel-atlas] .qm-place[data-status=current]{box-shadow:0 0 0 3px rgba(143,51,42,.22),0 10px 19px rgba(40,26,13,.42)}
-.qm[data-template=urban-research] .qm-place{width:clamp(90px,13.5%,140px);padding:5px 5px 29px;border:1px solid rgba(35,36,33,.55);color:#191a18;background:#f4f3ed;box-shadow:5px 6px 0 rgba(42,43,39,.16),0 9px 18px rgba(26,27,25,.2)}.qm[data-template=urban-research] .qm-photo{aspect-ratio:1.05;border:0}.qm[data-template=urban-research] .qm-photo img{filter:grayscale(1) contrast(1.18)}.qm[data-template=urban-research] .qm-name{left:8px;right:auto;bottom:-8px;max-width:calc(100% - 13px);padding:6px 9px;color:#25241c;background:#d8bf58;box-shadow:2px 3px 0 rgba(50,49,39,.24);font:800 clamp(.58rem,1vw,.74rem)/1.1 sans-serif;text-align:left;transform:rotate(-1.5deg)}.qm[data-template=urban-research] .qm-attachment{filter:grayscale(.75) drop-shadow(1px 2px 1px rgba(30,30,28,.28))}.qm[data-template=urban-research] .qm-badge{right:4px;bottom:auto;top:4px}.qm[data-template=urban-research] .qm-place[data-status=current]{box-shadow:0 0 0 3px rgba(200,172,53,.42),5px 6px 0 rgba(42,43,39,.16),0 9px 18px rgba(26,27,25,.2)}
-.qm[data-template=noir-network] .qm-place{width:clamp(94px,14%,148px);padding:5px 5px 22px;border:1px solid rgba(235,232,217,.72);color:#ece9df;background:#171817;box-shadow:0 0 0 2px rgba(0,0,0,.68),0 10px 24px rgba(0,0,0,.7)}.qm[data-template=noir-network] .qm-photo{aspect-ratio:1.48;border-color:rgba(236,234,224,.5);background-color:#20211f}.qm[data-template=noir-network] .qm-photo img{filter:grayscale(1) contrast(1.22) brightness(.9)}.qm[data-template=noir-network] .qm-photo:empty:after{color:rgba(239,237,225,.5)}.qm[data-template=noir-network] .qm-name{bottom:5px;color:#ece9df;font:700 clamp(.58rem,1vw,.75rem)/1.15 ui-monospace,Consolas,monospace;letter-spacing:.08em}.qm[data-template=noir-network] .qm-attachment{filter:grayscale(1) brightness(1.25) drop-shadow(1px 3px 2px rgba(0,0,0,.75))}.qm[data-template=noir-network] .qm-place[data-status=current]{border-color:#f2dc93;box-shadow:0 0 0 3px rgba(225,202,121,.22),0 12px 26px rgba(0,0,0,.76)}
-.qm-summary{position:absolute;z-index:7;left:12%;bottom:3%;max-width:58%;padding:7px 10px;color:#4c392a;background:rgba(231,213,177,.91);box-shadow:0 5px 10px rgba(36,20,10,.25);transform:rotate(-1deg)}.qm-summary span,.qm-summary strong,.qm-summary small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qm-summary span{font:800 .52rem/1 monospace}.qm-summary strong{margin:2px 0;font:800 .75rem/1.2 serif}.qm-summary small{font-size:.58rem}.qm[data-template=travel-atlas] .qm-summary{left:5%;bottom:5%;color:#4b3421;background:rgba(239,222,184,.94);border:1px solid rgba(104,72,41,.24);transform:rotate(1.2deg)}.qm[data-template=urban-research] .qm-summary{left:4%;bottom:4%;color:#1f201d;background:rgba(223,199,90,.94);border-left:5px solid #2e302c;box-shadow:4px 5px 0 rgba(44,46,42,.2);transform:rotate(-.8deg)}.qm[data-template=noir-network] .qm-summary{left:4%;bottom:4%;color:#f0eee5;background:rgba(13,14,13,.86);border-left:3px solid #d9c77d;box-shadow:0 8px 20px rgba(0,0,0,.48);transform:none}
-.qm-detail{position:absolute;z-index:20;inset:0;display:none;background:rgba(25,15,9,.66)}.qm-detail.open{display:grid;place-items:end center}.qm-card{width:min(86%,480px);margin-bottom:5%;padding:20px;color:#40352b;background:repeating-linear-gradient(0deg,transparent 0 26px,rgba(94,71,48,.09) 27px),#dfcfad;box-shadow:0 18px 44px rgba(0,0,0,.42)}.qm-back{min-height:44px;padding:0 10px;border:0;color:#4b392b;background:transparent;font-weight:800;cursor:pointer}.qm-card b{display:block;margin:12px 0 5px;color:#8d3e32;font:800 .62rem/1 monospace}.qm-card h2{margin:0 0 8px;font-family:serif}.qm-card p{margin:0;line-height:1.7}@media(max-width:520px){.qm{aspect-ratio:3/4}.qm-place{width:clamp(80px,26%,108px)}.qm[data-template=travel-atlas] .qm-place{width:clamp(86px,29%,118px)}.qm[data-template=urban-research] .qm-place{width:clamp(74px,23%,98px)}.qm[data-template=noir-network] .qm-place{width:clamp(80px,25%,106px)}.qm-badge{display:none}.qm-summary{left:6%;max-width:74%}}`;
+.qm-places{position:absolute;z-index:5;inset:0}.qm-place{--s:1;position:absolute;left:var(--x);top:var(--y);z-index:var(--z);width:clamp(88px,14.5%,145px);min-height:44px;padding:7px 7px 20px;border:0;color:#3d342c;background:#e7dfcf;box-shadow:0 7px 13px rgba(35,20,11,.36);cursor:pointer;transform:translate(-50%,-50%) rotate(var(--r)) scale(var(--s));touch-action:manipulation}.qm-photo{position:relative;display:block;width:100%;aspect-ratio:1.38;overflow:hidden;border:1px solid rgba(55,47,39,.28);background:linear-gradient(145deg,transparent 0 45%,rgba(57,58,53,.68) 46% 58%,transparent 59%),linear-gradient(#bbb9af,#72756f)}.qm-photo img{display:block;width:100%;height:100%;object-fit:cover;filter:grayscale(1) sepia(.16) contrast(1.02)}.qm-photo:empty:after{content:"PHOTO";position:absolute;inset:0;display:grid;place-items:center;color:rgba(44,40,35,.5);font:800 .58rem/1 monospace;letter-spacing:.15em}.qm-name{position:absolute;left:5px;right:5px;bottom:4px;overflow:hidden;font:800 clamp(.62rem,1.1vw,.8rem)/1.2 "KaiTi",serif;text-align:center;text-overflow:ellipsis;white-space:nowrap}
+.qm[data-template=travel-atlas] .qm-place{width:clamp(100px,16%,166px);padding:7px 7px 23px;border:1px solid rgba(91,65,38,.3);color:#493421;background:#eee0c3;box-shadow:0 9px 18px rgba(40,26,13,.4)}.qm[data-template=travel-atlas] .qm-photo{aspect-ratio:1.62;border-color:rgba(74,55,34,.35)}.qm[data-template=travel-atlas] .qm-photo img{filter:sepia(.28) saturate(.82) contrast(1.05)}.qm[data-template=travel-atlas] .qm-name{bottom:5px;font-style:italic;letter-spacing:.04em}
+.qm[data-template=urban-research] .qm-place{width:clamp(90px,13.5%,140px);padding:5px 5px 29px;border:1px solid rgba(35,36,33,.55);color:#191a18;background:#f4f3ed;box-shadow:5px 6px 0 rgba(42,43,39,.16),0 9px 18px rgba(26,27,25,.2)}.qm[data-template=urban-research] .qm-photo{aspect-ratio:1.05;border:0}.qm[data-template=urban-research] .qm-photo img{filter:grayscale(1) contrast(1.18)}.qm[data-template=urban-research] .qm-name{left:8px;right:auto;bottom:-8px;max-width:calc(100% - 13px);padding:6px 9px;color:#25241c;background:#d8bf58;box-shadow:2px 3px 0 rgba(50,49,39,.24);font:800 clamp(.58rem,1vw,.74rem)/1.1 sans-serif;text-align:left;transform:rotate(-1.5deg)}.qm[data-template=urban-research] .qm-attachment{filter:grayscale(.75) drop-shadow(1px 2px 1px rgba(30,30,28,.28))}
+.qm[data-template=noir-network] .qm-place{width:clamp(94px,14%,148px);padding:5px 5px 22px;border:1px solid rgba(235,232,217,.72);color:#ece9df;background:#171817;box-shadow:0 0 0 2px rgba(0,0,0,.68),0 10px 24px rgba(0,0,0,.7)}.qm[data-template=noir-network] .qm-photo{aspect-ratio:1.48;border-color:rgba(236,234,224,.5);background-color:#20211f}.qm[data-template=noir-network] .qm-photo img{filter:grayscale(1) contrast(1.22) brightness(.9)}.qm[data-template=noir-network] .qm-photo:empty:after{color:rgba(239,237,225,.5)}.qm[data-template=noir-network] .qm-name{bottom:5px;color:#ece9df;font:700 clamp(.58rem,1vw,.75rem)/1.15 ui-monospace,Consolas,monospace;letter-spacing:.08em}.qm[data-template=noir-network] .qm-attachment{filter:grayscale(1) brightness(1.25) drop-shadow(1px 3px 2px rgba(0,0,0,.75))}
+.qm-detail{position:absolute;z-index:20;inset:0;display:none;background:rgba(25,15,9,.66)}.qm-detail.open{display:grid;place-items:end center}.qm-card{width:min(86%,480px);margin-bottom:5%;padding:20px;color:#40352b;background:repeating-linear-gradient(0deg,transparent 0 26px,rgba(94,71,48,.09) 27px),#dfcfad;box-shadow:0 18px 44px rgba(0,0,0,.42)}.qm-back{min-height:44px;padding:0 10px;border:0;color:#4b392b;background:transparent;font-weight:800;cursor:pointer}.qm-card h2{margin:0 0 8px;font-family:serif}.qm-card p{margin:0;line-height:1.7}@media(max-width:520px){.qm{aspect-ratio:3/4}.qm-place{width:clamp(80px,26%,108px)}.qm[data-template=travel-atlas] .qm-place{width:clamp(86px,29%,118px)}.qm[data-template=urban-research] .qm-place{width:clamp(74px,23%,98px)}.qm[data-template=noir-network] .qm-place{width:clamp(80px,25%,106px)}}`;
 
 const EXPORTED_FRAME_CSS = `
 .qm-place:before{display:none}
 .qm-attachment{position:absolute;z-index:8;display:block;pointer-events:none;background-position:center;background-repeat:no-repeat;background-size:contain;filter:drop-shadow(1px 3px 2px rgba(33,20,12,.35))}
 .qm-place[data-frame=pin] .qm-attachment{left:50%;top:-19px;width:76%;height:34px;background-image:url("__PIN_ASSET__");transform:translateX(-50%) rotate(-3deg)}
-.qm-place[data-frame=pin][data-status=current] .qm-attachment{filter:drop-shadow(0 0 5px rgba(146,45,35,.8)) drop-shadow(1px 3px 2px rgba(33,20,12,.4))}
 .qm-place[data-frame=tape]{background:#e5dccd}.qm-place[data-frame=tape] .qm-attachment{left:50%;top:-14px;width:57%;height:36px;background-image:url("__TAPE_ASSET__");transform:translateX(-50%) rotate(-2deg)}
 .qm-place[data-frame=clip]{background:#e9e2d6}.qm-place[data-frame=clip] .qm-attachment{left:12%;top:-17px;width:36px;height:42px;background-image:url("__CLIP_ASSET__");transform:rotate(-5deg)}
 `;
+
+const EXPORTED_CRIME_CSS = `
+.qm[data-template=crime-collage]{border-color:#d8d5cd;background:#0b0c0b url("__CRIME_BACKGROUND__") center/cover no-repeat;box-shadow:0 24px 64px rgba(0,0,0,.68)}
+.qm[data-template=crime-collage] .qm-route{stroke:#e3131f;stroke-width:4;filter:drop-shadow(0 1px 2px rgba(0,0,0,.72))}.qm[data-template=crime-collage] .qm-route[data-status=blocked]{stroke:#f2f0ea;stroke-dasharray:12 8}.qm[data-template=crime-collage] .qm-route[data-status=unknown]{stroke:rgba(236,234,226,.64);stroke-dasharray:3 8}
+.qm[data-template=crime-collage] .qm-attachment{display:none}
+.qm[data-template=crime-collage] .qm-place[data-frame=pin]{width:clamp(104px,16%,172px);padding:8px 8px 31px;border:0;color:#111;background:#f0eee7;box-shadow:0 0 0 1px rgba(255,255,255,.5),8px 11px 18px rgba(0,0,0,.68)}.qm[data-template=crime-collage] .qm-place[data-frame=pin]:before{content:"";display:block;position:absolute;z-index:10;left:50%;top:-11px;width:21px;height:21px;border-radius:50%;background:radial-gradient(circle at 34% 25%,#ff6b63 0 9%,#e3151f 34%,#8f0710 74%);box-shadow:0 5px 5px rgba(0,0,0,.52);transform:translateX(-50%)}.qm[data-template=crime-collage] .qm-place[data-frame=pin] .qm-photo{aspect-ratio:1.08;border:0}.qm[data-template=crime-collage] .qm-place[data-frame=pin] .qm-photo img{filter:grayscale(1) contrast(1.3)}.qm[data-template=crime-collage] .qm-place[data-frame=pin] .qm-name{bottom:8px;font:900 .7rem/1 ui-monospace,Consolas,monospace;letter-spacing:.08em}
+.qm[data-template=crime-collage] .qm-place[data-frame=tape]{width:clamp(124px,19%,202px);padding:25px 6px 24px;border:3px double #262725;color:#171816;background:#c8c9c5;box-shadow:8px 10px 0 rgba(0,0,0,.38),0 13px 24px rgba(0,0,0,.5)}.qm[data-template=crime-collage] .qm-place[data-frame=tape]:before{content:"CASE.FILE";display:block;position:absolute;left:3px;right:3px;top:3px;height:17px;padding:3px 6px;color:#ecece8;background:#4b4d49;font:800 .5rem/1 ui-monospace,Consolas,monospace;letter-spacing:.08em;text-align:left}.qm[data-template=crime-collage] .qm-place[data-frame=tape] .qm-photo{aspect-ratio:1.72;border:1px solid #3d3f3b}.qm[data-template=crime-collage] .qm-place[data-frame=tape] .qm-photo img{filter:grayscale(1) contrast(1.15)}.qm[data-template=crime-collage] .qm-place[data-frame=tape] .qm-name{bottom:6px;font:800 .64rem/1 ui-monospace,Consolas,monospace;text-align:left}
+.qm[data-template=crime-collage] .qm-place[data-frame=clip]{width:clamp(100px,15%,162px);padding:12px 9px 25px;border:0;color:#f0eee8;background:#101110;box-shadow:0 0 0 2px #e3e1da,8px 10px 20px rgba(0,0,0,.72)}.qm[data-template=crime-collage] .qm-place[data-frame=clip]:before{content:"";display:block;position:absolute;left:8px;right:8px;top:3px;height:5px;background:repeating-linear-gradient(90deg,#eee 0 6px,transparent 6px 12px);opacity:.82}.qm[data-template=crime-collage] .qm-place[data-frame=clip] .qm-photo{aspect-ratio:1.34;border:1px solid #eceae3}.qm[data-template=crime-collage] .qm-place[data-frame=clip] .qm-photo img{filter:grayscale(1) contrast(1.35) brightness(.88)}.qm[data-template=crime-collage] .qm-place[data-frame=clip] .qm-photo:empty:after{color:rgba(238,236,228,.56)}.qm[data-template=crime-collage] .qm-place[data-frame=clip] .qm-name{bottom:6px;color:#f0eee8;font:800 .62rem/1 ui-monospace,Consolas,monospace;letter-spacing:.1em}
+@media(max-width:520px){.qm[data-template=crime-collage] .qm-place[data-frame=pin]{width:clamp(82px,27%,110px);padding-bottom:27px}.qm[data-template=crime-collage] .qm-place[data-frame=tape]{width:clamp(100px,33%,132px)}.qm[data-template=crime-collage] .qm-place[data-frame=clip]{width:clamp(80px,25%,104px)}}`;
 
 function blobToDataUri(blob) {
   return new Promise((resolve, reject) => {
@@ -647,15 +642,15 @@ function buildRegexHtml(assets = assetDataUris) {
   const config = {
     version: 2,
     templateId: state.templateId,
-    objective: state.objective,
     objects: state.objects.map(item => ({ ...item })),
   };
   const configJson = safeScriptJson(config);
-  const exportedCss = `${EXPORTED_CSS}${EXPORTED_FRAME_CSS}`
+  const exportedCss = `${EXPORTED_CSS}${EXPORTED_FRAME_CSS}${EXPORTED_CRIME_CSS}`
     .replace('__DESK_BACKGROUND__', assets.deskBackground)
     .replace('__TRAVEL_BACKGROUND__', assets.travelBackground)
     .replace('__URBAN_BACKGROUND__', assets.urbanBackground)
     .replace('__NOIR_BACKGROUND__', assets.noirBackground)
+    .replace('__CRIME_BACKGROUND__', assets.crimeBackground)
     .replace('__PIN_ASSET__', assets.pin)
     .replace('__TAPE_ASSET__', assets.tape)
     .replace('__CLIP_ASSET__', assets.clip);
@@ -670,14 +665,13 @@ function buildRegexHtml(assets = assetDataUris) {
 <article class="qm" id="qm" data-template="${state.templateId}">
   <svg class="qm-routes" viewBox="0 0 1000 625" preserveAspectRatio="none" aria-hidden="true"></svg>
   <div class="qm-places" role="group" aria-label="任务地点"></div>
-  <aside class="qm-summary"><span>当前位置</span><strong>尚未设定</strong><small></small></aside>
-  <section class="qm-detail" aria-hidden="true"><div class="qm-card" role="dialog" aria-modal="true" tabindex="-1"><button class="qm-back" type="button">← 返回地图</button><b></b><h2></h2><p></p></div></section>
+  <section class="qm-detail" aria-hidden="true"><div class="qm-card" role="dialog" aria-modal="true" tabindex="-1"><button class="qm-back" type="button">← 返回地图</button><h2></h2><p></p></div></section>
 </article>
 <script type="application/json" id="qm-data">$1</script>
 <script>
 (function(){
 var config=${configJson};
-var labels={current:'当前位置',completed:'已走过',available:'可前往',blocked:'已阻断',unknown:'未探明'};
+var labels={current:'进行中',completed:'已走过',available:'可前往',blocked:'已阻断',unknown:'未探明'};
 var dynamic={};try{dynamic=JSON.parse(document.getElementById('qm-data').textContent.trim()||'{}')}catch(error){dynamic={}}
 var overrides=Array.isArray(dynamic.places)?dynamic.places:[];
 var places=config.objects.map(function(base){var change=overrides.find(function(item){return item&&item.id===base.id})||{};return Object.assign({},base,change)});
@@ -694,10 +688,9 @@ places.forEach(function(place,placeIndex){
  var button=document.createElement('button');button.type='button';button.className='qm-place';button.dataset.status=labels[place.status]?place.status:'unknown';button.dataset.frame=['pin','tape','clip'].includes(place.frameStyle)?place.frameStyle:'pin';button.style.setProperty('--x',Math.max(7,Math.min(93,Number(place.x)||50))+'%');button.style.setProperty('--y',Math.max(10,Math.min(90,Number(place.y)||50))+'%');button.style.setProperty('--r',Math.max(-12,Math.min(12,Number(place.rotation)||0))+'deg');button.style.setProperty('--s',Math.max(.72,Math.min(1.32,(Number(place.size)||100)/100)));button.style.setProperty('--z',Number(place.z)||1);button.setAttribute('aria-label',String(place.name||'未命名地点')+'，'+(labels[button.dataset.status]||labels.unknown));
  var attachment=document.createElement('span');attachment.className='qm-attachment';attachment.setAttribute('aria-hidden','true');
  var photo=document.createElement('span');photo.className='qm-photo';var url=safeUrl(place.imageUrl);if(url){var image=document.createElement('img');image.src=url;image.alt='';image.loading='lazy';image.referrerPolicy='no-referrer';photo.append(image)}
- var name=document.createElement('span');name.className='qm-name';name.textContent=place.name||'未命名地点';var badge=document.createElement('span');badge.className='qm-badge';badge.textContent=labels[button.dataset.status]||labels.unknown;button.append(attachment,photo,name,badge);
- button.addEventListener('click',function(){var intro=String(place.intro||place.description||'');card.querySelector('b').textContent=labels[button.dataset.status]||labels.unknown;card.querySelector('h2').textContent=place.name||'未命名地点';card.querySelector('p').textContent=intro;card.querySelector('p').hidden=!intro;detail.classList.add('open');detail.setAttribute('aria-hidden','false');card.focus()});host.append(button);
+ var name=document.createElement('span');name.className='qm-name';name.textContent=place.name||'未命名地点';button.append(attachment,photo,name);
+ button.addEventListener('click',function(){var intro=String(place.intro||place.description||'');card.querySelector('h2').textContent=place.name||'未命名地点';card.querySelector('p').textContent=intro;card.querySelector('p').hidden=!intro;detail.classList.add('open');detail.setAttribute('aria-hidden','false');card.focus()});host.append(button);
 });
-var current=places.find(function(place){return place.status==='current'}),summaryText=String(dynamic.objective||config.objective||''),summarySmall=root.querySelector('.qm-summary small');root.querySelector('.qm-summary strong').textContent=current?current.name:'尚未设定';summarySmall.textContent=summaryText;summarySmall.hidden=!summaryText;
 })();
 </script>
 </body>
@@ -733,7 +726,6 @@ fields.name.addEventListener('input', () => {
   object.name = fields.name.value.slice(0, 28) || '未命名地点';
   save();
   renderPlaces();
-  renderSummary();
   document.querySelector('#selected-object-title').textContent = object.name;
 });
 

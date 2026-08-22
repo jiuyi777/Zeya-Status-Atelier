@@ -145,6 +145,11 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   background: #111 url("./assets/map-backgrounds/noir-network.webp") center / cover no-repeat;
   box-shadow: 0 24px 60px rgba(0,0,0,.64);
 }
+.clue-map[data-template="crime-collage"] {
+  border-color: #d8d5cd;
+  background: #0b0c0b url("./assets/map-backgrounds/crime-collage.webp") center / cover no-repeat;
+  box-shadow: 0 24px 64px rgba(0,0,0,.68);
+}
 
 .connection-layer { position: absolute; z-index: 4; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
 .route-thread { fill: none; stroke: #9a3d31; stroke-width: 4; stroke-linecap: round; filter: drop-shadow(0 2px 1px rgba(50,20,12,.38)); }
@@ -171,6 +176,13 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
 }
 .clue-map[data-template="noir-network"] .route-thread[data-status="blocked"] { stroke: #9e493f; stroke-dasharray: 5 7; }
 .clue-map[data-template="noir-network"] .route-thread[data-status="unknown"] { stroke: rgba(188,188,179,.52); stroke-dasharray: 2 8; }
+.clue-map[data-template="crime-collage"] .route-thread {
+  stroke: #e3131f;
+  stroke-width: 4;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.72));
+}
+.clue-map[data-template="crime-collage"] .route-thread[data-status="blocked"] { stroke: #f2f0ea; stroke-dasharray: 12 8; }
+.clue-map[data-template="crime-collage"] .route-thread[data-status="unknown"] { stroke: rgba(236,234,226,.64); stroke-dasharray: 3 8; }
 
 .place-layer { position: absolute; z-index: 6; inset: 0; }
 .place-card {
@@ -264,25 +276,6 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.place-state {
-  position: absolute;
-  right: -7px;
-  bottom: -8px;
-  min-width: 42px;
-  min-height: 24px;
-  padding: 5px 7px;
-  color: #f7ead4;
-  background: #674a35;
-  font: 800 .56rem/1 monospace;
-  letter-spacing: .05em;
-  box-shadow: 1px 3px 4px rgba(0,0,0,.25);
-}
-.place-card[data-status="current"] .place-state { background: #8c3b31; }
-.place-card[data-status="available"] .place-state { background: #806138; }
-.place-card[data-status="blocked"] .place-state { background: #562725; }
-.place-card[data-status="unknown"] .place-state { background: #5d5a54; }
-.place-card[data-status="completed"] .place-state,
-.place-card[data-status="available"] .place-state { display: none; }
 .clue-map[data-template="travel-atlas"] .place-card {
   width: clamp(106px, 16%, 176px);
   padding: 7px 7px 23px;
@@ -298,9 +291,6 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   font-family: "KaiTi", "STKaiti", serif;
   font-style: italic;
   letter-spacing: .04em;
-}
-.clue-map[data-template="travel-atlas"] .place-card[data-status="current"] {
-  box-shadow: 0 0 0 3px rgba(143,51,42,.22), 0 10px 19px rgba(40,26,13,.42);
 }
 .clue-map[data-template="urban-research"] .place-card {
   width: clamp(94px, 13.5%, 146px);
@@ -326,10 +316,6 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   transform: rotate(-1.5deg);
 }
 .clue-map[data-template="urban-research"] .place-attachment { filter: grayscale(.75) drop-shadow(1px 2px 1px rgba(30,30,28,.28)); }
-.clue-map[data-template="urban-research"] .place-state { right: 4px; bottom: auto; top: 4px; }
-.clue-map[data-template="urban-research"] .place-card[data-status="current"] {
-  box-shadow: 0 0 0 3px rgba(200,172,53,.42), 5px 6px 0 rgba(42,43,39,.16), 0 9px 18px rgba(26,27,25,.2);
-}
 .clue-map[data-template="noir-network"] .place-card {
   width: clamp(98px, 14%, 154px);
   padding: 5px 5px 22px;
@@ -348,10 +334,78 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   letter-spacing: .08em;
 }
 .clue-map[data-template="noir-network"] .place-attachment { filter: grayscale(1) brightness(1.25) drop-shadow(1px 3px 2px rgba(0,0,0,.75)); }
-.clue-map[data-template="noir-network"] .place-card[data-status="current"] {
-  border-color: #f2dc93;
-  box-shadow: 0 0 0 3px rgba(225,202,121,.22), 0 12px 26px rgba(0,0,0,.76);
+.clue-map[data-template="crime-collage"] .place-attachment { display: none; }
+.clue-map[data-template="crime-collage"] .place-card[data-frame="pin"] {
+  width: clamp(108px, 16%, 178px);
+  padding: 8px 8px 31px;
+  border: 0;
+  color: #111;
+  background: #f0eee7;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.5), 8px 11px 18px rgba(0,0,0,.68);
 }
+.clue-map[data-template="crime-collage"] .place-card[data-frame="pin"]::before {
+  content: "";
+  position: absolute;
+  z-index: 10;
+  left: 50%;
+  top: -11px;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 25%, #ff6b63 0 9%, #e3151f 34%, #8f0710 74%);
+  box-shadow: 0 5px 5px rgba(0,0,0,.52);
+  transform: translateX(-50%);
+}
+.clue-map[data-template="crime-collage"] .place-card[data-frame="pin"] .photo-window { aspect-ratio: 1.08 / 1; border: 0; }
+.clue-map[data-template="crime-collage"] .place-card[data-frame="pin"] .photo-window img { filter: grayscale(1) contrast(1.3); }
+.clue-map[data-template="crime-collage"] .place-card[data-frame="pin"] .place-caption { bottom: 8px; font: 900 .72rem/1 ui-monospace, Consolas, monospace; letter-spacing: .08em; }
+.clue-map[data-template="crime-collage"] .place-card[data-frame="tape"] {
+  width: clamp(128px, 19%, 208px);
+  padding: 25px 6px 24px;
+  border: 3px double #262725;
+  color: #171816;
+  background: #c8c9c5;
+  box-shadow: 8px 10px 0 rgba(0,0,0,.38), 0 13px 24px rgba(0,0,0,.5);
+}
+.clue-map[data-template="crime-collage"] .place-card[data-frame="tape"]::before {
+  content: "CASE.FILE";
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  top: 3px;
+  height: 17px;
+  padding: 3px 6px;
+  color: #ecece8;
+  background: #4b4d49;
+  font: 800 .5rem/1 ui-monospace, Consolas, monospace;
+  letter-spacing: .08em;
+  text-align: left;
+}
+.clue-map[data-template="crime-collage"] .place-card[data-frame="tape"] .photo-window { aspect-ratio: 1.72 / 1; border: 1px solid #3d3f3b; }
+.clue-map[data-template="crime-collage"] .place-card[data-frame="tape"] .photo-window img { filter: grayscale(1) contrast(1.15); }
+.clue-map[data-template="crime-collage"] .place-card[data-frame="tape"] .place-caption { bottom: 6px; font: 800 .66rem/1 ui-monospace, Consolas, monospace; text-align: left; }
+.clue-map[data-template="crime-collage"] .place-card[data-frame="clip"] {
+  width: clamp(104px, 15%, 168px);
+  padding: 12px 9px 25px;
+  border: 0;
+  color: #f0eee8;
+  background: #101110;
+  box-shadow: 0 0 0 2px #e3e1da, 8px 10px 20px rgba(0,0,0,.72);
+}
+.clue-map[data-template="crime-collage"] .place-card[data-frame="clip"]::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 3px;
+  height: 5px;
+  background: repeating-linear-gradient(90deg, #eee 0 6px, transparent 6px 12px);
+  opacity: .82;
+}
+.clue-map[data-template="crime-collage"] .place-card[data-frame="clip"] .photo-window { aspect-ratio: 1.34 / 1; border: 1px solid #eceae3; }
+.clue-map[data-template="crime-collage"] .place-card[data-frame="clip"] .photo-window img { filter: grayscale(1) contrast(1.35) brightness(.88); }
+.clue-map[data-template="crime-collage"] .place-card[data-frame="clip"] .photo-window.is-empty::after { color: rgba(238,236,228,.56); }
+.clue-map[data-template="crime-collage"] .place-card[data-frame="clip"] .place-caption { bottom: 6px; color: #f0eee8; font: 800 .64rem/1 ui-monospace, Consolas, monospace; letter-spacing: .1em; }
 .map-editor[data-mode="edit"] .place-card[aria-pressed="true"] {
   outline: 2px solid rgba(205, 178, 116, .72);
   outline-offset: 3px;
@@ -361,52 +415,6 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   outline: 2px solid #9c4a3c;
   outline-offset: 4px;
   box-shadow: 0 0 0 4px rgba(156,74,60,.14), 0 8px 14px rgba(35,20,11,.38);
-}
-
-.map-summary {
-  position: absolute;
-  z-index: 8;
-  left: 13%;
-  bottom: 3.6%;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 2px 8px;
-  max-width: 58%;
-  padding: 8px 12px;
-  color: #4c392a;
-  background: rgba(231,213,177,.91);
-  box-shadow: 0 5px 10px rgba(36,20,10,.25);
-  transform: rotate(-1deg);
-  pointer-events: none;
-}
-.map-summary span { align-self: center; font: 800 .58rem/1 monospace; letter-spacing: .08em; }
-.map-summary strong { overflow: hidden; font: 800 .8rem/1.2 "Noto Serif SC", serif; text-overflow: ellipsis; white-space: nowrap; }
-.map-summary small { grid-column: 1 / -1; overflow: hidden; font-size: .63rem; text-overflow: ellipsis; white-space: nowrap; }
-.clue-map[data-template="travel-atlas"] .map-summary {
-  left: 5%;
-  bottom: 5%;
-  color: #4b3421;
-  background: rgba(239,222,184,.94);
-  border: 1px solid rgba(104,72,41,.24);
-  transform: rotate(1.2deg);
-}
-.clue-map[data-template="urban-research"] .map-summary {
-  left: 4%;
-  bottom: 4%;
-  color: #1f201d;
-  background: rgba(223,199,90,.94);
-  border-left: 5px solid #2e302c;
-  box-shadow: 4px 5px 0 rgba(44,46,42,.2);
-  transform: rotate(-.8deg);
-}
-.clue-map[data-template="noir-network"] .map-summary {
-  left: 4%;
-  bottom: 4%;
-  color: #f0eee5;
-  background: rgba(13,14,13,.86);
-  border-left: 3px solid #d9c77d;
-  box-shadow: 0 8px 20px rgba(0,0,0,.48);
-  transform: none;
 }
 
 .place-detail { position: absolute; z-index: 30; inset: 0; visibility: hidden; opacity: 0; pointer-events: none; transition: opacity 160ms ease, visibility 0s linear 160ms; }
@@ -554,9 +562,10 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   .clue-map[data-template="travel-atlas"] .place-card { width: clamp(88px, 29%, 122px); padding-bottom: 20px; }
   .clue-map[data-template="urban-research"] .place-card { width: clamp(76px, 23%, 100px); padding-bottom: 25px; }
   .clue-map[data-template="noir-network"] .place-card { width: clamp(82px, 25%, 108px); padding-bottom: 19px; }
-  .place-state { display: none; }
+  .clue-map[data-template="crime-collage"] .place-card[data-frame="pin"] { width: clamp(84px, 27%, 112px); padding-bottom: 27px; }
+  .clue-map[data-template="crime-collage"] .place-card[data-frame="tape"] { width: clamp(102px, 33%, 136px); }
+  .clue-map[data-template="crime-collage"] .place-card[data-frame="clip"] { width: clamp(82px, 25%, 106px); }
   .place-caption { font-size: .66rem; }
-  .map-summary { left: 7%; bottom: 4%; max-width: 72%; }
   .inspector { position: static; max-height: none; min-height: 0; margin-top: 8px; }
   .inspector-empty { min-height: 210px; }
   .field-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
