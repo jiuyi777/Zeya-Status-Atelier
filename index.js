@@ -5,7 +5,11 @@ import {
     STATUS_STRUCTURE_PRESETS,
     STATUS_THEME_CSS,
     STATUS_PHONE_CSS,
+    PHONE_APP_ICON_ASSETS,
     PHONE_FRAME_ASSETS,
+    PHONE_CONTROL_LAYOUTS,
+    PHONE_SHELL_VISUAL_DEFAULTS,
+    PHONE_PAGE_SCHEMAS,
     buildAiInstruction,
     buildRegexScript,
     buildWorldbookJson,
@@ -150,10 +154,15 @@ const PHONE_DESKTOP_DEFAULTS = Object.freeze({
     shellStyle: 'classic',
     shellColor: '#e6a5c4',
     charmUrl: '',
-    wallpaperUrl: '', wallpaperPositionX: 50, wallpaperPositionY: 50,
-    petalsEnabled: true,
+    wallpaperUrl: '', wallpaperPositionX: 50, wallpaperPositionY: 50, wallpaperScale: 1,
+    decorationStyle: 'petals', petalsEnabled: true, iconScale: 1,
     widgetX: 15, widgetY: 58,
     widgetOrder: ['current_location', 'current_time', 'current_weather'],
+    widgetOffsets: {
+        current_location: { x: 0, y: 0 },
+        current_time: { x: 0, y: 0 },
+        current_weather: { x: 0, y: 0 },
+    },
     personalAvatarSource: 'character', personalAvatarUrl: '', personalAvatarPositionX: 50, personalAvatarPositionY: 50, personalAvatarScale: 1,
     personalFields: [
         { id: 'favor', label: '好感度', instruction: '填写0到100之间的整数，只写数字', kind: 'progress' },
@@ -161,6 +170,7 @@ const PHONE_DESKTOP_DEFAULTS = Object.freeze({
         { id: 'cloth', label: '当前衣着', instruction: '具体描述当前角色的衣着与明显细节', kind: 'long' },
         { id: 'thought', label: '实时想法', instruction: '第一人称填写角色此刻没有说出口的真实想法', kind: 'long' },
     ],
+    pageFields: Object.fromEntries(PHONE_PAGE_SCHEMAS.slice(1).map(page => [page.id, page.fields.map(field => ({ ...field }))])),
     apps: [
         { id: 'Personal', name: '个人', iconUrl: '', enabled: true, desktopX: 24, desktopY: 50 },
         { id: 'Memo', name: '备忘录', iconUrl: '', enabled: true, desktopX: 50, desktopY: 80 },
@@ -182,6 +192,21 @@ const HANDHELD_APP_ICON_PATHS = Object.freeze({
     Shop: '<path d="M5 9h14v11H5z"></path><path d="m4 9 2-5h12l2 5M7 9v-5M11 9v-5M15 9v-5M8 20v-6h4v6M15 14h2"></path><path d="M4 9c0 1.4 1 2.5 2.2 2.5S8.5 10.4 8.5 9c0 1.4 1 2.5 2.2 2.5S13 10.4 13 9c0 1.4 1 2.5 2.2 2.5S17.5 10.4 17.5 9c0 1.4 1 2.5 2.2 2.5"></path>',
 });
 const handheldPhoneAppIconMarkup = id => `<svg class="zrs-app-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${HANDHELD_APP_ICON_PATHS[id] || HANDHELD_APP_ICON_PATHS.Personal}</svg>`;
+const PHONE_DECORATION_MARKUP = Object.freeze({
+    snow: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M4.8 6.2l14.4 11.6M19.2 6.2 4.8 17.8M12 2l-2 2.7M12 2l2 2.7M12 22l-2-2.7M12 22l2-2.7M4.8 6.2l3.3.3M4.8 6.2l.7 3.2M19.2 17.8l-3.3-.3M19.2 17.8l-.7-3.2M19.2 6.2l-3.3.3M19.2 6.2l-.7 3.2M4.8 17.8l3.3-.3M4.8 17.8l.7-3.2"></path></svg>',
+    sakura: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 11.5C8.2 9.2 7.5 5.5 10.8 3c2.2 1.6 2.7 4 1.2 6.4 1.5-2.4 4-3.1 6.2-1.4-.5 3.7-3.7 5.5-6.2 4.4 2.5 1.1 3.5 3.6 2.1 6-3.6.6-6-2.1-5.7-4.8-.3 2.7-2.5 4.1-5 2.9-.1-3.7 2.8-6 5.4-5.4-2.6-.6-3.8-2.9-2.6-5.3 3.6-.7 6.2 1.8 5.8 5.7Z"></path></svg>',
+    petals: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18C4 11 8 5 16 4c1 7-3 13-11 14Zm4-3c3-1 6-4 8-8M14 19c-1-4 1-7 5-8 1 4-1 7-5 8Z"></path></svg>',
+    stars: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 2.6 6.6L22 11l-6 4.2.2 7.3L12 18.3l-4.2 4.2.2-7.3L2 11l7.4-2.4L12 2Z"></path></svg>',
+});
+const BUNDLED_PHONE_ASSET_URLS = new Set([
+    ...Object.values(PHONE_FRAME_ASSETS),
+    ...Object.values(PHONE_APP_ICON_ASSETS).flatMap(iconSet => Object.values(iconSet)),
+]);
+const localPhoneAssetUrl = url => {
+    if (!url || !BUNDLED_PHONE_ASSET_URLS.has(url)) return url || '';
+    const fileName = new URL(url).pathname.split('/').pop();
+    return new URL(`./assets/phone-beauty/${fileName}`, import.meta.url).href;
+};
 const PHONE_STRUCTURE_DEFAULT = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'phone');
 
 const OPENING_PALETTES = Object.freeze({
@@ -196,6 +221,7 @@ const DEFAULT_SETTINGS = Object.freeze({
     preset: 'custom',
     statusTemplate: 'custom',
     promptEnabled: false,
+    displayOnlyRegex: true,
     installScope: 'scoped',
     ruleId: 'zeya-status-rule-v2',
     activeWorkspace: 'opening',
@@ -258,6 +284,7 @@ const SETTING_FIELDS = Object.freeze({
     'status-atelier-page-fields': 'pageFieldsText',
     'status-atelier-install-scope': 'installScope',
     'status-atelier-prompt-enabled': 'promptEnabled',
+    'status-atelier-regex-display-only': 'displayOnlyRegex',
 });
 
 const STATUS_MEDIA_FIELDS = Object.freeze({
@@ -273,7 +300,8 @@ const PHONE_DESKTOP_FIELDS = Object.freeze({
     'status-atelier-phone-shell-color': 'shellColor',
     'status-atelier-phone-charm-url': 'charmUrl',
     'status-atelier-phone-wallpaper-url': 'wallpaperUrl',
-    'status-atelier-phone-petals-enabled': 'petalsEnabled',
+    'status-atelier-phone-decoration-style': 'decorationStyle',
+    'status-atelier-phone-icon-scale': 'iconScale',
     'status-atelier-phone-avatar-source': 'personalAvatarSource',
     'status-atelier-phone-avatar-url': 'personalAvatarUrl',
 });
@@ -298,6 +326,7 @@ let entryDialogDraftSelections = new Map();
 let greetingBindingPromise = null;
 let openingReadToast = null;
 let statusAiTestRecords = null;
+let phoneWallpaperPreviewUrl = '';
 let activeOpeningProfileKey = '';
 
 function context() {
@@ -368,9 +397,9 @@ function settings() {
     if (!stored.phoneDesktop || typeof stored.phoneDesktop !== 'object' || Array.isArray(stored.phoneDesktop)) {
         stored.phoneDesktop = clone(DEFAULT_SETTINGS.phoneDesktop);
     }
-    if (stored.phoneDesktopSchemaVersion !== 5) {
+    if (stored.phoneDesktopSchemaVersion !== 7) {
         stored.phoneDesktop = normalizePhoneDesktop({ phoneDesktop: stored.phoneDesktop, media: stored.media });
-        stored.phoneDesktopSchemaVersion = 5;
+        stored.phoneDesktopSchemaVersion = 7;
     }
     if (!PHONE_STRUCTURE_IDS.includes(stored.structure)) {
         stored.structure = PHONE_STRUCTURE_DEFAULT.id;
@@ -662,6 +691,8 @@ function renderPhoneDesktopControls() {
         if (control.type === 'checkbox') control.checked = phone[key] !== false;
         else control.value = String(phone[key] ?? '');
     }
+    const iconScaleOutput = field('status-atelier-phone-icon-scale-output');
+    if (iconScaleOutput) iconScaleOutput.value = `${Math.round(Number(phone.iconScale || 1) * 100)}%`;
     const avatarUrlWrap = field('status-atelier-phone-avatar-url-wrap');
     if (avatarUrlWrap) avatarUrlWrap.hidden = phone.personalAvatarSource !== 'url';
     phone.apps.forEach(app => {
@@ -776,43 +807,51 @@ function renderStatusSchema() {
     if (editLegend) editLegend.hidden = phoneMode;
     const editorTitle = field('status-atelier-status-editor-title');
     const editorHelp = field('status-atelier-status-editor-help');
-    if (editorTitle) editorTitle.textContent = phoneMode ? '个人页数据' : '字段设置';
+    if (editorTitle) editorTitle.textContent = phoneMode ? 'APP 页面数据' : '字段设置';
     if (editorHelp) editorHelp.textContent = phoneMode
-        ? '显示方式与 AI 内容。'
+        ? '四个页面都写入同一条世界书规则。'
         : '显示方式与 AI 内容。';
     if (phoneMode) {
         const phone = settings().phoneDesktop;
         phone.personalFields ??= clone(PHONE_DESKTOP_DEFAULTS.personalFields);
+        phone.pageFields ??= clone(PHONE_DESKTOP_DEFAULTS.pageFields);
         host.replaceChildren();
-        phone.personalFields.forEach(definition => {
-            const row = makeElement('article', 'status-atelier-schema-row status-atelier-phone-rule-row');
-            const label = makeElement('strong', 'status-atelier-phone-rule-label', definition.label);
-            const kind = makeElement('select', 'text_pole');
-            Object.entries(KIND_LABELS).forEach(([value, text]) => {
-                const option = makeElement('option', '', text);
-                option.value = value;
-                kind.append(option);
+        PHONE_PAGE_SCHEMAS.forEach((page, pageIndex) => {
+            const group = makeElement('details', 'status-atelier-phone-page-rules');
+            group.open = pageIndex === 0;
+            group.append(makeElement('summary', '', `${phone.apps.find(app => app.id === page.id)?.name || page.label} · 世界书数据`));
+            const definitions = page.id === 'Personal' ? phone.personalFields : phone.pageFields[page.id];
+            definitions.forEach(definition => {
+                const row = makeElement('article', 'status-atelier-schema-row status-atelier-phone-rule-row');
+                const label = makeElement('strong', 'status-atelier-phone-rule-label', definition.label);
+                const kind = makeElement('select', 'text_pole');
+                Object.entries(KIND_LABELS).forEach(([value, text]) => {
+                    const option = makeElement('option', '', text);
+                    option.value = value;
+                    kind.append(option);
+                });
+                kind.value = definition.kind;
+                kind.setAttribute('aria-label', `${definition.label}显示类型`);
+                const instruction = makeElement('textarea', 'text_pole');
+                instruction.value = definition.instruction;
+                instruction.rows = 2;
+                instruction.setAttribute('aria-label', `${definition.label}的 AI 填写要求`);
+                kind.addEventListener('change', () => {
+                    definition.kind = kind.value;
+                    statusAiTestRecords = null;
+                    scheduleStatusPreviewUpdate();
+                    saveSettingsSoon({ snapshotOpening: false });
+                });
+                instruction.addEventListener('input', () => {
+                    definition.instruction = instruction.value.slice(0, 300);
+                    statusAiTestRecords = null;
+                    scheduleStatusPreviewUpdate();
+                });
+                instruction.addEventListener('change', () => saveSettingsSoon({ snapshotOpening: false }));
+                row.append(label, kind, instruction);
+                group.append(row);
             });
-            kind.value = definition.kind;
-            kind.setAttribute('aria-label', `${definition.label}显示类型`);
-            const instruction = makeElement('textarea', 'text_pole');
-            instruction.value = definition.instruction;
-            instruction.rows = 2;
-            instruction.setAttribute('aria-label', `${definition.label}的 AI 填写要求`);
-            kind.addEventListener('change', () => {
-                definition.kind = kind.value;
-                statusAiTestRecords = null;
-                scheduleStatusPreviewUpdate();
-                saveSettingsSoon({ snapshotOpening: false });
-            });
-            instruction.addEventListener('input', () => {
-                definition.instruction = instruction.value.slice(0, 300);
-                statusAiTestRecords = null;
-                scheduleStatusPreviewUpdate();
-            });
-            instruction.addEventListener('change', () => saveSettingsSoon({ snapshotOpening: false }));
-            row.append(label, kind, instruction);
-            host.append(row);
+            host.append(group);
         });
         return;
     }
@@ -914,6 +953,7 @@ function applyPreset(name) {
     const preserved = {
         openingNotes: stored.openingNotes,
         promptEnabled: stored.promptEnabled,
+        displayOnlyRegex: stored.displayOnlyRegex,
         installScope: stored.installScope,
         ruleId: stored.ruleId,
         openingHome: stored.openingHome,
@@ -1584,11 +1624,41 @@ function readPhoneDesktopControl(control) {
     const key = PHONE_DESKTOP_FIELDS[control.id];
     if (key) {
         stored.phoneDesktop[key] = control.type === 'checkbox' ? control.checked : control.type === 'range' ? Number(control.value) : control.value;
+        if (key === 'shellStyle') {
+            const shellDefaults = PHONE_SHELL_VISUAL_DEFAULTS[control.value];
+            if (shellDefaults) {
+                stored.phoneDesktop.shellColor = shellDefaults.shellColor;
+                stored.phoneDesktop.decorationStyle = shellDefaults.decorationStyle;
+                stored.phoneDesktop.petalsEnabled = shellDefaults.decorationStyle !== 'none';
+                stored.phoneDesktop.iconScale = shellDefaults.iconScale;
+                stored.paletteId = shellDefaults.paletteId;
+                if (shellDefaults.appPositions) {
+                    stored.phoneDesktop.apps.forEach(app => {
+                        const position = shellDefaults.appPositions[app.id];
+                        if (!position) return;
+                        [app.desktopX, app.desktopY] = position;
+                    });
+                }
+                renderStatusDesignControls();
+            }
+        }
+        if (key === 'decorationStyle') stored.phoneDesktop.petalsEnabled = control.value !== 'none';
+        if (key === 'iconScale') {
+            const output = field('status-atelier-phone-icon-scale-output');
+            if (output) output.value = `${Math.round(Number(control.value) * 100)}%`;
+        }
+        if (key === 'wallpaperUrl' && phoneWallpaperPreviewUrl) {
+            URL.revokeObjectURL(phoneWallpaperPreviewUrl);
+            phoneWallpaperPreviewUrl = '';
+            const localControl = field('status-atelier-phone-wallpaper-file');
+            if (localControl) localControl.value = '';
+        }
         if (key === 'personalAvatarSource') {
             const urlWrap = field('status-atelier-phone-avatar-url-wrap');
             if (urlWrap) urlWrap.hidden = control.value !== 'url';
         }
         statusAiTestRecords = null;
+        if (key === 'shellStyle') renderPhoneDesktopControls();
         scheduleStatusPreviewUpdate();
         return;
     }
@@ -1598,6 +1668,49 @@ function readPhoneDesktopControl(control) {
     const app = stored.phoneDesktop.apps.find(item => item.id === appId);
     if (!app) return;
     app[appKey] = appKey === 'enabled' ? control.checked : control.value;
+    statusAiTestRecords = null;
+    scheduleStatusPreviewUpdate();
+}
+
+function arrangePhoneDesktopLayout(resetBasePosition = false) {
+    const phone = settings().phoneDesktop;
+    const shellDefaults = PHONE_SHELL_VISUAL_DEFAULTS[phone.shellStyle] || PHONE_SHELL_VISUAL_DEFAULTS.classic;
+    const defaultApps = new Map(PHONE_DESKTOP_DEFAULTS.apps.map(app => [app.id, app]));
+    phone.widgetOffsets = clone(PHONE_DESKTOP_DEFAULTS.widgetOffsets);
+    phone.apps.forEach(app => {
+        const presetPosition = shellDefaults.appPositions?.[app.id];
+        const fallback = defaultApps.get(app.id);
+        app.desktopX = presetPosition?.[0] ?? fallback?.desktopX ?? 50;
+        app.desktopY = presetPosition?.[1] ?? fallback?.desktopY ?? 50;
+    });
+    if (resetBasePosition) {
+        phone.widgetX = PHONE_DESKTOP_DEFAULTS.widgetX;
+        phone.widgetY = PHONE_DESKTOP_DEFAULTS.widgetY;
+    }
+    statusAiTestRecords = null;
+    scheduleStatusPreviewUpdate();
+    saveSettingsSoon({ snapshotOpening: false });
+}
+
+function previewLocalPhoneWallpaper(control) {
+    if (phoneWallpaperPreviewUrl) URL.revokeObjectURL(phoneWallpaperPreviewUrl);
+    phoneWallpaperPreviewUrl = '';
+    const fileValue = control?.files?.[0];
+    if (!fileValue) {
+        scheduleStatusPreviewUpdate();
+        return;
+    }
+    if (!String(fileValue.type || '').startsWith('image/')) {
+        control.value = '';
+        notify('error', '请选择图片文件');
+        scheduleStatusPreviewUpdate();
+        return;
+    }
+    phoneWallpaperPreviewUrl = URL.createObjectURL(fileValue);
+    const phone = settings().phoneDesktop;
+    phone.wallpaperPositionX = 50;
+    phone.wallpaperPositionY = 50;
+    phone.wallpaperScale = 1;
     statusAiTestRecords = null;
     scheduleStatusPreviewUpdate();
 }
@@ -1615,6 +1728,7 @@ function resolvedStatusInput(source = settings()) {
         paletteId: source.paletteId,
         palette: source.palette && typeof source.palette === 'object' ? { ...source.palette } : undefined,
         layout: source.layout,
+        displayOnlyRegex: source.displayOnlyRegex !== false,
         pagesText: source.pagesText,
         sharedFieldsText: source.sharedFieldsText,
         pageFieldsText: source.pageFieldsText,
@@ -1999,7 +2113,7 @@ function appendPreviewField(host, definition, value, shared = false, glyph = '�
     host.append(item);
 }
 
-function bindPhoneDiyDrag(root, sharedHost, wallpaperImage) {
+function bindPhoneDiyDrag(root, sharedHost, wallpaperImage, allowSharedDrag = true) {
     if (!root || !sharedHost) return;
     const stored = settings();
     const phone = stored.phoneDesktop;
@@ -2024,36 +2138,136 @@ function bindPhoneDiyDrag(root, sharedHost, wallpaperImage) {
             target.addEventListener('pointercancel', finish);
         });
     };
-    sharedHost.classList.add('is-diy-draggable');
-    sharedHost.title = '拖动调整桌面信息组件位置';
-    const widgetStart = { x: Number(phone.widgetX), y: Number(phone.widgetY) };
-    bindDrag(sharedHost, (deltaX, deltaY) => {
-        phone.widgetX = Math.max(8, Math.min(42, widgetStart.x + deltaX));
-        phone.widgetY = Math.max(45, Math.min(300, widgetStart.y + deltaY));
-        sharedHost.style.left = `${phone.widgetX}px`;
-        sharedHost.style.top = `${phone.widgetY}px`;
-    }, () => saveSettingsSoon({ snapshotOpening: false }));
+    if (allowSharedDrag) {
+        sharedHost.classList.add('is-diy-draggable');
+        sharedHost.title = '拖动调整桌面信息组件位置';
+        const widgetStart = { x: Number(phone.widgetX), y: Number(phone.widgetY) };
+        bindDrag(sharedHost, (deltaX, deltaY) => {
+            phone.widgetX = Math.max(8, Math.min(42, widgetStart.x + deltaX));
+            phone.widgetY = Math.max(45, Math.min(300, widgetStart.y + deltaY));
+            sharedHost.style.left = `${phone.widgetX}px`;
+            sharedHost.style.top = `${phone.widgetY}px`;
+        }, () => saveSettingsSoon({ snapshotOpening: false }));
+    }
     if (wallpaperImage) {
         wallpaperImage.classList.add('is-diy-draggable');
-        wallpaperImage.title = '拖动调整壁纸取景';
-        const wallpaperStart = { x: Number(phone.wallpaperPositionX), y: Number(phone.wallpaperPositionY) };
-        bindDrag(wallpaperImage, (deltaX, deltaY) => {
-            phone.wallpaperPositionX = Math.max(0, Math.min(100, wallpaperStart.x - deltaX / 2));
-            phone.wallpaperPositionY = Math.max(0, Math.min(100, wallpaperStart.y - deltaY / 3));
+        wallpaperImage.title = '拖动移动取景；滚轮或双指缩放';
+        wallpaperImage.draggable = false;
+        const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
+        const pointers = new Map();
+        let dragStart = null;
+        let pinchStart = null;
+        const pointerDistance = () => {
+            const [first, second] = [...pointers.values()];
+            return first && second ? Math.hypot(second.x - first.x, second.y - first.y) : 0;
+        };
+        const applyWallpaperCrop = () => {
             wallpaperImage.style.objectPosition = `${phone.wallpaperPositionX}% ${phone.wallpaperPositionY}%`;
-            const xControl = field('status-atelier-phone-wallpaper-x');
-            const yControl = field('status-atelier-phone-wallpaper-y');
-            if (xControl) xControl.value = String(Math.round(phone.wallpaperPositionX));
-            if (yControl) yControl.value = String(Math.round(phone.wallpaperPositionY));
-        }, () => saveSettingsSoon({ snapshotOpening: false }));
+            wallpaperImage.style.transform = `scale(${phone.wallpaperScale})`;
+        };
+        wallpaperImage.addEventListener('pointerdown', event => {
+            if (event.button !== 0) return;
+            event.preventDefault();
+            wallpaperImage.setPointerCapture?.(event.pointerId);
+            pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+            if (pointers.size === 1) {
+                dragStart = {
+                    x: event.clientX,
+                    y: event.clientY,
+                    positionX: Number(phone.wallpaperPositionX),
+                    positionY: Number(phone.wallpaperPositionY),
+                };
+            } else if (pointers.size === 2) {
+                pinchStart = { distance: pointerDistance(), scale: Number(phone.wallpaperScale) };
+            }
+        });
+        wallpaperImage.addEventListener('pointermove', event => {
+            if (!pointers.has(event.pointerId)) return;
+            pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+            if (pointers.size >= 2 && pinchStart?.distance) {
+                phone.wallpaperScale = clamp(pinchStart.scale * pointerDistance() / pinchStart.distance, 1, 3);
+            } else if (dragStart) {
+                phone.wallpaperPositionX = clamp(dragStart.positionX - (event.clientX - dragStart.x) * 0.5, 0, 100);
+                phone.wallpaperPositionY = clamp(dragStart.positionY - (event.clientY - dragStart.y) * 0.5, 0, 100);
+            }
+            applyWallpaperCrop();
+        });
+        const finishWallpaperPointer = event => {
+            if (!pointers.has(event.pointerId)) return;
+            pointers.delete(event.pointerId);
+            if (pointers.size === 1) {
+                const [remaining] = pointers.values();
+                dragStart = {
+                    x: remaining.x,
+                    y: remaining.y,
+                    positionX: Number(phone.wallpaperPositionX),
+                    positionY: Number(phone.wallpaperPositionY),
+                };
+                pinchStart = null;
+            } else if (!pointers.size) {
+                dragStart = null;
+                pinchStart = null;
+                saveSettingsSoon({ snapshotOpening: false });
+            }
+        };
+        wallpaperImage.addEventListener('pointerup', finishWallpaperPointer);
+        wallpaperImage.addEventListener('pointercancel', finishWallpaperPointer);
+        wallpaperImage.addEventListener('wheel', event => {
+            event.preventDefault();
+            phone.wallpaperScale = clamp(Number(phone.wallpaperScale) + (event.deltaY < 0 ? 0.1 : -0.1), 1, 3);
+            applyWallpaperCrop();
+            saveSettingsSoon({ snapshotOpening: false });
+        }, { passive: false });
+        applyWallpaperCrop();
     }
 }
 
-function bindPhoneHomeIconDrag(homeGuide) {
+function bindPhoneWidgetItemDrag(sharedHost) {
+    if (!sharedHost) return;
+    const phone = settings().phoneDesktop;
+    phone.widgetOffsets ??= clone(PHONE_DESKTOP_DEFAULTS.widgetOffsets);
+    sharedHost.querySelectorAll('.zrs-shared-item').forEach(item => {
+        item.title = '拖动单独移动这条桌面文字';
+        item.addEventListener('pointerdown', event => {
+            if (event.isPrimary === false || (event.pointerType === 'mouse' && event.button !== 0)) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const offset = phone.widgetOffsets[item.dataset.field] || { x: 0, y: 0 };
+            const startX = event.clientX;
+            const startY = event.clientY;
+            const originX = Number(offset.x) || 0;
+            const originY = Number(offset.y) || 0;
+            const ownerDocument = sharedHost.ownerDocument;
+            item.setPointerCapture?.(event.pointerId);
+            const move = moveEvent => {
+                if (moveEvent.pointerId !== event.pointerId) return;
+                moveEvent.preventDefault();
+                offset.x = Math.max(-180, Math.min(180, originX + moveEvent.clientX - startX));
+                offset.y = Math.max(-300, Math.min(300, originY + moveEvent.clientY - startY));
+                phone.widgetOffsets[item.dataset.field] = offset;
+                item.style.setProperty('--z-phone-widget-x', `${offset.x}px`);
+                item.style.setProperty('--z-phone-widget-y', `${offset.y}px`);
+            };
+            const finish = finishEvent => {
+                if (finishEvent.pointerId !== event.pointerId) return;
+                ownerDocument.removeEventListener('pointermove', move);
+                ownerDocument.removeEventListener('pointerup', finish);
+                ownerDocument.removeEventListener('pointercancel', finish);
+                item.releasePointerCapture?.(event.pointerId);
+                saveSettingsSoon({ snapshotOpening: false });
+            };
+            ownerDocument.addEventListener('pointermove', move, { passive: false });
+            ownerDocument.addEventListener('pointerup', finish);
+            ownerDocument.addEventListener('pointercancel', finish);
+        });
+    });
+}
+
+function bindPhoneHomeIconDrag(homeGuide, openApp) {
     if (!homeGuide) return;
     homeGuide.querySelectorAll('.zrs-phone-home-key').forEach(tile => {
         tile.addEventListener('pointerdown', event => {
-            if (event.button !== 0) return;
+            if (event.isPrimary === false || (event.pointerType === 'mouse' && event.button !== 0)) return;
             event.preventDefault();
             event.stopPropagation();
             const app = settings().phoneDesktop.apps.find(item => item.id === tile.dataset.appId);
@@ -2063,22 +2277,30 @@ function bindPhoneHomeIconDrag(homeGuide) {
             const startY = event.clientY;
             const originX = Number(app.desktopX);
             const originY = Number(app.desktopY);
+            let moved = false;
+            const ownerDocument = homeGuide.ownerDocument;
             tile.setPointerCapture?.(event.pointerId);
             const move = moveEvent => {
+                if (moveEvent.pointerId !== event.pointerId) return;
+                moveEvent.preventDefault();
+                if (Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY) > 5) moved = true;
                 app.desktopX = Math.max(12, Math.min(88, originX + ((moveEvent.clientX - startX) / bounds.width) * 100));
-                app.desktopY = Math.max(14, Math.min(86, originY + ((moveEvent.clientY - startY) / bounds.height) * 100));
+                app.desktopY = Math.max(14, Math.min(92, originY + ((moveEvent.clientY - startY) / bounds.height) * 100));
                 tile.style.setProperty('--z-phone-app-x', `${app.desktopX}%`);
                 tile.style.setProperty('--z-phone-app-y', `${app.desktopY}%`);
             };
-            const finish = () => {
-                tile.removeEventListener('pointermove', move);
-                tile.removeEventListener('pointerup', finish);
-                tile.removeEventListener('pointercancel', finish);
+            const finish = finishEvent => {
+                if (finishEvent.pointerId !== event.pointerId) return;
+                ownerDocument.removeEventListener('pointermove', move);
+                ownerDocument.removeEventListener('pointerup', finish);
+                ownerDocument.removeEventListener('pointercancel', finish);
+                tile.releasePointerCapture?.(event.pointerId);
                 saveSettingsSoon({ snapshotOpening: false });
+                if (!moved && finishEvent.type === 'pointerup') openApp?.(app.id);
             };
-            tile.addEventListener('pointermove', move);
-            tile.addEventListener('pointerup', finish);
-            tile.addEventListener('pointercancel', finish);
+            ownerDocument.addEventListener('pointermove', move, { passive: false });
+            ownerDocument.addEventListener('pointerup', finish);
+            ownerDocument.addEventListener('pointercancel', finish);
         });
     });
 }
@@ -2174,8 +2396,13 @@ function renderStatusPreview(host) {
     root.dataset.variant = rule.variant;
     root.dataset.layout = rule.layout;
     root.dataset.hasImage = rule.media.imageUrl ? 'true' : 'false';
-    if (rule.structure === 'phone') root.dataset.phoneShell = rule.phoneDesktop.shellStyle;
-    const handheldMode = rule.structure === 'phone' && rule.phoneDesktop.shellStyle === 'handheld';
+    if (rule.structure === 'phone') {
+        root.dataset.phoneShell = rule.phoneDesktop.shellStyle;
+        root.dataset.phoneDecoration = rule.phoneDesktop.decorationStyle;
+        root.style.setProperty('--z-phone-icon-scale', String(rule.phoneDesktop.iconScale));
+    }
+    const handheldMode = rule.structure === 'phone' && rule.phoneDesktop.shellStyle !== 'classic';
+    if (rule.structure === 'phone') root.dataset.phoneLayout = handheldMode ? 'handheld' : 'classic';
     if (rule.palette) {
         root.style.setProperty('--sap-accent', rule.palette.accent);
         root.style.setProperty('--sap-layer', rule.palette.background);
@@ -2191,9 +2418,10 @@ function renderStatusPreview(host) {
     if (rule.structure === 'phone') root.style.setProperty('--z-phone-shell', rule.phoneDesktop.shellColor);
 
     let phoneFrame = null;
-    if (handheldMode) {
+    const phoneFrameUrl = handheldMode ? PHONE_FRAME_ASSETS[rule.phoneDesktop.shellStyle] : '';
+    if (phoneFrameUrl) {
         phoneFrame = makeElement('img', 'zrs-phone-frame');
-        phoneFrame.src = PHONE_FRAME_ASSETS.handheld;
+        phoneFrame.src = localPhoneAssetUrl(phoneFrameUrl);
         phoneFrame.alt = '';
         phoneFrame.draggable = false;
         phoneFrame.setAttribute('aria-hidden', 'true');
@@ -2262,22 +2490,24 @@ function renderStatusPreview(host) {
     if (rule.structure === 'phone') {
         const wallpaper = makeElement('div', 'zrs-phone-wallpaper');
         wallpaper.setAttribute('aria-hidden', 'true');
-        if (rule.phoneDesktop.wallpaperUrl) {
+        const wallpaperUrl = phoneWallpaperPreviewUrl || rule.phoneDesktop.wallpaperUrl;
+        if (wallpaperUrl) {
             phoneWallpaperImage = makeElement('img');
-            phoneWallpaperImage.src = rule.phoneDesktop.wallpaperUrl;
+            phoneWallpaperImage.src = wallpaperUrl;
             phoneWallpaperImage.alt = '';
             phoneWallpaperImage.draggable = false;
             phoneWallpaperImage.style.objectPosition = `${rule.phoneDesktop.wallpaperPositionX}% ${rule.phoneDesktop.wallpaperPositionY}%`;
+            phoneWallpaperImage.style.transform = `scale(${rule.phoneDesktop.wallpaperScale})`;
             phoneWallpaperImage.addEventListener('error', () => phoneWallpaperImage.remove());
             wallpaper.append(phoneWallpaperImage);
         }
         body.append(wallpaper);
-        if (rule.phoneDesktop.petalsEnabled !== false) {
+        if (rule.phoneDesktop.decorationStyle !== 'none' && rule.phoneDesktop.petalsEnabled !== false) {
             const petals = makeElement('div', 'zrs-phone-petals');
             petals.setAttribute('aria-hidden', 'true');
             for (let index = 0; index < 15; index += 1) {
                 const decoration = makeElement('i');
-                if (handheldMode) decoration.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M4.8 6.2l14.4 11.6M19.2 6.2 4.8 17.8M12 2l-2 2.7M12 2l2 2.7M12 22l-2-2.7M12 22l2-2.7M4.8 6.2l3.3.3M4.8 6.2l.7 3.2M19.2 17.8l-3.3-.3M19.2 17.8l-.7-3.2M19.2 6.2l-3.3.3M19.2 6.2l-.7 3.2M4.8 17.8l3.3-.3M4.8 17.8l.7-3.2"></path></svg>';
+                if (handheldMode) decoration.innerHTML = PHONE_DECORATION_MARKUP[rule.phoneDesktop.decorationStyle] || PHONE_DECORATION_MARKUP.snow;
                 petals.append(decoration);
             }
             body.append(petals);
@@ -2317,6 +2547,13 @@ function renderStatusPreview(host) {
             phoneSharedHost = sharedHost;
         }
         definitions.forEach(item => appendPreviewField(sharedHost, item.definition, item.value, true, rule.glyph, rule));
+        if (rule.structure === 'phone') {
+            sharedHost.querySelectorAll('.zrs-shared-item').forEach(item => {
+                const offset = rule.phoneDesktop.widgetOffsets[item.dataset.field] || { x: 0, y: 0 };
+                item.style.setProperty('--z-phone-widget-x', `${offset.x}px`);
+                item.style.setProperty('--z-phone-widget-y', `${offset.y}px`);
+            });
+        }
         bindPreviewFieldReorder(sharedHost, rule, 'shared');
         body.append(sharedHost);
     }
@@ -2328,9 +2565,10 @@ function renderStatusPreview(host) {
         body.append(phoneHomeGuide);
     }
     const phonePagebar = makeElement('div', 'zrs-phone-pagebar');
-    const phoneBack = makeElement('button', 'zrs-phone-back', handheldMode ? 'B 返回' : '‹');
+    const touchPhoneMode = ['bandage-pop', 'mint-archive'].includes(rule.phoneDesktop.shellStyle);
+    const phoneBack = makeElement('button', 'zrs-phone-back', touchPhoneMode ? '‹' : handheldMode ? '返回' : '‹');
     phoneBack.type = 'button';
-    phoneBack.setAttribute('aria-label', handheldMode ? 'B 键返回状态主页' : '返回状态主页');
+    phoneBack.setAttribute('aria-label', '返回状态主页');
     const phoneTitle = makeElement('h4', 'zrs-phone-page-title');
     phonePagebar.append(phoneBack, phoneTitle);
     const pageHost = makeElement('div', 'status-atelier-preview-fields zrs-fields');
@@ -2458,6 +2696,20 @@ function renderStatusPreview(host) {
             root.classList.remove('is-phone-home');
         }
     };
+    const defaultPhoneIcons = PHONE_APP_ICON_ASSETS[rule.phoneDesktop.shellStyle] || {};
+    const addPreviewPhoneIcon = (icon, app, appId) => {
+        const iconUrl = app?.iconUrl || defaultPhoneIcons[appId];
+        if (!iconUrl) return;
+        const image = makeElement('img', 'zrs-app-icon-image');
+        image.src = localPhoneAssetUrl(iconUrl);
+        image.alt = '';
+        image.addEventListener('error', () => {
+            image.remove();
+            icon.classList.remove('has-custom-icon');
+        });
+        icon.classList.add('has-custom-icon');
+        icon.append(image);
+    };
     pages.forEach(({ page }, index) => {
         const app = phoneMode ? rule.phoneDesktop.apps.find(item => item.id === page.id) : null;
         if (handheldMode && app?.enabled === false) return;
@@ -2468,17 +2720,7 @@ function renderStatusPreview(host) {
             const icon = makeElement('span', 'zrs-app-icon');
             icon.dataset.appId = page.id;
             icon.innerHTML = handheldMode ? handheldPhoneAppIconMarkup(page.id) : phoneAppIconMarkup(page.id);
-            if (app?.iconUrl) {
-                const image = makeElement('img', 'zrs-app-icon-image');
-                image.src = app.iconUrl;
-                image.alt = '';
-                image.addEventListener('error', () => {
-                    image.remove();
-                    icon.classList.remove('has-custom-icon');
-                });
-                icon.classList.add('has-custom-icon');
-                icon.append(image);
-            }
+            addPreviewPhoneIcon(icon, app, page.id);
             button.append(icon, makeElement('span', 'zrs-app-label', app?.name || page.label));
         } else {
             button.textContent = page.label;
@@ -2506,29 +2748,25 @@ function renderStatusPreview(host) {
             const icon = makeElement('span', 'zrs-app-icon');
             icon.dataset.appId = appId;
             icon.innerHTML = handheldPhoneAppIconMarkup(appId);
-            if (app?.iconUrl) {
-                const image = makeElement('img', 'zrs-app-icon-image');
-                image.src = app.iconUrl;
-                image.alt = '';
-                icon.classList.add('has-custom-icon');
-                icon.append(image);
-            }
+            addPreviewPhoneIcon(icon, app, appId);
             tile.append(icon);
             phoneHomeGuide.append(tile);
         });
         phoneControls = makeElement('div', 'zrs-phone-controls');
         phoneControls.setAttribute('aria-label', '掌机实体按键');
-        [['X', '个人'], ['Y', '微信'], ['B', '购物或返回'], ['A', '日记']].forEach(([key, label]) => {
+        PHONE_CONTROL_LAYOUTS[rule.phoneDesktop.shellStyle].forEach(({ key, label }) => {
             const control = makeElement('button', 'zrs-phone-control');
             control.type = 'button';
             control.dataset.phoneControl = key;
-            control.setAttribute('aria-label', `${key} 键：${label}`);
+            control.setAttribute('aria-label', label);
             control.addEventListener('click', () => {
-                if (key === 'B' && !root.classList.contains('is-phone-home')) {
+                if (key === 'Back' || (key === 'B' && !root.classList.contains('is-phone-home'))) {
                     showPhoneHome();
                     return;
                 }
-                const pageId = key === 'X' ? 'Personal' : key === 'Y' ? 'Wechat' : key === 'B' ? 'Shop' : 'Memo';
+                const pageId = ['Personal', 'Memo', 'Wechat', 'Shop'].includes(key)
+                    ? key
+                    : key === 'X' ? 'Personal' : key === 'Y' ? 'Wechat' : key === 'B' ? 'Shop' : 'Memo';
                 const targetApp = rule.phoneDesktop.apps.find(item => item.id === pageId);
                 if (targetApp?.enabled === false) return;
                 const pageIndex = pages.findIndex(item => item.page.id === pageId);
@@ -2558,8 +2796,12 @@ function renderStatusPreview(host) {
         if (phoneCharm) root.append(phoneCharm);
         root.classList.add('is-phone-home');
         pageHost.replaceChildren();
-        bindPhoneDiyDrag(root, phoneSharedHost, phoneWallpaperImage);
-        if (handheldMode) bindPhoneHomeIconDrag(phoneHomeGuide);
+        bindPhoneDiyDrag(root, phoneSharedHost, phoneWallpaperImage, !touchPhoneMode);
+        if (touchPhoneMode) bindPhoneWidgetItemDrag(phoneSharedHost);
+        if (handheldMode) bindPhoneHomeIconDrag(phoneHomeGuide, appId => {
+            const pageIndex = pages.findIndex(item => item.page.id === appId);
+            if (pageIndex >= 0) showPage(pageIndex);
+        });
     } else {
         showPage(0);
     }
@@ -3995,6 +4237,9 @@ async function addSettingsPanel() {
     host.append(settingsRoot);
 
     settingsRoot.querySelectorAll('[data-status-workspace]').forEach(button => button.addEventListener('click', () => setWorkspace(button.dataset.statusWorkspace)));
+    field('status-atelier-phone-wallpaper-file')?.addEventListener('change', event => previewLocalPhoneWallpaper(event.currentTarget));
+    field('status-atelier-phone-auto-align')?.addEventListener('click', () => arrangePhoneDesktopLayout(false));
+    field('status-atelier-phone-reset-layout')?.addEventListener('click', () => arrangePhoneDesktopLayout(true));
     field('status-atelier-preset').addEventListener('change', event => {
         if (event.target.value !== 'custom') applyPreset(event.target.value);
     });

@@ -3498,6 +3498,21 @@ summary.status-atelier-section-heading {
     line-height: 1.65;
 }
 
+.status-atelier-phone-layout-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.status-atelier-phone-layout-actions button {
+    min-height: 42px;
+    border: 1px solid color-mix(in srgb, var(--SmartThemeBodyColor, #574b40) 26%, transparent);
+    border-radius: 10px;
+    color: inherit;
+    background: color-mix(in srgb, var(--SmartThemeBlurTintColor, #fff) 92%, transparent);
+    cursor: pointer;
+}
+
 .status-atelier-file-button {
     display: grid !important;
     min-height: 44px;
@@ -3522,6 +3537,45 @@ summary.status-atelier-section-heading {
     margin-top: 7px;
 }
 
+.status-atelier-phone-icon-scale {
+    display: grid !important;
+    grid-template-columns: auto minmax(110px, 1fr) 48px;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-atelier-phone-icon-scale input[type="range"] {
+    min-height: 44px;
+}
+
+.status-atelier-phone-icon-scale output {
+    color: var(--saw-ink-soft);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.status-atelier-phone-page-rules {
+    margin-top: 8px;
+    border: 1px solid var(--saw-line-soft);
+    background: color-mix(in srgb, var(--saw-panel) 84%, var(--saw-paper));
+}
+
+.status-atelier-phone-page-rules > summary {
+    min-height: 44px;
+    padding: 11px 12px;
+    color: var(--saw-ink);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.status-atelier-phone-page-rules[open] > summary {
+    border-bottom: 1px solid var(--saw-line-soft);
+}
+
+.status-atelier-phone-page-rules .status-atelier-phone-rule-row {
+    margin: 8px;
+}
+
 .status-atelier-rule-preview[data-structure="phone"] .zrs-shared.is-diy-draggable,
 .status-atelier-rule-preview[data-structure="phone"] .zrs-phone-wallpaper img.is-diy-draggable,
 .status-atelier-rule-preview[data-structure="phone"] .zrs-phone-avatar.is-diy-draggable {
@@ -3531,6 +3585,11 @@ summary.status-atelier-section-heading {
 }
 
 .status-atelier-rule-preview[data-structure="phone"] .zrs-phone-avatar.is-diy-draggable img {
+    transform-origin: center;
+    will-change: transform, object-position;
+}
+
+.status-atelier-rule-preview[data-structure="phone"] .zrs-phone-wallpaper img.is-diy-draggable {
     transform-origin: center;
     will-change: transform, object-position;
 }

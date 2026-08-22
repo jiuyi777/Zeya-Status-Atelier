@@ -156,24 +156,38 @@
                     </details>
 
                     <details id="status-atelier-phone-diy" class="status-atelier-setting-section status-atelier-collapsible">
-                        <summary class="status-atelier-section-heading"><div><h4>手机设置</h4><small>外壳、壁纸、雪花和 APP。</small></div></summary>
+                        <summary class="status-atelier-section-heading"><div><h4>手机设置</h4><small>外壳、壁纸、飘落素材和 APP。</small></div></summary>
                         <div class="status-atelier-phone-diy-grid">
                             <section class="status-atelier-phone-diy-card status-atelier-phone-shell-picker">
                                 <h5>手机款式</h5>
                                 <label>款式<select id="status-atelier-phone-shell-style" class="text_pole">
                                     <option value="classic">原始手机</option>
                                     <option value="handheld">横向掌机</option>
+                                    <option value="handheld-pink">02 粉色心形掌机</option>
+                                    <option value="handheld-white">03 白色竖键掌机</option>
+                                    <option value="bandage-pop">04 黑粉贴纸小手机</option>
+                                    <option value="mint-archive">05 薄荷格纹小手机</option>
                                 </select></label>
                                 <label>外壳颜色<input id="status-atelier-phone-shell-color" type="color" value="#e6a5c4" aria-label="手机外壳颜色"></label>
-                                <label>掌机挂饰 URL<input id="status-atelier-phone-charm-url" class="text_pole" type="url" placeholder="透明背景图片，可留空"></label>
+                                <label>手机挂饰 URL<input id="status-atelier-phone-charm-url" class="text_pole" type="url" placeholder="透明背景图片，可留空"></label>
                             </section>
                             <section class="status-atelier-phone-diy-card">
                                 <h5>桌面壁纸</h5>
                                 <label>壁纸 URL<input id="status-atelier-phone-wallpaper-url" class="text_pole" type="url" placeholder="可留空"></label>
+                                <label class="status-atelier-file-button">本地图片（仅预览）<input id="status-atelier-phone-wallpaper-file" type="file" accept="image/*"></label>
+                                <small>在右侧壁纸上拖动；滚轮或双指缩放。</small>
                             </section>
                             <section class="status-atelier-phone-diy-card">
                                 <h5>桌面动效</h5>
-                                <label class="checkbox_label"><input id="status-atelier-phone-petals-enabled" type="checkbox" checked><span>雪花</span></label>
+                                <label>飘落素材<select id="status-atelier-phone-decoration-style" class="text_pole"><option value="none">关闭</option><option value="snow">雪花</option><option value="sakura">樱花</option><option value="petals">花瓣</option><option value="stars">星星</option></select></label>
+                            </section>
+                            <section class="status-atelier-phone-diy-card">
+                                <h5>桌面排版</h5>
+                                <div class="status-atelier-phone-layout-actions">
+                                    <button id="status-atelier-phone-auto-align" type="button">自动对齐</button>
+                                    <button id="status-atelier-phone-reset-layout" type="button">重置布局</button>
+                                </div>
+                                <small>地点、时间、天气可以分别拖动。</small>
                             </section>
                             <section class="status-atelier-phone-diy-card">
                                 <h5>个人页头像</h5>
@@ -183,6 +197,7 @@
                             </section>
                             <section class="status-atelier-phone-diy-card status-atelier-phone-app-editor">
                                 <h5>桌面 APP</h5>
+                                <label class="status-atelier-phone-icon-scale">图标大小<input id="status-atelier-phone-icon-scale" type="range" min="0.75" max="1.7" step="0.05" value="1"><output id="status-atelier-phone-icon-scale-output" for="status-atelier-phone-icon-scale">100%</output></label>
                                 <div><label title="横向掌机显示个人 APP"><input id="status-atelier-phone-app-personal-enabled" data-phone-app-id="Personal" data-phone-app-key="enabled" type="checkbox" checked><span>个人</span></label><input id="status-atelier-phone-app-personal-name" data-phone-app-id="Personal" data-phone-app-key="name" class="text_pole" maxlength="12" aria-label="个人 APP 名称"><input id="status-atelier-phone-app-personal-icon" data-phone-app-id="Personal" data-phone-app-key="iconUrl" class="text_pole" type="url" placeholder="图标 URL（可留空）" aria-label="个人 APP 图标 URL"></div>
                                 <div><label title="横向掌机显示日记 APP"><input id="status-atelier-phone-app-memo-enabled" data-phone-app-id="Memo" data-phone-app-key="enabled" type="checkbox" checked><span>备忘</span></label><input id="status-atelier-phone-app-memo-name" data-phone-app-id="Memo" data-phone-app-key="name" class="text_pole" maxlength="12" aria-label="备忘录 APP 名称"><input id="status-atelier-phone-app-memo-icon" data-phone-app-id="Memo" data-phone-app-key="iconUrl" class="text_pole" type="url" placeholder="图标 URL（可留空）" aria-label="备忘录 APP 图标 URL"></div>
                                 <div><label title="横向掌机显示微信 APP"><input id="status-atelier-phone-app-wechat-enabled" data-phone-app-id="Wechat" data-phone-app-key="enabled" type="checkbox" checked><span>微信</span></label><input id="status-atelier-phone-app-wechat-name" data-phone-app-id="Wechat" data-phone-app-key="name" class="text_pole" maxlength="12" aria-label="微信 APP 名称"><input id="status-atelier-phone-app-wechat-icon" data-phone-app-id="Wechat" data-phone-app-key="iconUrl" class="text_pole" type="url" placeholder="图标 URL（可留空）" aria-label="微信 APP 图标 URL"></div>
@@ -210,7 +225,7 @@
 
                     <details class="status-atelier-setting-section status-atelier-collapsible">
                         <summary class="status-atelier-section-heading">
-                            <div><h4 id="status-atelier-status-editor-title">字段设置</h4><small id="status-atelier-status-editor-help">显示方式与 AI 内容。</small></div>
+                            <div><h4 id="status-atelier-status-editor-title">APP 页面数据</h4><small id="status-atelier-status-editor-help">四个页面都写入同一条世界书规则。</small></div>
                         </summary>
                         <button id="status-atelier-add-field" type="button" class="menu_button">＋ 新增字段</button>
                         <div id="status-atelier-edit-legend" class="status-atelier-edit-legend">
@@ -240,6 +255,7 @@
                             <button id="status-atelier-install-scoped" type="button" class="menu_button status-atelier-primary-action">生成并应用</button>
                             <button id="status-atelier-test-ai" type="button" class="menu_button">测试 AI</button>
                         </div>
+                        <label class="checkbox_label"><input id="status-atelier-regex-display-only" type="checkbox" checked><span>美化只显示，不发送给 AI</span></label>
                         <p id="status-atelier-ai-test-status" class="status-atelier-ai-test-status" role="status" aria-live="polite"></p>
                     </section>
 
