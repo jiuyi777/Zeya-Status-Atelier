@@ -13,14 +13,14 @@ import {
     normalizeRule,
     parseStatusOutput,
     parseFields,
-} from './rule-generator.js?v=0.10.0';
+} from './rule-generator.js?v=0.10.1';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.10.0';
+} from './opening-home-generator.js?v=0.10.1';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -32,19 +32,19 @@ import {
     parseSummaryResponse,
     responseText,
     usableGreetingRecords,
-} from './response-parser.js?v=0.10.0';
+} from './response-parser.js?v=0.10.1';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.10.0';
+} from './worldbook-routes.js?v=0.10.1';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.10.0';
+} from './entry-dialog.js?v=0.10.1';
 import {
     greetingBindingSummary,
     keepOnlyOpenGreetingCard,
@@ -53,14 +53,14 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.10.0';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.10.0';
-import { buildCharacterHomepageContext } from './opening-context.js?v=0.10.0';
+} from './greeting-workflow.js?v=0.10.1';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.10.1';
+import { buildCharacterHomepageContext } from './opening-context.js?v=0.10.1';
 import {
     STATUS_WORLDBOOK_ENTRY_ID,
     buildStatusWorldbookName,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.10.0';
+} from './status-worldbook.js?v=0.10.1';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -81,7 +81,7 @@ import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.10.0';
+const VERSION = '0.10.1';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 
 const HOME_TEMPLATES = Object.freeze([
@@ -324,7 +324,9 @@ function ensureQuestMapEditor() {
     overlay.hidden = true;
     overlay.setAttribute('aria-hidden', 'true');
     overlay.innerHTML = '<iframe class="status-atelier-map-editor-frame" title="可视化任务地图编辑器"></iframe>';
-    overlay.querySelector('.status-atelier-map-editor-frame').src = new URL('./design-drafts/map-beauty/index.html?embedded=1', import.meta.url).href;
+    const mapEditorUrl = new URL('./design-drafts/map-beauty/index.html?embedded=1', import.meta.url);
+    mapEditorUrl.searchParams.set('v', VERSION);
+    overlay.querySelector('.status-atelier-map-editor-frame').src = mapEditorUrl.href;
     document.body.append(overlay);
     questMapEditorOverlay = overlay;
     return overlay;
