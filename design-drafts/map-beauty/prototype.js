@@ -6,16 +6,32 @@ const STATUS_LABELS = {
   blocked: '已阻断',
   unknown: '未探明',
 };
-const FRAME_STYLE_LIST = ['pin', 'tape', 'clip'];
+const FRAME_STYLE_LIST = ['pin', 'tape', 'clip', 'ticket', 'lens'];
 const FRAME_STYLES = new Set(FRAME_STYLE_LIST);
-const MAP_TEMPLATE_LIST = ['desk-casebook', 'travel-atlas', 'urban-research', 'noir-network', 'crime-collage'];
+const MAP_TEMPLATE_LIST = ['desk-casebook', 'travel-atlas', 'urban-research', 'noir-network', 'crime-collage', 'travel-souvenir', 'urban-investigation', 'retro-archive'];
 const MAP_TEMPLATES = new Set(MAP_TEMPLATE_LIST);
+const DEFAULT_FRAME_LABELS = {
+  pin: '黄铜别针',
+  tape: '旧棕格绑带',
+  clip: '银色票夹',
+  ticket: '票据齿边',
+  lens: '圆形镜片',
+};
+const TEMPLATE_FRAME_LABELS = {
+  'crime-collage': { pin: '别针拍立得', tape: '电脑案件窗口', clip: '撕边胶片', ticket: '报纸证物框', lens: '镜头证物照' },
+  'travel-souvenir': { pin: '旅行明信片', tape: '火车票照片', clip: '行李牌照片', ticket: '邮票照片', lens: '折叠地图快照' },
+  'urban-investigation': { pin: '报纸证物框', tape: '监控窗口', clip: '胶片联络表', ticket: '案件夹照片', lens: '圆形调查镜头' },
+  'retro-archive': { pin: '电脑文件窗口', tape: 'CRT 监控屏', clip: '扫描预览', ticket: '缩略图文件夹', lens: '暗房档案袋' },
+};
 const ASSET_URLS = {
   deskBackground: './assets/detective-desk-blank.webp',
   travelBackground: './assets/map-backgrounds/travel-atlas.webp',
   urbanBackground: './assets/map-backgrounds/urban-research.webp',
   noirBackground: './assets/map-backgrounds/noir-network.webp',
   crimeBackground: './assets/map-backgrounds/crime-collage.webp',
+  souvenirBackground: './assets/map-backgrounds/travel-souvenir.webp',
+  investigationBackground: './assets/map-backgrounds/urban-investigation.webp',
+  archiveBackground: './assets/map-backgrounds/retro-archive.webp',
   pin: './assets/attachments/brass-safety-pin.webp',
   tape: './assets/attachments/gingham-cross-muted.webp',
   clip: './assets/attachments/silver-binder-clip.webp',
@@ -78,7 +94,7 @@ const defaultState = {
       name: '地点 04',
       imageUrl: '',
       intro: '尚未探明。',
-      frameStyle: 'pin',
+      frameStyle: 'ticket',
       status: 'unknown',
       connectFrom: ['place-2'],
       x: 78,
@@ -86,6 +102,20 @@ const defaultState = {
       rotation: 5,
       size: 96,
       z: 1,
+    },
+    {
+      id: 'place-5',
+      name: '地点 05',
+      imageUrl: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=640&q=80',
+      intro: '另一处可以继续调查的地点。',
+      frameStyle: 'lens',
+      status: 'available',
+      connectFrom: ['place-3'],
+      x: 18,
+      y: 74,
+      rotation: 2,
+      size: 94,
+      z: 5,
     },
   ],
 };
@@ -210,6 +240,20 @@ function selectedObject() {
 
 function statusLabel(status) {
   return STATUS_LABELS[status] || STATUS_LABELS.unknown;
+}
+
+function syncFrameStyleOptions() {
+  const labels = TEMPLATE_FRAME_LABELS[state.templateId] || DEFAULT_FRAME_LABELS;
+  [newPlaceStyle, fields.frameStyle].forEach(select => {
+    const previous = FRAME_STYLES.has(select.value) ? select.value : 'pin';
+    select.replaceChildren(...FRAME_STYLE_LIST.map(style => {
+      const option = document.createElement('option');
+      option.value = style;
+      option.textContent = labels[style] || DEFAULT_FRAME_LABELS[style];
+      return option;
+    }));
+    select.value = previous;
+  });
 }
 
 function svgElement(name, attributes = {}) {
@@ -427,6 +471,7 @@ function render() {
   editor.dataset.mode = mode;
   canvas.dataset.template = state.templateId;
   mapTemplate.value = state.templateId;
+  syncFrameStyleOptions();
   previewToggle.setAttribute('aria-pressed', String(mode === 'preview'));
   previewToggle.querySelector('span').textContent = mode === 'preview' ? '返回编辑' : '成品预览';
   renderConnections();
@@ -607,6 +652,34 @@ const EXPORTED_CRIME_CSS = `
 .qm[data-template=crime-collage] .qm-place[data-frame=clip]{width:clamp(100px,15%,162px);padding:12px 9px 25px;border:0;color:#f0eee8;background:#101110;box-shadow:0 0 0 2px #e3e1da,8px 10px 20px rgba(0,0,0,.72)}.qm[data-template=crime-collage] .qm-place[data-frame=clip]:before{content:"";display:block;position:absolute;left:8px;right:8px;top:3px;height:5px;background:repeating-linear-gradient(90deg,#eee 0 6px,transparent 6px 12px);opacity:.82}.qm[data-template=crime-collage] .qm-place[data-frame=clip] .qm-photo{aspect-ratio:1.34;border:1px solid #eceae3}.qm[data-template=crime-collage] .qm-place[data-frame=clip] .qm-photo img{filter:grayscale(1) contrast(1.35) brightness(.88)}.qm[data-template=crime-collage] .qm-place[data-frame=clip] .qm-photo:empty:after{color:rgba(238,236,228,.56)}.qm[data-template=crime-collage] .qm-place[data-frame=clip] .qm-name{bottom:6px;color:#f0eee8;font:800 .62rem/1 ui-monospace,Consolas,monospace;letter-spacing:.1em}
 @media(max-width:520px){.qm[data-template=crime-collage] .qm-place[data-frame=pin]{width:clamp(82px,27%,110px);padding-bottom:27px}.qm[data-template=crime-collage] .qm-place[data-frame=tape]{width:clamp(100px,33%,132px)}.qm[data-template=crime-collage] .qm-place[data-frame=clip]{width:clamp(80px,25%,104px)}}`;
 
+const EXPORTED_NEW_TEMPLATE_CSS = `
+.qm[data-template=travel-souvenir]{border-color:#8c6845;background:#b99568 url("__SOUVENIR_BACKGROUND__") center/cover no-repeat;box-shadow:0 20px 48px rgba(45,27,12,.48)}
+.qm[data-template=urban-investigation]{border-color:#66727d;background:#9ca9b2 url("__INVESTIGATION_BACKGROUND__") center/cover no-repeat;box-shadow:0 20px 48px rgba(13,22,30,.45)}
+.qm[data-template=retro-archive]{border-color:#4b4e4b;background:#111311 url("__ARCHIVE_BACKGROUND__") center/cover no-repeat;box-shadow:0 25px 64px rgba(0,0,0,.72)}
+.qm[data-template=travel-souvenir] .qm-route{stroke:#8d3c32;stroke-width:4.5;stroke-dasharray:3 6;filter:drop-shadow(0 1px 1px rgba(60,31,18,.48))}.qm[data-template=travel-souvenir] .qm-route[data-status=completed]{stroke:#715c46}.qm[data-template=travel-souvenir] .qm-route[data-status=blocked]{stroke:#63332d;stroke-dasharray:13 8}
+.qm[data-template=urban-investigation] .qm-route{stroke:#1b2024;stroke-width:3.5;filter:drop-shadow(0 1px 0 rgba(255,255,255,.35))}.qm[data-template=urban-investigation] .qm-route[data-status=blocked]{stroke:#7a3432;stroke-dasharray:7 6}.qm[data-template=urban-investigation] .qm-route[data-status=unknown]{stroke:rgba(35,43,49,.52);stroke-dasharray:2 7}
+.qm[data-template=retro-archive] .qm-route{stroke:#ad242a;stroke-width:4.5;filter:drop-shadow(0 1px 3px rgba(0,0,0,.9))}.qm[data-template=retro-archive] .qm-route[data-status=completed]{stroke:#777b76}.qm[data-template=retro-archive] .qm-route[data-status=blocked]{stroke:#e4e1d8;stroke-dasharray:12 8}.qm[data-template=retro-archive] .qm-route[data-status=unknown]{stroke:rgba(200,204,197,.48);stroke-dasharray:2 8}
+.qm-place[data-frame=ticket]{width:clamp(108px,16%,176px);padding:7px 7px 23px;border:2px dashed rgba(83,65,44,.52);background:#eadcc0}.qm-place[data-frame=ticket] .qm-attachment,.qm-place[data-frame=lens] .qm-attachment{display:none}.qm-place[data-frame=ticket] .qm-photo{aspect-ratio:1.55}.qm-place[data-frame=lens]{width:clamp(94px,13.5%,148px);padding:9px 9px 26px;border:6px solid #b7aa91;border-radius:50%;background:#ded3be}.qm-place[data-frame=lens] .qm-photo{aspect-ratio:1;border-radius:50%}.qm-place[data-frame=lens] .qm-name{bottom:-20px;padding:5px 7px;background:#e6dbc3;box-shadow:0 3px 6px rgba(0,0,0,.24)}
+.qm[data-template=travel-souvenir] .qm-attachment{display:none}.qm[data-template=travel-souvenir] .qm-place{color:#4d3824;font-family:"KaiTi",serif}
+.qm[data-template=travel-souvenir] .qm-place[data-frame=pin]{width:clamp(126px,18%,196px);padding:7px 7px 27px;border:1px solid rgba(91,65,38,.3);background:#ead5ad;box-shadow:0 9px 18px rgba(61,38,18,.38)}.qm[data-template=travel-souvenir] .qm-place[data-frame=pin] .qm-attachment{display:block;left:7%;top:-17px;width:38px;height:44px;background-image:url("__CLIP_ASSET__");filter:sepia(.18) drop-shadow(1px 3px 2px rgba(42,27,15,.45));transform:rotate(-7deg)}.qm[data-template=travel-souvenir] .qm-place[data-frame=pin] .qm-photo{aspect-ratio:1.55;border-color:rgba(82,57,32,.35)}
+.qm[data-template=travel-souvenir] .qm-place[data-frame=tape]{width:clamp(144px,21%,226px);padding:9px 13px 28px;border:1px solid #8f6843;border-radius:4px 15px;color:#4b301e;background:#d5a978;box-shadow:5px 7px 0 rgba(91,55,25,.2),0 10px 20px rgba(55,34,18,.3)}.qm[data-template=travel-souvenir] .qm-place[data-frame=tape]:before{display:block;content:"";position:absolute;top:0;bottom:0;right:22%;border-left:2px dashed rgba(94,56,29,.5)}.qm[data-template=travel-souvenir] .qm-place[data-frame=tape] .qm-photo{width:72%;aspect-ratio:1.45;border-color:rgba(76,48,26,.42)}.qm[data-template=travel-souvenir] .qm-place[data-frame=tape] .qm-name{right:25%;text-align:left}
+.qm[data-template=travel-souvenir] .qm-place[data-frame=clip]{width:clamp(116px,16%,178px);padding:9px 9px 28px 17px;border:0;clip-path:polygon(10% 0,100% 0,100% 100%,10% 100%,0 50%);background:#caa779;box-shadow:0 10px 20px rgba(58,38,21,.38)}.qm[data-template=travel-souvenir] .qm-place[data-frame=clip] .qm-attachment{display:block;left:-6%;top:13%;width:48%;height:42px;background-image:url("__TAPE_ASSET__");transform:rotate(-8deg)}.qm[data-template=travel-souvenir] .qm-place[data-frame=clip] .qm-photo{aspect-ratio:1.42}
+.qm[data-template=travel-souvenir] .qm-place[data-frame=ticket]{width:clamp(104px,14%,158px);padding:8px 8px 30px;border:6px dotted #ead9b8;color:#4d3924;background:#d9c09a;box-shadow:0 8px 17px rgba(59,39,21,.34)}.qm[data-template=travel-souvenir] .qm-place[data-frame=ticket] .qm-photo{aspect-ratio:1}
+.qm[data-template=travel-souvenir] .qm-place[data-frame=lens]{width:clamp(134px,19%,208px);padding:8px 8px 27px;border:1px solid rgba(84,62,39,.42);border-radius:0;background:#dfc9a3;box-shadow:0 9px 18px rgba(59,40,23,.36)}.qm[data-template=travel-souvenir] .qm-place[data-frame=lens]:before{display:block;content:"";position:absolute;z-index:3;left:50%;top:7px;bottom:27px;border-left:1px solid rgba(87,64,41,.45);box-shadow:2px 0 4px rgba(77,52,28,.18)}.qm[data-template=travel-souvenir] .qm-place[data-frame=lens] .qm-photo{aspect-ratio:1.62;border-radius:0}.qm[data-template=travel-souvenir] .qm-place[data-frame=lens] .qm-name{bottom:5px;padding:0;background:transparent;box-shadow:none}.qm[data-template=travel-souvenir] .qm-photo img{filter:sepia(.24) saturate(.85) contrast(1.05)}
+.qm[data-template=urban-investigation] .qm-attachment{display:none}.qm[data-template=urban-investigation] .qm-place{color:#20272c;font-family:ui-monospace,Consolas,monospace}
+.qm[data-template=urban-investigation] .qm-place[data-frame=pin]{width:clamp(120px,17%,188px);padding:16px 12px 30px;border:0;clip-path:polygon(2% 4%,95% 0,100% 91%,92% 100%,4% 96%,0 14%);background:#d7d4ca;box-shadow:7px 8px 0 rgba(36,48,57,.2),0 12px 25px rgba(27,37,45,.28)}.qm[data-template=urban-investigation] .qm-place[data-frame=pin] .qm-attachment{display:block;left:5%;top:-17px;width:68%;height:31px;filter:grayscale(1) brightness(.72) drop-shadow(1px 2px 1px rgba(0,0,0,.5))}.qm[data-template=urban-investigation] .qm-place[data-frame=pin] .qm-photo{aspect-ratio:1.2;border:1px solid #5b6266}
+.qm[data-template=urban-investigation] .qm-place[data-frame=tape]{width:clamp(142px,21%,224px);padding:25px 7px 27px;border:4px double #2e373d;border-radius:3px;color:#e6e7e2;background:#48545c;box-shadow:7px 9px 0 rgba(28,38,45,.3),0 12px 24px rgba(20,28,34,.36)}.qm[data-template=urban-investigation] .qm-place[data-frame=tape]:before{display:block;content:"CAM.FEED";position:absolute;left:5px;right:5px;top:4px;height:17px;padding:3px 6px;color:#dce0dd;background:#20282d;font:800 .5rem/1 monospace;letter-spacing:.08em;text-align:left}.qm[data-template=urban-investigation] .qm-place[data-frame=tape] .qm-photo{aspect-ratio:1.78;border-color:#1e252a}.qm[data-template=urban-investigation] .qm-place[data-frame=tape] .qm-name{color:#eceee9;text-align:left}
+.qm[data-template=urban-investigation] .qm-place[data-frame=clip]{width:clamp(152px,23%,240px);padding:16px 8px 28px;border:0;color:#eceee9;background:#151b1f;box-shadow:0 0 0 2px #30383e,0 10px 22px rgba(17,24,29,.42)}.qm[data-template=urban-investigation] .qm-place[data-frame=clip]:before{display:block;content:"";position:absolute;left:7px;right:7px;top:4px;height:7px;background:repeating-linear-gradient(90deg,#d9dcda 0 7px,transparent 7px 14px)}.qm[data-template=urban-investigation] .qm-place[data-frame=clip] .qm-photo{aspect-ratio:2.4;border-color:#c9ceca}.qm[data-template=urban-investigation] .qm-place[data-frame=clip] .qm-name{color:#e9ece7}
+.qm[data-template=urban-investigation] .qm-place[data-frame=ticket]{width:clamp(134px,19%,208px);padding:10px 10px 29px;border:0;color:#252b2f;background:#c7bca4;box-shadow:7px 8px 0 rgba(38,49,57,.22),0 10px 22px rgba(27,37,45,.28)}.qm[data-template=urban-investigation] .qm-place[data-frame=ticket]:before{display:block;content:"";position:absolute;left:10px;top:-13px;width:44%;height:16px;background:#b9ae96;clip-path:polygon(0 100%,15% 0,100% 0,100% 100%)}.qm[data-template=urban-investigation] .qm-place[data-frame=ticket] .qm-attachment{display:block;left:50%;top:-20px;width:45px;height:48px;background-image:url("__CLIP_ASSET__");filter:grayscale(1) brightness(.75) drop-shadow(1px 3px 2px rgba(0,0,0,.45));transform:translateX(-50%)}.qm[data-template=urban-investigation] .qm-place[data-frame=ticket] .qm-photo{aspect-ratio:1.5}
+.qm[data-template=urban-investigation] .qm-place[data-frame=lens]{width:clamp(106px,14%,164px);padding:9px 9px 27px;border:8px double #444f56;border-radius:50%;color:#20272c;background:#aeb7bc;box-shadow:8px 9px 0 rgba(33,44,52,.22),0 10px 23px rgba(22,31,38,.34)}.qm[data-template=urban-investigation] .qm-place[data-frame=lens] .qm-photo{aspect-ratio:1;border:0;border-radius:50%}.qm[data-template=urban-investigation] .qm-place[data-frame=lens] .qm-name{bottom:-22px;color:#20272c;background:#d2d3cd}.qm[data-template=urban-investigation] .qm-photo img{filter:grayscale(1) contrast(1.16) brightness(.92)}
+.qm[data-template=retro-archive] .qm-attachment{display:none}.qm[data-template=retro-archive] .qm-place{font-family:ui-monospace,Consolas,monospace}
+.qm[data-template=retro-archive] .qm-place[data-frame=pin]{width:clamp(142px,21%,224px);padding:26px 6px 26px;border:4px double #202321;color:#171a18;background:#a8aaa5;box-shadow:8px 9px 0 rgba(0,0,0,.36),0 14px 28px rgba(0,0,0,.52)}.qm[data-template=retro-archive] .qm-place[data-frame=pin]:before{display:block;content:"ARCHIVE.FILE";position:absolute;left:3px;right:3px;top:3px;height:18px;padding:4px 6px;color:#e5e6e1;background:#343734;font:800 .5rem/1 monospace;letter-spacing:.05em;text-align:left}.qm[data-template=retro-archive] .qm-place[data-frame=pin] .qm-photo{aspect-ratio:1.62;border-color:#2d302e}.qm[data-template=retro-archive] .qm-place[data-frame=pin] .qm-name{text-align:left}
+.qm[data-template=retro-archive] .qm-place[data-frame=tape]{width:clamp(132px,19%,208px);padding:13px 13px 29px;border:8px solid #353a37;border-radius:17px;color:#e1e4df;background:#242825;box-shadow:inset 0 0 0 2px #0c0e0d,8px 10px 0 rgba(0,0,0,.35),0 14px 30px rgba(0,0,0,.58)}.qm[data-template=retro-archive] .qm-place[data-frame=tape] .qm-photo{aspect-ratio:1.32;border:2px solid #080a09;border-radius:13px}.qm[data-template=retro-archive] .qm-place[data-frame=tape] .qm-name{color:#e4e6e1}
+.qm[data-template=retro-archive] .qm-place[data-frame=clip]{width:clamp(118px,16%,184px);padding:26px 10px 28px;border:2px solid #717671;color:#252824;background:#b8bbb5;box-shadow:8px 9px 0 rgba(0,0,0,.3),0 13px 27px rgba(0,0,0,.5)}.qm[data-template=retro-archive] .qm-place[data-frame=clip]:before{display:block;content:"SCAN.PREVIEW";position:absolute;left:10px;top:7px;color:#333732;font:800 .48rem/1 monospace;letter-spacing:.06em}.qm[data-template=retro-archive] .qm-place[data-frame=clip] .qm-photo{aspect-ratio:1/1.18;border:2px solid #2d302d}
+.qm[data-template=retro-archive] .qm-place[data-frame=ticket]{width:clamp(154px,23%,244px);padding:20px 9px 28px;border:1px solid #494b47;color:#262824;background:#b8ae9b;box-shadow:8px 10px 0 rgba(0,0,0,.32),0 14px 28px rgba(0,0,0,.5)}.qm[data-template=retro-archive] .qm-place[data-frame=ticket]:before{display:block;content:"ARCHIVE.THUMBNAILS";position:absolute;left:14px;top:-12px;width:58%;height:24px;padding:8px 8px 0;color:#30322f;background:#aea48f;font:800 .46rem/1 monospace;text-align:left;clip-path:polygon(0 100%,9% 0,100% 0,100% 100%)}.qm[data-template=retro-archive] .qm-place[data-frame=ticket] .qm-photo{aspect-ratio:2.2;border-color:#3a3d39}
+.qm[data-template=retro-archive] .qm-place[data-frame=lens]{width:clamp(130px,18%,204px);padding:34px 10px 28px;border:1px solid #4c504c;border-radius:2px;color:#dfe1db;background:#252825;box-shadow:8px 10px 0 rgba(0,0,0,.38),0 15px 30px rgba(0,0,0,.58)}.qm[data-template=retro-archive] .qm-place[data-frame=lens]:before{display:block;content:"CONTACT.PRINT";position:absolute;left:0;right:0;top:0;height:25px;padding:8px 10px;color:#d5d8d1;background:#343834;font:800 .48rem/1 monospace;letter-spacing:.06em;text-align:left;clip-path:polygon(0 0,100% 0,93% 100%,7% 100%)}.qm[data-template=retro-archive] .qm-place[data-frame=lens] .qm-photo{aspect-ratio:1.45;border:1px solid #c5c8c1;border-radius:0}.qm[data-template=retro-archive] .qm-place[data-frame=lens] .qm-name{bottom:6px;color:#e1e3de;background:transparent;box-shadow:none;text-align:left}.qm[data-template=retro-archive] .qm-photo{background:#070908}.qm[data-template=retro-archive] .qm-photo img{filter:grayscale(1) contrast(1.25) brightness(.82)}.qm[data-template=retro-archive] .qm-photo:empty:after{color:rgba(218,221,214,.45)}
+@media(max-width:520px){.qm[data-template=travel-souvenir] .qm-place[data-frame=pin]{width:clamp(94px,31%,126px)}.qm[data-template=travel-souvenir] .qm-place[data-frame=tape]{width:clamp(110px,36%,146px)}.qm[data-template=travel-souvenir] .qm-place[data-frame=clip]{width:clamp(86px,28%,116px)}.qm[data-template=travel-souvenir] .qm-place[data-frame=ticket]{width:clamp(78px,25%,104px)}.qm[data-template=travel-souvenir] .qm-place[data-frame=lens]{width:clamp(102px,33%,136px)}.qm[data-template=urban-investigation] .qm-place[data-frame=pin]{width:clamp(90px,29%,120px)}.qm[data-template=urban-investigation] .qm-place[data-frame=tape]{width:clamp(108px,35%,144px)}.qm[data-template=urban-investigation] .qm-place[data-frame=clip]{width:clamp(116px,38%,154px)}.qm[data-template=urban-investigation] .qm-place[data-frame=ticket]{width:clamp(100px,32%,134px)}.qm[data-template=urban-investigation] .qm-place[data-frame=lens]{width:clamp(80px,26%,106px)}.qm[data-template=retro-archive] .qm-place[data-frame=pin]{width:clamp(110px,36%,146px)}.qm[data-template=retro-archive] .qm-place[data-frame=tape]{width:clamp(102px,33%,136px)}.qm[data-template=retro-archive] .qm-place[data-frame=clip]{width:clamp(88px,29%,118px)}.qm[data-template=retro-archive] .qm-place[data-frame=ticket]{width:clamp(118px,39%,158px)}.qm[data-template=retro-archive] .qm-place[data-frame=lens]{width:clamp(98px,32%,132px)}}`;
+
 function blobToDataUri(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -646,15 +719,18 @@ function buildRegexHtml(assets = assetDataUris) {
     objects: state.objects.map(item => ({ ...item })),
   };
   const configJson = safeScriptJson(config);
-  const exportedCss = `${EXPORTED_CSS}${EXPORTED_FRAME_CSS}${EXPORTED_CRIME_CSS}`
-    .replace('__DESK_BACKGROUND__', assets.deskBackground)
-    .replace('__TRAVEL_BACKGROUND__', assets.travelBackground)
-    .replace('__URBAN_BACKGROUND__', assets.urbanBackground)
-    .replace('__NOIR_BACKGROUND__', assets.noirBackground)
-    .replace('__CRIME_BACKGROUND__', assets.crimeBackground)
-    .replace('__PIN_ASSET__', assets.pin)
-    .replace('__TAPE_ASSET__', assets.tape)
-    .replace('__CLIP_ASSET__', assets.clip);
+  const exportedCss = `${EXPORTED_CSS}${EXPORTED_FRAME_CSS}${EXPORTED_CRIME_CSS}${EXPORTED_NEW_TEMPLATE_CSS}`
+    .replaceAll('__DESK_BACKGROUND__', assets.deskBackground)
+    .replaceAll('__TRAVEL_BACKGROUND__', assets.travelBackground)
+    .replaceAll('__URBAN_BACKGROUND__', assets.urbanBackground)
+    .replaceAll('__NOIR_BACKGROUND__', assets.noirBackground)
+    .replaceAll('__CRIME_BACKGROUND__', assets.crimeBackground)
+    .replaceAll('__SOUVENIR_BACKGROUND__', assets.souvenirBackground)
+    .replaceAll('__INVESTIGATION_BACKGROUND__', assets.investigationBackground)
+    .replaceAll('__ARCHIVE_BACKGROUND__', assets.archiveBackground)
+    .replaceAll('__PIN_ASSET__', assets.pin)
+    .replaceAll('__TAPE_ASSET__', assets.tape)
+    .replaceAll('__CLIP_ASSET__', assets.clip);
   return `<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -686,7 +762,7 @@ function close(){detail.classList.remove('open');detail.setAttribute('aria-hidde
 detail.addEventListener('click',function(event){if(event.target===detail)close()});detail.querySelector('.qm-back').addEventListener('click',close);
 places.forEach(function(place,placeIndex){
  connectionIds(place.connectFrom,place.id).forEach(function(fromId,connectionIndex){var from=places.find(function(item){return item.id===fromId});if(from){var x1=from.x*10,y1=from.y*6.25,x2=place.x*10,y2=place.y*6.25,direction=(placeIndex+connectionIndex)%2?1:-1,bend=Math.min(46,Math.abs(x2-x1)*.08)*direction;var path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d','M '+x1+' '+y1+' Q '+((x1+x2)/2)+' '+(((y1+y2)/2)+bend)+' '+x2+' '+y2);path.setAttribute('class','qm-route');path.dataset.status=place.status;routes.append(path)}});
- var button=document.createElement('button');button.type='button';button.className='qm-place';button.dataset.status=labels[place.status]?place.status:'unknown';button.dataset.frame=['pin','tape','clip'].includes(place.frameStyle)?place.frameStyle:'pin';button.style.setProperty('--x',Math.max(7,Math.min(93,Number(place.x)||50))+'%');button.style.setProperty('--y',Math.max(10,Math.min(90,Number(place.y)||50))+'%');button.style.setProperty('--r',Math.max(-12,Math.min(12,Number(place.rotation)||0))+'deg');button.style.setProperty('--s',Math.max(.72,Math.min(1.32,(Number(place.size)||100)/100)));button.style.setProperty('--z',Number(place.z)||1);button.setAttribute('aria-label',String(place.name||'未命名地点')+'，'+(labels[button.dataset.status]||labels.unknown));
+ var button=document.createElement('button');button.type='button';button.className='qm-place';button.dataset.status=labels[place.status]?place.status:'unknown';button.dataset.frame=['pin','tape','clip','ticket','lens'].includes(place.frameStyle)?place.frameStyle:'pin';button.style.setProperty('--x',Math.max(7,Math.min(93,Number(place.x)||50))+'%');button.style.setProperty('--y',Math.max(10,Math.min(90,Number(place.y)||50))+'%');button.style.setProperty('--r',Math.max(-12,Math.min(12,Number(place.rotation)||0))+'deg');button.style.setProperty('--s',Math.max(.72,Math.min(1.32,(Number(place.size)||100)/100)));button.style.setProperty('--z',Number(place.z)||1);button.setAttribute('aria-label',String(place.name||'未命名地点')+'，'+(labels[button.dataset.status]||labels.unknown));
  var attachment=document.createElement('span');attachment.className='qm-attachment';attachment.setAttribute('aria-hidden','true');
  var photo=document.createElement('span');photo.className='qm-photo';var url=safeUrl(place.imageUrl);if(url){var image=document.createElement('img');image.src=url;image.alt='';image.loading='lazy';image.referrerPolicy='no-referrer';photo.append(image)}
  var name=document.createElement('span');name.className='qm-name';name.textContent=place.name||'未命名地点';button.append(attachment,photo,name);
