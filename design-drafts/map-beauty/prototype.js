@@ -172,6 +172,30 @@ const defaultState = {
   ],
 };
 
+const TEMPLATE_DEFAULT_LAYOUTS = {
+  'travel-souvenir': {
+    'place-1': { x: 25, y: 25, rotation: -4, size: 110, z: 3 },
+    'place-2': { x: 76, y: 24, rotation: 3, size: 106, z: 4 },
+    'place-3': { x: 24, y: 63, rotation: 6, size: 102, z: 2 },
+    'place-4': { x: 53, y: 57, rotation: -1, size: 104, z: 5 },
+    'place-5': { x: 79, y: 72, rotation: 5, size: 108, z: 6 },
+  },
+  'urban-investigation': {
+    'place-1': { x: 23, y: 27, rotation: -3, size: 112, z: 3 },
+    'place-2': { x: 76, y: 25, rotation: 2, size: 108, z: 4 },
+    'place-3': { x: 31, y: 72, rotation: 3, size: 108, z: 2 },
+    'place-4': { x: 78, y: 72, rotation: 2, size: 105, z: 1 },
+    'place-5': { x: 53, y: 48, rotation: -5, size: 106, z: 5 },
+  },
+  'retro-archive': {
+    'place-1': { x: 21, y: 24, rotation: 0, size: 110, z: 3 },
+    'place-2': { x: 59, y: 25, rotation: 1, size: 108, z: 4 },
+    'place-3': { x: 19, y: 69, rotation: 0, size: 106, z: 2 },
+    'place-4': { x: 54, y: 72, rotation: 0, size: 112, z: 1 },
+    'place-5': { x: 80, y: 68, rotation: 1, size: 108, z: 5 },
+  },
+};
+
 const editor = document.querySelector('#map-editor');
 const canvas = document.querySelector('#map-canvas');
 const placeLayer = document.querySelector('#place-layer');
@@ -200,8 +224,8 @@ const fields = {
   size: document.querySelector('#place-size'),
 };
 
-let state = loadState();
 const requestedTemplate = new URLSearchParams(location.search).get('template');
+let state = loadState(requestedTemplate);
 if (MAP_TEMPLATES.has(requestedTemplate)) state.templateId = requestedTemplate;
 let selectedId = null;
 let mode = new URLSearchParams(location.search).get('preview') === '1' ? 'preview' : 'edit';
@@ -216,10 +240,18 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-function loadState() {
+function createDefaultState(templateId = defaultState.templateId) {
+  const next = clone(defaultState);
+  next.templateId = MAP_TEMPLATES.has(templateId) ? templateId : defaultState.templateId;
+  const layout = TEMPLATE_DEFAULT_LAYOUTS[next.templateId];
+  if (layout) next.objects = next.objects.map(item => ({ ...item, ...(layout[item.id] || {}) }));
+  return next;
+}
+
+function loadState(requestedTemplateId = '') {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (!saved || !Array.isArray(saved.objects) || !saved.objects.length) return clone(defaultState);
+    if (!saved || !Array.isArray(saved.objects) || !saved.objects.length) return createDefaultState(requestedTemplateId);
     const objects = saved.objects
       .filter(item => item && typeof item.id === 'string')
       .slice(0, 16)
@@ -229,9 +261,9 @@ function loadState() {
       templateId: MAP_TEMPLATES.has(saved.templateId) ? saved.templateId : defaultState.templateId,
       objective: objective.startsWith('等待 AI 更新') ? '' : objective,
       objects,
-    } : clone(defaultState);
+    } : createDefaultState(requestedTemplateId);
   } catch {
-    return clone(defaultState);
+    return createDefaultState(requestedTemplateId);
   }
 }
 
@@ -947,7 +979,7 @@ previewToggle.addEventListener('click', () => {
 document.querySelector('#reset-button').addEventListener('click', () => {
   if (!window.confirm('恢复地点初始布局？当前地点草稿会被覆盖。')) return;
   const templateId = state.templateId;
-  state = { ...clone(defaultState), templateId };
+  state = createDefaultState(templateId);
   selectedId = null;
   connectionStartId = null;
   save();
