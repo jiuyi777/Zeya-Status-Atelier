@@ -87,7 +87,7 @@ test('long mobile opening editors are collapsed independently', () => {
 });
 
 test('status workspace exposes component, palette, real avatar and audio controls', () => {
-    for (const id of ['status-atelier-structure', 'status-atelier-status-styles', 'status-atelier-status-palettes', 'status-atelier-avatar-source', 'status-atelier-avatar-url', 'status-atelier-image-url', 'status-atelier-audio-url', 'status-atelier-test-ai']) {
+    for (const id of ['status-atelier-structure', 'status-atelier-forum-skins', 'status-atelier-status-styles', 'status-atelier-status-palettes', 'status-atelier-avatar-source', 'status-atelier-avatar-url', 'status-atelier-image-url', 'status-atelier-audio-url', 'status-atelier-test-ai']) {
         assert.match(settingsMarkup, new RegExp(`id="${id}"`));
     }
     assert.match(settingsMarkup, /20 套外观/);
@@ -200,8 +200,8 @@ test('modal and palettes stay inside mobile viewport and palette library is coll
     assert.doesNotMatch(source, /status-atelier-status-logo-library/);
     assert.match(source, /structure: 'phone'/);
     assert.match(source, /PHONE_STRUCTURE_IDS = Object\.freeze\(\['phone', 'profile', 'social', 'forum', 'chat', 'music', 'casefile', 'quest'\]\)/);
-    assert.match(settingsMarkup, /24 套色卡（可折叠）/);
-    assert.match(settingsMarkup, /20 套外观（可折叠）/);
+    assert.match(settingsMarkup, /<summary><strong>24 套色卡<\/strong><\/summary>/);
+    assert.match(settingsMarkup, /<summary><strong>20 套外观<\/strong><\/summary>/);
     assert.match(styleSource, /max-height:\s*calc\(100dvh - 12px - env\(safe-area-inset-top\) - env\(safe-area-inset-bottom\)\)/);
     assert.match(styleSource, /\.status-atelier-dialog-body\s*\{[\s\S]*?overflow-y:\s*auto;[\s\S]*?overscroll-behavior:\s*contain;/);
 });
@@ -256,16 +256,30 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.doesNotMatch(settingsMarkup, /模板决定完整构图与交互/);
     assert.doesNotMatch(settingsMarkup, /换素材与动效|都是独立模板/);
     assert.match(settingsMarkup, /status-atelier-setting-section status-atelier-collapsible" open>[\s\S]*?选择状态栏模板/);
-    assert.match(settingsMarkup, /外观改字体、边框、材质、圆角和组件造型/);
-    assert.match(settingsMarkup, /色卡只改颜色/);
+    assert.doesNotMatch(settingsMarkup, /外观改字体、边框、材质、圆角和组件造型|色卡只控制颜色/);
     assert.match(settingsMarkup, /id="status-atelier-appearance-section"[^>]*>[\s\S]*?<h4>更多外观与配色<\/h4>/);
-    assert.match(source, /appearanceSection\.hidden = stored\.structure === 'phone'/);
+    assert.match(source, /appearanceSection\.hidden = \['phone', 'forum'\]\.includes\(stored\.structure\)/);
+    assert.match(source, /forumSkinButton[\s\S]*?settings\(\)\.forumSkin = skin\.id/);
+    assert.match(settingsMarkup, /<details id="status-atelier-forum-skins-section"[^>]*status-atelier-collapsible[^>]*open hidden>/);
+    assert.doesNotMatch(settingsMarkup, /每套都会更换排版方式、示例站名和回复语气/);
+    assert.doesNotMatch(settingsMarkup, /把 AI 输出规则写进当前角色世界书，并更新当前角色的局部正则/);
+    assert.match(styleSource, /status-atelier-forum-skin\[aria-pressed="true"\][\s\S]*?background: rgba\(250, 248, 241, \.9\) !important/);
+    assert.match(source, /status-atelier-forum-field-slot/);
+    assert.match(source, /AI 怎么写这项（可选）/);
+    assert.match(source, /isRestrictedPage[\s\S]*?深\(\?:页\|夜\)档案/);
     assert.match(styleSource, /\.status-atelier-workbench \[hidden\] \{\s*display: none !important;/);
     assert.match(settingsMarkup, /id="status-atelier-phone-petals-enabled"[^>]*type="checkbox"/);
     assert.match(source, /'status-atelier-phone-petals-enabled': 'petalsEnabled'/);
     assert.match(settingsMarkup, /id="status-atelier-phone-diy" class="status-atelier-setting-section status-atelier-collapsible">/);
     assert.doesNotMatch(settingsMarkup, /选择本地壁纸|status-atelier-phone-wallpaper-file/);
-    assert.match(settingsMarkup, /双击字段名修改 · 拖动字段排序/);
+    assert.match(source, /forumPreviewDraftForSkin/);
+    assert.doesNotMatch(source, /status-atelier-forum-edit-toggle|forumPreviewEditMode/);
+    assert.match(source, /dataForumPreviewEditable|forumPreviewEditable/);
+    assert.match(source, /node\.contentEditable = 'true'/);
+    assert.match(source, /node\.title = '点击即可修改'/);
+    assert.match(source, /updateForumPageLabel/);
+    assert.match(styleSource, /status-atelier-forum-preview \[data-forum-preview-editable="true"\]:focus/);
+    assert.match(styleSource, /@media \(max-width: 720px\)[\s\S]*?status-atelier-forum-skins[\s\S]*?repeat\(2, minmax\(0, 1fr\)\)/);
     for (const removedId of ['status-atelier-title', 'status-atelier-subtitle', 'status-atelier-layout', 'status-atelier-theme']) {
         assert.doesNotMatch(settingsMarkup, new RegExp(`id="${removedId}"`));
     }
@@ -280,8 +294,8 @@ test('status workbench separates templates, appearance and palettes and supports
     for (const removedSlider of ['wallpaper-x', 'wallpaper-y', 'widget-x', 'widget-y', 'avatar-x', 'avatar-y']) {
         assert.doesNotMatch(settingsMarkup, new RegExp(`id="status-atelier-phone-${removedSlider}"`));
     }
-    assert.match(settingsMarkup, /取景和缩放直接在右侧“个人”页头像上完成/);
-    assert.match(settingsMarkup, /图标留空时使用配套默认图标/);
+    assert.doesNotMatch(settingsMarkup, /取景和缩放直接在右侧“个人”页头像上完成/);
+    assert.doesNotMatch(settingsMarkup, /图标留空时使用配套默认图标/);
     assert.doesNotMatch(settingsMarkup, /data-phone-widget-nudge|data-phone-avatar-adjust|data-phone-widget-(?:up|down)/);
     assert.match(source, /function bindPhonePersonalFieldLabelEditor/);
     assert.match(source, /phoneDesktop\.personalFields/);

@@ -5,10 +5,13 @@ import {
     STATUS_STRUCTURE_PRESETS,
     STATUS_THEME_CSS,
     STATUS_PHONE_CSS,
+    FORUM_THEME_CSS,
+    FORUM_SKIN_PRESETS,
     buildAiInstruction,
     buildRegexScript,
     buildWorldbookJson,
     makePreviewRecords,
+    isDefaultForumPagesText,
     normalizePhoneDesktop,
     normalizeRule,
     parseStatusOutput,
@@ -198,6 +201,8 @@ const DEFAULT_SETTINGS = Object.freeze({
     sharedFieldsText: PHONE_STRUCTURE_DEFAULT.shared.map(item => item.join('|')).join('\n'),
     pageFieldsText: PHONE_STRUCTURE_DEFAULT.fields.map(item => item.join('|')).join('\n'),
     variant: 'auto',
+    forumSkin: 'mist-bbs',
+    forumPreviewDrafts: {},
     paletteId: 'ice-blue',
     media: { avatarSource: 'character', avatarUrl: '', imageUrl: '', audioUrl: '', imageAlt: '状态栏配图' },
     phoneDesktop: PHONE_DESKTOP_DEFAULTS,
@@ -334,6 +339,9 @@ function settings() {
     }
     if (!stored.statusWorldbookBindings || typeof stored.statusWorldbookBindings !== 'object' || Array.isArray(stored.statusWorldbookBindings)) {
         stored.statusWorldbookBindings = {};
+    }
+    if (!stored.forumPreviewDrafts || typeof stored.forumPreviewDrafts !== 'object' || Array.isArray(stored.forumPreviewDrafts)) {
+        stored.forumPreviewDrafts = {};
     }
     if (stored.openingProfilesMigrated !== true) {
         stored.openingLegacyBackup = clone(stored.openingHome || OPENING_HOME_DEFAULTS);
@@ -632,6 +640,38 @@ function renderStatusDesignControls() {
     const avatarUrlLabel = field('status-atelier-avatar-url-wrap');
     if (avatarUrlLabel) avatarUrlLabel.hidden = media.avatarSource !== 'url';
     renderPhoneDesktopControls();
+    renderForumSkinControls();
+}
+
+function renderForumSkinControls() {
+    const section = field('status-atelier-forum-skins-section');
+    const host = field('status-atelier-forum-skins');
+    const forumMode = settings().structure === 'forum';
+    if (section) section.hidden = !forumMode;
+    if (!host) return;
+    if (host.children.length !== FORUM_SKIN_PRESETS.length) {
+        host.replaceChildren();
+        FORUM_SKIN_PRESETS.forEach(skin => {
+            const button = makeElement('button', 'status-atelier-forum-skin');
+            button.type = 'button';
+            button.dataset.forumSkin = skin.id;
+            button.dataset.forumLayout = skin.layout;
+            const layout = makeElement('span', `status-atelier-forum-skin-layout is-${skin.layout}`);
+            layout.setAttribute('aria-hidden', 'true');
+            layout.append(makeElement('i'), makeElement('i'), makeElement('i'));
+            const swatches = makeElement('span', 'status-atelier-forum-skin-swatches');
+            skin.swatches.forEach(colorValue => {
+                const dot = makeElement('i');
+                dot.style.background = colorValue;
+                swatches.append(dot);
+            });
+            button.append(layout, makeElement('b', '', skin.name), swatches);
+            host.append(button);
+        });
+    }
+    host.querySelectorAll('[data-forum-skin]').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.forumSkin === settings().forumSkin));
+    });
 }
 
 function renderPhoneDesktopControls() {
@@ -640,7 +680,7 @@ function renderPhoneDesktopControls() {
     const section = field('status-atelier-phone-diy');
     if (section) section.hidden = stored.structure !== 'phone';
     const appearanceSection = field('status-atelier-appearance-section');
-    if (appearanceSection) appearanceSection.hidden = stored.structure === 'phone';
+    if (appearanceSection) appearanceSection.hidden = ['phone', 'forum'].includes(stored.structure);
     renderTemplateMediaControls();
     for (const [id, key] of Object.entries(PHONE_DESKTOP_FIELDS)) {
         const control = field(id);
@@ -662,7 +702,7 @@ function renderTemplateMediaControls() {
     const structure = settings().structure;
     const section = field('status-atelier-template-media');
     if (!section) return;
-    const usesAvatar = ['profile', 'social', 'forum', 'chat', 'casefile'].includes(structure);
+    const usesAvatar = ['profile', 'social', 'chat', 'casefile'].includes(structure);
     const usesImage = ['social', 'collage', 'music'].includes(structure);
     const usesAudio = structure === 'music';
     section.hidden = structure === 'phone' || (!usesAvatar && !usesImage && !usesAudio);
@@ -692,6 +732,7 @@ function applyStatusStructure(structureId) {
     const stored = settings();
     stored.structure = structure.id;
     stored.variant = 'auto';
+    if (structure.id === 'forum' && !FORUM_SKIN_PRESETS.some(item => item.id === stored.forumSkin)) stored.forumSkin = 'mist-bbs';
     stored.title = structure.title;
     stored.subtitle = structure.subtitle;
     stored.layout = structure.layout;
@@ -718,6 +759,7 @@ function applyStatusStructure(structureId) {
     renderStatusSchema();
     renderModalStatusSchema();
     renderPhoneDesktopControls();
+    renderForumSkinControls();
     scheduleStatusPreviewUpdate();
 }
 
@@ -754,16 +796,38 @@ function renderStatusSchema() {
     const host = field('status-atelier-status-schema');
     if (!host) return;
     const phoneMode = settings().structure === 'phone';
+    const forumMode = settings().structure === 'forum';
     const addButton = field('status-atelier-add-field');
-    if (addButton) addButton.hidden = phoneMode;
+    if (addButton) {
+        addButton.hidden = phoneMode;
+        addButton.textContent = forumMode ? '＋ 增加一条回复' : '＋ 新增字段';
+    }
     const editLegend = field('status-atelier-edit-legend');
     if (editLegend) editLegend.hidden = phoneMode;
+    const legendItems = editLegend?.querySelectorAll('span') || [];
+    if (forumMode && legendItems.length >= 3) {
+        legendItems[0].innerHTML = '<b>字段名称</b> 会显示在右侧预览对应位置';
+        legendItems[1].innerHTML = '<b>回复楼层</b> 默认 12 条，也可以继续增加或删除';
+        legendItems[2].innerHTML = '<b>AI 怎么写</b> 是提示规则，不是让你手填帖子正文';
+    } else if (!phoneMode && legendItems.length >= 3) {
+        legendItems[0].innerHTML = '<b>可修改</b> 名称、类型、填写要求和顺序';
+        legendItems[1].innerHTML = '<b>AI 填写</b> 好感度、生命值、地点、独白等动态内容';
+        legendItems[2].innerHTML = '<b>自动锁定</b> 字段 key、标签和捕获结构';
+    }
     const editorTitle = field('status-atelier-status-editor-title');
     const editorHelp = field('status-atelier-status-editor-help');
-    if (editorTitle) editorTitle.textContent = phoneMode ? '个人页显示与 AI 规则' : '字段显示与 AI 规则';
+    const previewHelp = field('status-atelier-preview-help');
+    if (editorTitle) editorTitle.textContent = phoneMode ? '个人页显示与 AI 规则' : forumMode ? '论坛版块与回复字段' : '字段显示与 AI 规则';
     if (editorHelp) editorHelp.textContent = phoneMode
         ? '字段名称在右侧“个人”页双击修改；这里只设置显示类型和 AI 填写要求。'
-        : '名称和顺序直接在预览修改；这里只设置显示类型和 AI 填写要求。';
+        : forumMode
+            ? '每版默认 12 楼：主楼 4–6 句，其余每楼 1–3 句；楼层仍可增加、删除或调整顺序。'
+            : '名称和顺序直接在预览修改；这里只设置显示类型和 AI 填写要求。';
+    if (previewHelp) previewHelp.textContent = forumMode
+        ? '主楼 4–6 句 · 其余 1–3 句 · 昵称与内容由 AI 动态生成'
+        : phoneMode
+            ? '双击个人页字段名修改 · 桌面组件可拖动'
+            : '双击字段名修改 · 拖动字段排序 · 数值由 AI 填写';
     if (phoneMode) {
         const phone = settings().phoneDesktop;
         phone.personalFields ??= clone(PHONE_DESKTOP_DEFAULTS.personalFields);
@@ -802,9 +866,23 @@ function renderStatusSchema() {
     }
     const definitions = fieldDefinitions();
     host.replaceChildren();
+    let lastScope = null;
     definitions.forEach((definition, index) => {
-        const row = makeElement('article', 'status-atelier-schema-row');
-        row.append(makeElement('span', 'status-atelier-schema-drag', '⠿'));
+        if (forumMode && definition.scope !== lastScope) {
+            host.append(makeElement('h5', 'status-atelier-forum-field-group', definition.scope === 'shared' ? '全站固定位置' : '每个版块都会生成'));
+            lastScope = definition.scope;
+        }
+        const row = makeElement('article', `status-atelier-schema-row${forumMode ? ' is-forum' : ''}`);
+        const postNumber = Number(definition.id.match(/^post_(\d+)$/)?.[1]);
+        const forumPlaces = {
+            forum_title: '顶部站名', forum_notice: '顶部公告', board_title: '版块标签',
+            thread_title: '主题标题', tags: '主题标签',
+        };
+        row.append(makeElement(
+            'span',
+            forumMode ? 'status-atelier-forum-field-slot' : 'status-atelier-schema-drag',
+            forumMode ? (Number.isFinite(postNumber) ? `第 ${postNumber} 楼` : forumPlaces[definition.id] || '版块内容') : '⠿',
+        ));
         const label = makeElement('input', 'text_pole');
         label.value = definition.label;
         label.title = '可修改：显示名称';
@@ -816,9 +894,9 @@ function renderStatusSchema() {
         });
         kind.value = definition.kind;
         const actions = makeElement('div', 'status-atelier-schema-actions');
-        const up = makeElement('button', 'status-atelier-schema-remove', '↑');
-        const down = makeElement('button', 'status-atelier-schema-remove', '↓');
-        const remove = makeElement('button', 'status-atelier-schema-remove', '×');
+        const up = makeElement('button', `status-atelier-schema-remove${forumMode ? ' is-text' : ''}`, forumMode ? '上移' : '↑');
+        const down = makeElement('button', `status-atelier-schema-remove${forumMode ? ' is-text' : ''}`, forumMode ? '下移' : '↓');
+        const remove = makeElement('button', `status-atelier-schema-remove${forumMode ? ' is-text' : ''}`, forumMode ? '删除' : '×');
         [up, down, remove].forEach(button => { button.type = 'button'; });
         const scopedDefinitions = definitions.filter(item => item.scope === definition.scope);
         const scopedPosition = scopedDefinitions.findIndex(item => item.id === definition.id);
@@ -831,16 +909,27 @@ function renderStatusSchema() {
         down.addEventListener('click', () => moveFieldDefinition(definitions, index, 1));
         remove.addEventListener('click', () => { definitions.splice(index, 1); serializeFieldDefinitions(definitions); renderStatusSchema(); });
         actions.append(up, down, remove);
-        const key = makeElement('span', 'status-atelier-schema-key', `🔒 ${definition.id}`);
         const details = makeElement('details');
-        details.append(makeElement('summary', '', 'AI 填写要求'));
+        details.append(makeElement('summary', '', 'AI 怎么写这项（可选）'));
+        if (forumMode) {
+            details.append(makeElement(
+                'p',
+                'status-atelier-forum-ai-help',
+                Number.isFinite(postNumber)
+                    ? `这里写“第 ${postNumber} 楼”的语气或规则，例如：口语化、回应上一楼。不是直接填写帖子正文。`
+                    : '这里写给 AI 的生成规则；右侧示例内容会在真实聊天时自动替换。',
+            ));
+            details.open = definition.id === 'post_1';
+        }
         const instruction = makeElement('textarea', 'text_pole');
         instruction.value = definition.instruction;
         details.append(instruction);
         label.addEventListener('input', () => { definition.label = label.value; serializeFieldDefinitions(definitions); });
         kind.addEventListener('change', () => { definition.kind = kind.value; serializeFieldDefinitions(definitions); });
         instruction.addEventListener('input', () => { definition.instruction = instruction.value; serializeFieldDefinitions(definitions); });
-        row.append(label, kind, actions, key, details);
+        row.append(label, kind, actions);
+        if (!forumMode) row.append(makeElement('span', 'status-atelier-schema-key', `🔒 ${definition.id}`));
+        row.append(details);
         host.append(row);
     });
     if (!definitions.length) host.append(makeElement('p', 'status-atelier-empty', '当前没有字段，点击“新增字段”开始。'));
@@ -848,6 +937,23 @@ function renderStatusSchema() {
 
 function addStatusField() {
     const definitions = fieldDefinitions();
+    if (settings().structure === 'forum') {
+        const postNumbers = definitions
+            .map(item => Number(item.id.match(/^post_(\d+)$/)?.[1]))
+            .filter(Number.isFinite);
+        const nextPost = Math.max(0, ...postNumbers) + 1;
+        definitions.push({
+            id: `post_${nextPost}`,
+            label: `回复 ${nextPost}`,
+            instruction: '严格填写 楼层号◆作者名◆ID:四到八位字符◆MM/DD HH:mm◆单段正文；正文可用>>数字引用其他楼层',
+            kind: 'long',
+            scope: 'page',
+        });
+        serializeFieldDefinitions(definitions);
+        renderStatusSchema();
+        renderModalStatusSchema();
+        return;
+    }
     let index = definitions.length + 1;
     let key = `custom_${index}`;
     const used = new Set(definitions.map(item => item.id));
@@ -906,6 +1012,7 @@ function applyPreset(name) {
         favoriteHomeTemplates: stored.favoriteHomeTemplates,
         favoriteStatusTemplates: stored.favoriteStatusTemplates,
         structure: stored.structure,
+        forumSkin: stored.forumSkin,
         paletteId: stored.paletteId,
         media: stored.media,
     };
@@ -1595,6 +1702,7 @@ function resolvedStatusInput(source = settings()) {
         subtitle: source.subtitle,
         theme: source.theme,
         structure: source.structure,
+        forumSkin: source.forumSkin,
         variant: source.variant,
         paletteId: source.paletteId,
         palette: source.palette && typeof source.palette === 'object' ? { ...source.palette } : undefined,
@@ -1929,22 +2037,6 @@ function appendPreviewField(host, definition, value, shared = false, glyph = '�
     item.dataset.kind = definition.kind;
     item.dataset.field = definition.id || '';
     item.dataset.previewScope = scope;
-    if (rule?.structure === 'forum' && definition.id === 'floor_user') {
-        const avatar = rule.media.avatarUrl
-            ? makeElement('img', 'status-atelier-preview-forum-avatar zrs-forum-avatar')
-            : makeElement('span', 'status-atelier-preview-forum-avatar zrs-forum-avatar is-placeholder', glyph);
-        if (rule.media.avatarUrl) {
-            avatar.src = rule.media.avatarUrl;
-            avatar.alt = rule.media.imageAlt || '当前角色头像';
-            avatar.loading = 'lazy';
-            avatar.addEventListener('error', () => {
-                avatar.removeAttribute('src');
-                avatar.classList.add('is-placeholder');
-                avatar.textContent = glyph;
-            });
-        }
-        item.append(avatar);
-    }
     const label = makeElement('span', 'status-atelier-preview-label zrs-label', definition.label);
     const dragHandle = makeElement('button', 'status-atelier-preview-field-drag', '⋮⋮');
     dragHandle.type = 'button';
@@ -2107,6 +2199,299 @@ function bindPhoneAvatarDiy(avatarHolder, avatarImage) {
     }, { passive: false });
 }
 
+function forumAvatarForName(name) {
+    const glyphs = ['🦊', '🐈', '🌙', '🍵', '🎧', '📚', '🪐', '🕯️', '☂️', '🌿', '🎲', '🫧'];
+    const value = String(name || '匿名用户');
+    let hash = 17;
+    for (const character of value) hash = ((hash * 31) + character.codePointAt(0)) >>> 0;
+    return { glyph: glyphs[hash % glyphs.length], tone: String(hash % 6) };
+}
+
+function forumPreviewDraftForSkin(skinId) {
+    const drafts = settings().forumPreviewDrafts;
+    drafts[skinId] ??= { pages: [] };
+    if (!Array.isArray(drafts[skinId].pages)) drafts[skinId].pages = [];
+    return drafts[skinId];
+}
+
+function updateForumPageLabel(pageIndex, label) {
+    const stored = settings();
+    const lines = String(stored.pagesText || '').split(/\r?\n/).filter(line => line.trim());
+    if (!lines[pageIndex]) return;
+    const parts = lines[pageIndex].split('|');
+    parts[0] = label;
+    lines[pageIndex] = parts.join('|');
+    stored.pagesText = lines.join('\n');
+    const pagesControl = field('status-atelier-pages');
+    if (pagesControl) pagesControl.value = stored.pagesText;
+}
+
+function renderForumPreview(host, previewRecords) {
+    if (!host) return;
+    const { rule, shared, pages } = previewRecords;
+    const skin = FORUM_SKIN_PRESETS.find(item => item.id === rule.forumSkin) || FORUM_SKIN_PRESETS[0];
+    const draft = forumPreviewDraftForSkin(skin.id);
+    const draftPageAt = index => {
+        draft.pages[index] ??= { posts: [] };
+        if (!Array.isArray(draft.pages[index].posts)) draft.pages[index].posts = [];
+        return draft.pages[index];
+    };
+    const root = makeElement('main', 'forum-2ch status-atelier-forum-preview');
+    root.dataset.forumSkin = skin.id;
+    const bindEditable = (node, saveValue, { maxLength = 600, multiline = false } = {}) => {
+        node.dataset.forumPreviewEditable = 'true';
+        node.tabIndex = 0;
+        node.contentEditable = 'true';
+        node.title = '点击即可修改';
+        let originalValue = node.textContent;
+        let cancelled = false;
+        const commit = () => {
+            const nextValue = String(cancelled ? originalValue : node.textContent || '')
+                .replace(/\s+/g, multiline ? ' ' : ' ')
+                .trim()
+                .slice(0, maxLength);
+            cancelled = false;
+            if (!nextValue) {
+                node.textContent = originalValue;
+                return;
+            }
+            originalValue = nextValue;
+            node.textContent = nextValue;
+            saveValue(nextValue);
+            saveSettingsSoon({ snapshotOpening: false });
+        };
+        node.addEventListener('blur', commit);
+        node.addEventListener('keydown', event => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                cancelled = true;
+                node.blur();
+                return;
+            }
+            if (event.key === 'Enter' && (!multiline || event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                node.blur();
+            }
+        });
+        node.addEventListener('click', event => {
+            event.stopPropagation();
+        });
+        return node;
+    };
+    const header = makeElement('header', 'forum-header');
+    const brand = makeElement('div', 'forum-brand');
+    const forumTitle = makeElement('h1', 'forum-title', draft.title || shared[0] || '匿名剧情观察站');
+    bindEditable(forumTitle, value => { draft.title = value; }, { maxLength: 60 });
+    brand.append(
+        makeElement('p', 'forum-kicker', skin.kicker),
+        forumTitle,
+    );
+    const presence = makeElement('div', 'forum-presence', draft.presence || skin.presence);
+    bindEditable(presence, value => { draft.presence = value; }, { maxLength: 30 });
+    header.append(brand, presence);
+    const notice = makeElement('div', 'forum-notice', draft.notice || shared[1] || '禁止灌水；引用楼层时请使用 >>编号。');
+    bindEditable(notice, value => { draft.notice = value; }, { maxLength: 120 });
+    const tabs = makeElement('nav', 'forum-tabs');
+    tabs.setAttribute('role', 'tablist');
+    tabs.setAttribute('aria-label', '论坛版块切换');
+    const panel = makeElement('section', 'forum-board-panel');
+    panel.setAttribute('role', 'tabpanel');
+    panel.setAttribute('aria-live', 'polite');
+    const footer = makeElement('footer', 'forum-footer', draft.footer || skin.footer);
+    bindEditable(footer, value => { draft.footer = value; }, { maxLength: 100 });
+    root.append(header, notice, tabs, panel, footer);
+
+    const forumRecord = (page, values) => Object.fromEntries(
+        (page?.fields || rule.pageFields).map((definition, index) => [definition.id, values[index] || '']),
+    );
+    const parseForumPost = (value, fallbackNumber, sourceLabel) => {
+        const parts = String(value || '').split('◆');
+        const body = parts.slice(4).join('◆').trim();
+        if (parts.length < 5 || !body) return null;
+        return {
+            num: String(parts[0] || fallbackNumber).trim().replace(/^#/, ''),
+            name: String(parts[1] || '匿名用户').trim(),
+            id: String(parts[2] || 'ID:----').trim(),
+            time: String(parts[3] || '--/-- --:--').trim(),
+            body,
+            sourceLabel: String(sourceLabel || `帖子${fallbackNumber}`),
+        };
+    };
+    const appendForumBody = (hostElement, text) => {
+        String(text || '').split(/(>>\d+)/g).forEach(part => {
+            if (!part) return;
+            hostElement.append(/^>>\d+$/.test(part)
+                ? makeElement('span', 'forum-quote-ref', part)
+                : document.createTextNode(part));
+        });
+    };
+    const renderForumPage = (page, values, pageIndex) => {
+        panel.replaceChildren();
+        const pageDraft = draftPageAt(pageIndex);
+        const data = forumRecord(page, values);
+        if (pageDraft.boardTitle) data.board_title = pageDraft.boardTitle;
+        const postDefinitions = (page?.fields || rule.pageFields).filter(definition => /^post_\d+$/.test(definition.id));
+        const posts = postDefinitions
+            .map((definition, index) => parseForumPost(data[definition.id], index + 1, definition.label))
+            .filter(Boolean);
+        const skinMeta = {
+            'tieba-thread': [`主题 0${pageIndex + 1} · 回复 ${posts.length}`, '只看主题'],
+            'douban-group': [`来自小组 · ${data.board_title || page.label}`, `${posts.length} 条回应`],
+            'paranormal-case': [`天涯社区 > ${data.board_title || page.label}`, `本页 ${pageIndex + 1}/${pages.length} · 回复 ${posts.length}`],
+        }[skin.id] || [`BOARD 0${pageIndex + 1} / RES ${posts.length}`, '読み込み完了'];
+        const meta = makeElement('div', 'forum-board-meta');
+        meta.append(
+            makeElement('span', '', skinMeta[0]),
+            makeElement('span', '', skinMeta[1]),
+        );
+        const threadHead = makeElement('div', 'forum-thread-head');
+        const threadTitle = makeElement('h2', 'forum-thread-title', data.thread_title || 'X');
+        const threadTags = makeElement('div', 'forum-tags', data.tags || 'X');
+        threadHead.append(
+            threadTitle,
+            threadTags,
+        );
+        const postList = makeElement('div', 'forum-post-list');
+        if (!posts.length) postList.append(makeElement('div', 'forum-empty', 'まだ書き込みがありません'));
+        posts.forEach(post => {
+            const item = makeElement('article', 'forum-post');
+            const metaRow = makeElement('div', 'forum-post-meta');
+            const replyLabel = skin.id === 'ao3-archive'
+                ? `读者评论 ${post.num}`
+                : skin.id === 'jj-forum'
+                    ? `回帖 ${post.num}`
+                    : skin.id === 'tieba-thread'
+                        ? `${post.num} 楼`
+                        : skin.id === 'douban-group'
+                            ? `回应 ${post.num}`
+                            : skin.id === 'paranormal-case'
+                                ? `第 ${post.num} 楼`
+                                : `楼层 ${post.num}`;
+            metaRow.append(
+                makeElement('span', 'forum-post-field', replyLabel),
+                makeElement('span', 'forum-post-num', post.num),
+            );
+            if (['tieba-thread', 'douban-group', 'paranormal-case'].includes(skin.id)) {
+                const avatar = forumAvatarForName(`${post.name}-${post.num}`);
+                const avatarNode = makeElement('span', 'forum-post-avatar', avatar.glyph);
+                avatarNode.dataset.avatarTone = avatar.tone;
+                metaRow.append(avatarNode);
+            }
+            const author = makeElement('span', 'forum-post-author', post.name);
+            metaRow.append(
+                author,
+                makeElement('span', 'forum-post-id', post.id),
+                makeElement('time', 'forum-post-time', post.time),
+            );
+            const body = makeElement('div', 'forum-post-body');
+            appendForumBody(body, post.body);
+            item.append(metaRow, body);
+            postList.append(item);
+        });
+        panel.append(meta, threadHead, postList);
+    };
+
+    const isRestrictedPage = page => /深(?:页|夜)档案/.test(String(page?.label || ''));
+    const unlocked = pages.map(({ page }) => !isRestrictedPage(page));
+    let pendingIndex = null;
+    let pendingButton = null;
+    const modal = makeElement('div', 'forum-confirm');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', '进入深页档案');
+    const modalBox = makeElement('div', 'forum-confirm-box');
+    modalBox.append(makeElement('div', 'forum-confirm-mark', 'DEEP ARCHIVE'));
+    const modalTitle = makeElement('h2', 'forum-confirm-title', '进入深页档案');
+    modalBox.append(
+        modalTitle,
+        makeElement('p', 'forum-confirm-copy', '只有这个版块需要确认。进入后，本次查看不会再次询问。'),
+    );
+    const modalActions = makeElement('div', 'forum-confirm-actions');
+    const cancel = makeElement('button', 'forum-confirm-button', '返回');
+    cancel.type = 'button';
+    const confirm = makeElement('button', 'forum-confirm-button is-primary', '确认进入');
+    confirm.type = 'button';
+    modalActions.append(cancel, confirm);
+    modalBox.append(modalActions);
+    modal.append(modalBox);
+    root.append(modal);
+
+    const closeConfirm = restoreFocus => {
+        modal.classList.remove('is-visible');
+        if (restoreFocus) pendingButton?.focus();
+        pendingIndex = null;
+        pendingButton = null;
+    };
+    const showPage = index => {
+        const record = pages[index];
+        if (!record) return;
+        renderForumPage(record.page, record.values || [], index);
+        [...tabs.children].forEach((button, buttonIndex) => {
+            const active = buttonIndex === index;
+            button.classList.toggle('is-active', active);
+            button.setAttribute('aria-selected', String(active));
+            button.tabIndex = active ? 0 : -1;
+        });
+    };
+    pages.forEach(({ page, values }, index) => {
+        const pageDraft = draftPageAt(index);
+        const boardName = pageDraft.boardTitle || forumRecord(page, values).board_title || page.label;
+        const restricted = isRestrictedPage(page);
+        const button = makeElement('button', 'forum-tab');
+        button.type = 'button';
+        button.setAttribute('role', 'tab');
+        button.setAttribute('aria-selected', 'false');
+        button.setAttribute('aria-label', `${boardName}${restricted ? '，需要确认进入' : ''}`);
+        button.dataset.forumLabel = boardName;
+        if (restricted) button.append(makeElement('span', 'forum-tab-lock', '确认进入'));
+        const tabName = makeElement('span', 'forum-tab-name', boardName);
+        bindEditable(tabName, value => {
+            pageDraft.boardTitle = value;
+            button.dataset.forumLabel = value;
+            button.setAttribute('aria-label', `${value}${restricted ? '，需要确认进入' : ''}`);
+            updateForumPageLabel(index, value);
+        }, { maxLength: 20 });
+        button.append(tabName);
+        button.addEventListener('click', () => {
+            if (!unlocked[index]) {
+                pendingIndex = index;
+                pendingButton = button;
+                modal.classList.add('is-visible');
+                confirm.focus();
+                return;
+            }
+            showPage(index);
+        });
+        tabs.append(button);
+    });
+    cancel.addEventListener('click', () => closeConfirm(true));
+    confirm.addEventListener('click', () => {
+        if (pendingIndex === null) return;
+        const index = pendingIndex;
+        const button = pendingButton;
+        unlocked[index] = true;
+        closeConfirm(false);
+        if (button) {
+            button.classList.add('is-unlocked');
+            button.querySelector('.forum-tab-lock')?.remove();
+            button.setAttribute('aria-label', button.dataset.forumLabel || button.textContent.trim());
+        }
+        showPage(index);
+        button?.focus();
+    });
+    modal.addEventListener('click', event => {
+        if (event.target === modal) closeConfirm(true);
+    });
+    root.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && modal.classList.contains('is-visible')) closeConfirm(true);
+    });
+
+    const style = document.createElement('style');
+    style.textContent = FORUM_THEME_CSS;
+    host.replaceChildren(style, root);
+    showPage(0);
+}
+
 function renderStatusPreview(host) {
     if (!host) return;
     if (!document.querySelector('#status-atelier-exported-theme-css')) {
@@ -2126,6 +2511,10 @@ function renderStatusPreview(host) {
     const previewInput = resolvedStatusInput();
     const previewRecords = statusAiTestRecords || makePreviewRecords(previewInput);
     const { rule, shared, pages } = previewRecords;
+    if (rule.structure === 'forum') {
+        renderForumPreview(host, previewRecords);
+        return;
+    }
     const root = makeElement('section', 'status-atelier-rule-preview zeya-regex-status');
     root.dataset.theme = rule.theme;
     root.dataset.structure = rule.structure;
@@ -2238,7 +2627,7 @@ function renderStatusPreview(host) {
         image.addEventListener('error', () => image.remove());
         mediaHost.append(image);
     };
-    if (rule.structure !== 'forum' && !hasAvatarField) addPreviewImage(rule.media.avatarUrl, 'status-atelier-preview-avatar zrs-avatar', rule.media.imageAlt);
+    if (!hasAvatarField) addPreviewImage(rule.media.avatarUrl, 'status-atelier-preview-avatar zrs-avatar', rule.media.imageAlt);
     addPreviewImage(rule.media.imageUrl, 'status-atelier-preview-cover zrs-cover', rule.media.imageAlt);
     if (rule.media.audioUrl) {
         const audio = makeElement('audio', 'status-atelier-preview-audio zrs-audio');
@@ -2262,7 +2651,6 @@ function renderStatusPreview(host) {
         bindPreviewFieldReorder(sharedHost, rule, 'shared');
         body.append(sharedHost);
     }
-
     const tabs = makeElement('div', 'status-atelier-preview-tabs zrs-tabs');
     const phonePagebar = makeElement('div', 'zrs-phone-pagebar');
     const phoneBack = makeElement('button', 'zrs-phone-back', '‹');
@@ -2363,7 +2751,11 @@ function renderStatusPreview(host) {
             appendPreviewField(pageHost, definition, values[fieldIndex] || previewValue(definition), false, rule.glyph, rule);
         });
         if (!phoneMode) bindPreviewFieldReorder(pageHost, rule, 'page');
-        [...tabs.children].forEach((button, buttonIndex) => button.classList.toggle('is-active', buttonIndex === index));
+        [...tabs.children].forEach((button, buttonIndex) => {
+            const active = buttonIndex === index;
+            button.classList.toggle('is-active', active);
+            button.setAttribute('aria-pressed', String(active));
+        });
         if (phoneMode) {
             root.classList.remove('is-phone-home');
         }
@@ -2371,6 +2763,7 @@ function renderStatusPreview(host) {
     pages.forEach(({ page }, index) => {
         const button = makeElement('button', 'status-atelier-preview-tab zrs-tab');
         button.type = 'button';
+        button.setAttribute('aria-pressed', 'false');
         if (phoneMode) {
             const app = rule.phoneDesktop.apps.find(item => item.id === page.id);
             const icon = makeElement('span', 'zrs-app-icon');
@@ -3909,6 +4302,25 @@ async function addSettingsPanel() {
                 button.setAttribute('aria-pressed', String(button === statusStyleButton));
             });
             refreshStatusAppearancePreview();
+            saveSettingsSoon({ snapshotOpening: false });
+            return;
+        }
+        const forumSkinButton = event.target.closest('button[data-forum-skin]');
+        if (forumSkinButton) {
+            const skin = FORUM_SKIN_PRESETS.find(item => item.id === forumSkinButton.dataset.forumSkin);
+            if (!skin) return;
+            const forumStructure = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'forum');
+            if (isDefaultForumPagesText(settings().pagesText)) {
+                settings().pagesText = skin.sections
+                    ? skin.sections.map(section => section.join('|')).join('\n')
+                    : forumStructure.pagesText;
+                const pagesControl = field('status-atelier-pages');
+                if (pagesControl) pagesControl.value = settings().pagesText;
+            }
+            settings().forumSkin = skin.id;
+            statusAiTestRecords = null;
+            renderForumSkinControls();
+            scheduleStatusPreviewUpdate();
             saveSettingsSoon({ snapshotOpening: false });
         }
     });

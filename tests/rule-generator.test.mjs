@@ -7,9 +7,12 @@ import {
     STATUS_STYLE_PRESETS,
     STATUS_THEME_CSS,
     STATUS_PHONE_CSS,
+    FORUM_THEME_CSS,
+    FORUM_SKIN_PRESETS,
     buildAiInstruction,
     buildRegexScript,
     buildWorldbookJson,
+    makePreviewRecords,
     normalizePhoneDesktop,
     normalizeRule,
     parseStatusOutput,
@@ -53,8 +56,35 @@ test('the workbench can reuse every exported theme instead of showing a color-on
     }
     assert.match(STATUS_THEME_CSS, /data-theme="vinyl-mag"[^}]*[\s\S]*?\.zrs-header::before/);
     assert.match(STATUS_THEME_CSS, /data-theme="cafe-receipt"[^}]*[\s\S]*?clip-path:polygon/);
-    for (const structure of ['custom', 'profile', 'social', 'forum', 'chat', 'collage', 'music', 'quest', 'casefile']) {
+    for (const structure of ['custom', 'profile', 'social', 'chat', 'collage', 'music', 'quest', 'casefile']) {
         assert.match(STATUS_THEME_CSS, new RegExp(`data-structure="${structure}"`), `${structure} has a distinct exported skeleton`);
+    }
+    assert.match(FORUM_THEME_CSS, /\.forum-2ch/);
+    assert.match(FORUM_THEME_CSS, /--pixel-size:4px/);
+    assert.match(FORUM_THEME_CSS, /image-rendering:pixelated/);
+    assert.match(FORUM_THEME_CSS, /\.forum-title[^}]*text-shadow:4px 4px 0/);
+    assert.match(FORUM_THEME_CSS, /box-shadow:8px 8px 0/);
+    assert.match(FORUM_THEME_CSS, /\.forum-tabs[^}]*overflow-x:auto/);
+    assert.match(FORUM_THEME_CSS, /\.forum-post-meta/);
+    assert.deepEqual(FORUM_SKIN_PRESETS.map(item => item.id), ['mist-bbs', 'ao3-archive', 'jj-forum', 'tieba-thread', 'douban-group', 'paranormal-case']);
+    assert.match(FORUM_THEME_CSS, /data-forum-skin="mist-bbs"/);
+    assert.match(FORUM_THEME_CSS, /data-forum-skin="ao3-archive"/);
+    assert.match(FORUM_THEME_CSS, /data-forum-skin="jj-forum"/);
+    assert.match(FORUM_THEME_CSS, /data-forum-skin="tieba-thread"/);
+    assert.match(FORUM_THEME_CSS, /data-forum-skin="douban-group"/);
+    assert.match(FORUM_THEME_CSS, /data-forum-skin="paranormal-case"/);
+    assert.match(FORUM_THEME_CSS, /forum-post-avatar/);
+    for (const tianyaColor of ['#f5e8d2', '#d2d9e5', '#dd9650', '#a14924', '#432714']) {
+        assert.match(FORUM_THEME_CSS.toLowerCase(), new RegExp(tianyaColor), `tianya uses color-card swatch ${tianyaColor}`);
+    }
+    assert.match(FORUM_THEME_CSS, /backdrop-filter:blur\(14px\)/);
+    assert.match(FORUM_THEME_CSS, /data-forum-skin="mist-bbs"[^\n]*\.forum-tab\{color:#dce8ff!important/);
+    assert.match(FORUM_THEME_CSS, /grid-template-columns:132px minmax\(0,1fr\)/);
+    for (const winterNightBlue of ['#07080c', '#333c50', '#546282', '#9cb2e8', '#cad9f5']) {
+        assert.match(FORUM_THEME_CSS, new RegExp(winterNightBlue), `forum uses winter-night-blue swatch ${winterNightBlue}`);
+    }
+    for (const rejectedClash of ['#f3cf4d', '#78e08f', '#79a7ff', '#ff6b9a']) {
+        assert.doesNotMatch(FORUM_THEME_CSS, new RegExp(rejectedClash), `forum removes rejected mixed color ${rejectedClash}`);
     }
     assert.match(STATUS_PHONE_CSS, /data-structure="phone"/);
     assert.match(STATUS_PHONE_CSS, /is-phone-home/);
@@ -62,13 +92,10 @@ test('the workbench can reuse every exported theme instead of showing a color-on
     assert.match(STATUS_PHONE_CSS, /--z-phone-bg:var\(--z-bg/);
     assert.match(STATUS_PHONE_CSS, /zrs-phone-chat\.is-left[^}]*var\(--z-phone-accent\)/);
     assert.match(STATUS_THEME_CSS, /data-structure="music"[^}]*[\s\S]*?repeating-radial-gradient/);
-    assert.match(STATUS_THEME_CSS, /data-structure="forum"[^}]*[\s\S]*?grid-template-columns:110px/);
-    assert.match(STATUS_THEME_CSS, /data-structure="forum"[^}]*[\s\S]*?zrs-field:nth-child\(4\)/);
     assert.match(STATUS_THEME_CSS, /data-structure="collage"[^}]*[\s\S]*?grid-template-columns:repeat\(12/);
     assert.match(STATUS_THEME_CSS, /data-structure="collage"[^}]*[\s\S]*?zrs-structure-art i:nth-child\(3\)/);
     assert.match(STATUS_THEME_CSS, /data-structure="custom"[^}]*[\s\S]*?border:3px inset/);
     assert.match(STATUS_THEME_CSS, /data-structure="social"[^}]*[\s\S]*?data-field="post_body"/);
-    assert.match(STATUS_THEME_CSS, /data-structure="forum"[^}]*[\s\S]*?zrs-forum-avatar/);
     assert.match(STATUS_THEME_CSS, /data-structure="music"[^}]*[\s\S]*?33⅓/);
     assert.match(STATUS_THEME_CSS, /data-structure="quest"[^}]*[\s\S]*?drop-shadow/);
     assert.match(STATUS_THEME_CSS, /data-structure="casefile"[^}]*[\s\S]*?rotate\(-5deg\)/);
@@ -260,19 +287,173 @@ test('generated renderer contains real media components without autoplay', () =>
     assert.match(script.replaceString, /--z-accent:#c9a54c/);
 });
 
-test('generated fields keep semantic ids and forum binds a real avatar into the author rail', () => {
+test('generated fields keep semantic ids in the exported renderer', () => {
     const script = buildRegexScript({
         ...RULE_PRESETS.universalClassical,
-        structure: 'forum',
-        media: {
-            avatarSource: 'character',
-            avatarUrl: '/thumbnail?type=avatar&file=character.png',
-        },
+        structure: 'profile',
     });
     assert.match(script.replaceString, /item\.dataset\.field=field\.id/);
-    assert.match(script.replaceString, /field\.id==='floor_user'/);
-    assert.match(script.replaceString, /zrs-forum-avatar/);
-    assert.match(script.replaceString, /当前角色头像/);
+});
+
+test('forum keeps six purposeful boards, twelve replies per board and only confirms the deep archive', () => {
+    const preset = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'forum');
+    assert.ok(preset);
+    assert.equal(parsePages(preset.pagesText).length, 6);
+    assert.deepEqual(preset.shared.map(field => field[3]), ['forum_title', 'forum_notice']);
+    assert.deepEqual(
+        preset.fields.map(field => field[3]),
+        ['board_title', 'thread_title', 'tags', 'post_1', 'post_2', 'post_3', 'post_4', 'post_5', 'post_6', 'post_7', 'post_8', 'post_9', 'post_10', 'post_11', 'post_12'],
+    );
+
+    const input = {
+        ...RULE_PRESETS.custom,
+        structure: 'forum',
+        theme: 'retro-bbs',
+        pagesText: preset.pagesText,
+        sharedFieldsText: preset.shared.map(field => field.join('|')).join('\n'),
+        pageFieldsText: preset.fields.map(field => field.join('|')).join('\n'),
+        forumSkin: 'ao3-archive',
+    };
+    const instruction = buildAiInstruction(input);
+    const generated = buildRegexScript(input);
+    const script = generated.replaceString;
+
+    assert.deepEqual(generated.placement, [2]);
+    assert.equal(generated.runOnEdit, true);
+    assert.equal(generated.markdownOnly, true);
+    assert.match(instruction, /◆/);
+    assert.match(instruction, />>数字/);
+    assert.match(instruction, /主楼4-6句铺场景与冲突/);
+    assert.match(instruction, /其余每楼1-3句接话推进/);
+    assert.match(instruction, /至少4种立场/);
+    assert.match(instruction, /接梗、误会、反驳、嗑点、脑洞、预测/);
+    assert.match(instruction, /禁止情报摘要/);
+    assert.match(instruction, /把\{\{char\}\}与\{\{user\}\}当本轮故事主角/);
+    assert.match(instruction, /预览中的X不是昵称，禁止照搬/);
+    assert.match(instruction, /N=1至6/);
+    assert.match(instruction, /R1\|R2\|R3/);
+    assert.ok(instruction.length < 600, `forum worldbook instruction stays compact: ${instruction.length} chars`);
+    assert.match(script, /<!DOCTYPE html>/i);
+    assert.match(script, /<body>/i);
+    assert.match(script, /<\/body>/i);
+    assert.match(script, /class="forum-2ch"/);
+    assert.match(script, /data-forum-skin="ao3-archive"/);
+    assert.match(script, /class="forum-header"/);
+    assert.match(script, /class="forum-tabs"/);
+    assert.match(script, /class="forum-board-panel"/);
+    assert.doesNotMatch(script, /class="forum-2ch" style=/);
+    assert.doesNotMatch(script, /class="zrs-card"/);
+    assert.doesNotMatch(script, /class="zrs-chrome"/);
+    assert.doesNotMatch(script, /class="zrs-collapse"/);
+    assert.doesNotMatch(script, /class="zrs-fields"/);
+    assert.match(script, /function parseForumPost/);
+    assert.match(script, /function forumAvatar/);
+    assert.match(script, /avatarNode\.dataset\.avatarTone/);
+    assert.match(script, /function renderForumPage/);
+    assert.match(script, /forum-post/);
+    assert.match(script, /forum-post-num/);
+    assert.match(script, /forum-post-author/);
+    assert.match(script, /forum-post-id/);
+    assert.match(script, /forum-post-time/);
+    assert.match(script, /forum-post-field/);
+    assert.match(script, /forum-quote-ref/);
+    assert.match(script, /forum-confirm/);
+    assert.match(script, /aria-modal/);
+    assert.match(script, /var unlocked=/);
+    assert.match(script, /function isRestrictedPage/);
+    assert.match(script, /深\(\?:页\|夜\)档案/);
+    assert.match(script, /if\(restricted\)button\.append\(make\('span','forum-tab-lock','确认进入'\)\)/);
+    assert.doesNotMatch(script, /if\(index>0\)button\.append\(make\('span','forum-tab-lock'/);
+    assert.match(FORUM_THEME_CSS, /forum-board-meta/);
+    assert.match(FORUM_THEME_CSS, /forum-post/);
+    assert.match(FORUM_THEME_CSS, /forum-quote-ref/);
+    assert.match(FORUM_THEME_CSS, /forum-confirm-box/);
+    assert.equal(normalizeRule(input).forumSkin, 'ao3-archive');
+    assert.equal(normalizeRule({ ...input, forumSkin: 'unknown-forum' }).forumSkin, 'mist-bbs');
+    for (const skin of FORUM_SKIN_PRESETS) {
+        const themedScript = buildRegexScript({ ...input, forumSkin: skin.id }).replaceString;
+        assert.match(themedScript, new RegExp(`data-forum-skin="${skin.id}"`));
+        assert.match(themedScript, new RegExp(skin.kicker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    }
+
+    const previewTitles = FORUM_SKIN_PRESETS.map(skin => makePreviewRecords({ ...input, forumSkin: skin.id }).shared[0]);
+    assert.equal(new Set(previewTitles).size, FORUM_SKIN_PRESETS.length);
+    const mistPreview = makePreviewRecords({ ...input, forumSkin: 'mist-bbs' });
+    const archivePreview = makePreviewRecords({ ...input, forumSkin: 'ao3-archive' });
+    const jjPreview = makePreviewRecords({ ...input, forumSkin: 'jj-forum' });
+    const tiebaPreview = makePreviewRecords({ ...input, forumSkin: 'tieba-thread' });
+    const doubanPreview = makePreviewRecords({ ...input, forumSkin: 'douban-group' });
+    const paranormalPreview = makePreviewRecords({ ...input, forumSkin: 'paranormal-case' });
+    assert.equal(archivePreview.pages[5].values[0], '深页档案');
+    assert.match(archivePreview.shared[0], /同人作品库/);
+    assert.equal(archivePreview.pages[0].values[1], 'X');
+    assert.equal(archivePreview.pages[0].values[2], 'X');
+    assert.equal(archivePreview.pages[0].values.filter(value => /◆/.test(value)).length, 12);
+    assert.equal(jjPreview.pages[0].values.filter(value => /◆/.test(value)).length, 12);
+    assert.equal(jjPreview.shared[0], '江水港旧论坛');
+    assert.match(jjPreview.shared[1], /角色与user当连载小说主角/);
+    assert.equal(jjPreview.pages[0].values[1], 'X');
+    assert.equal(jjPreview.pages[0].values[2], 'X');
+    assert.equal(jjPreview.pages[0].values[3], '1◆X◆ID:X◆X◆X');
+    assert.match(tiebaPreview.shared[0], /事件吧/);
+    assert.match(doubanPreview.shared[0], /小组/);
+    assert.match(paranormalPreview.shared[0], /天涯社区/);
+    assert.deepEqual(tiebaPreview.rule.pages.map(page => page.label), ['实时吃瓜楼', '角色扒皮楼', 'CP脑洞楼', '后续押注楼', '名场面改写', '深页档案']);
+    assert.deepEqual(doubanPreview.rule.pages.map(page => page.label), ['今日名场面', '关系显微镜', '如果我是TA', '脑洞放映厅', '小组投票', '深页档案']);
+    assert.deepEqual(paranormalPreview.rule.pages.map(page => page.label), ['今夜怪谈', '楼主续更', '众说纷纭', '天涯神回复', '民间旧闻', '深页档案']);
+    for (const preview of [mistPreview, archivePreview, jjPreview, tiebaPreview, doubanPreview, paranormalPreview]) {
+        assert.equal(preview.rule.pages.length, 6);
+        assert.equal(preview.rule.pages.at(-1).label, '深页档案');
+        for (const page of preview.pages) {
+            assert.equal(page.values[1], 'X');
+            assert.equal(page.values[2], 'X');
+            const posts = page.values.filter(value => /◆/.test(value));
+            assert.equal(posts.length, 12);
+            assert.ok(posts.every(value => /^\d+◆X◆ID:X◆X◆X$/.test(value)));
+        }
+    }
+    assert.match(FORUM_THEME_CSS, /data-avatar-tone="5"/);
+    assert.match(FORUM_SKIN_PRESETS.find(skin => skin.id === 'ao3-archive').aiGuide, /同人档案小剧场/);
+    for (const skin of FORUM_SKIN_PRESETS) {
+        assert.equal(skin.sections.length, 6);
+        assert.ok(buildAiInstruction({ ...input, forumSkin: skin.id }).length < 600, `${skin.id} compact worldbook`);
+    }
+
+    const fixedTitleInstruction = buildAiInstruction({
+        ...input,
+        forumPreviewDrafts: { 'ao3-archive': { title: '我改过的同人站' } },
+    });
+    assert.match(fixedTitleInstruction, /论坛名=我改过的同人站/);
+
+    const postValues = [
+        '1◆匿名用户◆ID:a7K2◆08/22 19:42◆第一楼正文',
+        '2◆路过◆ID:m91Q◆08/22 19:45◆>>1 引用第一楼',
+        '3◆考据党◆ID:x4pL◆08/22 19:51◆第三楼正文',
+        '4◆匿名用户◆ID:b20N◆08/22 20:03◆>>2 继续回复',
+        '5◆围观者◆ID:c31P◆08/22 20:08◆第五楼正文',
+        '6◆补充证言◆ID:d42Q◆08/22 20:11◆>>5 补充第五楼',
+        '7◆时间线整理◆ID:e53R◆08/22 20:16◆第七楼正文',
+        '8◆匿名备份◆ID:f64S◆08/22 20:22◆第八楼正文',
+        '9◆催更读者◆ID:g75T◆08/22 20:28◆第九楼正文',
+        '10◆补档用户◆ID:h86U◆08/22 20:33◆>>9 补充第九楼',
+        '11◆长评用户◆ID:i97V◆08/22 20:39◆第十一楼正文',
+        '12◆楼主◆ID:j08W◆08/22 20:45◆第十二楼总结',
+    ];
+    const pageLine = (id, board) => `[${id}|${board}|当前主题|#剧情 #讨论|${postValues.join('|')}]`;
+    const parsed = parseStatusOutput(input, [
+        '<zeya_status>',
+        '[Shared|匿名剧情站|请遵守版规]',
+        pageLine('View1', '公开讨论'),
+        pageLine('View2', '角色闲谈'),
+        pageLine('View3', '事件追踪'),
+        pageLine('View4', '脑洞改写'),
+        pageLine('View5', '后续押注'),
+        pageLine('View6', '深夜档案'),
+        '</zeya_status>',
+    ].join('\n'));
+    assert.equal(parsed.pages.length, 6);
+    assert.equal(parsed.pages[1].values[0], '角色闲谈');
+    assert.equal(parsed.pages[0].values[4], postValues[1]);
 });
 
 test('avatar is a real field kind that binds the configured character or user image', () => {
