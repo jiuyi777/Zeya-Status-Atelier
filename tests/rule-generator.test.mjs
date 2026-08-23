@@ -27,10 +27,10 @@ test('parses any number of switch pages without storing story values', () => {
 });
 
 test('registers genuinely different component structures and composable palettes', () => {
-    assert.equal(STATUS_STRUCTURE_PRESETS.length, 10);
-    assert.equal(new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id)).size, 10);
-    assert.equal(STATUS_PALETTE_PRESETS.length, 24);
-    assert.equal(new Set(STATUS_PALETTE_PRESETS.map(item => item.id)).size, 24);
+    assert.equal(STATUS_STRUCTURE_PRESETS.length, 13);
+    assert.equal(new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id)).size, 13);
+    assert.equal(STATUS_PALETTE_PRESETS.length, 26);
+    assert.equal(new Set(STATUS_PALETTE_PRESETS.map(item => item.id)).size, 26);
     assert.ok(STATUS_PALETTE_PRESETS.every(item => ['accent', 'background', 'card', 'text', 'muted'].every(key => /^#[0-9a-f]{6}$/i.test(item[key]))));
     for (const structure of STATUS_STRUCTURE_PRESETS) {
         assert.ok(structure.fields.length >= 3, `${structure.name} has an editable schema`);
@@ -106,13 +106,93 @@ test('the workbench can reuse every exported theme instead of showing a color-on
 
 test('removes the rejected 40-card recipe collection from selectable structures', () => {
     const ids = STATUS_STRUCTURE_PRESETS.map(item => item.id);
-    assert.deepEqual(ids, ['phone', 'profile', 'social', 'forum', 'chat', 'collage', 'music', 'quest', 'casefile', 'custom']);
+    assert.deepEqual(ids, ['phone', 'profile', 'archive-status', 'pixel-chat', 'pixel-handheld', 'social', 'forum', 'chat', 'collage', 'music', 'quest', 'casefile', 'custom']);
     for (const removedId of ['shop', 'travel', 'weather', 'holo', 'specimen', 'memory', 'livestream']) {
         assert.equal(ids.includes(removedId), false, `${removedId} is no longer selectable`);
     }
     const generated = buildRegexScript({ ...RULE_PRESETS.custom, variant: 'glass-orbit', structure: 'shop' }).replaceString;
     assert.match(generated, /data-structure="custom"/);
     assert.match(generated, /data-variant="auto"/);
+});
+
+test('three original role-card regex layouts keep separate fields, interactions and dynamic X preview', () => {
+    const cases = [
+        {
+            id: 'archive-status', theme: 'bw-archive', paletteId: 'archive-mono',
+            shared: ['scene_time', 'location', 'good_omen', 'bad_omen', 'scene_title', 'broadcast'],
+            fields: ['front_chapter', 'front_thought', 'back_chapter', 'back_thought', 'letter_to', 'letter_body', 'letter_from', 'photo_location', 'fortune_level', 'fortune_text'],
+            markers: [/bw-archive-system/, /fb-card/, /fb-letter-toggle/, /fb-omikuji-cylinder/],
+            avatar: true,
+        },
+        {
+            id: 'pixel-chat', theme: 'pixel-handheld', paletteId: 'pixel-candy',
+            shared: [],
+            fields: ['chat_title', 'chat_subtitle', 'chat_1', 'chat_2', 'chat_3'],
+            markers: [/status-container/, /js-pixel-chats/, /chat-message/, /current-character\.png/],
+            avatar: true,
+        },
+        {
+            id: 'pixel-handheld', theme: 'pixel-handheld', paletteId: 'pixel-candy',
+            shared: ['scene_date', 'scene_time', 'location'],
+            fields: ['weather', 'weather_feel', 'outfit', 'diary', 'todo_1', 'todo_2', 'todo_3'],
+            markers: [/blackberry-phone/, /panel-weather/, /data-target/, /navigator\.getBattery/],
+            avatar: false,
+        },
+    ];
+    for (const item of cases) {
+        const preset = STATUS_STRUCTURE_PRESETS.find(candidate => candidate.id === item.id);
+        assert.ok(preset);
+        assert.equal(preset.theme, item.theme);
+        assert.equal(preset.paletteId, item.paletteId);
+        assert.equal(preset.avatarSource === 'character', item.avatar);
+        assert.deepEqual((preset.shared || []).map(field => field[3]), item.shared);
+        assert.deepEqual(preset.fields.map(field => field[3]), item.fields);
+        const input = {
+            ...RULE_PRESETS.custom,
+            structure: preset.id,
+            theme: preset.theme,
+            paletteId: preset.paletteId,
+            title: preset.title,
+            subtitle: preset.subtitle,
+            layout: preset.layout,
+            pagesText: preset.pagesText,
+            sharedFieldsText: (preset.shared || []).map(field => field.join('|')).join('\n'),
+            pageFieldsText: preset.fields.map(field => field.join('|')).join('\n'),
+            media: { avatarSource: 'character', avatarUrl: 'https://example.com/current-character.png' },
+        };
+        const preview = makePreviewRecords(input);
+        assert.ok(preview.shared.every(value => value === 'X'));
+        assert.ok(preview.pages.flatMap(page => page.values).every(value => value === 'X'));
+        const instruction = buildAiInstruction(input);
+        assert.ok(instruction.length < 600, `${item.id} worldbook rule stays below the 600-token ceiling with a stricter character limit`);
+        assert.match(instruction, /把字段名替换为实际值/);
+        assert.match(instruction, /以此类推/);
+        const generated = buildRegexScript(input).replaceString;
+        for (const marker of item.markers) assert.match(generated, marker);
+        if (item.avatar) assert.match(generated, /current-character\.png/);
+        assert.doesNotMatch(generated, /佐藤原野|小久风太/);
+        const browserScript = generated.match(/<script>\n([\s\S]*?)\n<\/script>/);
+        assert.ok(browserScript);
+        assert.doesNotThrow(() => new Function(browserScript[1]));
+    }
+    const archivePalette = STATUS_PALETTE_PRESETS.find(item => item.id === 'archive-mono');
+    assert.deepEqual(
+        { name: archivePalette?.name, muted: archivePalette?.muted },
+        { name: '黑白钢蓝档案', muted: '#4a6582' },
+    );
+    const pixelPalette = STATUS_PALETTE_PRESETS.find(item => item.id === 'pixel-candy');
+    assert.deepEqual(
+        { name: pixelPalette?.name, accent: pixelPalette?.accent, card: pixelPalette?.card, text: pixelPalette?.text },
+        { name: '粉蓝黑莓像素', accent: '#ff9aa2', card: '#fff9fa', text: '#5d576b' },
+    );
+    assert.match(buildRegexScript({
+        ...RULE_PRESETS.custom,
+        structure: 'pixel-handheld',
+        theme: 'pixel-handheld',
+        pagesText: STATUS_STRUCTURE_PRESETS.find(item => item.id === 'pixel-handheld').pagesText,
+        sharedFieldsText: STATUS_STRUCTURE_PRESETS.find(item => item.id === 'pixel-handheld').shared.map(field => field.join('|')).join('\n'),
+        pageFieldsText: STATUS_STRUCTURE_PRESETS.find(item => item.id === 'pixel-handheld').fields.map(field => field.join('|')).join('\n'),
+    }).replaceString, /blackberry-phone/);
 });
 
 test('phone desktop is editable and exports real app navigation with a back action', () => {
@@ -256,6 +336,7 @@ test('normalizes safe media and rejects executable URLs', () => {
             avatarSource: 'url',
             avatarUrl: 'javascript:alert(1)',
             imageUrl: 'https://example.com/cover.jpg',
+            archiveImageUrls: 'https://example.com/photo-a.jpg\njavascript:alert(2)\nhttps://example.com/photo-a.jpg\n/player-photo-b.png',
             audioUrl: 'https://example.com/theme.mp3',
         },
     });
@@ -263,7 +344,32 @@ test('normalizes safe media and rejects executable URLs', () => {
     assert.equal(rule.palette.id, 'porcelain');
     assert.equal(rule.media.avatarUrl, '');
     assert.equal(rule.media.imageUrl, 'https://example.com/cover.jpg');
+    assert.deepEqual(rule.media.archiveImageUrls, ['https://example.com/photo-a.jpg', '/player-photo-b.png']);
     assert.equal(rule.media.audioUrl, 'https://example.com/theme.mp3');
+});
+
+test('archive polaroid uses one random player image and exports no fixed original photo', () => {
+    const preset = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'archive-status');
+    const generated = buildRegexScript({
+        ...RULE_PRESETS.custom,
+        structure: preset.id,
+        theme: preset.theme,
+        paletteId: preset.paletteId,
+        pagesText: preset.pagesText,
+        sharedFieldsText: preset.shared.map(field => field.join('|')).join('\n'),
+        pageFieldsText: preset.fields.map(field => field.join('|')).join('\n'),
+        media: {
+            avatarSource: 'character',
+            avatarUrl: '/thumbnails/Assistant.png',
+            archiveImageUrls: ['https://example.com/photo-a.jpg', 'https://example.com/photo-b.jpg'],
+            imageAlt: '玩家拍立得',
+        },
+    }).replaceString;
+    assert.match(generated, /archiveImageUrls/);
+    assert.match(generated, /Math\.floor\(Math\.random\(\) \* archiveImages\.length\)/);
+    assert.match(generated, /https:\/\/example\.com\/photo-a\.jpg/);
+    assert.match(generated, /https:\/\/example\.com\/photo-b\.jpg/);
+    assert.doesNotMatch(generated, /pe9JZE4\.jpg|pep3ywj\.png/);
 });
 
 test('generated renderer contains real media components without autoplay', () => {
@@ -398,6 +504,14 @@ test('forum keeps six purposeful boards, twelve replies per board and only confi
     assert.match(tiebaPreview.shared[0], /事件吧/);
     assert.match(doubanPreview.shared[0], /小组/);
     assert.match(paranormalPreview.shared[0], /天涯社区/);
+    assert.deepEqual(paranormalPreview.rule.sharedFields.map(field => field.id), ['forum_title', 'forum_notice', 'forum_presence']);
+    assert.equal(paranormalPreview.shared[2], 'X');
+    const paranormalInstruction = buildAiInstruction({ ...input, forumSkin: 'paranormal-case' });
+    const paranormalScript = buildRegexScript({ ...input, forumSkin: 'paranormal-case' }).replaceString;
+    assert.match(paranormalInstruction, /\[Shared\|论坛名\|公告\|在线人数\]/);
+    assert.match(paranormalInstruction, /在线 X 人/);
+    assert.match(paranormalScript, /shared\[2\]\|\|config\.presenceFallback/);
+    assert.doesNotMatch(paranormalScript, /<div class="forum-presence">在线 2187 人<\/div>/);
     assert.deepEqual(tiebaPreview.rule.pages.map(page => page.label), ['实时吃瓜楼', '角色扒皮楼', 'CP脑洞楼', '后续押注楼', '名场面改写', '深页档案']);
     assert.deepEqual(doubanPreview.rule.pages.map(page => page.label), ['今日名场面', '关系显微镜', '如果我是TA', '脑洞放映厅', '小组投票', '深页档案']);
     assert.deepEqual(paranormalPreview.rule.pages.map(page => page.label), ['今夜怪谈', '楼主续更', '众说纷纭', '天涯神回复', '民间旧闻', '深页档案']);
@@ -548,11 +662,11 @@ test('builds an importable constant worldbook entry containing the dynamic outpu
     assert.equal(Object.hasOwn(entry, 'affection'), false);
 });
 
-test('registers 20 distinct editable mobile themes with unique codes and ids', () => {
-    assert.equal(STATUS_STYLE_PRESETS.length, 20);
-    assert.equal(new Set(STATUS_STYLE_PRESETS.map(style => style.code)).size, 20);
-    assert.equal(new Set(STATUS_STYLE_PRESETS.map(style => style.id)).size, 20);
-    assert.deepEqual(STATUS_STYLE_PRESETS.map(style => style.code), Array.from({ length: 20 }, (_, index) => String(index + 1).padStart(2, '0')));
+test('registers 22 distinct editable mobile themes with unique codes and ids', () => {
+    assert.equal(STATUS_STYLE_PRESETS.length, 22);
+    assert.equal(new Set(STATUS_STYLE_PRESETS.map(style => style.code)).size, 22);
+    assert.equal(new Set(STATUS_STYLE_PRESETS.map(style => style.id)).size, 22);
+    assert.deepEqual(STATUS_STYLE_PRESETS.map(style => style.code), Array.from({ length: 22 }, (_, index) => String(index + 1).padStart(2, '0')));
     for (const removed of ['glass', 'ocean', 'bauhaus-shop', 'nouveau-tarot', 'holo-terminal']) {
         assert.equal(STATUS_STYLE_PRESETS.some(style => style.id === removed), false);
     }
@@ -593,7 +707,7 @@ test('every status theme generates syntactically valid mobile renderer code', ()
 });
 
 test('the retained appearance library keeps visibly dedicated treatments', () => {
-    assert.equal(STATUS_STYLE_PRESETS.length, 20);
+    assert.equal(STATUS_STYLE_PRESETS.length, 22);
     for (const style of STATUS_STYLE_PRESETS.filter(item => item.id !== 'classical')) {
         assert.match(STATUS_THEME_CSS, new RegExp(`data-theme="${style.id}"`), `${style.code} ${style.name} has dedicated CSS`);
     }

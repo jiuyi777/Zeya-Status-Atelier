@@ -17,6 +17,7 @@ import {
     parseStatusOutput,
     parseFields,
 } from './rule-generator.js?v=0.10.0';
+import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.10.0';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
@@ -147,7 +148,7 @@ const STATUS_TEMPLATES = Object.freeze([
 ]);
 
 const KIND_LABELS = Object.freeze({ text: '短文本', long: '长文本', number: '数字', progress: '数值 0–100', currency: '金额', avatar: '头像' });
-const PHONE_STRUCTURE_IDS = Object.freeze(['phone', 'profile', 'social', 'forum', 'chat', 'music', 'casefile', 'quest']);
+const PHONE_STRUCTURE_IDS = Object.freeze(['phone', 'profile', 'social', 'forum', 'chat', 'music', 'casefile', 'quest', 'archive-status', 'pixel-chat', 'pixel-handheld']);
 const PHONE_DESKTOP_DEFAULTS = Object.freeze({
     wallpaperUrl: '', wallpaperPositionX: 50, wallpaperPositionY: 50,
     petalsEnabled: true,
@@ -204,7 +205,7 @@ const DEFAULT_SETTINGS = Object.freeze({
     forumSkin: 'mist-bbs',
     forumPreviewDrafts: {},
     paletteId: 'ice-blue',
-    media: { avatarSource: 'character', avatarUrl: '', imageUrl: '', audioUrl: '', imageAlt: '状态栏配图' },
+    media: { avatarSource: 'character', avatarUrl: '', imageUrl: '', archiveImageUrls: '', audioUrl: '', imageAlt: '状态栏配图' },
     phoneDesktop: PHONE_DESKTOP_DEFAULTS,
     openingNotes: {},
     openingProfiles: {},
@@ -258,6 +259,7 @@ const STATUS_MEDIA_FIELDS = Object.freeze({
     'status-atelier-avatar-source': 'avatarSource',
     'status-atelier-avatar-url': 'avatarUrl',
     'status-atelier-image-url': 'imageUrl',
+    'status-atelier-archive-image-urls': 'archiveImageUrls',
     'status-atelier-audio-url': 'audioUrl',
     'status-atelier-image-alt': 'imageAlt',
 });
@@ -581,15 +583,27 @@ function renderPaletteButtons() {
     });
 }
 
-function renderStatusDesignControls() {
-    const structureSelect = field('status-atelier-structure');
-    if (structureSelect && !structureSelect.options.length) {
-        STATUS_STRUCTURE_PRESETS.filter(item => PHONE_STRUCTURE_IDS.includes(item.id)).forEach(item => {
+function populateStatusStructureSelect(structureSelect) {
+    if (!structureSelect || structureSelect.options.length) return;
+    const selectable = STATUS_STRUCTURE_PRESETS.filter(item => PHONE_STRUCTURE_IDS.includes(item.id));
+    const appendGroup = (label, ids) => {
+        const group = makeElement('optgroup');
+        group.label = label;
+        ids.map(id => selectable.find(item => item.id === id)).filter(Boolean).forEach(item => {
             const option = makeElement('option', '', item.name);
             option.value = item.id;
-            structureSelect.append(option);
+            group.append(option);
         });
-    }
+        structureSelect.append(group);
+    };
+    appendGroup('手机', ['phone', 'pixel-handheld']);
+    appendGroup('聊天会话', ['chat', 'pixel-chat']);
+    appendGroup('其他状态栏', selectable.map(item => item.id).filter(id => !['phone', 'pixel-handheld', 'chat', 'pixel-chat'].includes(id)));
+}
+
+function renderStatusDesignControls() {
+    const structureSelect = field('status-atelier-structure');
+    populateStatusStructureSelect(structureSelect);
     if (structureSelect) structureSelect.value = settings().structure || 'custom';
     const styleHost = field('status-atelier-status-styles');
     if (styleHost && styleHost.children.length !== STATUS_STYLE_PRESETS.length) {
@@ -680,7 +694,7 @@ function renderPhoneDesktopControls() {
     const section = field('status-atelier-phone-diy');
     if (section) section.hidden = stored.structure !== 'phone';
     const appearanceSection = field('status-atelier-appearance-section');
-    if (appearanceSection) appearanceSection.hidden = ['phone', 'forum'].includes(stored.structure);
+    if (appearanceSection) appearanceSection.hidden = ['phone', 'forum', 'archive-status', 'pixel-chat', 'pixel-handheld'].includes(stored.structure);
     renderTemplateMediaControls();
     for (const [id, key] of Object.entries(PHONE_DESKTOP_FIELDS)) {
         const control = field(id);
@@ -702,13 +716,14 @@ function renderTemplateMediaControls() {
     const structure = settings().structure;
     const section = field('status-atelier-template-media');
     if (!section) return;
-    const usesAvatar = ['profile', 'social', 'chat', 'casefile'].includes(structure);
+    const usesAvatar = ['profile', 'social', 'chat', 'casefile', 'archive-status', 'pixel-chat'].includes(structure);
     const usesImage = ['social', 'collage', 'music'].includes(structure);
+    const usesArchiveImages = structure === 'archive-status';
     const usesAudio = structure === 'music';
-    section.hidden = structure === 'phone' || (!usesAvatar && !usesImage && !usesAudio);
+    section.hidden = structure === 'phone' || (!usesAvatar && !usesImage && !usesArchiveImages && !usesAudio);
     const title = field('status-atelier-template-media-title');
     const help = field('status-atelier-template-media-help');
-    if (title) title.textContent = usesAudio ? '播放界面素材' : usesImage ? '当前模板配图' : '当前模板头像';
+    if (title) title.textContent = usesArchiveImages ? '档案头像与拍立得' : usesAudio ? '播放界面素材' : usesImage ? '当前模板配图' : '当前模板头像';
     if (help) help.textContent = usesAudio
         ? '封面与音频只会进入播放界面，音频不会自动播放。'
         : usesImage
@@ -717,13 +732,15 @@ function renderTemplateMediaControls() {
     const avatarSourceWrap = field('status-atelier-media-avatar-source-wrap');
     const avatarUrlWrap = field('status-atelier-avatar-url-wrap');
     const imageUrlWrap = field('status-atelier-image-url-wrap');
+    const archiveImageUrlsWrap = field('status-atelier-archive-image-urls-wrap');
     const audioUrlWrap = field('status-atelier-audio-url-wrap');
     const altWrap = field('status-atelier-image-alt-wrap');
     if (avatarSourceWrap) avatarSourceWrap.hidden = !usesAvatar;
     if (avatarUrlWrap) avatarUrlWrap.hidden = !usesAvatar || settings().media?.avatarSource !== 'url';
     if (imageUrlWrap) imageUrlWrap.hidden = !usesImage;
+    if (archiveImageUrlsWrap) archiveImageUrlsWrap.hidden = !usesArchiveImages;
     if (audioUrlWrap) audioUrlWrap.hidden = !usesAudio;
-    if (altWrap) altWrap.hidden = !usesAvatar && !usesImage;
+    if (altWrap) altWrap.hidden = !usesAvatar && !usesImage && !usesArchiveImages;
 }
 
 function applyStatusStructure(structureId) {
@@ -736,6 +753,11 @@ function applyStatusStructure(structureId) {
     stored.title = structure.title;
     stored.subtitle = structure.subtitle;
     stored.layout = structure.layout;
+    if (structure.theme) stored.theme = structure.theme;
+    if (structure.paletteId) stored.paletteId = structure.paletteId;
+    if (structure.avatarSource) {
+        stored.media = { ...DEFAULT_SETTINGS.media, ...(stored.media || {}), avatarSource: structure.avatarSource };
+    }
     stored.pagesText = structure.pagesText;
     stored.sharedFieldsText = (structure.shared || []).map(field => field.join('|')).join('\n');
     stored.pageFieldsText = structure.fields.map(field => field.join('|')).join('\n');
@@ -750,6 +772,18 @@ function applyStatusStructure(structureId) {
     if (subtitleControl) subtitleControl.value = stored.subtitle;
     const layoutControl = field('status-atelier-layout');
     if (layoutControl) layoutControl.value = stored.layout;
+    const themeControl = field('status-atelier-theme');
+    if (themeControl) themeControl.value = stored.theme;
+    field('status-atelier-status-styles')?.querySelectorAll('[data-status-style]').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.statusStyle === stored.theme));
+    });
+    field('status-atelier-status-palettes')?.querySelectorAll('[data-status-palette]').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.statusPalette === stored.paletteId));
+    });
+    const paletteControl = field('status-atelier-palette');
+    if (paletteControl) paletteControl.value = stored.paletteId;
+    const avatarSourceControl = field('status-atelier-avatar-source');
+    if (avatarSourceControl) avatarSourceControl.value = stored.media.avatarSource;
     const pagesControl = field('status-atelier-pages');
     if (pagesControl) pagesControl.value = stored.pagesText;
     const sharedControl = field('status-atelier-shared-fields');
@@ -2286,7 +2320,7 @@ function renderForumPreview(host, previewRecords) {
         makeElement('p', 'forum-kicker', skin.kicker),
         forumTitle,
     );
-    const presence = makeElement('div', 'forum-presence', draft.presence || skin.presence);
+    const presence = makeElement('div', 'forum-presence', draft.presence || shared[2] || skin.presence);
     bindEditable(presence, value => { draft.presence = value; }, { maxLength: 30 });
     header.append(brand, presence);
     const notice = makeElement('div', 'forum-notice', draft.notice || shared[1] || '禁止灌水；引用楼层时请使用 >>编号。');
@@ -2515,6 +2549,12 @@ function renderStatusPreview(host) {
         renderForumPreview(host, previewRecords);
         return;
     }
+    if (isOriginalRoleCardStructure(rule.structure)) {
+        const root = makeElement('section', 'status-atelier-rule-preview status-atelier-original-rolecard');
+        mountOriginalRoleCard(root, rule, previewRecords);
+        host.replaceChildren(root);
+        return;
+    }
     const root = makeElement('section', 'status-atelier-rule-preview zeya-regex-status');
     root.dataset.theme = rule.theme;
     root.dataset.structure = rule.structure;
@@ -2592,6 +2632,66 @@ function renderStatusPreview(host) {
             });
             structureArt.append(node);
         });
+    }
+    if (rule.structure === 'archive-status') {
+        root.dataset.archiveSide = 'front';
+        structureArt.removeAttribute('aria-hidden');
+        const controls = makeElement('div', 'zrs-archive-controls');
+        const flip = makeElement('button', '', '查看背面');
+        const letter = makeElement('button', '', '拆信');
+        const fortune = makeElement('button', '', '抽签');
+        [flip, letter, fortune].forEach(button => {
+            button.type = 'button';
+            button.setAttribute('aria-pressed', 'false');
+        });
+        flip.addEventListener('click', () => {
+            const back = root.dataset.archiveSide !== 'back';
+            root.dataset.archiveSide = back ? 'back' : 'front';
+            flip.textContent = back ? '返回正面' : '查看背面';
+            flip.setAttribute('aria-pressed', String(back));
+        });
+        letter.addEventListener('click', () => {
+            const open = root.classList.toggle('is-letter-open');
+            letter.textContent = open ? '收好信件' : '拆信';
+            letter.setAttribute('aria-pressed', String(open));
+        });
+        fortune.addEventListener('click', () => {
+            const open = root.classList.toggle('is-fortune-open');
+            fortune.textContent = open ? '收起签文' : '抽签';
+            fortune.setAttribute('aria-pressed', String(open));
+        });
+        controls.append(flip, letter, fortune);
+        structureArt.append(controls);
+    }
+    if (rule.structure === 'pixel-handheld') {
+        root.dataset.handheldPage = 'chat';
+        structureArt.removeAttribute('aria-hidden');
+        const battery = makeElement('span', 'zrs-handheld-battery', 'BAT 88%');
+        const nav = makeElement('div', 'zrs-handheld-nav');
+        const pages = [['chat', '聊'], ['weather', '天'], ['outfit', '衣'], ['diary', '记'], ['todo', '办']];
+        pages.forEach(([pageId, label], index) => {
+            const button = makeElement('button', '', label);
+            button.type = 'button';
+            button.dataset.handheldTarget = pageId;
+            button.setAttribute('aria-label', `${label}页面`);
+            button.setAttribute('aria-pressed', String(index === 0));
+            button.classList.toggle('is-active', index === 0);
+            button.addEventListener('click', () => {
+                root.dataset.handheldPage = pageId;
+                nav.querySelectorAll('button').forEach(item => {
+                    const active = item === button;
+                    item.classList.toggle('is-active', active);
+                    item.setAttribute('aria-pressed', String(active));
+                });
+            });
+            nav.append(button);
+        });
+        structureArt.append(battery, nav);
+        if (typeof navigator.getBattery === 'function') {
+            navigator.getBattery().then(info => {
+                battery.textContent = `BAT ${Math.round(info.level * 100)}%`;
+            }).catch(() => {});
+        }
     }
     let phoneWallpaperImage = null;
     if (rule.structure === 'phone') {
@@ -3574,13 +3674,7 @@ function renderGreetingStatusChooser() {
         });
     }
     select.value = settings().theme || 'classical';
-    if (structureSelect && !structureSelect.options.length) {
-        STATUS_STRUCTURE_PRESETS.filter(structure => PHONE_STRUCTURE_IDS.includes(structure.id)).forEach(structure => {
-            const option = makeElement('option', '', structure.name);
-            option.value = structure.id;
-            structureSelect.append(option);
-        });
-    }
+    populateStatusStructureSelect(structureSelect);
     if (structureSelect) structureSelect.value = settings().structure || 'custom';
     if (paletteHost && paletteHost.children.length !== STATUS_PALETTE_PRESETS.length) {
         paletteHost.replaceChildren();

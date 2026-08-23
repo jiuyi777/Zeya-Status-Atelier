@@ -18,6 +18,10 @@ const requiredFiles = [
     'opening-overview.js',
     'worldbook-routes.js',
     'rule-generator.js',
+    'role-card-originals.js',
+    'role-card-originals/archive.css',
+    'role-card-originals/pixel-chat.css',
+    'role-card-originals/blackberry.css',
     'opening-home-generator.js',
     'response-parser.js',
     'settings.html',
@@ -175,11 +179,11 @@ for (const style of STATUS_STYLE_PRESETS) {
     }
 }
 if (openingIds.size !== 4) errors.push('四套开场白主页必须使用四个独立正则 ID');
-if (STATUS_STYLE_PRESETS.length !== 20) errors.push('状态栏外观注册表必须正好包含20套');
-if (new Set(STATUS_STYLE_PRESETS.map(style => style.id)).size !== 20) errors.push('20套状态栏外观必须使用20个独立主题 ID');
-if (statusIds.size !== 20) errors.push('20套状态栏外观必须生成20个独立正则 ID');
+if (STATUS_STYLE_PRESETS.length !== 22) errors.push('状态栏外观注册表必须正好包含22套');
+if (new Set(STATUS_STYLE_PRESETS.map(style => style.id)).size !== 22) errors.push('22套状态栏外观必须使用22个独立主题 ID');
+if (statusIds.size !== 22) errors.push('22套状态栏外观必须生成22个独立正则 ID');
 
-if (STATUS_STRUCTURE_PRESETS.length !== 10) errors.push('旧40套配方移除后，编辑器必须保留9种基础结构与1种手机桌面结构');
+if (STATUS_STRUCTURE_PRESETS.length !== 13) errors.push('编辑器必须保留9种基础结构、1种手机桌面结构与3种原版角色卡结构');
 try {
     await readdir(join(root, 'starter-packs', '状态栏一键配方'));
     errors.push('已删除的40套状态栏一键配方不应继续生成');

@@ -1,0 +1,155 @@
+@import url('https://fontsapi.zeoseven.com/71/main/result.css');
+:host{display:block}
+
+        /* ========== 基础设定 ========== */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        .phone-wrapper {
+            font-family: "MisekiBitmapMincho", "SimSun", serif;
+            font-weight: normal;
+            line-height: 1.5;
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+            width: 100%;
+        }
+
+        /* ========== 粉色系黑莓风格机身 (蓝边无阴影版) ========== */
+        .blackberry-phone {
+            width: 100%;
+            max-width: 340px;
+            background-color: #FFCCE3; /* 保留粉色机身 */
+            border-radius: 24px 24px 35px 35px;
+            padding: 20px 15px 25px 15px;
+            position: relative;
+            border: 3px solid #8ab6f9; /* 边缘线条改成了清新的蓝色 */
+            /* 去掉了所有的阴影效果 */
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .phone-speaker {
+            width: 60px;
+            height: 6px;
+            background-color: #d48b85;
+            border-radius: 10px;
+            margin: 0 auto;
+            border-bottom: 1px solid #fff;
+        }
+
+        /* ========== 屏幕区域 ========== */
+        .screen-container {
+            background-color: #f4f7f6;
+            border: 8px solid #CCE1F4;
+            border-radius: 12px;
+            height: 220px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .status-bar {
+            height: 20px;
+            background-color: #bcebde;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 10px;
+            color: #5d576b;
+            font-weight: bold;
+            transition: background-color 0.4s ease;
+        }
+
+        .screen-content {
+            padding: 15px;
+            height: calc(100% - 20px);
+            background-color: #e0fbf5;
+            background-image: radial-gradient(rgba(93, 87, 107, 0.06) 1px, transparent 1px);
+            background-size: 10px 10px;
+            overflow-y: auto;
+            transition: background-color 0.4s ease;
+        }
+
+        /* 主滑动条及日记滑动条样式 */
+        .screen-content::-webkit-scrollbar, .diary-content::-webkit-scrollbar { width: 6px; }
+        .screen-content::-webkit-scrollbar-track, .diary-content::-webkit-scrollbar-track { background: rgba(255, 183, 178, 0.2); border-radius: 3px; }
+        .screen-content::-webkit-scrollbar-thumb, .diary-content::-webkit-scrollbar-thumb { background: #ffb7b2; border-radius: 3px; }
+        .screen-content::-webkit-scrollbar-thumb:hover, .diary-content::-webkit-scrollbar-thumb:hover { background: #e59a95; }
+
+        /* 标签页隐藏与显示 */
+        .tab-panel {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .tab-panel.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ========== 物理按键区 ========== */
+        .keyboard-area { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-top: 5px; }
+        .nav-row { display: flex; justify-content: center; align-items: center; gap: 20px; width: 100%; }
+
+        .btn {
+            width: 45px; height: 35px;
+            background: linear-gradient(to bottom, #fff9fa, #ffe4e1);
+            border: 2px solid #e59a95; border-radius: 8px 8px 12px 12px;
+            box-shadow: inset 0 2px 2px rgba(255,255,255,0.8), 0 3px 5px rgba(200,100,100,0.3);
+            color: #d48b85; font-size: 16px; font-weight: bold;
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn.center-btn {
+            width: 55px; height: 45px; border-radius: 12px;
+            background: radial-gradient(circle, #ffdac1, #ffb7b2); border: 2px solid #d48b85;
+            box-shadow: inset 0 0 5px rgba(200,100,100,0.4); color: #fff;
+        }
+        .btn:active { transform: translateY(3px); box-shadow: inset 0 4px 6px rgba(200,100,100,0.4); background: linear-gradient(to bottom, #ffe4e1, #ffb7b2); color: #5d576b; }
+        .btn.center-btn:active { transform: translateY(3px); box-shadow: inset 0 4px 6px rgba(200,100,100,0.5); background: radial-gradient(circle, #ffb7b2, #e59a95); }
+        .btn.active { color: #5d576b; }
+        .btn.center-btn.active { border-color: #fff; }
+
+        /* ========== 版块样式 ========== */
+        .clock-face { width: 80px; height: 80px; background-color: #fff; border: 4px solid #5d576b; border-radius: 50%; position: relative; margin-bottom: 15px; }
+        .clock-center { width: 8px; height: 8px; background-color: #ffb7b2; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5; }
+        .clock-hand { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; background-color: #5d576b; border-radius: 3px; }
+        .hour-hand { width: 4px; height: 25px; margin-left: -2px; }
+        .minute-hand { width: 3px; height: 35px; margin-left: -1.5px; background-color: #ffb7b2; }
+        .time-text { font-size: 20px; font-weight: bold; color: #5d576b; }
+        .date-loc { font-size: 12px; color: #888; margin-top: 5px; }
+
+        .weather-text-icon { font-size: 30px; font-weight: bold; color: #ff9aa2; border: 3px solid #ffdac1; border-radius: 15px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; background-color: #fff; }
+        .weather-desc { font-size: 14px; color: #5d576b; padding: 0 10px; margin-bottom: 15px; }
+        .weather-cute-text { font-size: 14px; color: #d48b85; text-align: left; padding: 10px; background: rgba(255,255,255,0.7); border-radius: 8px; border: 2px dashed #ffb7b2; font-style: italic; width: 90%; }
+
+        .outfit-title { font-size: 16px; font-weight: bold; color: #d48b85; margin-bottom: 15px; border-bottom: 2px dashed #ffb7b2; padding-bottom: 5px; }
+        .outfit-desc { font-size: 14px; color: #5d576b; text-align: left; padding: 10px; background: rgba(255,255,255,0.7); border-radius: 8px; border: 2px dashed #ffb7b2; width: 90%; }
+
+        .diary-page { background-color: #fff9fa; border: 2px solid #e59a95; padding: 15px 12px 12px 12px; border-radius: 4px; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; }
+        .tape-deco { position: absolute; top: -8px; left: 50%; transform: translateX(-50%) rotate(-2deg); width: 40px; height: 15px; background-color: rgba(181, 234, 215, 0.8); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .diary-date { font-size: 14px; font-weight: bold; color: #d48b85; border-bottom: 2px dashed #ffdac1; padding-bottom: 5px; margin-bottom: 10px; text-align: left; flex-shrink: 0; }
+        .diary-content { font-size: 13px; color: #5d576b; text-align: left; line-height: 1.6; overflow-y: auto; flex-grow: 1; padding-right: 4px; white-space: pre-wrap; }
+
+        .todo-title { font-size: 16px; font-weight: bold; color: #7b9e78; margin-bottom: 15px; }
+        .todo-list { background-color: rgba(255,255,255,0.6); padding: 15px; border-radius: 12px; border: 2px dashed #b5ead7; width: 90%; text-align: left; overflow-y: auto; max-height: 150px; }
+        .todo-item { font-size: 14px; color: #5d6b57; display: flex; align-items: flex-start; margin-bottom: 10px; line-height: 1.4; }
+        .todo-item:last-child { margin-bottom: 0; }
+        .todo-box { display: inline-block; width: 14px; height: 14px; border: 2px solid #7b9e78; border-radius: 3px; margin-right: 8px; margin-top: 2px; flex-shrink: 0; background-color: rgba(255,255,255,0.8); }
+
+        /* 待办清单专属绿色滑动条 */
+        .todo-list::-webkit-scrollbar { width: 6px; }
+        .todo-list::-webkit-scrollbar-track { background: rgba(181, 234, 215, 0.3); border-radius: 3px; }
+        .todo-list::-webkit-scrollbar-thumb { background: #b5ead7; border-radius: 3px; }
+        .todo-list::-webkit-scrollbar-thumb:hover { background: #7b9e78; }
+

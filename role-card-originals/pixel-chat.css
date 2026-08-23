@@ -1,0 +1,145 @@
+@import url('https://fontsapi.zeoseven.com/925/main/result.css');
+:host{display:block;padding:10px;font-family:"Ark Pixel 12px Prop latin","Microsoft YaHei",sans-serif;font-weight:normal}
+
+        /* 基础样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            /* 使用指定的像素字体 */
+            font-family: "Ark Pixel 12px Prop latin", "Microsoft YaHei", sans-serif;
+            font-weight: normal;
+            background: transparent;
+            padding: 10px;
+        }
+
+        /* 主容器：可爱的像素风马卡龙面板 */
+        .status-container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: #fff4f8; /* 非常浅的粉白底色 */
+            /* 像素风边框实现：使用粉蓝色调 */
+            box-shadow:
+                inset -4px -4px 0px 0px rgba(0,0,0,0.05),
+                4px 0 0 0 #ffb3c6,
+                0 4px 0 0 #ffb3c6,
+                -4px 0 0 0 #ffb3c6,
+                0 -4px 0 0 #ffb3c6,
+                4px 4px 0 0 #ffb3c6,
+                -4px -4px 0 0 #ffb3c6,
+                4px -4px 0 0 #ffb3c6,
+                -4px 4px 0 0 #ffb3c6;
+            border-radius: 0; /* 像素风不需要圆角 */
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 15px;
+        }
+
+        /* 顶部标题区域 */
+        .header-section {
+            background-color: #bde0fe; /* 马卡龙浅蓝 */
+            padding: 15px;
+            text-align: center;
+            border: 2px dashed #ffafcc; /* 可爱的马卡龙粉虚线 */
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.05);
+        }
+
+        .main-title {
+            font-size: 20px;
+            color: #ff7eb3; /* 偏深的粉色，保证可读性 */
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 0px #fff;
+        }
+
+        .sub-title {
+            font-size: 14px;
+            color: #6a9bd8; /* 偏深的蓝色 */
+        }
+
+        /* 聊天区域（仿微信） */
+        .chat-section {
+            background-color: #eaf2ff; /* 极淡的马卡龙蓝背景 */
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border: 2px solid #fff;
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05);
+            min-height: 200px;
+        }
+
+        /* 气泡容器 */
+        .chat-message {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            animation: popIn 0.3s ease-out forwards;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        /* 动画延迟，让消息一条条出来 */
+        .chat-message:nth-child(1) { animation-delay: 0.1s; }
+        .chat-message:nth-child(2) { animation-delay: 0.3s; }
+        .chat-message:nth-child(3) { animation-delay: 0.5s; }
+
+        @keyframes popIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 气泡样式（左侧/AI发出） */
+        .bubble {
+            background-color: #ffffff;
+            padding: 10px 14px;
+            position: relative;
+            color: #555;
+            font-size: 14px;
+            line-height: 1.5;
+            max-width: 80%;
+            /* 像素风气泡，使用粉蓝色边框 */
+            box-shadow: 2px 2px 0px #dcdcdc;
+            border: 2px solid #a2d2ff;
+        }
+
+        /* 气泡小尾巴 */
+        .bubble::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 10px;
+            width: 0;
+            height: 0;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-right: 6px solid #a2d2ff;
+        }
+
+        /* 头像占位 */
+        .avatar {
+            width: 36px;
+            height: 36px;
+            background-color: #ffb3c6; /* 马卡龙粉头像底色 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            border: 2px solid #fff;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-size: 14px;
+        }
+
