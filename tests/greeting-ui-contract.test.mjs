@@ -87,11 +87,13 @@ test('long mobile opening editors are collapsed independently', () => {
 });
 
 test('status workspace exposes component, palette, real avatar and audio controls', () => {
-    for (const id of ['status-atelier-structure', 'status-atelier-forum-skins', 'status-atelier-status-styles', 'status-atelier-status-palettes', 'status-atelier-avatar-source', 'status-atelier-avatar-url', 'status-atelier-image-url', 'status-atelier-audio-url', 'status-atelier-test-ai']) {
+    for (const id of ['status-atelier-structure', 'status-atelier-forum-skins', 'status-atelier-status-styles', 'status-atelier-status-palettes', 'status-atelier-avatar-source', 'status-atelier-avatar-url', 'status-atelier-image-url', 'status-atelier-archive-image-urls', 'status-atelier-audio-url', 'status-atelier-test-ai']) {
         assert.match(settingsMarkup, new RegExp(`id="${id}"`));
     }
-    assert.match(settingsMarkup, /20 套外观/);
-    assert.match(settingsMarkup, /24 套色卡/);
+    assert.match(settingsMarkup, /拍立得图片链接（每行一个，随机显示）/);
+    assert.match(source, /'status-atelier-archive-image-urls': 'archiveImageUrls'/);
+    assert.match(settingsMarkup, /22 套外观/);
+    assert.match(settingsMarkup, /26 套色卡/);
     assert.match(source, /thumbnail\('avatar', avatar\)/);
     assert.match(source, /thumbnail\('persona', user_avatar\)/);
     assert.match(source, /parseStatusOutput\(input, response\)/);
@@ -199,9 +201,9 @@ test('modal and palettes stay inside mobile viewport and palette library is coll
     assert.doesNotMatch(settingsMarkup, /status-atelier-status-logo-library/);
     assert.doesNotMatch(source, /status-atelier-status-logo-library/);
     assert.match(source, /structure: 'phone'/);
-    assert.match(source, /PHONE_STRUCTURE_IDS = Object\.freeze\(\['phone', 'profile', 'social', 'forum', 'chat', 'music', 'casefile', 'quest'\]\)/);
-    assert.match(settingsMarkup, /<summary><strong>24 套色卡<\/strong><\/summary>/);
-    assert.match(settingsMarkup, /<summary><strong>20 套外观<\/strong><\/summary>/);
+    assert.match(source, /PHONE_STRUCTURE_IDS = Object\.freeze\(\['phone', 'profile', 'social', 'forum', 'chat', 'music', 'casefile', 'quest', 'archive-status', 'pixel-chat', 'pixel-handheld'\]\)/);
+    assert.match(settingsMarkup, /<summary><strong>26 套色卡<\/strong><\/summary>/);
+    assert.match(settingsMarkup, /<summary><strong>22 套外观<\/strong><\/summary>/);
     assert.match(styleSource, /max-height:\s*calc\(100dvh - 12px - env\(safe-area-inset-top\) - env\(safe-area-inset-bottom\)\)/);
     assert.match(styleSource, /\.status-atelier-dialog-body\s*\{[\s\S]*?overflow-y:\s*auto;[\s\S]*?overscroll-behavior:\s*contain;/);
 });
@@ -258,7 +260,11 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(settingsMarkup, /status-atelier-setting-section status-atelier-collapsible" open>[\s\S]*?选择状态栏模板/);
     assert.doesNotMatch(settingsMarkup, /外观改字体、边框、材质、圆角和组件造型|色卡只控制颜色/);
     assert.match(settingsMarkup, /id="status-atelier-appearance-section"[^>]*>[\s\S]*?<h4>更多外观与配色<\/h4>/);
-    assert.match(source, /appearanceSection\.hidden = \['phone', 'forum', 'chat'\]\.includes\(stored\.structure\)/);
+    assert.match(source, /appearanceSection\.hidden = \['phone', 'forum', 'chat', 'archive-status', 'pixel-chat', 'pixel-handheld'\]\.includes\(stored\.structure\)/);
+    assert.match(source, /function populateStatusStructureSelect\(structureSelect\)/);
+    assert.match(source, /appendGroup\('手机', \['phone', 'pixel-handheld'\]\)/);
+    assert.match(source, /appendGroup\('聊天会话', \['chat', 'pixel-chat'\]\)/);
+    assert.match(source, /appendGroup\('其他状态栏'/);
     assert.match(source, /forumSkinButton[\s\S]*?settings\(\)\.forumSkin = skin\.id/);
     assert.match(settingsMarkup, /<details id="status-atelier-forum-skins-section"[^>]*status-atelier-collapsible[^>]*open hidden>/);
     assert.doesNotMatch(settingsMarkup, /每套都会更换排版方式、示例站名和回复语气/);

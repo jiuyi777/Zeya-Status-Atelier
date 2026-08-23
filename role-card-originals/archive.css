@@ -1,0 +1,1174 @@
+
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Serif+SC:wght@400;700&display=swap');
+
+        /* =========================================
+           黑白档案外层界面样式 (B&W Archive Wrapper)
+           ========================================= */
+        .bw-archive-system {
+            width: 100%;
+            max-width: 650px;
+            margin: 20px auto;
+            font-family: 'Courier New', Courier, monospace;
+            color: #263849;
+            background: #fff;
+            border: 2px solid #435a70;
+            box-shadow: 8px 8px 0px rgba(67, 90, 112, 0.48);
+            position: relative;
+            pointer-events: auto;
+            border-radius: 2px;
+            animation: archiveFadeIn 0.8s ease-out forwards;
+        }
+
+        @keyframes archiveFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bw-archive-header {
+            background: #435a70;
+            color: #fff;
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            user-select: none;
+            transition: background 0.3s;
+        }
+
+        .bw-archive-header:hover {
+            background: #536d86;
+        }
+
+        .bw-archive-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.05em;
+        }
+
+        .bw-archive-icon {
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bw-archive-system.open .bw-archive-icon {
+            transform: rotate(180deg);
+        }
+
+        .bw-archive-deco-line {
+            height: 6px;
+            background: repeating-linear-gradient(45deg, #435a70, #435a70 10px, #edf4f8 10px, #edf4f8 20px);
+            width: 100%;
+            border-bottom: 2px solid #435a70;
+        }
+
+        .bw-archive-body {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #fdfdfd;
+            background-image:
+                linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .bw-archive-system.open .bw-archive-body {
+            grid-template-rows: 1fr;
+        }
+
+        .bw-archive-inner {
+            overflow: hidden;
+        }
+
+        .bw-archive-content-wrapper {
+            padding: 25px 15px;
+            position: relative;
+        }
+
+        .bw-archive-content-wrapper::before,
+        .bw-archive-content-wrapper::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #000;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .bw-archive-content-wrapper::before {
+            top: 10px;
+            left: 10px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .bw-archive-content-wrapper::after {
+            bottom: 10px;
+            right: 10px;
+            border-left: none;
+            border-top: none;
+        }
+
+        .bw-archive-footer {
+            border-top: 2px solid #435a70;
+            padding: 8px 20px;
+            font-size: 0.8em;
+            display: flex;
+            justify-content: space-between;
+            color: #263849;
+            background: #fff;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .bw-status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .bw-status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #435a70;
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* =========================================
+           原版内层界面样式 (Frost Blue HUD)
+           ========================================= */
+        .frost-blue-chapter-hud {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2px;
+            box-sizing: border-box;
+            position: relative;
+            font-family: 'Noto Serif SC', 'Noto Serif JP', serif;
+            pointer-events: none;
+            animation: hudFadeIn 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+            perspective: 1000px;
+        }
+
+        @keyframes hudFadeIn {
+            0% { opacity: 0; transform: translateY(20px) scale(0.98); filter: blur(10px); }
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+
+        @keyframes elementFadeIn {
+            0% { opacity: 0; transform: translateY(15px); filter: blur(8px); }
+            100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+
+        .fb-daily-status {
+            background: rgba(220, 235, 255, 0.4);
+            backdrop-filter: blur(12px) saturate(120%);
+            -webkit-backdrop-filter: blur(12px) saturate(120%);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 12px;
+            padding: 12px 18px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 15px rgba(31, 38, 135, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+            z-index: 5;
+            opacity: 0;
+            animation: elementFadeIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards 0.1s;
+            pointer-events: auto;
+        }
+
+        .fb-ds-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .fb-ds-date {
+            display: flex;
+            flex-direction: column;
+            min-width: 80px;
+        }
+
+        .fb-ds-label {
+            font-size: 0.65em;
+            color: #6FA3EF;
+            letter-spacing: 2px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .fb-ds-value {
+            font-size: 0.9em;
+            color: #2c3e50;
+            font-weight: 700;
+        }
+
+        .fb-ds-divider {
+            width: 1px;
+            height: 30px;
+            background: rgba(111, 163, 239, 0.3);
+            margin: 0 10px;
+        }
+
+        .fb-ds-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .fb-ds-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            font-size: 0.75em;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .fb-ds-good .fb-ds-icon {
+            background: #6FA3EF;
+            box-shadow: 0 2px 5px rgba(111, 163, 239, 0.4);
+        }
+
+        .fb-ds-bad .fb-ds-icon {
+            background: #95a5a6;
+            box-shadow: 0 2px 5px rgba(149, 165, 166, 0.4);
+        }
+
+        .fb-ds-text {
+            font-size: 0.85em;
+            font-weight: 700;
+            color: #34495e;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .fb-ds-info-row {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            border-top: 1px dashed rgba(111, 163, 239, 0.3);
+            padding-top: 8px;
+        }
+
+        .fb-ds-info-row-flex {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .fb-ds-info-label {
+            font-size: 0.65em;
+            color: #6FA3EF;
+            letter-spacing: 2px;
+            font-weight: 700;
+            min-width: 65px;
+            margin-top: 2px;
+        }
+
+        .fb-ds-info-value {
+            font-size: 0.85em;
+            color: #34495e;
+            font-weight: 700;
+            flex: 1;
+            word-break: break-word;
+        }
+
+        .fb-ds-broadcast-value {
+            font-style: italic;
+            font-family: 'Noto Serif SC', 'Noto Serif JP', serif;
+            color: #4a6582;
+            line-height: 1.4;
+        }
+
+        .fb-card {
+            position: relative;
+            width: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.4, 0.2, 0.2, 1);
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .fb-card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .fb-container {
+            --hud-bg: rgba(220, 235, 255, 0.25);
+            --hud-border: rgba(255, 255, 255, 0.4);
+            --hud-accent: #6FA3EF;
+            --hud-accent-alpha: rgba(111, 163, 239, 0.3);
+            --hud-accent-light: rgba(111, 163, 239, 0.15);
+            --hud-accent-shadow: rgba(111, 163, 239, 0.2);
+            --hud-text-primary: #2c3e50;
+            --hud-text-secondary: #5d7a96;
+            --hud-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+
+            background: var(--hud-bg);
+            backdrop-filter: blur(12px) saturate(120%);
+            -webkit-backdrop-filter: blur(12px) saturate(120%);
+            border: 1px solid var(--hud-border);
+            border-radius: 16px;
+            padding: 30px 25px;
+            box-shadow: var(--hud-shadow);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+
+        .fb-front {
+            position: relative;
+            z-index: 2;
+        }
+
+        .fb-back {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: rotateY(180deg);
+            box-sizing: border-box;
+
+            --hud-bg: rgba(255, 220, 225, 0.25);
+            --hud-border: rgba(255, 200, 205, 0.4);
+            --hud-accent: #E57373;
+            --hud-accent-alpha: rgba(229, 115, 115, 0.3);
+            --hud-accent-light: rgba(229, 115, 115, 0.15);
+            --hud-accent-shadow: rgba(229, 115, 115, 0.2);
+            --hud-text-primary: #5A3535;
+            --hud-text-secondary: #8A5A5A;
+            --hud-shadow: 0 8px 32px 0 rgba(135, 31, 45, 0.15);
+        }
+
+        .fb-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 100%);
+            pointer-events: none;
+            z-index: 0;
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+        }
+
+        .fb-header {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            border-bottom: 1px solid var(--hud-accent-alpha);
+            padding-bottom: 12px;
+            margin-bottom: 5px;
+            opacity: 0;
+            animation: elementFadeIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards 0.3s;
+        }
+
+        .fb-chapter-title {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: var(--hud-text-primary);
+            letter-spacing: 0.1em;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .fb-chapter-decoration {
+            font-size: 0.7em;
+            color: var(--hud-accent);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 4px;
+            opacity: 0.8;
+        }
+
+        .fb-chapter-jp-subtitle {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 0.85em;
+            color: var(--hud-text-secondary);
+            margin-top: 6px;
+            font-weight: 400;
+            letter-spacing: 0.05em;
+            opacity: 0.9;
+            font-style: normal;
+        }
+
+        .fb-content-row {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .fb-avatar-frame {
+            flex-shrink: 0;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: none;
+            box-shadow: 0 4px 15px var(--hud-accent-shadow);
+            overflow: visible;
+            position: relative;
+            opacity: 0;
+            animation: elementFadeIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards 0.6s;
+            margin-top: 5px;
+        }
+
+        .fb-avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            transform: scale(1.0);
+        }
+
+        .fb-avatar-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 140%;
+            height: 140%;
+            pointer-events: none;
+            z-index: 10;
+            background-image: url('https://s41.ax1x.com/2026/03/02/pepQksH.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .fb-avatar-overlay-back {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 140%;
+            height: 140%;
+            pointer-events: none;
+            z-index: 10;
+            background-image: url('https://s41.ax1x.com/2026/03/02/pepiJCn.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .fb-char-name {
+            font-size: 1.1em;
+            color: var(--hud-accent);
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-align: center;
+            opacity: 0;
+            animation: elementFadeIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards 0.9s;
+            margin-top: -4px;
+        }
+
+        .fb-monologue-box {
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 8px;
+            padding: 16px 20px;
+            font-size: 0.95em;
+            color: var(--hud-text-secondary);
+            line-height: 1.6;
+            font-style: italic;
+            border-left: 3px solid var(--hud-accent);
+            border-right: none;
+            border-top: none;
+            border-bottom: none;
+            position: relative;
+            text-align: left;
+            width: 100%;
+            box-sizing: border-box;
+            opacity: 0;
+            animation: elementFadeIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards 1.2s;
+        }
+
+        .fb-monologue-box::before {
+            content: '“';
+            position: absolute;
+            top: -10px;
+            left: 5px;
+            font-size: 2.5em;
+            color: var(--hud-accent-light);
+            font-family: serif;
+            pointer-events: none;
+        }
+
+        .fb-monologue-box::after {
+            content: '”';
+            position: absolute;
+            bottom: -30px;
+            right: 10px;
+            font-size: 2.5em;
+            color: var(--hud-accent-light);
+            font-family: serif;
+            pointer-events: none;
+        }
+
+        .fb-letter-wrapper {
+            width: 100%;
+            margin-top: 20px;
+            perspective: 1000px;
+            pointer-events: auto;
+            opacity: 0;
+            animation: elementFadeIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards 1.5s;
+        }
+
+        .fb-letter-toggle {
+            background: rgba(220, 235, 255, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(12px) saturate(120%);
+            -webkit-backdrop-filter: blur(12px) saturate(120%);
+            padding: 12px 20px;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            color: #6FA3EF;
+            font-weight: 700;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            font-family: 'STKaiti', 'KaiTi', 'FangSong', 'Noto Serif SC', serif;
+            font-size: 1.05rem;
+            letter-spacing: 0.12em;
+        }
+
+        .fb-letter-toggle:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.25);
+        }
+
+        .fb-letter-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+            transition: transform 0.4s ease;
+        }
+
+        .fb-letter-wrapper.open .fb-letter-toggle svg {
+            transform: rotate(180deg);
+        }
+
+        .fb-letter-content {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .fb-letter-content-inner {
+            overflow: hidden;
+        }
+
+        .fb-letter-wrapper.open .fb-letter-content {
+            grid-template-rows: 1fr;
+        }
+
+        .fb-letter-paper-wrapper {
+            position: relative;
+            margin-top: 5px;
+            padding: 10px 8px;
+        }
+
+        .fb-blue-tape {
+            position: absolute;
+            width: 85px;
+            height: 26px;
+            background: linear-gradient(135deg, rgba(111, 163, 239, 0.7), rgba(90, 140, 220, 0.6));
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border-left: 2px dotted rgba(255, 255, 255, 0.5);
+            border-right: 2px dotted rgba(255, 255, 255, 0.5);
+            opacity: 0.9;
+        }
+
+        .fb-blue-tape.tape-tl {
+            top: 2px;
+            left: 0px;
+            transform: rotate(-5deg);
+        }
+
+        .fb-blue-tape.tape-br {
+            bottom: 2px;
+            right: 0px;
+            transform: rotate(-3deg);
+        }
+
+        .fb-blue-tape.tape-top {
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%) rotate(2deg);
+            width: 100px;
+            height: 28px;
+            z-index: 5;
+        }
+
+        .fb-letter-paper {
+            margin-top: 0;
+            background-color: #f4f9ff;
+            background-image:
+                linear-gradient(90deg, transparent 79px, rgba(111, 163, 239, 0.5) 79px, rgba(111, 163, 239, 0.5) 81px, transparent 81px),
+                linear-gradient(rgba(111, 163, 239, 0.15) 1px, transparent 1px);
+            background-size: 100% 1.8em;
+            border: 1px solid #cce0ff;
+            border-radius: 4px;
+            padding: 1.8em 30px 30px 100px;
+            color: #1e3a5f;
+            font-family: 'STKaiti', 'KaiTi', 'FangSong', 'Noto Serif SC', 'Noto Serif JP', serif;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), inset 0 0 50px rgba(180, 215, 255, 0.4);
+            position: relative;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        .fb-letter-paper::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)" opacity="0.05"/></svg>');
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .fb-letter-paper::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .fb-letter-paper::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        .fb-letter-paper::-webkit-scrollbar-thumb {
+            background: rgba(111, 163, 239, 0.3);
+            border-radius: 4px;
+        }
+
+        .fb-letter-to {
+            font-weight: 700;
+            font-size: 1.1em;
+            margin-bottom: 0;
+            line-height: 1.8em;
+            font-style: italic;
+            position: relative;
+            z-index: 2;
+        }
+
+        .fb-letter-body {
+            flex-grow: 1;
+            line-height: 1.8em;
+            font-size: 1em;
+            white-space: pre-wrap;
+            margin-top: 1.8em;
+            margin-bottom: 1.8em;
+            text-align: justify;
+            position: relative;
+            z-index: 2;
+        }
+
+        .fb-letter-from {
+            text-align: right;
+            font-weight: 700;
+            font-size: 1.1em;
+            line-height: 1.8em;
+            font-style: italic;
+            position: relative;
+            z-index: 2;
+        }
+
+        .fb-letter-stamp {
+            position: absolute;
+            bottom: 15px;
+            left: 8px;
+            width: 60px;
+            height: auto;
+            z-index: 5;
+            opacity: 0.85;
+            pointer-events: none;
+            transform: rotate(-5deg);
+            mix-blend-mode: multiply;
+        }
+
+        /* =========================================
+           拍立得照片样式 & 地图标点系统
+           ========================================= */
+        .fb-polaroid-wrapper {
+            width: 100%;
+            margin-top: 35px;
+            display: flex;
+            justify-content: center;
+            position: relative;
+            opacity: 0;
+            animation: elementFadeIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards 1.8s;
+            pointer-events: auto;
+            perspective: 1000px;
+        }
+
+        .fb-polaroid {
+            background: #f8fbff;
+            padding: 12px 12px 35px 12px;
+            border-radius: 4px;
+            box-shadow: 0 10px 25px rgba(31, 38, 135, 0.15), inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+            transform: rotate(-3deg);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            width: 220px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .fb-polaroid:hover {
+            transform: rotate(0deg) scale(1.05) translateY(-5px);
+            box-shadow: 0 15px 35px rgba(31, 38, 135, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.9);
+            z-index: 10;
+        }
+
+        .fb-polaroid-img-container {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background: #dce8f5;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .fb-polaroid-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: sepia(0.2) hue-rotate(10deg) saturate(1.1) brightness(1.05) contrast(1.05);
+            transition: filter 0.4s ease;
+        }
+
+        .fb-polaroid-img-container.is-placeholder::after {
+            content: "X";
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            color: #435a70;
+            background: linear-gradient(135deg, #edf4f8, #dce8f5);
+            font: 700 2rem/1 'Courier New', monospace;
+        }
+
+        .fb-polaroid:hover .fb-polaroid-img {
+            filter: sepia(0.05) hue-rotate(0deg) saturate(1.05) brightness(1.1) contrast(1.0);
+        }
+
+        /* 拍立得小人样式 - 根据用户指令进行精确的相对坐标与光晕修正 */
+        .fb-polaroid-figure {
+            position: absolute;
+            width: 16%;
+            height: auto;
+            z-index: 2;
+            pointer-events: none;
+            filter: sepia(0.2) hue-rotate(10deg) saturate(1.1) brightness(1.05) contrast(1.05) drop-shadow(2px 3px 4px rgba(0, 0, 0, 0.4));
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            /* 基础未命中时 */
+            bottom: 22%;
+            right: 35%;
+        }
+
+        /* 1. 紫色 - 高圆寺 Livehouse "Basement"
+           向上微调，确保小人完全显露 */
+        [data-loc*="Basement"] .fb-polaroid-figure {
+            top: 81%; left: 6.25%; bottom: auto; right: auto;
+            transform: scale(1.1) rotate(5deg);
+            filter: sepia(0) hue-rotate(0deg) saturate(1.1) brightness(1.15) drop-shadow(0 0 12px #9A2CFF);
+        }
+
+        /* 2. 蓝色 - 歌舞伎町 "Club EDEN"
+           向右下挪动 (1/4, -1/4) */
+        [data-loc*="EDEN"] .fb-polaroid-figure {
+            top: 55%; left: 56.5%; bottom: auto; right: auto;
+            transform: scale(1.15);
+            filter: sepia(0) hue-rotate(0deg) saturate(1.2) brightness(1.2) drop-shadow(0 0 12px #3B5BFF);
+        }
+
+        /* 3. 青色 - 7-11
+           向左上方向回调与右下角等距的位置 */
+        [data-loc*="7-11"] .fb-polaroid-figure {
+            top: 75%; left: 65%; bottom: auto; right: auto;
+            transform: scale(1.05) rotate(-3deg);
+            filter: sepia(0) hue-rotate(0deg) saturate(1.1) brightness(1.1) drop-shadow(0 0 10px #0688A6);
+        }
+
+        /* 4. 绿色 - 老旧公寓 204室
+           向右下移动一点点，高明度低饱和度绿色 */
+        [data-loc*="204室"] .fb-polaroid-figure,
+        [data-loc*="公寓"] .fb-polaroid-figure {
+            top: 20%; right: 10%; bottom: auto; left: auto;
+            transform: scale(1.05) rotate(-5deg);
+            filter: sepia(0) hue-rotate(0deg) saturate(0.8) brightness(1.2) drop-shadow(0 0 10px #A8E6CF);
+        }
+
+        /* 5. 红色 - 富士见汤
+           左侧边缘中间部分 */
+        [data-loc*="富士见汤"] .fb-polaroid-figure,
+        [data-loc*="钱汤"] .fb-polaroid-figure {
+            top: 45%; left: 15%; bottom: auto; right: auto;
+            transform: scale(1.08) rotate(3deg);
+            filter: sepia(0) hue-rotate(0deg) saturate(1.1) brightness(1.1) drop-shadow(0 0 10px #C63D33);
+        }
+
+        /* 6. 黄绿色 - 鸟贵族
+           向左移1/8，向上移1/2，高明度低饱和度黄绿 */
+        [data-loc*="鸟贵族"] .fb-polaroid-figure {
+            top: 12.5%; left: 21.875%; bottom: auto; right: auto;
+            transform: scale(1.05) rotate(2deg);
+            filter: sepia(0) hue-rotate(0deg) saturate(0.7) brightness(1.2) drop-shadow(0 0 10px #E5E0B1);
+        }
+
+        /* 7. 隐藏机制 */
+        [data-loc="隐藏"] .fb-polaroid-figure {
+            display: none !important;
+        }
+
+        /* 悬停放大效果统一处理 */
+        .fb-polaroid:hover .fb-polaroid-figure {
+            transform: scale(1.2) translateY(-4px);
+        }
+
+        [data-loc*="EDEN"] .fb-polaroid:hover .fb-polaroid-figure {
+            transform: scale(1.3) translateY(-4px);
+        }
+
+        .fb-polaroid-filter {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+            mix-blend-mode: overlay;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .fb-polaroid-caption {
+            margin-top: 15px;
+            text-align: center;
+            font-family: 'Noto Serif SC', 'Noto Serif JP', cursive;
+            color: #3a5b82;
+            font-size: 0.95em;
+            font-weight: 700;
+            letter-spacing: 1px;
+            transform: rotate(-1deg);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* =========================================
+           御神签界面样式
+           ========================================= */
+        .fb-omikuji-container {
+            background: rgba(220, 235, 255, 0.25);
+            backdrop-filter: blur(12px) saturate(120%);
+            -webkit-backdrop-filter: blur(12px) saturate(120%);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 16px;
+            padding: 20px 25px;
+            margin-top: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            text-align: center;
+            opacity: 0;
+            animation: elementFadeIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards 2.1s;
+            pointer-events: auto;
+            position: relative;
+        }
+
+        .fb-omikuji-title {
+            font-size: 0.8em;
+            color: #6FA3EF;
+            letter-spacing: 3px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .fb-omikuji-scene {
+            position: relative;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin-bottom: 5px;
+        }
+
+        .fb-omikuji-cylinder {
+            width: 40px;
+            height: 75px;
+            background: linear-gradient(135deg, #a8cbf7, #dce8f5, #8ab4f8);
+            border-radius: 3px 3px 8px 8px;
+            position: relative;
+            cursor: pointer;
+            box-shadow: inset -5px -5px 10px rgba(0, 0, 0, 0.1), 0 5px 15px rgba(31, 38, 135, 0.15);
+            z-index: 2;
+            transform-origin: bottom center;
+        }
+
+        .fb-omikuji-cylinder::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: #5a8cdc;
+            border-radius: 50%;
+            box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.4);
+        }
+
+        .fb-omikuji-cylinder::after {
+            content: '御\A神\A籤';
+            white-space: pre;
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Noto Serif SC', 'Noto Serif JP', serif;
+            font-size: 11px;
+            color: #34495e;
+            font-weight: 700;
+            line-height: 1.2;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        @keyframes shakeOmikuji {
+            0%, 100% { transform: rotate(0deg); }
+            20% { transform: rotate(12deg); }
+            40% { transform: rotate(-12deg); }
+            60% { transform: rotate(8deg); }
+            80% { transform: rotate(-8deg); }
+        }
+
+        .fb-omikuji-cylinder.shaking {
+            animation: shakeOmikuji 0.5s ease-in-out infinite;
+        }
+
+        .fb-omikuji-stick {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 50px;
+            background: #e8d5b7;
+            border: 1px solid #d4b895;
+            border-radius: 2px;
+            z-index: 1;
+            transition: bottom 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .fb-omikuji-stick::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 10px;
+            background: #e74c3c;
+        }
+
+        .fb-omikuji-scene.drawn .fb-omikuji-stick {
+            bottom: 70px;
+        }
+
+        .fb-omikuji-result-box {
+            position: relative;
+            height: 20px;
+            margin-top: 5px;
+        }
+
+        .fb-omikuji-hint {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            font-size: 0.75em;
+            color: #8da5bf;
+            letter-spacing: 1px;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .fb-omikuji-scene.drawn~.fb-omikuji-result-box .fb-omikuji-hint {
+            opacity: 0;
+        }
+
+        .fb-omikuji-paper-wrapper {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+            max-width: 260px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .fb-omikuji-scene.drawn~.fb-omikuji-paper-wrapper {
+            grid-template-rows: 1fr;
+        }
+
+        .fb-omikuji-paper-inner {
+            overflow: hidden;
+        }
+
+        .fb-omikuji-paper-content {
+            background: #fffcf8;
+            border: 1px solid #e8d5b7;
+            border-radius: 4px;
+            padding: 20px 15px;
+            box-shadow: 0 10px 25px rgba(31, 38, 135, 0.15), inset 0 0 20px rgba(232, 213, 183, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            background-image: radial-gradient(#e8d5b7 1px, transparent 1px);
+            background-size: 15px 15px;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+
+        .fb-omikuji-paper-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 2px solid #d32f2f;
+            margin: 6px;
+            pointer-events: none;
+            opacity: 0.6;
+            border-radius: 2px;
+        }
+
+        .fb-omikuji-level {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: #d32f2f;
+            font-family: 'Noto Serif SC', 'Noto Serif JP', serif;
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            letter-spacing: 8px;
+            margin: 15px 0 20px 0;
+            padding: 15px 8px;
+            border: 3px double #d32f2f;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 3px 3px 0 rgba(211, 47, 47, 0.1);
+        }
+
+        .fb-omikuji-text {
+            font-size: 0.95em;
+            color: #2c3e50;
+            line-height: 1.8;
+            text-align: center;
+            font-weight: 700;
+            padding: 0 10px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .fb-omikuji-close {
+            margin-top: 18px;
+            font-size: 0.8em;
+            color: #8da5bf;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+            position: relative;
+            z-index: 2;
+            font-weight: 700;
+            padding: 5px 15px;
+            border-radius: 12px;
+            background: rgba(220, 235, 255, 0.3);
+        }
+
+        .fb-omikuji-close:hover {
+            color: #d32f2f;
+            background: rgba(220, 235, 255, 0.6);
+        }
+
+        @media (max-width: 480px) {
+            .fb-daily-status { padding: 10px 12px; gap: 8px; }
+            .fb-ds-date { min-width: 70px; }
+            .fb-ds-value { font-size: 0.8em; }
+            .fb-ds-text { font-size: 0.75em; }
+            .fb-ds-icon { width: 18px; height: 18px; font-size: 0.65em; }
+            .fb-ds-divider { margin: 0 5px; }
+            .fb-ds-info-label { min-width: 55px; }
+            .fb-ds-info-value { font-size: 0.8em; }
+            .fb-letter-paper {
+                padding: 1.8em 20px 20px 60px;
+                background-image:
+                    linear-gradient(90deg, transparent 49px, rgba(111, 163, 239, 0.5) 49px, rgba(111, 163, 239, 0.5) 51px, transparent 51px),
+                    linear-gradient(rgba(111, 163, 239, 0.15) 1px, transparent 1px);
+            }
+            .fb-letter-stamp { width: 40px; left: 4px; bottom: 10px; }
+        }
+
+        .fb-avatar-frame.is-placeholder .fb-avatar-img { display: none; }
+        .fb-avatar-frame.is-placeholder::after {
+            content: "X";
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            color: #111;
+            background: #eef3f8;
+            font: 700 2rem/1 'Courier New', monospace;
+        }
