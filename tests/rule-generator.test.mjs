@@ -4,6 +4,10 @@ import {
     PHONE_APP_ICON_ASSETS,
     PHONE_PAGE_SCHEMAS,
     PHONE_SHELL_VISUAL_DEFAULTS,
+    CHAT_APPEARANCE_PRESETS,
+    CHAT_FRAME_ASSET_URLS,
+    CHAT_REFERENCE_CSS,
+    CHAT_SAMPLE_LOG,
     RULE_PRESETS,
     PHONE_SHELL_STYLES,
     STATUS_PALETTE_PRESETS,
@@ -19,6 +23,7 @@ import {
     makePreviewRecords,
     normalizePhoneDesktop,
     normalizeRule,
+    parseChatConversationLog,
     parseStatusOutput,
     parseFields,
     parsePages,
@@ -578,6 +583,119 @@ test('forum keeps six purposeful boards, twelve replies per board and only confi
     assert.equal(parsed.pages.length, 6);
     assert.equal(parsed.pages[1].values[0], '角色闲谈');
     assert.equal(parsed.pages[0].values[4], postValues[1]);
+});
+
+test('chat session exports a scrollable variable-length phone-literature conversation with both avatars', () => {
+    const preset = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'chat');
+    assert.ok(preset);
+    assert.deepEqual(preset.fields.map(field => field[3]), ['chat_name', 'online', 'chat_log']);
+    assert.match(preset.fields[2][1], /12到24条/);
+    assert.match(preset.fields[2][1], /时间¦发送方¦类型¦状态¦时长¦内容/);
+    const input = {
+        ...RULE_PRESETS.custom,
+        structure: 'chat',
+        title: preset.title,
+        subtitle: preset.subtitle,
+        layout: preset.layout,
+        pagesText: preset.pagesText,
+        pageFieldsText: preset.fields.map(field => field.join('|')).join('\n'),
+        media: {
+            avatarSource: 'character',
+            avatarUrl: '/thumbnail?type=avatar&file=character.png',
+            userAvatarUrl: '/thumbnail?type=persona&file=user.png',
+            imageAlt: '聊天对象头像',
+        },
+    };
+    const preview = makePreviewRecords(input);
+    assert.deepEqual(preview.pages[0].values, ['当前聊天对象', '在线 · 正在输入', CHAT_SAMPLE_LOG]);
+    const messages = parseChatConversationLog(preview.pages[0].values[2]);
+    assert.equal(messages.length, 17);
+    assert.deepEqual(messages[0], {
+        time: '21:58', side: 'left', type: 'text', state: '', duration: '', message: 'X',
+    });
+    assert.deepEqual(messages.map(item => item.message), Array(17).fill('X'));
+    assert.equal(messages[7].type, 'voice');
+    assert.equal(messages[7].duration, '0:09');
+    assert.equal(messages.at(-1).side, 'right');
+    assert.equal(messages.at(-1).state, '已读');
+    const instruction = buildAiInstruction(input);
+    assert.match(instruction, /12到24条/);
+    assert.match(instruction, /每条用§分隔/);
+    assert.doesNotMatch(CHAT_SAMPLE_LOG, /\|/);
+    const parsed = parseStatusOutput(input, `<zeya_status>
+[View1|当前聊天对象|在线 · 正在输入|${CHAT_SAMPLE_LOG}]
+</zeya_status>`);
+    assert.equal(parseChatConversationLog(parsed.pages[0].values[2]).length, 17);
+    const script = buildRegexScript(input).replaceString;
+    assert.match(script, /function renderChatConversation/);
+    assert.match(script, /zrs-chat-window/);
+    assert.match(script, /zrs-chat-conversation/);
+    assert.match(script, /zrs-chat-contact/);
+    assert.match(script, /zrs-chat-row is-/);
+    assert.match(script, /is-voice-message/);
+    assert.match(script, /zrs-chat-message-meta/);
+    assert.match(script, /zrs-chat-voice-play/);
+    assert.match(script, /zrs-chat-menu/);
+    assert.match(script, /zrs-chat-sidebar/);
+    assert.match(script, /zrs-chat-statusbar/);
+    assert.match(script, /aria-expanded/);
+    assert.match(script, /聊天记录，可上下滑动/);
+    assert.match(script, /function parseChatMessages/);
+    assert.match(script, /config\.media\.userAvatarUrl/);
+    assert.match(script, /side==='right'\?config\.media\.userAvatarUrl:config\.media\.avatarUrl/);
+    assert.match(script, /DIY：六套外观、会话标题与左侧头像/);
+    assert.match(script, /头像：左侧角色 · 右侧当前 User/);
+    assert.match(script, /AI：对象、在线、消息、时间、语音与已读/);
+    assert.doesNotMatch(script, /DIY：头像来源、标题、外观与配色/);
+    assert.doesNotMatch(script, /their_message_1|user_message_3|AI · 七轮会话/);
+    assert.match(script, /messages\.forEach/);
+    assert.match(script, /fields\.append\(menu,windowBody\)/);
+    assert.match(CHAT_REFERENCE_CSS, /data-structure="chat"[^}]*width:min\(100%,620px\)/);
+    assert.match(CHAT_REFERENCE_CSS, /zrs-chat-window[^}]*grid-template-columns:174px/);
+    assert.match(CHAT_REFERENCE_CSS, /zrs-chat-menu[^}]*display:flex!important/);
+    assert.match(CHAT_REFERENCE_CSS, /zrs-chat-sidebar[^}]*display:flex!important/);
+    assert.match(CHAT_REFERENCE_CSS, /zrs-chat-transcript[^}]*height:520px[^}]*overflow-y:auto/);
+    assert.match(CHAT_REFERENCE_CSS, /zrs-chat-transcript[^}]*touch-action:pan-y/);
+    assert.match(CHAT_REFERENCE_CSS, /zrs-chat-mini-avatar[^}]*width:30px;height:30px/);
+    assert.match(CHAT_REFERENCE_CSS, /zrs-chat-bubble[^}]*font-size:\.78rem/);
+    assert.doesNotMatch(CHAT_REFERENCE_CSS, /zrs-chat-bubble\{[^}]*border:[^;}]*(?:dashed|dotted)/);
+    assert.doesNotMatch(CHAT_REFERENCE_CSS, /zrs-chat-bubble::after\{[^}]*border-(?:left|bottom):[^;}]*(?:dashed|dotted)/);
+    assert.match(CHAT_REFERENCE_CSS, /zrs-chat-voice-play[^}]*width:32px;height:32px/);
+    assert.match(CHAT_REFERENCE_CSS, /@media\(max-width:520px\)[\s\S]*zrs-chat-transcript\{height:430px/);
+    assert.equal(CHAT_APPEARANCE_PRESETS.length, 6);
+    assert.deepEqual(CHAT_APPEARANCE_PRESETS.map(item => item.id), [
+        'kitty-pink', 'meow-mono', 'cloud-blue', 'notepad-pink', 'lace-ivory', 'velvet-wine',
+    ]);
+    for (const appearance of CHAT_APPEARANCE_PRESETS) {
+        const appearanceInput = { ...input, chatAppearance: appearance.id };
+        const normalized = normalizeRule(appearanceInput);
+        const appearanceScript = buildRegexScript(appearanceInput).replaceString;
+        assert.equal(normalized.chatAppearance, appearance.id);
+        assert.match(appearanceScript, new RegExp(`data-chat-appearance="${appearance.id}"`));
+        assert.doesNotMatch(appearanceScript, /url\(&quot;undefined/);
+    }
+    assert.match(CHAT_REFERENCE_CSS, /data-chat-appearance="meow-mono"/);
+    assert.match(CHAT_REFERENCE_CSS, /data-chat-appearance="cloud-blue"/);
+    assert.match(CHAT_REFERENCE_CSS, /data-chat-appearance="notepad-pink"/);
+    assert.match(CHAT_REFERENCE_CSS, /data-chat-appearance="lace-ivory"/);
+    assert.match(CHAT_REFERENCE_CSS, /data-chat-appearance="velvet-wine"/);
+    assert.match(CHAT_REFERENCE_CSS, /05\/06 are standalone tactile chat cards/);
+    assert.match(CHAT_REFERENCE_CSS, /:is\(\[data-chat-appearance="lace-ivory"\],\[data-chat-appearance="velvet-wine"\]\)[^{]*\.zrs-header[^}]*display:none!important/);
+    assert.match(CHAT_REFERENCE_CSS, /:is\(\[data-chat-appearance="lace-ivory"\],\[data-chat-appearance="velvet-wine"\]\)[^{]*\.zrs-chat-window\{[^}]*height:930px[^}]*overflow:hidden/);
+    assert.match(CHAT_REFERENCE_CSS, /:is\(\[data-chat-appearance="lace-ivory"\],\[data-chat-appearance="velvet-wine"\]\)[^{]*\.zrs-chat-transcript\{[^}]*height:714px[^}]*overflow-y:auto/);
+    assert.match(CHAT_REFERENCE_CSS, /:is\(\[data-chat-appearance="lace-ivory"\],\[data-chat-appearance="velvet-wine"\]\)[^{]*\.zrs-chat-mini-avatar\{[^}]*width:46px;height:46px/);
+    assert.match(CHAT_REFERENCE_CSS, /preview-character\.svg/);
+    assert.match(CHAT_REFERENCE_CSS, /preview-user\.svg/);
+    assert.match(CHAT_REFERENCE_CSS, /zrs-chat-row\.is-voice-message\{display:none!important/);
+    assert.match(CHAT_REFERENCE_CSS, /zrs-chat-contact[^)]*zrs-chat-statusbar/);
+    assert.match(CHAT_FRAME_ASSET_URLS['lace-ivory'], /assets\/chat\/lace-frame\.png$/);
+    assert.match(CHAT_FRAME_ASSET_URLS['velvet-wine'], /assets\/chat\/velvet-frame\.png$/);
+    const laceScript = buildRegexScript({ ...input, chatAppearance: 'lace-ivory' }).replaceString;
+    const velvetScript = buildRegexScript({ ...input, chatAppearance: 'velvet-wine' }).replaceString;
+    assert.match(laceScript, new RegExp(CHAT_FRAME_ASSET_URLS['lace-ivory'].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    assert.match(velvetScript, new RegExp(CHAT_FRAME_ASSET_URLS['velvet-wine'].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    assert.match(script, /cat-mascot\.png/);
+    assert.doesNotMatch(script, /url\(&quot;undefined/);
 });
 
 test('avatar is a real field kind that binds the configured character or user image', () => {

@@ -212,11 +212,11 @@
                         <div class="status-atelier-settings-grid">
                             <label id="status-atelier-media-avatar-source-wrap">头像来源<select id="status-atelier-avatar-source" class="text_pole">
                                 <option value="character">当前角色头像</option>
-                                <option value="user">当前 user 头像</option>
+                                <option value="user">当前 User 头像</option>
                                 <option value="url">直接 URL</option>
                                 <option value="none">不显示头像</option>
                             </select></label>
-                            <label id="status-atelier-avatar-url-wrap" hidden>头像 URL<input id="status-atelier-avatar-url" class="text_pole" type="url" placeholder="https://example.com/avatar.png"></label>
+                            <label id="status-atelier-avatar-url-wrap" hidden>自定义头像 URL<input id="status-atelier-avatar-url" class="text_pole" type="url" placeholder="选择“直接 URL”后填写 https://..."></label>
                             <label id="status-atelier-image-url-wrap">主图 / 封面 URL<input id="status-atelier-image-url" class="text_pole" type="url" placeholder="https://example.com/cover.png"></label>
                             <label id="status-atelier-audio-url-wrap">音频 URL<input id="status-atelier-audio-url" class="text_pole" type="url" placeholder="https://example.com/audio.mp3"></label>
                             <label id="status-atelier-image-alt-wrap">图片替代文字<input id="status-atelier-image-alt" class="text_pole" type="text" maxlength="80" placeholder="用于图片加载失败和无障碍阅读"></label>
@@ -226,6 +226,18 @@
                     <details id="status-atelier-forum-skins-section" class="status-atelier-setting-section status-atelier-collapsible" open hidden>
                         <summary class="status-atelier-section-heading"><div><h4>选择一种论坛</h4></div></summary>
                         <div id="status-atelier-forum-skins" class="status-atelier-forum-skins" aria-label="论坛风格"></div>
+                    </details>
+
+                    <details id="status-atelier-chat-appearance" class="status-atelier-setting-section status-atelier-collapsible" hidden open>
+                        <summary class="status-atelier-section-heading"><div><h4>聊天会话外观</h4><small>六套独立主题；聊天结构、左右头像和长对话都保留。</small></div></summary>
+                        <div id="status-atelier-chat-appearances" class="status-atelier-status-styles" aria-label="聊天会话外观">
+                            <button type="button" class="status-atelier-status-style" data-chat-appearance="kitty-pink" aria-pressed="true"><b>01</b><span class="status-atelier-chat-style-preview is-kitty" aria-hidden="true"></span><small>KittyChat 粉色桌面</small></button>
+                            <button type="button" class="status-atelier-status-style" data-chat-appearance="meow-mono" aria-pressed="false"><b>02</b><span class="status-atelier-chat-style-preview is-mono" aria-hidden="true"></span><small>Meow 黑白手绘</small></button>
+                            <button type="button" class="status-atelier-status-style" data-chat-appearance="cloud-blue" aria-pressed="false"><b>03</b><span class="status-atelier-chat-style-preview is-blue" aria-hidden="true"></span><small>云朵蓝 Messenger</small></button>
+                            <button type="button" class="status-atelier-status-style" data-chat-appearance="notepad-pink" aria-pressed="false"><b>04</b><span class="status-atelier-chat-style-preview is-notepad" aria-hidden="true"></span><small>粉色记事本单窗</small></button>
+                            <button type="button" class="status-atelier-status-style" data-chat-appearance="lace-ivory" aria-pressed="false"><b>05</b><span class="status-atelier-chat-style-preview is-lace" aria-hidden="true"></span><small>奶油纸雕蕾丝</small></button>
+                            <button type="button" class="status-atelier-status-style" data-chat-appearance="velvet-wine" aria-pressed="false"><b>06</b><span class="status-atelier-chat-style-preview is-velvet" aria-hidden="true"></span><small>奶茶绒面酒红丝带</small></button>
+                        </div>
                     </details>
 
                     <details class="status-atelier-setting-section status-atelier-collapsible">
