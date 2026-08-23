@@ -25,31 +25,6 @@ const DEFAULT_PAGE_FIELDS = [
     { label: '下一步打算', instruction: '填写该角色最可能采取的下一步行动', kind: 'long' },
 ];
 
-export const STATUS_STYLE_PRESETS = Object.freeze([
-    { code: '01', id: 'classical', name: '古典对称', title: '人物状态记录', subtitle: 'STORY STATUS', layout: 'grid' },
-    { code: '02', id: 'newspaper', name: '复古报刊', title: '剧情人物档案', subtitle: 'DAILY CHARACTER FILE', layout: 'grid' },
-    { code: '03', id: 'timeline', name: '中轴时间线', title: '人物轨迹', subtitle: 'CHARACTER TIMELINE', layout: 'stack' },
-    { code: '04', id: 'minimal', name: '构成编辑', title: '当前状态', subtitle: 'STATUS / EDITION', layout: 'grid' },
-    { code: '05', id: 'envelope', name: '信封日记', title: '私密近况', subtitle: 'PRIVATE LETTER', layout: 'stack' },
-    { code: '06', id: 'obsidian', name: '黑银档案', title: '机密状态档案', subtitle: 'CLASSIFIED STATUS', layout: 'grid' },
-    { code: '07', id: 'botanical', name: '植物标本', title: '人物观察手记', subtitle: 'BOTANICAL NOTES', layout: 'grid' },
-    { code: '08', id: 'cyber', name: '赛博终端', title: '神经状态面板', subtitle: 'NEURAL STATUS', layout: 'grid' },
-    { code: '09', id: 'polaroid', name: '拍立得墙', title: '今日人物快照', subtitle: 'DAILY SNAPSHOT', layout: 'grid' },
-    { code: '10', id: 'ledger', name: '账簿手记', title: '人物往来簿', subtitle: 'RELATION LEDGER', layout: 'grid' },
-    { code: '11', id: 'neon', name: '霓虹夜城', title: '夜色情报站', subtitle: 'NIGHT SIGNAL', layout: 'grid' },
-    { code: '12', id: 'parchment', name: '羊皮卷轴', title: '旅途人物志', subtitle: 'TRAVEL CHRONICLE', layout: 'stack' },
-    { code: '13', id: 'comic', name: '漫画分镜', title: '本回人物状态', subtitle: 'CHARACTER PANEL', layout: 'grid' },
-    { code: '14', id: 'pixel', name: '像素冒险', title: '队伍状态', subtitle: 'PARTY STATUS', layout: 'grid' },
-    { code: '15', id: 'retro-bbs', name: '复古论坛', title: '主题讨论串', subtitle: 'BBS THREAD / ONLINE', layout: 'stack', glyph: '⌁' },
-    { code: '16', id: 'mono-chat', name: '黑白群聊', title: '群组会话', subtitle: 'GROUP CHAT', layout: 'stack', glyph: '↗' },
-    { code: '17', id: 'ink-diary', name: '水墨日记', title: '私笺日录', subtitle: 'PRIVATE DIARY', layout: 'stack', glyph: '○' },
-    { code: '18', id: 'vinyl-mag', name: '七十年代唱片', title: '此刻播放', subtitle: 'STEREO / SIDE A', layout: 'grid', glyph: '♪' },
-    { code: '19', id: 'dada-collage', name: '达达拼贴', title: '影像拼贴册', subtitle: 'CUT / PASTE / MEMORY', layout: 'grid', glyph: '✂' },
-    { code: '20', id: 'noir-case', name: '黑色电影案件', title: '案件调查档案', subtitle: 'CONFIDENTIAL / CASE FILE', layout: 'stack', glyph: '×' },
-]);
-
-const STATUS_STYLE_IDS = new Set(STATUS_STYLE_PRESETS.map(style => style.id));
-
 const PHONE_PAGE_SCHEMAS = Object.freeze([
     {
         id: 'Personal', label: '个人', instruction: '填写当前主要角色的关系数值、衣着与真实想法',
@@ -94,7 +69,7 @@ const PHONE_PAGE_SCHEMAS = Object.freeze([
 export const STATUS_STRUCTURE_PRESETS = Object.freeze([
     {
         id: 'phone', name: '手机桌面', description: '留白主页、四个应用入口与可返回的独立子页面',
-        title: '手机状态', subtitle: 'PHONE STATUS', layout: 'grid',
+        title: '手机状态', subtitle: 'PHONE STATUS', layout: 'grid', appearanceId: 'phone-desktop', appearanceName: '蓝白轻手机', glyph: '⌂',
         pagesText: PHONE_PAGE_SCHEMAS.map(page => `${page.label}|${page.instruction}`).join('\n'),
         shared: [
             ['位置', '填写当前剧情地点', 'text', 'current_location'],
@@ -105,7 +80,7 @@ export const STATUS_STRUCTURE_PRESETS = Object.freeze([
     },
     {
         id: 'profile', name: '人物状态栏', description: '角色头像、身份签名、关系与内心动态',
-        title: '人物状态记录', subtitle: 'CHARACTER PROFILE', layout: 'grid',
+        title: '人物状态记录', subtitle: 'CHARACTER PROFILE', layout: 'grid', appearanceId: 'character-profile', appearanceName: '人物身份卡', glyph: '◎',
         pagesText: '当前角色|填写当前主要角色的姓名与身份',
         fields: [
             ['身份 / 称谓', '填写角色当前身份或对用户的称谓', 'text', 'identity'],
@@ -117,21 +92,26 @@ export const STATUS_STRUCTURE_PRESETS = Object.freeze([
         ],
     },
     {
-        id: 'social', name: '个人动态', description: '个人笔记、正文、标签与互动数据',
-        title: '今日动态', subtitle: 'SOCIAL NOTE', layout: 'stack',
-        pagesText: '最新动态|填写本轮最值得发布的一条动态',
+        id: 'social', name: '个人动态', description: '复古纸质个人档案、身份资料与独立介绍页',
+        title: '个人档案', subtitle: 'PERSONAL DOSSIER', layout: 'stack', appearanceId: 'personal-dossier', appearanceName: '黑白动态档案', glyph: '✦',
+        pagesText: '当前档案|填写当前主要角色的个人资料与近况记录',
         fields: [
-            ['发布者', '填写发布这条动态的角色名', 'text', 'author'],
-            ['笔记标题', '填写简短有吸引力的动态标题', 'text', 'post_title'],
-            ['正文', '以发布者口吻概括动态内容', 'long', 'post_body'],
-            ['标签', '填写2到4个与本轮剧情有关的标签', 'text', 'tags'],
-            ['点赞', '填写合理的点赞数', 'number', 'likes'],
-            ['收藏 / 评论', '填写收藏数与评论数', 'text', 'engagement'],
+            ['姓名', '填写当前角色姓名', 'text', 'full_name'],
+            ['身份 / 职位', '填写角色当前身份、职业或称谓', 'text', 'identity'],
+            ['生日', '填写角色生日；未知时结合设定写“未公开”', 'text', 'birthday'],
+            ['年龄', '填写角色当前年龄或外观年龄', 'text', 'age'],
+            ['身体状态', '具体填写角色当前的身体感受、伤病、疲劳或生理反应', 'long', 'physical_state'],
+            ['当前地点', '填写角色当前所在地点', 'text', 'current_location'],
+            ['记录日期', '结合当前剧情时间填写本次档案记录日期', 'text', 'record_date'],
+            ['记录渠道', '填写这份档案本轮产生或更新的渠道', 'text', 'record_channel'],
+            ['当前想法', '第一人称填写角色此刻没有说出口的真实想法', 'long', 'current_thought'],
+            ['当前状态', '简短填写角色此刻的身体、情绪或行动状态', 'text', 'current_state'],
+            ['个人介绍 / 当前记录', '以自然的人物档案口吻写一段完整介绍，可包含性格、经历与本轮近况', 'long', 'introduction'],
         ],
     },
     {
         id: 'forum', name: '论坛主题', description: '社区版头、主题信息、作者栏、正文、引用与互动尾栏',
-        title: '主题讨论中', subtitle: 'FORUM THREAD', layout: 'stack',
+        title: '主题讨论中', subtitle: 'FORUM THREAD', layout: 'stack', appearanceId: 'forum-thread', appearanceName: '社区论坛帖', glyph: '#',
         pagesText: '主题帖|填写当前讨论主题',
         fields: [
             ['板块', '填写帖子所在板块', 'text', 'board'],
@@ -144,7 +124,7 @@ export const STATUS_STRUCTURE_PRESETS = Object.freeze([
     },
     {
         id: 'chat', name: '聊天会话', description: '对话气泡、在线状态与附件提示',
-        title: '会话窗口', subtitle: 'CHAT / ONLINE', layout: 'stack',
+        title: '会话窗口', subtitle: 'CHAT / ONLINE', layout: 'stack', appearanceId: 'chat-session', appearanceName: '即时聊天窗', glyph: '↗',
         pagesText: '当前会话|填写聊天对象或群组名称',
         fields: [
             ['会话名', '填写聊天对象或群组名称', 'text', 'chat_name'],
@@ -157,7 +137,7 @@ export const STATUS_STRUCTURE_PRESETS = Object.freeze([
     },
     {
         id: 'collage', name: '影像作品集', description: '主视觉、缩略图组、杂志标题、图注和记忆索引',
-        title: '影像拼贴册', subtitle: 'CUT / PASTE / MEMORY', layout: 'grid',
+        title: '影像拼贴册', subtitle: 'CUT / PASTE / MEMORY', layout: 'grid', appearanceId: 'image-collage', appearanceName: '影像拼贴册', glyph: '✂',
         pagesText: '本页拼贴|填写本轮影像主题',
         fields: [
             ['胶卷编号', '填写简短胶卷编号', 'text', 'roll'],
@@ -170,7 +150,7 @@ export const STATUS_STRUCTURE_PRESETS = Object.freeze([
     },
     {
         id: 'music', name: '琴键音乐', description: '可点亮琴键、曲目信息、歌词和真实音频控件',
-        title: '此刻播放', subtitle: 'NOW PLAYING', layout: 'stack',
+        title: '此刻播放', subtitle: 'NOW PLAYING', layout: 'stack', appearanceId: 'piano-player', appearanceName: '琴键播放器', glyph: '♪',
         pagesText: '当前曲目|填写最符合本轮剧情的曲目主题',
         fields: [
             ['曲名', '填写符合本轮剧情的曲名', 'text', 'track'],
@@ -183,7 +163,7 @@ export const STATUS_STRUCTURE_PRESETS = Object.freeze([
     },
     {
         id: 'quest', name: '任务地图', description: '区域、任务轨迹、资源和行动节点',
-        title: '冒险任务簿', subtitle: 'QUEST MAP', layout: 'stack',
+        title: '冒险任务簿', subtitle: 'QUEST MAP', layout: 'stack', appearanceId: 'quest-map', appearanceName: '羊皮任务图', glyph: '⌖',
         pagesText: '当前任务|填写当前主任务或探索区域',
         fields: [
             ['区域 / 天气', '填写当前区域与天气', 'text', 'region_weather'],
@@ -196,7 +176,7 @@ export const STATUS_STRUCTURE_PRESETS = Object.freeze([
     },
     {
         id: 'casefile', name: '案件档案', description: '案件编号、证据卡、嫌疑人与推理结论',
-        title: '案件调查档案', subtitle: 'CONFIDENTIAL / CASE FILE', layout: 'grid',
+        title: '案件调查档案', subtitle: 'CONFIDENTIAL / CASE FILE', layout: 'grid', appearanceId: 'case-file', appearanceName: '调查案件簿', glyph: '×',
         pagesText: '当前案件|填写当前调查案件或谜团',
         fields: [
             ['案件编号', '填写简短案件编号', 'text', 'case_id'],
@@ -209,7 +189,7 @@ export const STATUS_STRUCTURE_PRESETS = Object.freeze([
     },
     {
         id: 'custom', name: '自由组件板', description: '保留完全可编辑的通用字段容器',
-        title: '自定义状态面板', subtitle: 'CUSTOM COMPONENTS', layout: 'grid',
+        title: '自定义状态面板', subtitle: 'CUSTOM COMPONENTS', layout: 'grid', appearanceId: 'component-canvas', appearanceName: '自由组件板', glyph: '✦',
         pagesText: '当前页面|填写页面对象或视角',
         fields: [
             ['标题字段', '根据当前剧情动态填写', 'text', 'custom_title'],
@@ -244,7 +224,23 @@ export const STATUS_PALETTE_PRESETS = Object.freeze([
     { id: 'ice-blue', name: '冰川浅蓝', accent: '#3f8fb2', background: '#c9e6ef', card: '#f5fcff', text: '#244653', muted: '#668593' },
     { id: 'lemon-pink', name: '柠檬樱粉', accent: '#df6e93', background: '#f3df77', card: '#fff9dc', text: '#4a3341', muted: '#8b6f68' },
     { id: 'oxblood-gray', name: '牛血石灰', accent: '#8e2631', background: '#a7a39d', card: '#ece8df', text: '#2f2927', muted: '#706865' },
+    { id: 'dunhuang-orange-teal', name: '敦煌橙青', accent: '#bf5825', background: '#d2d9e5', card: '#e0b26f', text: '#432714', muted: '#6bb0a0' },
+    { id: 'saturn-retro', name: '土星复古', accent: '#803126', background: '#9bbdbc', card: '#e8ddca', text: '#392c26', muted: '#6b5a76' },
+    { id: 'spring-lemon', name: '春芽柠檬', accent: '#709f13', background: '#cee572', card: '#f7f384', text: '#355315', muted: '#97c430' },
+    { id: 'orange-blue-collision', name: '橙蓝碰撞', accent: '#f06c24', background: '#5d777a', card: '#f6d2aa', text: '#2a213a', muted: '#a7563c' },
+    { id: 'night-blue-peach', name: '夜蓝蜜桃', accent: '#ff9450', background: '#07111c', card: '#1b3152', text: '#f7d2c7', muted: '#65a0ce' },
+    { id: 'mist-gray-forest', name: '雾灰森林', accent: '#bdc7ce', background: '#24292e', card: '#4a5156', text: '#f2f5f7', muted: '#808a92' },
+    { id: 'charcoal-red-books', name: '炭红旧书', accent: '#b7b4ae', background: '#0a0a0a', card: '#371e1e', text: '#f0ebe5', muted: '#726e68' },
+    { id: 'winter-frost-blue', name: '冬夜霜蓝', accent: '#9cb2e8', background: '#07080c', card: '#333c50', text: '#f3f6fc', muted: '#546282' },
 ]);
+
+export const SOCIAL_APPEARANCE_PRESETS = Object.freeze([
+    { id: 'personal-dossier', name: '蓝布手账档案', source: '原创插画主题' },
+    { id: 'dossier-clipping', name: '人物剪报卷宗', source: '旧设计 04' },
+    { id: 'dossier-botanical', name: '镜中记', source: '旧设计 09' },
+]);
+
+const SOCIAL_APPEARANCE_IDS = new Set(SOCIAL_APPEARANCE_PRESETS.map(item => item.id));
 
 const STATUS_STRUCTURE_IDS = new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id));
 const STATUS_PALETTE_IDS = new Set(STATUS_PALETTE_PRESETS.map(item => item.id));
@@ -535,8 +531,9 @@ export function normalizeRule(input = {}) {
     const pages = parsePages(input.pagesText);
     const sharedFields = parseFields(input.sharedFieldsText);
     const pageFields = parseFields(input.pageFieldsText);
-    const style = STATUS_STYLE_PRESETS.find(item => item.id === input.theme);
     const structure = STATUS_STRUCTURE_IDS.has(input.structure) ? input.structure : 'custom';
+    const structurePreset = STATUS_STRUCTURE_PRESETS.find(item => item.id === structure)
+        || STATUS_STRUCTURE_PRESETS.find(item => item.id === 'custom');
     const variant = STATUS_CUSTOM_VARIANT_IDS.has(input.variant) ? input.variant : 'auto';
     const media = normalizeMedia(input);
     const phoneDesktop = normalizePhoneDesktop({ ...input, media });
@@ -547,22 +544,29 @@ export function normalizeRule(input = {}) {
             fields: (page.id === 'Personal' ? phoneDesktop.personalFields : page.fields).map(field => ({ ...field })),
         }))
         : (pages.length ? pages : parsePages(RULE_PRESETS.relationship.pagesText));
+    const socialAppearance = structure === 'social' && SOCIAL_APPEARANCE_IDS.has(input.theme)
+        ? SOCIAL_APPEARANCE_PRESETS.find(item => item.id === input.theme)
+        : null;
+    const themeAssetUrl = structure === 'social'
+        ? safeMediaUrl(input.themeAssetUrl, 'image')
+        : '';
     return {
         ruleId: String(input.ruleId || 'zeya-status-rule'),
         ruleName: String(input.ruleName || '双页剧情状态').trim() || '双页剧情状态',
         tagName: sanitizeTagName(input.tagName),
         title: String(input.title || '人物状态记录'),
         subtitle: String(input.subtitle || 'STORY STATUS'),
-        theme: style?.id || 'newspaper',
-        styleName: style?.name || '复古报刊',
-        glyph: style?.glyph || '✦',
+        theme: socialAppearance?.id || structurePreset.appearanceId,
+        styleName: socialAppearance?.name || structurePreset.appearanceName,
+        themeAssetUrl,
+        glyph: structurePreset.glyph,
         structure,
         variant,
-        structureName: STATUS_STRUCTURE_PRESETS.find(item => item.id === structure)?.name || '自由组件板',
+        structureName: structurePreset.name,
         palette: normalizePalette(input),
         media,
         phoneDesktop,
-        layout: input.layout === 'stack' ? 'stack' : 'grid',
+        layout: structurePreset.layout,
         pages: normalizedPages,
         sharedFields,
         pageFields: pageFields.length ? pageFields : DEFAULT_PAGE_FIELDS,
@@ -788,6 +792,77 @@ export const STATUS_THEME_CSS = `
 .zeya-regex-status[data-structure="casefile"] .zrs-card{overflow:visible;border:0;border-radius:2px;background:#3b3028;box-shadow:14px 14px 0 color-mix(in srgb,var(--z-text) 70%,#000)}.zeya-regex-status[data-structure="casefile"] .zrs-chrome{color:var(--z-card);background:var(--z-text)}.zeya-regex-status[data-structure="casefile"] .zrs-header{min-height:118px;padding:22px 18px;border:0;color:var(--z-card);background:linear-gradient(118deg,var(--z-text) 0 64%,var(--z-accent) 64%)}.zeya-regex-status[data-structure="casefile"] .zrs-title{max-width:11ch;font:900 clamp(1.55em,7vw,2.55em)/.87 "Arial Black","Noto Sans SC",sans-serif;letter-spacing:-.07em}.zeya-regex-status[data-structure="casefile"] .zrs-content{padding:20px;background:linear-gradient(90deg,transparent 49%,rgba(65,35,21,.1) 50%,transparent 51%),var(--z-card)}.zeya-regex-status[data-structure="casefile"] .zrs-structure-art{display:flex;height:150px;margin:0 0 22px;padding:15px;gap:12px;border:0;background:color-mix(in srgb,var(--z-bg) 65%,#5c4635);box-shadow:inset 0 0 28px rgba(0,0,0,.3)}.zeya-regex-status[data-structure="casefile"] .zrs-structure-art i{position:relative;inset:auto;flex:1;border:8px solid var(--z-card);background:linear-gradient(145deg,var(--z-text),var(--z-muted));box-shadow:2px 4px 9px rgba(0,0,0,.38)}.zeya-regex-status[data-structure="casefile"] .zrs-structure-art i:nth-child(1){transform:rotate(-5deg)}.zeya-regex-status[data-structure="casefile"] .zrs-structure-art i:nth-child(2){transform:translateY(7px) rotate(3deg);background:repeating-linear-gradient(45deg,var(--z-accent) 0 7px,var(--z-card) 7px 14px)}.zeya-regex-status[data-structure="casefile"] .zrs-structure-art i:nth-child(3){transform:rotate(-2deg);background:radial-gradient(circle,var(--z-card) 0 16%,var(--z-text) 17% 48%,var(--z-muted) 49%)}.zeya-regex-status[data-structure="casefile"] .zrs-structure-art::after{content:"EVIDENCE  /  03";right:9px;bottom:-9px;transform:rotate(-3deg);box-shadow:3px 3px var(--z-text)}.zeya-regex-status[data-structure="casefile"] .zrs-fields{grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}.zeya-regex-status[data-structure="casefile"] .zrs-field{grid-column:span 3;padding:12px;border:0;border-radius:0;background:var(--z-card);box-shadow:4px 5px 0 color-mix(in srgb,var(--z-text) 22%,transparent);transform:rotate(-.5deg)}.zeya-regex-status[data-structure="casefile"] .zrs-field:nth-child(even){box-shadow:4px 5px 0 color-mix(in srgb,var(--z-accent) 35%,transparent);transform:rotate(.6deg)}.zeya-regex-status[data-structure="casefile"] .zrs-field:is([data-field="evidence"],[data-field="suspects"],[data-field="theory"]){grid-column:1/-1;min-height:82px}.zeya-regex-status[data-structure="casefile"] .zrs-field[data-field="evidence"]{box-shadow:inset 12px 0 var(--z-accent),4px 5px 0 color-mix(in srgb,var(--z-text) 22%,transparent)}
 .zeya-regex-status[data-structure="music"] .zrs-card{overflow:hidden;border:5px solid var(--z-text);border-radius:16px;background:var(--z-card);box-shadow:10px 12px 0 color-mix(in srgb,var(--z-accent) 72%,var(--z-text))}.zeya-regex-status[data-structure="music"] .zrs-chrome{border-radius:0;color:var(--z-card);background:var(--z-text)}.zeya-regex-status[data-structure="music"] .zrs-header{min-height:112px;padding:22px;border-bottom:5px solid var(--z-text);background:linear-gradient(112deg,var(--z-accent) 0 38%,var(--z-card) 38%)}.zeya-regex-status[data-structure="music"] .zrs-title{margin-left:38%;font:900 clamp(1.45em,6vw,2.35em)/.9 Georgia,"Noto Serif SC",serif;letter-spacing:-.05em}.zeya-regex-status[data-structure="music"] .zrs-subtitle{margin-left:38%}.zeya-regex-status[data-structure="music"] .zrs-content{display:block;padding:18px;background:var(--z-bg)}.zeya-regex-status[data-structure="music"] .zrs-structure-art{display:flex;width:100%;height:154px;margin:0 0 16px;padding:0 8px 14px;align-items:stretch;overflow:hidden;border:8px solid var(--z-text);border-bottom-width:16px;border-radius:7px;background:var(--z-text);box-shadow:0 8px 0 color-mix(in srgb,var(--z-accent) 50%,var(--z-text))}.zeya-regex-status[data-structure="music"] .zrs-structure-art::before{content:"KEYS / LIVE";position:absolute;z-index:6;left:14px;bottom:2px;color:var(--z-card);font:900 8px/1 monospace;letter-spacing:.16em}.zeya-regex-status[data-structure="music"] .zrs-structure-art::after{content:"TAP TO PLAY";position:absolute;z-index:6;right:14px;bottom:2px;color:var(--z-accent);font:900 8px/1 monospace;letter-spacing:.12em}.zeya-regex-status[data-structure="music"] .zrs-structure-art i{position:relative;inset:auto;display:block;flex:1;height:auto;border:1px solid var(--z-text);border-radius:0 0 5px 5px;background:var(--z-card);box-shadow:inset 0 -8px color-mix(in srgb,var(--z-muted) 15%,transparent);cursor:pointer;transition:transform .12s ease,background .12s ease}.zeya-regex-status[data-structure="music"] .zrs-structure-art i::after{content:none}.zeya-regex-status[data-structure="music"] .zrs-structure-art i:is(:nth-child(1),:nth-child(2),:nth-child(4),:nth-child(5),:nth-child(6),:nth-child(8),:nth-child(9),:nth-child(11))::after{content:"";position:absolute;z-index:3;right:-38%;top:0;width:76%;height:58%;border-radius:0 0 4px 4px;background:var(--z-text);box-shadow:0 3px 0 color-mix(in srgb,var(--z-accent) 45%,#000);pointer-events:none}.zeya-regex-status[data-structure="music"] .zrs-structure-art i:is(:hover,:focus-visible,.is-active){z-index:4;outline:0;background:var(--z-accent);transform:translateY(5px)}.zeya-regex-status[data-structure="music"] :is(.zrs-structure-head,.zrs-shared,.zrs-tabs){display:block;margin-bottom:12px}.zeya-regex-status[data-structure="music"] .zrs-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.zeya-regex-status[data-structure="music"] .zrs-field{grid-column:span 2;border:0;border-radius:4px;background:var(--z-card);box-shadow:inset 0 -6px color-mix(in srgb,var(--z-accent) 16%,transparent)}.zeya-regex-status[data-structure="music"] .zrs-field:is([data-field="track"],[data-field="lyrics"],[data-field="listening_note"]){grid-column:1/-1}.zeya-regex-status[data-structure="music"] .zrs-cover{width:min(100%,220px);aspect-ratio:1;object-fit:cover}
 .zeya-regex-status[data-structure="social"] .zrs-structure-art::before{content:"TODAY / NOTE"}.zeya-regex-status[data-structure="music"] .zrs-structure-art::after{content:"33⅓ / SIDE A"}.zeya-regex-status[data-structure="quest"] .zrs-structure-art::before{content:"N  ↑"}
+/* Personal feed: monochrome manga scrapbook with two genuinely different paper compositions. */
+.zeya-regex-status[data-structure="social"] .zrs-card{--z-paper:var(--z-card);--z-paper-deep:color-mix(in srgb,var(--z-bg) 72%,var(--z-card));--z-ink:var(--z-text);--z-mark:var(--z-accent);--z-soft:var(--z-muted);overflow:hidden;border:4px solid var(--z-ink);border-radius:0;background:var(--z-paper);box-shadow:9px 10px 0 var(--z-ink),15px 16px 0 color-mix(in srgb,var(--z-mark) 54%,var(--z-soft))}
+.zeya-regex-status[data-structure="social"] .zrs-chrome{min-height:34px;padding:6px 14px;border-bottom:3px solid var(--z-ink);color:var(--z-paper);background:var(--z-ink);letter-spacing:.18em}.zeya-regex-status[data-structure="social"] .zrs-chrome i{border-color:var(--z-paper);background:var(--z-paper)}
+.zeya-regex-status[data-structure="social"] .zrs-header{position:relative;min-height:96px;padding:17px 138px 25px 18px!important;border:0;border-bottom:5px solid var(--z-ink);color:var(--z-ink);background:linear-gradient(115deg,var(--z-paper) 0 64%,var(--z-paper-deep) 64%)}
+.zeya-regex-status[data-structure="social"] .zrs-header::before{content:"";position:absolute;left:0;right:0;bottom:0;height:15px;background:conic-gradient(var(--z-mark) 25%,var(--z-paper) 0 50%,var(--z-ink) 0 75%,var(--z-paper) 0) 0 0/14px 14px}.zeya-regex-status[data-structure="social"] .zrs-header::after{content:"CUT / PASTE\\A NO. 0217";position:absolute;left:auto;right:50px;top:14px;width:88px;padding:7px 5px;white-space:pre;border:2px solid var(--z-ink);color:var(--z-paper);background:color-mix(in srgb,var(--z-mark) 78%,var(--z-ink));box-shadow:4px 4px 0 var(--z-paper),6px 6px 0 var(--z-ink);font:900 7px/1.35 monospace;letter-spacing:.12em;text-align:center;transform:rotate(2deg)}
+.zeya-regex-status[data-structure="social"] .zrs-title{position:relative;z-index:1;color:var(--z-ink);font:900 clamp(1.45em,6vw,2.45em)/.86 "Arial Black","Noto Sans SC",sans-serif;letter-spacing:-.06em;text-transform:uppercase}.zeya-regex-status[data-structure="social"] .zrs-subtitle{position:relative;z-index:1;margin-top:10px;color:var(--z-ink);font:900 .62em/1 monospace;letter-spacing:.25em}.zeya-regex-status[data-structure="social"] .zrs-collapse{position:relative;z-index:3;border:2px solid var(--z-ink);border-radius:0;color:var(--z-paper);background:var(--z-ink)}
+.zeya-regex-status[data-structure="social"] .zrs-content{padding:14px;background:radial-gradient(circle,color-mix(in srgb,var(--z-mark) 58%,transparent) 0 1.1px,transparent 1.4px) 0 0/13px 13px,var(--z-paper-deep)}
+.zeya-regex-status[data-structure="social"] .zrs-structure-art,.zeya-regex-status[data-structure="social"] .zrs-structure-head,.zeya-regex-status[data-structure="social"]>.zrs-card>.zrs-content>.zrs-tabs{display:none!important}
+.zeya-regex-status[data-structure="social"] .zrs-fields{display:block;margin:0;padding:0}
+.zeya-regex-status[data-structure="social"] .zrs-social-file{position:relative;isolation:isolate;overflow:hidden;border:4px solid var(--z-ink);color:var(--z-ink);background:var(--z-paper);box-shadow:6px 6px 0 var(--z-ink),inset 0 0 0 2px var(--z-paper)}
+.zeya-regex-status[data-structure="social"] .zrs-social-file::before{content:"";position:absolute;z-index:0;inset:0;background:radial-gradient(circle at 93% 8%,var(--z-mark) 0 2px,transparent 2.5px) 0 0/11px 11px;opacity:.22;pointer-events:none}.zeya-regex-status[data-structure="social"] .zrs-social-file::after{content:"";position:absolute;z-index:1;right:-24px;bottom:-25px;width:110px;height:110px;border:13px solid var(--z-mark);border-radius:50%;box-shadow:0 0 0 5px var(--z-paper),0 0 0 8px var(--z-ink);opacity:.18;pointer-events:none}
+.zeya-regex-status[data-structure="social"] .zrs-social-scraps{position:absolute;z-index:5;inset:0;overflow:hidden;pointer-events:none}.zeya-regex-status[data-structure="social"] .zrs-social-scrap{position:absolute;display:block}.zeya-regex-status[data-structure="social"] .zrs-social-scrap.is-label{left:12px;top:13px;padding:7px 10px;border:2px solid var(--z-paper);outline:2px solid var(--z-ink);color:var(--z-paper);background:color-mix(in srgb,var(--z-mark) 78%,var(--z-ink));font:900 10px/1 monospace;letter-spacing:.12em;transform:rotate(-4deg)}.zeya-regex-status[data-structure="social"] .zrs-social-scrap.is-heart{right:-9px;top:57px;color:var(--z-mark);font:900 66px/.8 Georgia,serif;transform:rotate(9deg);-webkit-text-stroke:3px var(--z-paper);paint-order:stroke fill}.zeya-regex-status[data-structure="social"] .zrs-social-scrap.is-star{left:8px;top:176px;color:var(--z-paper);font:900 42px/1 sans-serif;-webkit-text-stroke:3px var(--z-mark);paint-order:stroke fill;transform:rotate(-14deg)}.zeya-regex-status[data-structure="social"] .zrs-social-scrap.is-tape{left:152px;top:72px;width:82px;height:20px;border:1px dashed var(--z-ink);background:color-mix(in srgb,var(--z-paper) 78%,transparent);box-shadow:0 1px 0 color-mix(in srgb,var(--z-ink) 25%,transparent);transform:rotate(-7deg)}.zeya-regex-status[data-structure="social"] .zrs-social-scrap.is-grid{left:-8px;bottom:11px;width:70px;height:82px;border:3px solid var(--z-ink);background:conic-gradient(var(--z-mark) 25%,var(--z-paper) 0 50%,var(--z-ink) 0 75%,var(--z-paper) 0) 0 0/14px 14px;transform:rotate(5deg);opacity:.95}
+.zeya-regex-status[data-structure="social"] .zrs-social-switcher{position:relative;z-index:6;display:flex;min-height:68px;padding:11px 76px 11px 112px;align-items:center;gap:9px;border-bottom:6px solid var(--z-ink);background:linear-gradient(90deg,var(--z-paper) 0 62%,var(--z-paper-deep) 62%)}
+.zeya-regex-status[data-structure="social"] .zrs-social-switch{min-width:104px;min-height:44px;padding:8px 13px;border:3px solid var(--z-ink);border-radius:0;color:var(--z-ink);background:var(--z-paper);box-shadow:4px 4px 0 var(--z-ink);font:900 .78em/1.2 "Noto Sans SC",sans-serif;letter-spacing:.06em;cursor:pointer}.zeya-regex-status[data-structure="social"] .zrs-social-switch:nth-child(2){transform:rotate(1.5deg)}.zeya-regex-status[data-structure="social"] .zrs-social-switch:is(:hover,:focus-visible){outline:3px solid var(--z-mark);outline-offset:3px}.zeya-regex-status[data-structure="social"] .zrs-social-switch.is-active{color:var(--z-paper);background:var(--z-mark);box-shadow:4px 4px 0 var(--z-paper),6px 6px 0 var(--z-ink);transform:rotate(-1.5deg)}
+.zeya-regex-status[data-structure="social"] .zrs-social-sheet{position:relative;z-index:2;min-height:390px}.zeya-regex-status[data-structure="social"] .zrs-social-sheet[hidden]{display:none}
+.zeya-regex-status[data-structure="social"] .zrs-social-profile{background:radial-gradient(circle,var(--z-mark) 0 1px,transparent 1.5px) calc(100% - 12px) 12px/12px 12px no-repeat,var(--z-paper)}
+.zeya-regex-status[data-structure="social"] .zrs-social-ticket{position:absolute;z-index:2;left:0;top:0;bottom:0;width:82px;padding:25px 11px 14px;clip-path:polygon(0 0,89% 0,100% 3%,89% 6%,100% 9%,89% 12%,100% 15%,89% 18%,100% 21%,89% 24%,100% 27%,89% 30%,100% 33%,89% 36%,100% 39%,89% 42%,100% 45%,89% 48%,100% 51%,89% 54%,100% 57%,89% 60%,100% 63%,89% 66%,100% 69%,89% 72%,100% 75%,89% 78%,100% 81%,89% 84%,100% 87%,89% 90%,100% 93%,89% 96%,100% 100%,0 100%);color:var(--z-paper);background:var(--z-ink);text-align:center}.zeya-regex-status[data-structure="social"] .zrs-social-ticket b,.zeya-regex-status[data-structure="social"] .zrs-social-ticket span,.zeya-regex-status[data-structure="social"] .zrs-social-ticket small{display:block}.zeya-regex-status[data-structure="social"] .zrs-social-ticket b{font:900 1.45em/1 "Arial Black",sans-serif;letter-spacing:-.05em}.zeya-regex-status[data-structure="social"] .zrs-social-ticket span{margin-top:14px;font:900 8px/1.4 monospace}.zeya-regex-status[data-structure="social"] .zrs-social-ticket i{display:block;width:2px;height:92px;margin:18px auto;background:repeating-linear-gradient(var(--z-paper) 0 5px,transparent 5px 9px)}.zeya-regex-status[data-structure="social"] .zrs-social-ticket small{margin:auto;writing-mode:vertical-rl;font:900 7px/1 monospace;letter-spacing:.18em}
+.zeya-regex-status[data-structure="social"] .zrs-social-profile-body{display:grid;grid-template-columns:142px minmax(0,1fr);gap:17px 20px;min-height:390px;padding:30px 22px 27px 104px;background:linear-gradient(90deg,transparent 0 98%,var(--z-mark) 98% 99%,transparent 99%)}
+.zeya-regex-status[data-structure="social"] .zrs-social-photo{position:relative;grid-row:1/3;width:142px;height:178px;margin:4px 0 0;padding:7px 7px 25px;border:5px solid var(--z-ink);background:var(--z-paper);box-shadow:-7px -7px 0 var(--z-paper-deep),7px 8px 0 var(--z-ink);transform:rotate(-2.5deg)}.zeya-regex-status[data-structure="social"] .zrs-social-photo::after{content:"";position:absolute;z-index:4;left:28px;top:-15px;width:76px;height:22px;border:1px dashed var(--z-ink);background:color-mix(in srgb,var(--z-paper) 78%,transparent);transform:rotate(4deg)}.zeya-regex-status[data-structure="social"] .zrs-social-photo img{position:relative;z-index:1;width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.18)}.zeya-regex-status[data-structure="social"] .zrs-social-photo.is-placeholder::before{content:"PHOTO";display:grid;width:100%;height:100%;place-items:center;background:radial-gradient(circle,var(--z-ink) 0 1.2px,transparent 1.6px) 0 0/9px 9px;font:900 12px/1 "Arial Black",sans-serif;letter-spacing:.16em}.zeya-regex-status[data-structure="social"] .zrs-social-photo figcaption{position:absolute;z-index:2;left:7px;right:7px;bottom:7px;font:900 7px/1 monospace;letter-spacing:.12em;text-align:center}
+.zeya-regex-status[data-structure="social"] .zrs-social-identity{min-width:0;padding:4px 3px 12px;border-bottom:6px solid var(--z-ink)}.zeya-regex-status[data-structure="social"] .zrs-social-identity small{display:table;padding:5px 7px;color:var(--z-paper);background:var(--z-ink);font:900 7px/1.2 monospace;letter-spacing:.14em;transform:rotate(1deg)}.zeya-regex-status[data-structure="social"] .zrs-social-name{display:block;margin-top:10px;overflow-wrap:anywhere;color:var(--z-ink);font:900 clamp(1.65em,6vw,2.6em)/.86 "Arial Black","Noto Sans SC",sans-serif;letter-spacing:-.07em}.zeya-regex-status[data-structure="social"] .zrs-social-role{display:inline-block;margin-top:9px;padding:4px 7px;border:2px solid var(--z-ink);color:var(--z-ink);font:900 .74em/1.25 "Noto Sans SC",sans-serif;letter-spacing:.07em;transform:rotate(-1deg)}
+.zeya-regex-status[data-structure="social"] .zrs-social-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 11px;margin:0}.zeya-regex-status[data-structure="social"] .zrs-social-detail{min-width:0;padding:7px 8px;border:2px solid var(--z-ink);background:var(--z-paper);box-shadow:3px 3px 0 var(--z-ink);transform:rotate(.5deg)}.zeya-regex-status[data-structure="social"] .zrs-social-detail:nth-child(3n+2){color:var(--z-paper);background:var(--z-ink);box-shadow:3px 3px 0 var(--z-paper-deep);transform:rotate(-.7deg)}.zeya-regex-status[data-structure="social"] .zrs-social-detail dt{font:900 7px/1.2 monospace;letter-spacing:.1em}.zeya-regex-status[data-structure="social"] .zrs-social-detail dd{margin:5px 0 0;overflow-wrap:anywhere;font:800 .76em/1.35 "Noto Sans SC",sans-serif}
+.zeya-regex-status[data-structure="social"] .zrs-social-state{grid-column:1/-1;margin-top:4px;padding:13px 16px;clip-path:polygon(0 4%,5% 0,10% 4%,15% 0,21% 4%,28% 0,34% 4%,41% 0,48% 4%,56% 0,63% 4%,70% 0,77% 4%,84% 0,91% 4%,100% 0,98% 100%,91% 96%,84% 100%,77% 96%,70% 100%,63% 96%,56% 100%,48% 96%,41% 100%,34% 96%,28% 100%,21% 96%,15% 100%,10% 96%,5% 100%,0 96%);color:var(--z-paper);background:var(--z-ink);box-shadow:inset 0 -8px 0 color-mix(in srgb,var(--z-paper) 12%,transparent);transform:rotate(-.45deg)}.zeya-regex-status[data-structure="social"] .zrs-social-state span{display:block;color:var(--z-paper-deep);font:900 7px/1 monospace;letter-spacing:.18em}.zeya-regex-status[data-structure="social"] .zrs-social-state strong{display:block;margin-top:7px;white-space:pre-wrap;overflow-wrap:anywhere;font:800 .86em/1.5 "Noto Sans SC",sans-serif}
+.zeya-regex-status[data-structure="social"] .zrs-social-intro{min-height:430px;padding:32px 30px 34px;background:radial-gradient(circle,var(--z-ink) 0 1px,transparent 1.4px) 100% 0/12px 12px,var(--z-paper)}.zeya-regex-status[data-structure="social"] .zrs-social-intro::before{content:"";position:absolute;z-index:0;left:-10px;top:62px;width:82px;height:116px;border:4px solid var(--z-ink);background:conic-gradient(var(--z-ink) 25%,var(--z-paper) 0 50%,var(--z-ink) 0 75%,var(--z-paper) 0) 0 0/16px 16px;transform:rotate(-7deg)}.zeya-regex-status[data-structure="social"] .zrs-social-intro::after{content:"♥";position:absolute;z-index:3;right:12px;top:76px;color:var(--z-paper);font:900 65px/.8 Georgia,serif;-webkit-text-stroke:5px var(--z-ink);paint-order:stroke fill;transform:rotate(8deg)}
+.zeya-regex-status[data-structure="social"] .zrs-social-intro-head{position:relative;z-index:2;display:grid;grid-template-columns:auto 1fr;gap:3px 11px;margin-left:38px;padding:15px 92px 13px 16px;border:4px solid var(--z-ink);color:var(--z-paper);background:var(--z-ink);box-shadow:7px 7px 0 var(--z-paper-deep);transform:rotate(-1deg)}.zeya-regex-status[data-structure="social"] .zrs-social-intro-head span{grid-row:1/3;font:900 1.8em/1 "Arial Black",sans-serif;writing-mode:vertical-rl}.zeya-regex-status[data-structure="social"] .zrs-social-intro-head strong{font:900 clamp(1.55em,6vw,2.45em)/.9 "Arial Black","Noto Sans SC",sans-serif;letter-spacing:-.06em}.zeya-regex-status[data-structure="social"] .zrs-social-intro-head small{font:900 8px/1.3 monospace;letter-spacing:.16em;text-transform:uppercase}
+.zeya-regex-status[data-structure="social"] .zrs-social-intro-copy{position:relative;z-index:2;min-height:235px;margin:24px 28px 0 8px;padding:22px 20px 24px;border:4px solid var(--z-ink);white-space:pre-wrap;overflow-wrap:anywhere;background:repeating-linear-gradient(transparent 0 29px,color-mix(in srgb,var(--z-ink) 30%,transparent) 30px 31px),var(--z-paper);box-shadow:9px 9px 0 var(--z-ink);font:600 .94em/31px "Noto Serif SC","Songti SC",serif;transform:rotate(.5deg)}.zeya-regex-status[data-structure="social"] .zrs-social-intro-copy::first-letter{font:900 2.8em/.8 "Arial Black","Noto Sans SC",sans-serif}
+.zeya-regex-status[data-structure="social"] .zrs-social-archive-photo{position:relative;z-index:3;width:150px;margin:24px 20px 0 auto;padding:7px 7px 22px;border:5px solid var(--z-ink);background:var(--z-paper);box-shadow:7px 8px 0 var(--z-ink);transform:rotate(3deg)}.zeya-regex-status[data-structure="social"] .zrs-social-archive-photo::before{content:"";position:absolute;left:38px;top:-15px;width:70px;height:20px;border:1px dashed var(--z-ink);background:color-mix(in srgb,var(--z-paper) 78%,transparent);transform:rotate(-6deg)}.zeya-regex-status[data-structure="social"] .zrs-social-archive-photo img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;filter:grayscale(1) contrast(1.15)}.zeya-regex-status[data-structure="social"] .zrs-social-archive-photo figcaption{margin-top:7px;font:900 7px/1 monospace;letter-spacing:.08em;text-align:center}
+@media(max-width:520px){.zeya-regex-status[data-structure="social"] .zrs-card{box-shadow:6px 7px 0 var(--z-ink)}.zeya-regex-status[data-structure="social"] .zrs-header{min-height:88px;padding:15px 58px 24px 14px!important}.zeya-regex-status[data-structure="social"] .zrs-header::after{display:none}.zeya-regex-status[data-structure="social"] .zrs-title{font-size:1.48em}.zeya-regex-status[data-structure="social"] .zrs-content{padding:7px}.zeya-regex-status[data-structure="social"] .zrs-social-file{border-width:3px;box-shadow:4px 4px 0 var(--z-ink)}.zeya-regex-status[data-structure="social"] .zrs-social-scrap.is-label{left:7px;top:15px;padding:6px 7px;font-size:8px}.zeya-regex-status[data-structure="social"] .zrs-social-scrap.is-heart{display:none}.zeya-regex-status[data-structure="social"] .zrs-social-scrap.is-star{left:-2px;top:165px;font-size:32px}.zeya-regex-status[data-structure="social"] .zrs-social-scrap.is-tape{left:106px;top:72px;width:66px}.zeya-regex-status[data-structure="social"] .zrs-social-scrap.is-grid{left:-18px;bottom:8px;width:55px;height:64px}.zeya-regex-status[data-structure="social"] .zrs-social-switcher{min-height:68px;padding:10px 8px 10px 84px;gap:6px}.zeya-regex-status[data-structure="social"] .zrs-social-switch{flex:1;min-width:0;min-height:44px;padding:7px 5px;font-size:.7em;box-shadow:3px 3px 0 var(--z-ink)}.zeya-regex-status[data-structure="social"] .zrs-social-ticket{position:static;display:flex;width:auto;height:50px;padding:9px 12px;align-items:center;gap:11px;clip-path:none;border-bottom:4px solid var(--z-ink);color:var(--z-ink);background:conic-gradient(var(--z-ink) 25%,var(--z-paper) 0 50%,var(--z-ink) 0 75%,var(--z-paper) 0) 0 0/12px 12px;text-align:left}.zeya-regex-status[data-structure="social"] .zrs-social-ticket>*{padding:3px 5px;color:var(--z-paper);background:var(--z-ink)}.zeya-regex-status[data-structure="social"] .zrs-social-ticket span{margin:0}.zeya-regex-status[data-structure="social"] .zrs-social-ticket i{width:22px;height:2px;margin:0}.zeya-regex-status[data-structure="social"] .zrs-social-ticket small{margin-left:auto;writing-mode:horizontal-tb}.zeya-regex-status[data-structure="social"] .zrs-social-profile-body{grid-template-columns:100px minmax(0,1fr);min-height:0;padding:20px 12px 25px;gap:15px 13px}.zeya-regex-status[data-structure="social"] .zrs-social-photo{grid-row:auto;width:100px;height:134px;border-width:4px;box-shadow:-4px -4px 0 var(--z-paper-deep),5px 6px 0 var(--z-ink)}.zeya-regex-status[data-structure="social"] .zrs-social-photo::after{left:17px;width:58px}.zeya-regex-status[data-structure="social"] .zrs-social-name{font-size:clamp(1.25em,7vw,1.8em)}.zeya-regex-status[data-structure="social"] .zrs-social-details{grid-column:1/-1;gap:9px 8px}.zeya-regex-status[data-structure="social"] .zrs-social-detail{padding:6px;box-shadow:2px 2px 0 var(--z-ink)}.zeya-regex-status[data-structure="social"] .zrs-social-state{grid-column:1/-1}.zeya-regex-status[data-structure="social"] .zrs-social-intro{min-height:390px;padding:23px 12px 28px}.zeya-regex-status[data-structure="social"] .zrs-social-intro::before{left:-24px;top:76px;width:62px;height:92px}.zeya-regex-status[data-structure="social"] .zrs-social-intro::after{right:4px;top:82px;font-size:45px}.zeya-regex-status[data-structure="social"] .zrs-social-intro-head{margin-left:17px;padding:13px 56px 12px 11px;box-shadow:5px 5px 0 var(--z-paper-deep)}.zeya-regex-status[data-structure="social"] .zrs-social-intro-head span{font-size:1.35em}.zeya-regex-status[data-structure="social"] .zrs-social-intro-head strong{font-size:clamp(1.2em,7vw,1.75em)}.zeya-regex-status[data-structure="social"] .zrs-social-intro-copy{min-height:250px;margin:20px 9px 0 5px;padding:18px 13px 22px;box-shadow:6px 7px 0 var(--z-ink);font-size:.88em}.zeya-regex-status[data-structure="social"] .zrs-social-archive-photo{width:130px;margin-right:12px}}
+/* Personal dossier v1: the generated collage is the visual theme; HTML remains editable content. */
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"]{--z-paper:#f4ecdc;--z-paper-deep:#ded2bd;--z-ink:#173655;--z-mark:#315f89;--z-soft:#7e8fa0;color:var(--z-ink)}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-card{overflow:hidden;border:1px solid #b7aa94;border-radius:20px;background:#e8dfd0;box-shadow:0 20px 48px #152f4938}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-chrome{min-height:31px;border:0;color:#f8f0df;background:#173655;letter-spacing:.13em}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-header{min-height:88px;padding:18px 64px 18px 20px!important;border:0;color:#173655;background:#eee5d5}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-header::before,.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-header::after{display:none}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-title{color:#173655;font:800 clamp(1.45em,5.4vw,2.15em)/1.05 "Noto Serif SC","Songti SC",serif;letter-spacing:.05em}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-subtitle{margin-top:7px;color:#587089;font:700 .64em/1.2 "Noto Sans SC",sans-serif;letter-spacing:.18em}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-collapse{border:1px solid #7890a5;border-radius:50%;color:#f8f0df;background:#173655}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-content{padding:10px;background:#173655}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-file{position:relative;isolation:isolate;min-height:620px;overflow:hidden;border:0;border-radius:13px;color:#173655;background:#e9dfcf;box-shadow:inset 0 0 0 1px #fff8}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-file::before,.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-file::after{display:none}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-theme-art{position:absolute;z-index:0;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:center;pointer-events:none;user-select:none}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-scraps,.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-ticket{display:none}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-switcher{position:relative;z-index:3;display:flex;min-height:0;margin:20px 22px 0;padding:8px;gap:7px;border:1px solid #c9bda8;border-radius:12px;background:#f6efe3e8;box-shadow:0 8px 22px #17365522;backdrop-filter:blur(5px)}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-switch{min-width:0;min-height:42px;padding:8px 15px;border:0;border-radius:9px;color:#36536d;background:transparent;box-shadow:none;font:700 .8em/1.2 "Noto Sans SC",sans-serif;letter-spacing:.05em;transform:none}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-switch:is(:hover,:focus-visible){outline:2px solid #7896b1;outline-offset:1px}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-switch.is-active{color:#fff8e9;background:#244b70;box-shadow:0 3px 9px #17365535;transform:none}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-sheet{position:relative;z-index:2;min-height:0;margin:14px 22px 24px;border:1px solid #c9bda8;border-radius:15px;background:#f7f0e5e8;box-shadow:0 12px 30px #1736552b;backdrop-filter:blur(6px)}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-profile{background:#f7f0e5e8}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-profile-body{display:grid;grid-template-columns:132px minmax(0,1fr);gap:17px 20px;min-height:0;padding:24px;background:transparent}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-photo{grid-row:1/3;width:132px;height:170px;margin:0;padding:7px 7px 25px;border:1px solid #a99c87;border-radius:4px;background:#eee5d5;box-shadow:0 9px 18px #1736552b;transform:rotate(-1.5deg)}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-photo::after{display:none}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-photo img{filter:none}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-photo.is-placeholder::before{content:"照片 URL";background:#d9cfbd;color:#61768a;font:700 11px/1 "Noto Sans SC",sans-serif;letter-spacing:.08em}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-photo figcaption{color:#5c6e7e;font:700 7px/1 monospace}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-identity{padding:4px 0 13px;border-bottom:1px solid #a89d8a}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-identity small{display:none}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-name{margin-top:0;color:#173655;font:800 clamp(1.55em,5vw,2.2em)/1.08 "Noto Serif SC","Songti SC",serif;letter-spacing:.04em}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-role{margin-top:9px;padding:0;border:0;color:#607387;font:700 .76em/1.35 "Noto Sans SC",sans-serif;letter-spacing:.06em;transform:none}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 15px;margin:0}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-detail,.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-detail:nth-child(3n+2){min-width:0;padding:8px 2px;border:0;border-bottom:1px solid #b9ae9b;color:#173655;background:transparent;box-shadow:none;transform:none}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-detail dt{color:#6a7b8b;font:700 9px/1.2 "Noto Sans SC",sans-serif;letter-spacing:.06em}.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-detail dd{margin-top:4px;font:700 .78em/1.4 "Noto Sans SC",sans-serif}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-state{grid-column:1/-1;margin-top:1px;padding:12px 15px;clip-path:none;border-radius:10px;color:#f8f0df;background:#244b70;box-shadow:0 5px 13px #1736552e;transform:none}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-state span{color:#bfcfe0;font:700 8px/1 "Noto Sans SC",sans-serif}.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-state strong{font:700 .85em/1.5 "Noto Sans SC",sans-serif}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-intro{min-height:0;padding:24px;background:#f7f0e5e8}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-intro::before,.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-intro::after{display:none}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-intro-head{display:block;margin:0;padding:0 0 13px;border:0;border-bottom:1px solid #a99e8c;color:#173655;background:transparent;box-shadow:none;transform:none}.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-intro-head span{display:none}.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-intro-head strong{font:800 clamp(1.35em,5vw,1.9em)/1.1 "Noto Serif SC","Songti SC",serif;letter-spacing:.04em}.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-intro-head small{display:block;margin-top:6px;color:#6a7b8b;font:700 9px/1.3 "Noto Sans SC",sans-serif;letter-spacing:.06em}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-intro-copy{min-height:220px;margin:16px 0 0;padding:17px 18px;border:1px solid #c8bcaa;border-radius:11px;background:#fffaf0d9;box-shadow:none;font:600 .94em/1.85 "Noto Serif SC","Songti SC",serif;transform:none}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-intro-copy::first-letter{font:inherit}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-archive-photo{width:160px;margin:18px 0 0 auto;padding:7px 7px 22px;border:1px solid #a99c87;border-radius:4px;background:#eee5d5;box-shadow:0 8px 18px #17365526;transform:rotate(1.5deg)}
+.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-archive-photo::before{display:none}.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-archive-photo img{filter:none}
+@media(max-width:520px){.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-card{border-radius:13px;box-shadow:0 12px 28px #152f4938}.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-header{min-height:78px;padding:15px 52px 15px 16px!important}.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-content{padding:7px}.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-file{min-height:580px;border-width:0;box-shadow:none}.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-switcher{margin:14px 12px 0;padding:6px}.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-sheet{margin:10px 12px 18px}.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-profile-body{grid-template-columns:92px minmax(0,1fr);padding:17px 14px;gap:14px 12px}.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-photo{width:92px;height:126px;border-width:1px;box-shadow:0 6px 14px #17365526}.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-details{grid-column:1/-1}.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-intro{padding:18px 14px}.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-intro-copy{min-height:230px;margin-top:13px;padding:14px}.zeya-regex-status[data-structure="social"][data-theme="personal-dossier"] .zrs-social-archive-photo{width:135px}}
+
 /* 0.10.0 custom panel collection: twenty different materials and compositions. */
 .zeya-regex-status[data-structure="custom"][data-variant] .zrs-structure-art{display:block}.zeya-regex-status[data-structure="custom"][data-variant] .zrs-field{transform:none}
 .zeya-regex-status[data-structure="custom"][data-variant="cream-inset"] .zrs-card{border:0;border-radius:30px;background:var(--z-card);box-shadow:inset 8px 8px 18px color-mix(in srgb,var(--z-muted) 20%,transparent),inset -8px -8px 18px rgba(255,255,255,.65)}.zeya-regex-status[data-structure="custom"][data-variant="cream-inset"] .zrs-header{position:relative;justify-content:center;border:0;background:transparent;text-align:center}.zeya-regex-status[data-structure="custom"][data-variant="cream-inset"] .zrs-header>div{width:100%;padding-inline:42px}.zeya-regex-status[data-structure="custom"][data-variant="cream-inset"] .zrs-collapse{position:absolute;right:14px}.zeya-regex-status[data-structure="custom"][data-variant="cream-inset"] .zrs-structure-art{height:70px;border:0;border-radius:22px;background:color-mix(in srgb,var(--z-bg) 55%,var(--z-card));box-shadow:inset 5px 5px 12px color-mix(in srgb,var(--z-muted) 20%,transparent)}.zeya-regex-status[data-structure="custom"][data-variant="cream-inset"] .zrs-fields{max-width:92%;margin-inline:auto}.zeya-regex-status[data-structure="custom"][data-variant="cream-inset"] .zrs-field{border:0;border-radius:18px;background:var(--z-card);box-shadow:5px 5px 12px color-mix(in srgb,var(--z-muted) 18%,transparent),-3px -3px 8px rgba(255,255,255,.7);text-align:center}
@@ -878,6 +953,7 @@ function generatedReplacement(rule) {
         subtitle: rule.subtitle,
         theme: rule.theme,
         styleName: rule.styleName,
+        themeAssetUrl: rule.themeAssetUrl,
         glyph: rule.glyph,
         layout: rule.layout,
         structure: rule.structure,
@@ -952,8 +1028,8 @@ ${STATUS_PHONE_CSS}
   var mediaHost=root.querySelector('.zrs-structure-head');
   var hasAvatarField=config.sharedFields.some(function(field){return field.kind==='avatar';})||config.pageFields.some(function(field){return field.kind==='avatar';})||config.pages.some(function(page){return (page.fields||[]).some(function(field){return field.kind==='avatar';});});
   function addImage(url,className,alt){if(!url)return null;var img=make('img',className);img.src=url;img.alt=alt||'';img.loading='lazy';img.referrerPolicy='no-referrer';img.addEventListener('error',function(){img.remove();});mediaHost.append(img);return img;}
-  if(config.media.avatarUrl&&config.structure!=='forum'&&!hasAvatarField){addImage(config.media.avatarUrl,'zrs-avatar',config.media.imageAlt);var copy=make('div','zrs-media-copy');copy.append(make('b','',config.structureName),make('small','',config.media.avatarSource==='character'?'当前角色头像':config.media.avatarSource==='user'?'当前 user 头像':'自定义头像'));mediaHost.append(copy);}
-  if(config.media.imageUrl)addImage(config.media.imageUrl,'zrs-cover',config.media.imageAlt);
+  if(config.media.avatarUrl&&config.structure!=='forum'&&config.structure!=='social'&&!hasAvatarField){addImage(config.media.avatarUrl,'zrs-avatar',config.media.imageAlt);var copy=make('div','zrs-media-copy');copy.append(make('b','',config.structureName),make('small','',config.media.avatarSource==='character'?'当前角色头像':config.media.avatarSource==='user'?'当前 user 头像':'自定义头像'));mediaHost.append(copy);}
+  if(config.media.imageUrl&&config.structure!=='social')addImage(config.media.imageUrl,'zrs-cover',config.media.imageAlt);
   if(config.media.audioUrl){var audio=make('audio','zrs-audio');audio.controls=true;audio.preload='metadata';audio.src=config.media.audioUrl;mediaHost.append(audio);}
   if(!mediaHost.children.length)mediaHost.remove();
   function addValue(host,field,value){var item=make('div',host.classList.contains('zrs-shared')?'zrs-shared-item':'zrs-field');item.dataset.kind=field.kind;item.dataset.field=field.id||'';if(config.structure==='forum'&&field.id==='floor_user'){var forumAvatar=config.media.avatarUrl?make('img','zrs-forum-avatar'):make('span','zrs-forum-avatar is-placeholder',config.glyph||'✦');if(config.media.avatarUrl){forumAvatar.src=config.media.avatarUrl;forumAvatar.alt=config.media.imageAlt||'当前角色头像';forumAvatar.loading='lazy';forumAvatar.referrerPolicy='no-referrer';forumAvatar.addEventListener('error',function(){forumAvatar.removeAttribute('src');forumAvatar.classList.add('is-placeholder');forumAvatar.textContent=config.glyph||'✦';});}item.append(forumAvatar);}item.append(make('span','zrs-label',field.label));if(field.kind==='avatar'){var fieldAvatar=config.media.avatarUrl?make('img','zrs-field-avatar'):make('span','zrs-field-avatar is-placeholder',config.glyph||'✦');if(config.media.avatarUrl){fieldAvatar.src=config.media.avatarUrl;fieldAvatar.alt=config.media.imageAlt||String(value||field.label);fieldAvatar.loading='lazy';fieldAvatar.referrerPolicy='no-referrer';fieldAvatar.addEventListener('error',function(){fieldAvatar.removeAttribute('src');fieldAvatar.classList.add('is-placeholder');fieldAvatar.textContent=config.glyph||'✦';});}item.append(fieldAvatar,make('span','zrs-value zrs-avatar-caption',value||'当前角色'));}else{item.append(make('span','zrs-value',value||'—'));}if(field.kind==='progress'){var n=Number(String(value||'').match(/-?\\d+(?:\\.\\d+)?/)?.[0]);if(!Number.isFinite(n))n=0;n=Math.max(0,Math.min(100,n));var meter=make('span','zrs-meter');var fill=make('i');fill.style.width=n+'%';meter.append(fill);item.append(meter);}host.append(item);}
@@ -969,7 +1045,27 @@ ${STATUS_PHONE_CSS}
   function phoneAvatar(){var holder=make('div','zrs-phone-avatar');var url=config.phoneDesktop.personalAvatarUrl||config.media.avatarUrl;if(url){var img=make('img');img.src=url;img.alt=config.media.imageAlt||'当前角色头像';img.loading='lazy';img.referrerPolicy='no-referrer';img.style.objectPosition=config.phoneDesktop.personalAvatarPositionX+'% '+config.phoneDesktop.personalAvatarPositionY+'%';img.style.transform='scale('+config.phoneDesktop.personalAvatarScale+')';img.addEventListener('error',function(){img.remove();holder.classList.add('is-placeholder');});holder.append(img);}else holder.classList.add('is-placeholder');return holder;}
   function phoneDataCard(field,value,extraClass){var progress=field&&field.kind==='progress';var card=make('div','zrs-phone-data-card'+(extraClass?' '+extraClass:''));var head=make('div','zrs-phone-data-head');head.append(make('span','',field&&field.label||'未命名字段'));if(progress)head.append(make('span','',phoneText(value,'0')+'/100'));card.append(head);if(progress){var bar=make('div','zrs-phone-bar');var fill=make('i');var amount=Number(String(value||'').match(/-?\\d+(?:\\.\\d+)?/)?.[0]);if(!Number.isFinite(amount))amount=0;fill.style.width=Math.max(0,Math.min(100,amount))+'%';bar.append(fill);card.append(bar);}else card.append(make('div','zrs-phone-copy',phoneText(value,'暂无记录')));return card;}
   function renderPhonePage(page,values){fields.replaceChildren();root.dataset.phonePage=page.id;phoneTitle.textContent=page.label;if(page.id==='Personal'){var personalFields=page.fields||config.phoneDesktop.personalFields||[];var hero=make('div','zrs-phone-personal-hero');hero.append(phoneAvatar());fields.append(hero,phoneDataCard(personalFields[0],values[0]),phoneDataCard(personalFields[1],values[1],'is-desire'),phoneDataCard(personalFields[2],values[2],'is-wide'),phoneDataCard(personalFields[3],values[3],'is-wide is-thought'));return;}if(page.id==='Memo'){values.forEach(function(value){if(phoneText(value,'')!=='')fields.append(make('div','zrs-phone-list-card',value));});if(!fields.children.length)fields.append(make('div','zrs-phone-empty','暂无备忘事项'));return;}if(page.id==='Wechat'){phoneTitle.textContent=phoneText(values[0],'未知');for(var i=1;i<values.length;i++){var message=phoneText(values[i],'');if(message)fields.append(make('div','zrs-phone-chat '+(i%2===1?'is-left':'is-right'),message));}if(!fields.children.length)fields.append(make('div','zrs-phone-empty','暂无聊天记录'));return;}for(var itemIndex=0;itemIndex<values.length;itemIndex+=2){var itemName=phoneText(values[itemIndex],'');if(!itemName)continue;var detail=make('details','zrs-phone-shop');var summary=make('summary','',itemName);detail.append(summary,make('div','zrs-phone-shop-desc',phoneText(values[itemIndex+1],'暂无说明')));fields.append(detail);}if(!fields.children.length)fields.append(make('div','zrs-phone-empty','购物车空空如也'));}
-  function showPage(index){var page=config.pages[index];var values=records[page.id]||[];fields.replaceChildren();if(phoneMode)renderPhonePage(page,values);else (page.fields||config.pageFields).forEach(function(field,fieldIndex){addValue(fields,field,values[fieldIndex]);});root.querySelectorAll('.zrs-tab').forEach(function(button,buttonIndex){button.classList.toggle('is-active',buttonIndex===index);});if(phoneMode)root.classList.remove('is-phone-home');}
+  function socialValue(page,values,id,fallback){var definitions=page.fields||config.pageFields;var index=definitions.findIndex(function(field){return field.id===id;});return index>=0?phoneText(values[index],fallback):fallback;}
+  function renderSocialPage(page,values){
+    var article=make('article','zrs-social-file');
+    if(config.themeAssetUrl){var themeArt=make('img','zrs-social-theme-art');themeArt.src=config.themeAssetUrl;themeArt.alt='';themeArt.loading='lazy';themeArt.draggable=false;themeArt.setAttribute('aria-hidden','true');themeArt.addEventListener('error',function(){themeArt.remove();});article.append(themeArt);}
+    var scraps=make('div','zrs-social-scraps');scraps.setAttribute('aria-hidden','true');[['is-label','MY FILE'],['is-heart','♥'],['is-star','★'],['is-tape',''],['is-grid','']].forEach(function(item){scraps.append(make('span','zrs-social-scrap '+item[0],item[1]));});
+    var switcher=make('div','zrs-social-switcher');switcher.setAttribute('role','tablist');switcher.setAttribute('aria-label','个人档案页面');
+    var profileButton=make('button','zrs-social-switch is-active','资料卡');var introButton=make('button','zrs-social-switch','个人介绍');[profileButton,introButton].forEach(function(button){button.type='button';button.setAttribute('role','tab');});profileButton.setAttribute('aria-selected','true');introButton.setAttribute('aria-selected','false');switcher.append(profileButton,introButton);
+    var profileSheet=make('section','zrs-social-sheet zrs-social-profile is-active');profileSheet.setAttribute('role','tabpanel');
+    var ticket=make('aside','zrs-social-ticket');ticket.setAttribute('aria-hidden','true');ticket.append(make('b','','FILE'),make('span','','NO. 0217'),make('i'),make('small','','IDENTITY RECORD'));
+    var portrait=make('figure','zrs-social-photo');
+    if(config.media.avatarUrl){var avatarImage=make('img');avatarImage.src=config.media.avatarUrl;avatarImage.alt=config.media.imageAlt||'人物证件照';avatarImage.loading='lazy';avatarImage.referrerPolicy='no-referrer';avatarImage.addEventListener('error',function(){avatarImage.remove();portrait.classList.add('is-placeholder');});portrait.append(avatarImage);}else portrait.classList.add('is-placeholder');portrait.append(make('figcaption','','PORTRAIT / 01'));
+    var identity=make('div','zrs-social-identity');var name=make('strong','zrs-social-name',socialValue(page,values,'full_name','—'));name.dataset.field='full_name';var role=make('span','zrs-social-role',socialValue(page,values,'identity','—'));role.dataset.field='identity';identity.append(make('small','','PASSENGER DETAILS'),name,role);
+    var details=make('dl','zrs-social-details');[['生日','birthday'],['年龄','age'],['身体状态','physical_state'],['当前地点','current_location'],['记录日期','record_date'],['记录渠道','record_channel'],['当前想法','current_thought']].forEach(function(item){var row=make('div','zrs-social-detail');var description=make('dd','',socialValue(page,values,item[1],'—'));description.dataset.field=item[1];row.append(make('dt','',item[0]),description);details.append(row);});
+    var state=make('div','zrs-social-state');var stateValue=make('strong','',socialValue(page,values,'current_state','—'));stateValue.dataset.field='current_state';state.append(make('span','','CURRENT STATUS'),stateValue);
+    var profileBody=make('div','zrs-social-profile-body');profileBody.append(portrait,identity,details,state);profileSheet.append(ticket,profileBody);
+    var introSheet=make('section','zrs-social-sheet zrs-social-intro');introSheet.setAttribute('role','tabpanel');introSheet.hidden=true;var introHead=make('header','zrs-social-intro-head');introHead.append(make('span','','PERSONAL'),make('strong','','Introduction'),make('small','',socialValue(page,values,'full_name','—')));var introCopy=make('p','zrs-social-intro-copy',socialValue(page,values,'introduction','—'));introCopy.dataset.field='introduction';introSheet.append(introHead,introCopy);
+    if(config.media.imageUrl){var archivePhoto=make('figure','zrs-social-archive-photo');var archiveImage=make('img');archiveImage.src=config.media.imageUrl;archiveImage.alt=config.media.imageAlt||'档案附图';archiveImage.loading='lazy';archiveImage.referrerPolicy='no-referrer';archiveImage.addEventListener('error',function(){archivePhoto.remove();});archivePhoto.append(archiveImage,make('figcaption','','ARCHIVE / ATTACHED'));introSheet.append(archivePhoto);}
+    function showSocialSheet(introVisible){profileSheet.hidden=introVisible;introSheet.hidden=!introVisible;profileSheet.classList.toggle('is-active',!introVisible);introSheet.classList.toggle('is-active',introVisible);profileButton.classList.toggle('is-active',!introVisible);introButton.classList.toggle('is-active',introVisible);profileButton.setAttribute('aria-selected',String(!introVisible));introButton.setAttribute('aria-selected',String(introVisible));}
+    profileButton.addEventListener('click',function(){showSocialSheet(false);});introButton.addEventListener('click',function(){showSocialSheet(true);});article.append(scraps,switcher,profileSheet,introSheet);fields.append(article);
+  }
+  function showPage(index){var page=config.pages[index];var values=records[page.id]||[];fields.replaceChildren();if(phoneMode)renderPhonePage(page,values);else if(config.structure==='social')renderSocialPage(page,values);else (page.fields||config.pageFields).forEach(function(field,fieldIndex){addValue(fields,field,values[fieldIndex]);});root.querySelectorAll('.zrs-tab').forEach(function(button,buttonIndex){button.classList.toggle('is-active',buttonIndex===index);});if(phoneMode)root.classList.remove('is-phone-home');}
   function phoneIconMarkup(id){var paths={Personal:'<circle cx="12" cy="8" r="3.1"></circle><path d="M5.7 19.2c.8-3.4 3-5.3 6.3-5.3s5.5 1.9 6.3 5.3"></path>',Memo:'<rect x="5.5" y="3.5" width="13" height="17" rx="3"></rect><path d="M9 8h6M9 12h6M9 16h4"></path>',Wechat:'<path d="M4.2 10.1c0-3.1 3-5.6 6.7-5.6s6.7 2.5 6.7 5.6-3 5.6-6.7 5.6c-.8 0-1.6-.1-2.3-.4l-3.3 1.6.8-3.1a5.1 5.1 0 0 1-1.9-3.7Z"></path><path d="M13.4 14.8c.5 2.1 2.6 3.7 5.1 3.7.6 0 1.1-.1 1.6-.3l2.1 1-.5-2c.8-.7 1.3-1.7 1.3-2.8 0-2-1.7-3.7-4.1-4.1"></path>',Shop:'<path d="M5.2 8.5h13.6l-1 11H6.2l-1-11Z"></path><path d="M8.6 9V7.1a3.4 3.4 0 0 1 6.8 0V9"></path>'};return '<svg class="zrs-app-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(paths[id]||paths.Personal)+'</svg>';}
   config.pages.forEach(function(page,index){var button=make('button','zrs-tab');button.type='button';if(phoneMode){var app=config.phoneDesktop.apps.find(function(item){return item.id===page.id;});var icon=make('span','zrs-app-icon');icon.dataset.appId=page.id;icon.innerHTML=phoneIconMarkup(page.id);if(app&&app.iconUrl){var iconImage=make('img','zrs-app-icon-image');iconImage.src=app.iconUrl;iconImage.alt='';iconImage.loading='lazy';iconImage.referrerPolicy='no-referrer';iconImage.addEventListener('error',function(){iconImage.remove();icon.classList.remove('has-custom-icon');});icon.append(iconImage);icon.classList.add('has-custom-icon');}button.append(icon,make('span','zrs-app-label',app?app.name:page.label));}else button.textContent=page.label;button.addEventListener('click',function(){showPage(index);});tabs.append(button);});
   root.querySelector('.zrs-phone-back').addEventListener('click',function(){root.classList.add('is-phone-home');root.querySelectorAll('.zrs-tab').forEach(function(button){button.classList.remove('is-active');});});
@@ -1002,6 +1098,22 @@ export function buildRegexScript(input) {
 export function makePreviewRecords(input) {
     const rule = normalizeRule(input);
     const sampleFor = field => {
+        if (rule.structure === 'social') {
+            const socialSamples = {
+                full_name: '姓名',
+                identity: '身份 / 职位',
+                birthday: 'X',
+                age: 'X',
+                physical_state: 'X',
+                current_location: 'X',
+                record_date: 'X',
+                record_channel: 'X',
+                current_thought: 'X',
+                current_state: 'X',
+                introduction: 'X',
+            };
+            if (socialSamples[field.id]) return socialSamples[field.id];
+        }
         if (field.kind === 'progress') return 'AI动态数值';
         if (field.kind === 'currency') return 'AI动态金额';
         if (field.kind === 'avatar') return '当前角色';

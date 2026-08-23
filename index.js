@@ -1,7 +1,7 @@
 import {
     RULE_PRESETS,
+    SOCIAL_APPEARANCE_PRESETS,
     STATUS_PALETTE_PRESETS,
-    STATUS_STYLE_PRESETS,
     STATUS_STRUCTURE_PRESETS,
     STATUS_THEME_CSS,
     STATUS_PHONE_CSS,
@@ -83,6 +83,7 @@ const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
 const VERSION = '0.10.0';
 const OPENING_HOME_SCHEMA_VERSION = 2;
+const SOCIAL_THEME_ART_URL = new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href;
 
 const HOME_TEMPLATES = Object.freeze([
     {
@@ -199,7 +200,7 @@ const DEFAULT_SETTINGS = Object.freeze({
     pageFieldsText: PHONE_STRUCTURE_DEFAULT.fields.map(item => item.join('|')).join('\n'),
     variant: 'auto',
     paletteId: 'ice-blue',
-    media: { avatarSource: 'character', avatarUrl: '', imageUrl: '', audioUrl: '', imageAlt: '状态栏配图' },
+    media: { avatarSource: 'character', avatarUrl: '', imageUrl: '', themeAssetUrl: '', audioUrl: '', imageAlt: '状态栏配图' },
     phoneDesktop: PHONE_DESKTOP_DEFAULTS,
     openingNotes: {},
     openingProfiles: {},
@@ -238,7 +239,6 @@ const SETTING_FIELDS = Object.freeze({
     'status-atelier-tag-name': 'tagName',
     'status-atelier-title': 'title',
     'status-atelier-subtitle': 'subtitle',
-    'status-atelier-theme': 'theme',
     'status-atelier-structure': 'structure',
     'status-atelier-palette': 'paletteId',
     'status-atelier-layout': 'layout',
@@ -253,6 +253,7 @@ const STATUS_MEDIA_FIELDS = Object.freeze({
     'status-atelier-avatar-source': 'avatarSource',
     'status-atelier-avatar-url': 'avatarUrl',
     'status-atelier-image-url': 'imageUrl',
+    'status-atelier-theme-asset-url': 'themeAssetUrl',
     'status-atelier-audio-url': 'audioUrl',
     'status-atelier-image-alt': 'imageAlt',
 });
@@ -367,6 +368,12 @@ function settings() {
         stored.sharedFieldsText = PHONE_STRUCTURE_DEFAULT.shared.map(item => item.join('|')).join('\n');
         stored.pageFieldsText = PHONE_STRUCTURE_DEFAULT.fields.map(item => item.join('|')).join('\n');
     }
+    const activeStructure = STATUS_STRUCTURE_PRESETS.find(item => item.id === stored.structure) || PHONE_STRUCTURE_DEFAULT;
+    const socialThemeIds = new Set(SOCIAL_APPEARANCE_PRESETS.map(item => item.id));
+    if (stored.structure !== 'social' || !socialThemeIds.has(stored.theme)) {
+        stored.theme = activeStructure.appearanceId;
+    }
+    stored.layout = activeStructure.layout;
     if (stored.openingSummary.source === 'manual') stored.openingSummary.source = 'main';
     if (!['opening', 'status'].includes(stored.activeWorkspace)) stored.activeWorkspace = 'opening';
     if (!Array.isArray(stored.favoriteHomeTemplates)) stored.favoriteHomeTemplates = clone(DEFAULT_SETTINGS.favoriteHomeTemplates);
@@ -386,6 +393,17 @@ function settings() {
         stored.statusFieldsUnified = true;
     }
     if (stored.structure === 'phone') stored.statusFieldsUnified = true;
+    if (stored.structure === 'social' && stored.socialProfileSchemaVersion !== 2) {
+        const replacements = {
+            nationality: { id: 'physical_state', label: '身体状态', instruction: '具体填写角色当前的身体感受、伤病、疲劳或生理反应', kind: 'long' },
+            issuer: { id: 'current_thought', label: '当前想法', instruction: '第一人称填写角色此刻没有说出口的真实想法', kind: 'long' },
+        };
+        stored.pageFieldsText = parseFields(stored.pageFieldsText).map(item => {
+            const next = replacements[item.id] || item;
+            return `${next.label}|${next.instruction}|${next.kind}|${next.id}`;
+        }).join('\n');
+        stored.socialProfileSchemaVersion = 2;
+    }
     if (stored.openingIntroContrastV051 !== true) {
         if (String(stored.openingHome?.introBackground || '').toLowerCase() === '#1a3048') {
             stored.openingHome.introBackground = '#e8e0d0';
@@ -583,24 +601,24 @@ function renderStatusDesignControls() {
         });
     }
     if (structureSelect) structureSelect.value = settings().structure || 'custom';
-    const styleHost = field('status-atelier-status-styles');
-    if (styleHost && styleHost.children.length !== STATUS_STYLE_PRESETS.length) {
-        styleHost.replaceChildren();
-        STATUS_STYLE_PRESETS.forEach(style => {
-            const button = makeElement('button', 'status-atelier-status-style');
+    const socialAppearanceHost = field('status-atelier-social-appearances');
+    if (socialAppearanceHost && socialAppearanceHost.children.length !== SOCIAL_APPEARANCE_PRESETS.length) {
+        socialAppearanceHost.replaceChildren();
+        SOCIAL_APPEARANCE_PRESETS.forEach((appearance, index) => {
+            const button = makeElement('button', 'status-atelier-social-appearance');
             button.type = 'button';
-            button.dataset.statusStyle = style.id;
-            button.title = `${style.code} ${style.name}`;
+            button.dataset.socialAppearance = appearance.id;
+            button.setAttribute('aria-pressed', String(settings().theme === appearance.id));
             button.append(
-                makeElement('b', '', style.code),
-                makeElement('span', 'status-atelier-status-style-glyph', style.glyph || '✦'),
-                makeElement('small', '', style.name),
+                makeElement('span', 'status-atelier-social-appearance-number', String(index + 1).padStart(2, '0')),
+                makeElement('strong', '', appearance.name),
+                makeElement('small', '', appearance.source),
             );
-            styleHost.append(button);
+            socialAppearanceHost.append(button);
         });
     }
-    styleHost?.querySelectorAll('[data-status-style]').forEach(button => {
-        button.setAttribute('aria-pressed', String(button.dataset.statusStyle === settings().theme));
+    socialAppearanceHost?.querySelectorAll('[data-social-appearance]').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.socialAppearance === settings().theme));
     });
     const paletteHost = field('status-atelier-status-palettes');
     if (paletteHost && paletteHost.children.length !== STATUS_PALETTE_PRESETS.length) {
@@ -641,6 +659,10 @@ function renderPhoneDesktopControls() {
     if (section) section.hidden = stored.structure !== 'phone';
     const appearanceSection = field('status-atelier-appearance-section');
     if (appearanceSection) appearanceSection.hidden = stored.structure === 'phone';
+    const appearanceTitle = field('status-atelier-appearance-title');
+    if (appearanceTitle) appearanceTitle.textContent = stored.structure === 'social' ? '个人档案外观与配色' : '模板配色';
+    const socialAppearanceSection = field('status-atelier-social-appearance-section');
+    if (socialAppearanceSection) socialAppearanceSection.hidden = stored.structure !== 'social';
     renderTemplateMediaControls();
     for (const [id, key] of Object.entries(PHONE_DESKTOP_FIELDS)) {
         const control = field(id);
@@ -668,20 +690,26 @@ function renderTemplateMediaControls() {
     section.hidden = structure === 'phone' || (!usesAvatar && !usesImage && !usesAudio);
     const title = field('status-atelier-template-media-title');
     const help = field('status-atelier-template-media-help');
-    if (title) title.textContent = usesAudio ? '播放界面素材' : usesImage ? '当前模板配图' : '当前模板头像';
-    if (help) help.textContent = usesAudio
+    if (title) title.textContent = structure === 'social' ? '个人档案 · DIY 素材' : usesAudio ? '播放界面素材' : usesImage ? '当前模板配图' : '当前模板头像';
+    if (help) help.textContent = structure === 'social'
+        ? '选择证件照来源和档案附图。'
+        : usesAudio
         ? '封面与音频只会进入播放界面，音频不会自动播放。'
         : usesImage
             ? '这些图片只会进入当前选中的模板。'
             : '头像会绑定当前角色、当前 user 或图片 URL。';
+    const socialGuide = field('status-atelier-social-data-guide');
+    if (socialGuide) socialGuide.hidden = structure !== 'social';
     const avatarSourceWrap = field('status-atelier-media-avatar-source-wrap');
     const avatarUrlWrap = field('status-atelier-avatar-url-wrap');
     const imageUrlWrap = field('status-atelier-image-url-wrap');
+    const themeAssetUrlWrap = field('status-atelier-theme-asset-url-wrap');
     const audioUrlWrap = field('status-atelier-audio-url-wrap');
     const altWrap = field('status-atelier-image-alt-wrap');
     if (avatarSourceWrap) avatarSourceWrap.hidden = !usesAvatar;
     if (avatarUrlWrap) avatarUrlWrap.hidden = !usesAvatar || settings().media?.avatarSource !== 'url';
     if (imageUrlWrap) imageUrlWrap.hidden = !usesImage;
+    if (themeAssetUrlWrap) themeAssetUrlWrap.hidden = structure !== 'social';
     if (audioUrlWrap) audioUrlWrap.hidden = !usesAudio;
     if (altWrap) altWrap.hidden = !usesAvatar && !usesImage;
 }
@@ -692,6 +720,7 @@ function applyStatusStructure(structureId) {
     const stored = settings();
     stored.structure = structure.id;
     stored.variant = 'auto';
+    stored.theme = structure.appearanceId;
     stored.title = structure.title;
     stored.subtitle = structure.subtitle;
     stored.layout = structure.layout;
@@ -762,8 +791,8 @@ function renderStatusSchema() {
     const editorHelp = field('status-atelier-status-editor-help');
     if (editorTitle) editorTitle.textContent = phoneMode ? '个人页显示与 AI 规则' : '字段显示与 AI 规则';
     if (editorHelp) editorHelp.textContent = phoneMode
-        ? '字段名称在右侧“个人”页双击修改；这里只设置显示类型和 AI 填写要求。'
-        : '名称和顺序直接在预览修改；这里只设置显示类型和 AI 填写要求。';
+        ? '编辑名称、显示类型和填写要求。'
+        : '编辑名称、显示类型、填写要求和顺序。';
     if (phoneMode) {
         const phone = settings().phoneDesktop;
         phone.personalFields ??= clone(PHONE_DESKTOP_DEFAULTS.personalFields);
@@ -808,6 +837,7 @@ function renderStatusSchema() {
         const label = makeElement('input', 'text_pole');
         label.value = definition.label;
         label.title = '可修改：显示名称';
+        label.setAttribute('aria-label', `${definition.label}的显示名称`);
         const kind = makeElement('select', 'text_pole');
         Object.entries(KIND_LABELS).forEach(([value, text]) => {
             const option = makeElement('option', '', text);
@@ -815,6 +845,7 @@ function renderStatusSchema() {
             kind.append(option);
         });
         kind.value = definition.kind;
+        kind.setAttribute('aria-label', `${definition.label}的显示类型`);
         const actions = makeElement('div', 'status-atelier-schema-actions');
         const up = makeElement('button', 'status-atelier-schema-remove', '↑');
         const down = makeElement('button', 'status-atelier-schema-remove', '↓');
@@ -832,15 +863,18 @@ function renderStatusSchema() {
         remove.addEventListener('click', () => { definitions.splice(index, 1); serializeFieldDefinitions(definitions); renderStatusSchema(); });
         actions.append(up, down, remove);
         const key = makeElement('span', 'status-atelier-schema-key', `🔒 ${definition.id}`);
-        const details = makeElement('details');
-        details.append(makeElement('summary', '', 'AI 填写要求'));
+        const instructionWrap = makeElement('label', 'status-atelier-schema-instruction');
+        instructionWrap.append(makeElement('span', '', 'AI 填写内容'));
         const instruction = makeElement('textarea', 'text_pole');
         instruction.value = definition.instruction;
-        details.append(instruction);
+        instruction.rows = 3;
+        instruction.placeholder = '例如：填写角色此刻没有说出口的内心独白';
+        instruction.setAttribute('aria-label', `${definition.label}的 AI 填写内容`);
+        instructionWrap.append(instruction);
         label.addEventListener('input', () => { definition.label = label.value; serializeFieldDefinitions(definitions); });
         kind.addEventListener('change', () => { definition.kind = kind.value; serializeFieldDefinitions(definitions); });
         instruction.addEventListener('input', () => { definition.instruction = instruction.value; serializeFieldDefinitions(definitions); });
-        row.append(label, kind, actions, key, details);
+        row.append(label, kind, actions, key, instructionWrap);
         host.append(row);
     });
     if (!definitions.length) host.append(makeElement('p', 'status-atelier-empty', '当前没有字段，点击“新增字段”开始。'));
@@ -1519,11 +1553,6 @@ function readSettingsControl(control) {
         settings().preset = 'custom';
         field('status-atelier-preset').value = 'custom';
     }
-    if (key === 'theme') {
-        field('status-atelier-status-styles')?.querySelectorAll('[data-status-style]').forEach(button => {
-            button.setAttribute('aria-pressed', String(button.dataset.statusStyle === settings().theme));
-        });
-    }
     if (['promptEnabled', 'installScope'].includes(key)) {
         updatePrompt();
         saveSettingsSoon({ snapshotOpening: false });
@@ -1602,6 +1631,9 @@ function resolvedStatusInput(source = settings()) {
         pagesText: source.pagesText,
         sharedFieldsText: source.sharedFieldsText,
         pageFieldsText: source.pageFieldsText,
+        themeAssetUrl: source.structure === 'social' && source.theme === 'personal-dossier'
+            ? String(source.media?.themeAssetUrl || '').trim() || SOCIAL_THEME_ART_URL
+            : '',
         media: { ...DEFAULT_SETTINGS.media, ...(source.media || {}) },
         phoneDesktop: clone(source.phoneDesktop || DEFAULT_SETTINGS.phoneDesktop),
     };
@@ -1630,6 +1662,14 @@ function resolvedStatusInput(source = settings()) {
         }
     } catch {
         output.phoneDesktop.personalAvatarUrl = output.phoneDesktop.personalAvatarSource === 'url' ? output.phoneDesktop.personalAvatarUrl : '';
+    }
+    return output;
+}
+
+function resolvedStatusExportInput(source = settings()) {
+    const output = resolvedStatusInput(source);
+    if (output.structure === 'social' && output.theme === 'personal-dossier') {
+        output.themeAssetUrl = String(source.media?.themeAssetUrl || '').trim();
     }
     return output;
 }
@@ -2145,6 +2185,154 @@ function renderStatusPreview(host) {
         root.style.setProperty('--z-muted', rule.palette.muted);
     }
 
+    const directEditor = makeElement('section', 'status-atelier-preview-direct-editor');
+    directEditor.hidden = true;
+    const closeDirectEditor = () => {
+        directEditor.hidden = true;
+        directEditor.replaceChildren();
+    };
+    const directEditorField = (labelText, control) => {
+        const label = makeElement('label', 'status-atelier-preview-direct-field');
+        label.append(makeElement('span', '', labelText), control);
+        return label;
+    };
+    const openPreviewFieldEditor = fieldId => {
+        const definitions = fieldDefinitions();
+        const definition = definitions.find(item => item.scope === 'page' && item.id === fieldId);
+        if (!definition) return;
+        const heading = makeElement('div', 'status-atelier-preview-direct-heading');
+        const close = makeElement('button', 'menu_button', '关闭');
+        close.type = 'button';
+        close.addEventListener('click', closeDirectEditor);
+        heading.append(makeElement('strong', '', `编辑：${definition.label}`), close);
+        const labelInput = makeElement('input', 'text_pole');
+        labelInput.value = definition.label;
+        labelInput.maxLength = 30;
+        const kindSelect = makeElement('select', 'text_pole');
+        Object.entries(KIND_LABELS).forEach(([value, text]) => {
+            const option = makeElement('option', '', text);
+            option.value = value;
+            kindSelect.append(option);
+        });
+        kindSelect.value = definition.kind;
+        const instructionInput = makeElement('textarea', 'text_pole');
+        instructionInput.value = definition.instruction;
+        instructionInput.rows = 4;
+        instructionInput.placeholder = '例如：填写角色此刻没有说出口的内心独白';
+        const save = makeElement('button', 'menu_button status-atelier-primary-action', '保存并更新预览');
+        save.type = 'button';
+        save.addEventListener('click', () => {
+            const nextLabel = String(labelInput.value || '').trim().slice(0, 30);
+            if (!nextLabel) return;
+            definition.label = nextLabel;
+            definition.kind = kindSelect.value;
+            definition.instruction = String(instructionInput.value || '').trim().slice(0, 300) || '根据当前剧情动态填写';
+            serializeFieldDefinitions(definitions);
+            renderStatusSchema();
+            renderModalStatusSchema();
+            saveSettingsSoon({ snapshotOpening: false });
+        });
+        directEditor.replaceChildren(
+            heading,
+            directEditorField('显示名称', labelInput),
+            directEditorField('显示类型', kindSelect),
+            directEditorField('AI 填写内容', instructionInput),
+            save,
+        );
+        directEditor.hidden = false;
+        labelInput.focus();
+        directEditor.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+    };
+    const openPreviewMediaEditor = () => {
+        const media = settings().media || clone(DEFAULT_SETTINGS.media);
+        const heading = makeElement('div', 'status-atelier-preview-direct-heading');
+        const close = makeElement('button', 'menu_button', '关闭');
+        close.type = 'button';
+        close.addEventListener('click', closeDirectEditor);
+        heading.append(makeElement('strong', '', '编辑：头像与档案图片'), close);
+        const avatarSource = makeElement('select', 'text_pole');
+        [['character', '当前角色头像'], ['user', '当前 user 头像'], ['url', '直接 URL'], ['none', '不显示头像']].forEach(([value, text]) => {
+            const option = makeElement('option', '', text);
+            option.value = value;
+            avatarSource.append(option);
+        });
+        avatarSource.value = media.avatarSource || 'character';
+        const avatarUrl = makeElement('input', 'text_pole');
+        avatarUrl.type = 'url';
+        avatarUrl.value = media.avatarUrl || '';
+        avatarUrl.placeholder = 'https://example.com/avatar.png';
+        avatarUrl.addEventListener('input', () => {
+            if (avatarUrl.value.trim()) avatarSource.value = 'url';
+        });
+        const imageUrl = makeElement('input', 'text_pole');
+        imageUrl.type = 'url';
+        imageUrl.value = media.imageUrl || '';
+        imageUrl.placeholder = 'https://example.com/archive.png';
+        const imageAlt = makeElement('input', 'text_pole');
+        imageAlt.value = media.imageAlt || '';
+        imageAlt.maxLength = 80;
+        const save = makeElement('button', 'menu_button status-atelier-primary-action', '保存并更新预览');
+        save.type = 'button';
+        save.addEventListener('click', () => {
+            settings().media ??= clone(DEFAULT_SETTINGS.media);
+            settings().media.avatarSource = avatarSource.value;
+            settings().media.avatarUrl = avatarUrl.value;
+            settings().media.imageUrl = imageUrl.value;
+            settings().media.imageAlt = imageAlt.value;
+            statusAiTestRecords = null;
+            renderStatusDesignControls();
+            scheduleStatusPreviewUpdate();
+            saveSettingsSoon({ snapshotOpening: false });
+        });
+        directEditor.replaceChildren(
+            heading,
+            directEditorField('头像 URL', avatarUrl),
+            directEditorField('头像来源', avatarSource),
+            directEditorField('档案附图 URL', imageUrl),
+            directEditorField('图片替代文字', imageAlt),
+            save,
+        );
+        directEditor.hidden = false;
+        avatarUrl.focus();
+        directEditor.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+    };
+    const bindDirectPreviewTarget = (element, fieldId, labelText) => {
+        if (!element) return;
+        element.classList.add('status-atelier-preview-direct-target');
+        element.tabIndex = 0;
+        element.title = `点击编辑${labelText || '这个字段'}`;
+        element.setAttribute('role', 'button');
+        element.setAttribute('aria-label', `编辑${labelText || '这个字段'}的显示名称、类型和 AI 填写内容`);
+        const open = event => {
+            event.preventDefault();
+            event.stopPropagation();
+            openPreviewFieldEditor(fieldId);
+        };
+        element.addEventListener('click', open);
+        element.addEventListener('keydown', event => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            open(event);
+        });
+    };
+    const bindDirectMediaTarget = element => {
+        if (!element) return;
+        element.classList.add('status-atelier-preview-direct-target');
+        element.tabIndex = 0;
+        element.title = '点击编辑头像与档案图片';
+        element.setAttribute('role', 'button');
+        element.setAttribute('aria-label', '编辑头像来源与档案图片 URL');
+        const open = event => {
+            event.preventDefault();
+            event.stopPropagation();
+            openPreviewMediaEditor();
+        };
+        element.addEventListener('click', open);
+        element.addEventListener('keydown', event => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            open(event);
+        });
+    };
+
     const card = makeElement('section', 'status-atelier-preview-card zrs-card');
     const chrome = makeElement('div', 'status-atelier-preview-chrome zrs-chrome');
     const previewGlyph = makeElement('span', 'status-atelier-preview-glyph zrs-glyph');
@@ -2163,7 +2351,7 @@ function renderStatusPreview(host) {
     const previewTitle = makeElement('h3', 'status-atelier-rule-preview-title zrs-title', rule.title);
     bindPreviewTitleEditor(previewTitle);
     heading.append(previewTitle, makeElement('p', 'status-atelier-rule-preview-subtitle zrs-subtitle', rule.subtitle));
-    header.append(heading, makeElement('span', 'status-atelier-preview-dynamic-badge', 'AI 动态数值'));
+    header.append(heading, makeElement('span', 'status-atelier-preview-dynamic-badge', rule.structure === 'social' ? '动态档案' : 'AI 动态数值'));
     card.append(header);
 
     const body = makeElement('div', 'status-atelier-rule-preview-body zrs-content');
@@ -2238,8 +2426,8 @@ function renderStatusPreview(host) {
         image.addEventListener('error', () => image.remove());
         mediaHost.append(image);
     };
-    if (rule.structure !== 'forum' && !hasAvatarField) addPreviewImage(rule.media.avatarUrl, 'status-atelier-preview-avatar zrs-avatar', rule.media.imageAlt);
-    addPreviewImage(rule.media.imageUrl, 'status-atelier-preview-cover zrs-cover', rule.media.imageAlt);
+    if (!['forum', 'social'].includes(rule.structure) && !hasAvatarField) addPreviewImage(rule.media.avatarUrl, 'status-atelier-preview-avatar zrs-avatar', rule.media.imageAlt);
+    if (rule.structure !== 'social') addPreviewImage(rule.media.imageUrl, 'status-atelier-preview-cover zrs-cover', rule.media.imageAlt);
     if (rule.media.audioUrl) {
         const audio = makeElement('audio', 'status-atelier-preview-audio zrs-audio');
         audio.controls = true;
@@ -2354,11 +2542,164 @@ function renderStatusPreview(host) {
         }
         if (!pageHost.children.length) pageHost.append(makeElement('div', 'zrs-phone-empty', '购物车空空如也'));
     };
+    const socialValue = (page, values, id, fallback = '') => {
+        const definitions = page?.fields || rule.pageFields;
+        const index = definitions.findIndex(definition => definition.id === id);
+        const value = index >= 0 ? String(values[index] || '').trim() : '';
+        return value && value !== '无' ? value : fallback;
+    };
+    const renderSocialPage = (page, values) => {
+        const socialDefinitions = page?.fields || rule.pageFields;
+        const socialDefinition = id => socialDefinitions.find(definition => definition.id === id);
+        const socialLabel = (id, fallback) => socialDefinition(id)?.label || fallback;
+        const article = makeElement('article', 'zrs-social-file');
+        if (rule.themeAssetUrl) {
+            const themeArt = makeElement('img', 'zrs-social-theme-art');
+            themeArt.src = rule.themeAssetUrl;
+            themeArt.alt = '';
+            themeArt.loading = 'lazy';
+            themeArt.draggable = false;
+            themeArt.setAttribute('aria-hidden', 'true');
+            themeArt.addEventListener('error', () => themeArt.remove());
+            article.append(themeArt);
+        }
+        const scraps = makeElement('div', 'zrs-social-scraps');
+        scraps.setAttribute('aria-hidden', 'true');
+        [
+            ['is-label', 'MY FILE'],
+            ['is-heart', '♥'],
+            ['is-star', '★'],
+            ['is-tape', ''],
+            ['is-grid', ''],
+        ].forEach(([className, copy]) => scraps.append(makeElement('span', `zrs-social-scrap ${className}`, copy)));
+        const switcher = makeElement('div', 'zrs-social-switcher');
+        switcher.setAttribute('role', 'tablist');
+        switcher.setAttribute('aria-label', '个人档案页面');
+        const profileButton = makeElement('button', 'zrs-social-switch is-active', '资料卡');
+        const introButton = makeElement('button', 'zrs-social-switch', '个人介绍');
+        [profileButton, introButton].forEach(button => {
+            button.type = 'button';
+            button.setAttribute('role', 'tab');
+        });
+        profileButton.setAttribute('aria-selected', 'true');
+        introButton.setAttribute('aria-selected', 'false');
+        switcher.append(profileButton, introButton);
+
+        const profileSheet = makeElement('section', 'zrs-social-sheet zrs-social-profile is-active');
+        profileSheet.setAttribute('role', 'tabpanel');
+        const ticket = makeElement('aside', 'zrs-social-ticket');
+        ticket.setAttribute('aria-hidden', 'true');
+        ticket.append(
+            makeElement('b', '', 'FILE'),
+            makeElement('span', '', 'NO. 0217'),
+            makeElement('i'),
+            makeElement('small', '', 'IDENTITY RECORD'),
+        );
+        const portrait = makeElement('figure', 'zrs-social-photo');
+        if (rule.media.avatarUrl) {
+            const image = makeElement('img');
+            image.src = rule.media.avatarUrl;
+            image.alt = rule.media.imageAlt || '人物证件照';
+            image.loading = 'lazy';
+            image.addEventListener('error', () => {
+                image.remove();
+                portrait.classList.add('is-placeholder');
+            });
+            portrait.append(image);
+        } else {
+            portrait.classList.add('is-placeholder');
+        }
+        portrait.append(makeElement('figcaption', '', 'PORTRAIT / 01'));
+        bindDirectMediaTarget(portrait);
+
+        const identityBlock = makeElement('div', 'zrs-social-identity');
+        const name = makeElement('strong', 'zrs-social-name', socialValue(page, values, 'full_name', '姓名'));
+        name.dataset.field = 'full_name';
+        const role = makeElement('span', 'zrs-social-role', socialValue(page, values, 'identity', '身份 / 职位'));
+        role.dataset.field = 'identity';
+        bindDirectPreviewTarget(name, 'full_name', socialLabel('full_name', '姓名'));
+        bindDirectPreviewTarget(role, 'identity', socialLabel('identity', '身份 / 职位'));
+        identityBlock.append(makeElement('small', '', 'PASSENGER DETAILS'), name, role);
+
+        const details = makeElement('dl', 'zrs-social-details');
+        [
+            ['birthday', '生日', 'X'],
+            ['age', '年龄', 'X'],
+            ['physical_state', '身体状态', 'X'],
+            ['current_location', '当前地点', 'X'],
+            ['record_date', '记录日期', 'X'],
+            ['record_channel', '记录渠道', 'X'],
+            ['current_thought', '当前想法', 'X'],
+        ].forEach(([id, fallbackLabel, fallback]) => {
+            const row = makeElement('div', 'zrs-social-detail');
+            const label = socialLabel(id, fallbackLabel);
+            const term = makeElement('dt', '', label);
+            const description = makeElement('dd', '', socialValue(page, values, id, fallback));
+            description.dataset.field = id;
+            row.append(term, description);
+            bindDirectPreviewTarget(row, id, label);
+            details.append(row);
+        });
+        const status = makeElement('div', 'zrs-social-state');
+        const statusLabel = socialLabel('current_state', '当前状态');
+        status.append(
+            makeElement('span', '', statusLabel),
+            makeElement('strong', '', socialValue(page, values, 'current_state', 'X')),
+        );
+        status.querySelector('strong').dataset.field = 'current_state';
+        bindDirectPreviewTarget(status, 'current_state', statusLabel);
+        const profileBody = makeElement('div', 'zrs-social-profile-body');
+        profileBody.append(portrait, identityBlock, details, status);
+        profileSheet.append(ticket, profileBody);
+
+        const introSheet = makeElement('section', 'zrs-social-sheet zrs-social-intro');
+        introSheet.setAttribute('role', 'tabpanel');
+        introSheet.hidden = true;
+        const introHead = makeElement('header', 'zrs-social-intro-head');
+        const introductionLabel = socialLabel('introduction', '个人介绍 / 当前记录');
+        const introName = makeElement('small', '', socialValue(page, values, 'full_name', '姓名'));
+        introHead.append(
+            makeElement('span', '', 'PERSONAL'),
+            makeElement('strong', '', introductionLabel),
+            introName,
+        );
+        bindDirectPreviewTarget(introName, 'full_name', socialLabel('full_name', '姓名'));
+        const introCopy = makeElement('p', 'zrs-social-intro-copy', socialValue(page, values, 'introduction', 'X'));
+        introCopy.dataset.field = 'introduction';
+        bindDirectPreviewTarget(introCopy, 'introduction', introductionLabel);
+        introSheet.append(introHead, introCopy);
+        if (rule.media.imageUrl) {
+            const archivePhoto = makeElement('figure', 'zrs-social-archive-photo');
+            const archiveImage = makeElement('img');
+            archiveImage.src = rule.media.imageUrl;
+            archiveImage.alt = rule.media.imageAlt || '档案附图';
+            archiveImage.loading = 'lazy';
+            archiveImage.addEventListener('error', () => archivePhoto.remove());
+            archivePhoto.append(archiveImage, makeElement('figcaption', '', 'ARCHIVE / ATTACHED'));
+            bindDirectMediaTarget(archivePhoto);
+            introSheet.append(archivePhoto);
+        }
+        const showSocialSheet = introVisible => {
+            profileSheet.hidden = introVisible;
+            introSheet.hidden = !introVisible;
+            profileSheet.classList.toggle('is-active', !introVisible);
+            introSheet.classList.toggle('is-active', introVisible);
+            profileButton.classList.toggle('is-active', !introVisible);
+            introButton.classList.toggle('is-active', introVisible);
+            profileButton.setAttribute('aria-selected', String(!introVisible));
+            introButton.setAttribute('aria-selected', String(introVisible));
+        };
+        profileButton.addEventListener('click', () => showSocialSheet(false));
+        introButton.addEventListener('click', () => showSocialSheet(true));
+        article.append(scraps, switcher, profileSheet, introSheet);
+        pageHost.append(article);
+    };
     const showPage = index => {
         pageHost.replaceChildren();
         const page = pages[index]?.page;
         const values = pages[index]?.values || [];
         if (phoneMode) renderPhonePage(page, values);
+        else if (rule.structure === 'social') renderSocialPage(page, values);
         else (page?.fields || rule.pageFields).forEach((definition, fieldIndex) => {
             appendPreviewField(pageHost, definition, values[fieldIndex] || previewValue(definition), false, rule.glyph, rule);
         });
@@ -2402,7 +2743,7 @@ function renderStatusPreview(host) {
     body.append(phonePagebar);
     body.append(pageHost);
     card.append(body);
-    root.append(card);
+    root.append(card, directEditor);
     host.replaceChildren(root);
     if (phoneMode) {
         root.classList.add('is-phone-home');
@@ -2485,8 +2826,8 @@ function safeFileName(value) {
     return String(value || 'jiuyi-status').replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').trim() || 'jiuyi-status';
 }
 
-function downloadRegex() {
-    const script = buildRegexScript(resolvedStatusInput());
+async function downloadRegex() {
+    const script = buildRegexScript(await resolvedStatusExportInput());
     downloadJson(`regex-${safeFileName(settings().ruleName)}.json`, script);
     notify('success', '正则 JSON 已生成；里面没有写死剧情数值');
 }
@@ -2579,7 +2920,7 @@ async function installRegex(scope) {
     const worldbook = scope === 'scoped'
         ? await installStatusWorldbookRule()
         : await installGlobalStatusWorldbookRule();
-    await installGeneratedRegex(buildRegexScript(resolvedStatusInput()), scope);
+    await installGeneratedRegex(buildRegexScript(await resolvedStatusExportInput()), scope);
     settings().promptEnabled = false;
     const promptToggle = field('status-atelier-prompt-enabled');
     if (promptToggle) promptToggle.checked = settings().promptEnabled;
@@ -3168,19 +3509,9 @@ function renderGreetingThemeChooser() {
 }
 
 function renderGreetingStatusChooser() {
-    const select = greetingModal?.querySelector('#status-atelier-modal-status-style');
     const structureSelect = greetingModal?.querySelector('#status-atelier-modal-status-structure');
     const paletteHost = greetingModal?.querySelector('#status-atelier-modal-status-palettes');
     const state = greetingModal?.querySelector('.status-atelier-modal-status-state');
-    if (!select) return;
-    if (!select.options.length) {
-        STATUS_STYLE_PRESETS.forEach(style => {
-            const option = makeElement('option', '', `${style.code} · ${style.name}`);
-            option.value = style.id;
-            select.append(option);
-        });
-    }
-    select.value = settings().theme || 'classical';
     if (structureSelect && !structureSelect.options.length) {
         STATUS_STRUCTURE_PRESETS.filter(structure => PHONE_STRUCTURE_IDS.includes(structure.id)).forEach(structure => {
             const option = makeElement('option', '', structure.name);
@@ -3285,19 +3616,11 @@ function setGreetingModalWorkspace(target = 'opening') {
 }
 
 async function applyModalStatus(button) {
-    const select = greetingModal?.querySelector('#status-atelier-modal-status-style');
-    const style = STATUS_STYLE_PRESETS.find(item => item.id === select?.value);
-    if (!style) return notify('warning', '请选择一个状态栏外观');
     const originalLabel = button.textContent;
     button.disabled = true;
     button.textContent = '正在写入当前角色…';
     try {
-        Object.assign(settings(), {
-            theme: style.id,
-            layout: style.layout,
-            preset: 'custom',
-            statusTemplate: 'custom',
-        });
+        Object.assign(settings(), { preset: 'custom', statusTemplate: 'custom' });
         const worldbook = await installRegex('scoped');
         await saveSettingsNow();
         loadSettingsUI();
@@ -3396,7 +3719,6 @@ function buildGreetingModal() {
                         <summary><strong>调整状态栏</strong><small>结构、字段与色卡</small></summary>
                         <div class="status-atelier-modal-status-controls">
                             <label>状态栏模板<select id="status-atelier-modal-status-structure" class="text_pole"></select></label>
-                            <label>外观版式<select id="status-atelier-modal-status-style" class="text_pole"></select></label>
                         </div>
                         <details class="status-atelier-modal-schema-editor">
                             <summary><strong>字段与 AI 动态数值</strong><small>增加、改名、改类型或删除</small></summary>
@@ -3447,13 +3769,6 @@ function buildGreetingModal() {
     greetingModal.querySelector('#status-atelier-open-full-workbench').addEventListener('click', openFullWorkbench);
     greetingModal.querySelector('#status-atelier-modal-status-structure').addEventListener('change', event => {
         applyStatusStructure(event.currentTarget.value);
-    });
-    greetingModal.querySelector('#status-atelier-modal-status-style').addEventListener('change', event => {
-        const style = STATUS_STYLE_PRESETS.find(item => item.id === event.currentTarget.value);
-        if (!style) return;
-        Object.assign(settings(), { theme: style.id, layout: style.layout, preset: 'custom', statusTemplate: 'custom' });
-        refreshStatusAppearancePreview();
-        saveSettingsSoon({ snapshotOpening: false });
     });
     greetingModal.querySelector('#status-atelier-modal-status-palettes').addEventListener('click', event => {
         const button = event.target.closest('[data-modal-status-palette]');
@@ -3892,24 +4207,18 @@ async function addSettingsPanel() {
             saveSettingsSoon({ snapshotOpening: false });
             return;
         }
-        const statusStyleButton = event.target.closest('[data-status-style]');
-        if (statusStyleButton) {
-            const style = STATUS_STYLE_PRESETS.find(item => item.id === statusStyleButton.dataset.statusStyle);
-            if (!style) return;
-            settings().theme = style.id;
-            const themeControl = field('status-atelier-theme');
-            if (themeControl) themeControl.value = style.id;
-            settings().layout = style.layout;
-            const layoutControl = field('status-atelier-layout');
-            if (layoutControl) layoutControl.value = style.layout;
-            settings().preset = 'custom';
-            field('status-atelier-preset').value = 'custom';
+        const socialAppearanceButton = event.target.closest('[data-social-appearance]');
+        if (socialAppearanceButton && settings().structure === 'social') {
+            const appearance = SOCIAL_APPEARANCE_PRESETS.find(item => item.id === socialAppearanceButton.dataset.socialAppearance);
+            if (!appearance) return;
+            settings().theme = appearance.id;
             statusAiTestRecords = null;
-            field('status-atelier-status-styles')?.querySelectorAll('[data-status-style]').forEach(button => {
-                button.setAttribute('aria-pressed', String(button === statusStyleButton));
+            field('status-atelier-social-appearances')?.querySelectorAll('[data-social-appearance]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button === socialAppearanceButton));
             });
-            refreshStatusAppearancePreview();
+            updatePreview();
             saveSettingsSoon({ snapshotOpening: false });
+            return;
         }
     });
     field('status-atelier-test-ai').addEventListener('click', event => testStatusAiGeneration(event.currentTarget));

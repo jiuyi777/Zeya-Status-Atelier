@@ -183,25 +183,30 @@
                         </div>
                     </details>
 
-                    <details id="status-atelier-template-media" class="status-atelier-setting-section status-atelier-collapsible" hidden>
+                    <details id="status-atelier-template-media" class="status-atelier-setting-section status-atelier-collapsible" hidden open>
                         <summary class="status-atelier-section-heading"><div><h4 id="status-atelier-template-media-title">当前模板素材</h4><small id="status-atelier-template-media-help">这里只显示当前模板真正会用到的素材。</small></div></summary>
+                        <div id="status-atelier-social-data-guide" class="status-atelier-social-data-guide" hidden>
+                            <span><b>图片设置</b>证件照、档案附图和替代文字。</span>
+                            <span><b>动态内容</b>姓名、身份、地点、当前状态和个人介绍。</span>
+                        </div>
                         <div class="status-atelier-settings-grid">
-                            <label id="status-atelier-media-avatar-source-wrap">头像来源<select id="status-atelier-avatar-source" class="text_pole">
+                            <label id="status-atelier-media-avatar-source-wrap">头像 / 证件照来源<select id="status-atelier-avatar-source" class="text_pole">
                                 <option value="character">当前角色头像</option>
                                 <option value="user">当前 user 头像</option>
                                 <option value="url">直接 URL</option>
                                 <option value="none">不显示头像</option>
                             </select></label>
                             <label id="status-atelier-avatar-url-wrap" hidden>头像 URL<input id="status-atelier-avatar-url" class="text_pole" type="url" placeholder="https://example.com/avatar.png"></label>
-                            <label id="status-atelier-image-url-wrap">主图 / 封面 URL<input id="status-atelier-image-url" class="text_pole" type="url" placeholder="https://example.com/cover.png"></label>
+                            <label id="status-atelier-image-url-wrap">主图 / 封面 / 档案附图 URL<input id="status-atelier-image-url" class="text_pole" type="url" placeholder="https://example.com/cover.png"></label>
+                            <label id="status-atelier-theme-asset-url-wrap" hidden>主题插画 URL<input id="status-atelier-theme-asset-url" class="text_pole" type="url" placeholder="https://example.com/blue-fabric.jpg"><small>填写公开图片 URL 后会用于预览和导出；留空时仅在插件预览里显示内置蓝布插画。</small></label>
                             <label id="status-atelier-audio-url-wrap">音频 URL<input id="status-atelier-audio-url" class="text_pole" type="url" placeholder="https://example.com/audio.mp3"></label>
                             <label id="status-atelier-image-alt-wrap">图片替代文字<input id="status-atelier-image-alt" class="text_pole" type="text" maxlength="80" placeholder="用于图片加载失败和无障碍阅读"></label>
                         </div>
                     </details>
 
-                    <details class="status-atelier-setting-section status-atelier-collapsible">
+                    <details class="status-atelier-setting-section status-atelier-collapsible" open>
                         <summary class="status-atelier-section-heading">
-                            <div><h4 id="status-atelier-status-editor-title">字段显示与 AI 规则</h4><small id="status-atelier-status-editor-help">名称和顺序直接在预览修改；这里只设置显示类型和 AI 填写要求。</small></div>
+                            <div><h4 id="status-atelier-status-editor-title">字段显示与 AI 规则</h4><small id="status-atelier-status-editor-help">编辑名称、显示类型、填写要求和顺序。</small></div>
                         </summary>
                         <button id="status-atelier-add-field" type="button" class="menu_button">＋ 新增字段</button>
                         <div id="status-atelier-edit-legend" class="status-atelier-edit-legend">
@@ -213,36 +218,36 @@
                     </details>
 
                     <details id="status-atelier-appearance-section" class="status-atelier-setting-section status-atelier-collapsible">
-                        <summary class="status-atelier-section-heading"><div><h4>更多外观与配色</h4><small>外观改字体、边框、材质、圆角和组件造型；色卡只改颜色，都不改变模板构图。</small></div></summary>
-                        <details class="status-atelier-status-style-library">
-                            <summary><strong>20 套外观（可折叠）</strong><small>只改变字体、边框、材质、圆角和组件造型；能改变整套构图的方案归入“模板”。</small></summary>
-                            <div id="status-atelier-status-styles" class="status-atelier-status-styles" aria-label="状态栏外观"></div>
-                        </details>
+                        <summary class="status-atelier-section-heading"><div><h4 id="status-atelier-appearance-title">模板配色</h4></div></summary>
+                        <section id="status-atelier-social-appearance-section" class="status-atelier-social-appearance-section" hidden>
+                            <h5>个人档案构图</h5>
+                            <div id="status-atelier-social-appearances" class="status-atelier-social-appearances" aria-label="个人档案构图"></div>
+                        </section>
                         <details class="status-atelier-status-palette-library">
-                            <summary><strong>24 套色卡（可折叠）</strong><small>色卡只控制颜色，不改变形状与排版。</small></summary>
+                            <summary><strong>32 套色卡（可折叠）</strong><small>点击色卡即时预览。</small></summary>
                             <div id="status-atelier-status-palettes" class="status-atelier-status-palettes" aria-label="状态栏色卡"></div>
                         </details>
                         <input id="status-atelier-palette" type="hidden">
                     </details>
 
                     <section class="status-atelier-setting-section status-atelier-quick-apply">
-                        <div class="status-atelier-section-heading"><div><h4>一键启用状态栏</h4><small>把 AI 输出规则写进当前角色世界书，并更新当前角色的局部正则。</small></div></div>
+                        <div class="status-atelier-section-heading"><div><h4>一键启用状态栏</h4></div></div>
                         <div class="status-atelier-setting-actions">
                             <button id="status-atelier-install-scoped" type="button" class="menu_button status-atelier-primary-action">一键生成并应用</button>
                             <button id="status-atelier-test-ai" type="button" class="menu_button">先测试当前 AI</button>
                         </div>
-                        <p id="status-atelier-ai-test-status" class="status-atelier-ai-test-status" role="status" aria-live="polite">无需先测试；一键应用会同时写入世界书输出规则和局部正则。</p>
+                        <p id="status-atelier-ai-test-status" class="status-atelier-ai-test-status" role="status" aria-live="polite"></p>
                     </section>
 
-                    <details class="status-atelier-setting-section status-atelier-advanced" open>
-                        <summary>手动下载与全局安装</summary>
+                    <section class="status-atelier-setting-section status-atelier-advanced status-atelier-download-actions">
+                        <div class="status-atelier-section-heading"><div><h4>手动下载与全局安装</h4></div></div>
                         <div class="status-atelier-setting-actions">
                             <button id="status-atelier-copy-prompt" type="button" class="menu_button">复制 AI 输出规则</button>
                             <button id="status-atelier-download-worldbook" type="button" class="menu_button">下载世界书</button>
                             <button id="status-atelier-download-regex" type="button" class="menu_button">下载正则</button>
                             <button id="status-atelier-install-global" type="button" class="menu_button">应用到全局</button>
                         </div>
-                    </details>
+                    </section>
 
                     <details class="status-atelier-setting-section status-atelier-advanced">
                         <summary>高级规则与备份</summary>
@@ -265,7 +270,7 @@
 
                 </main>
                 <aside class="status-atelier-preview-shell">
-                    <div class="status-atelier-preview-heading"><small>可直接编辑的实时预览</small><span>双击字段名修改 · 拖动字段排序 · 数值由 AI 填写</span></div>
+                    <div class="status-atelier-preview-heading"><small>实时预览</small><span>左侧修改字段名称和 AI 填写内容 · 右侧同步更新</span></div>
                     <div id="status-atelier-preview"></div>
                 </aside>
             </div>

@@ -3245,6 +3245,125 @@ summary.status-atelier-section-heading {
     letter-spacing: .06em;
 }
 
+.status-atelier-social-appearance-section {
+    margin-bottom: 14px;
+}
+
+.status-atelier-social-appearance-section h5 {
+    margin: 0 0 10px;
+}
+
+.status-atelier-social-appearances {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.status-atelier-social-appearance {
+    position: relative;
+    display: grid;
+    min-height: 72px;
+    padding: 10px 11px 10px 42px;
+    align-content: center;
+    border: 1px solid color-mix(in srgb, var(--SmartThemeBorderColor) 72%, transparent);
+    border-radius: 10px;
+    color: var(--SmartThemeBodyColor);
+    background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 72%, transparent);
+    text-align: left;
+    cursor: pointer;
+}
+
+.status-atelier-social-appearance-number {
+    position: absolute;
+    left: 10px;
+    top: 11px;
+    color: color-mix(in srgb, var(--SmartThemeBodyColor) 55%, transparent);
+    font: 800 10px/1 monospace;
+}
+
+.status-atelier-social-appearance strong,
+.status-atelier-social-appearance small {
+    display: block;
+}
+
+.status-atelier-social-appearance strong {
+    font-size: 13px;
+}
+
+.status-atelier-social-appearance small {
+    margin-top: 4px;
+    color: color-mix(in srgb, var(--SmartThemeBodyColor) 60%, transparent);
+    font-size: 10px;
+}
+
+.status-atelier-social-appearance[aria-pressed="true"] {
+    border-color: var(--SmartThemeQuoteColor);
+    color: var(--SmartThemeEmColor);
+    background: color-mix(in srgb, var(--SmartThemeQuoteColor) 22%, var(--SmartThemeBlurTintColor));
+    box-shadow: inset 4px 0 var(--SmartThemeQuoteColor);
+}
+
+@media (max-width: 520px) {
+    .status-atelier-social-appearances {
+        grid-template-columns: 1fr;
+    }
+
+    .status-atelier-social-appearance {
+        min-height: 60px;
+    }
+}
+
+.status-atelier-preview-direct-editor {
+    display: grid;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 12px;
+    border: 2px solid var(--z-text, var(--saw-ink));
+    color: var(--z-text, var(--saw-ink));
+    background: var(--z-card, #fffef9);
+    box-shadow: 5px 5px 0 var(--z-accent, var(--saw-accent));
+}
+
+.status-atelier-preview-direct-editor[hidden] {
+    display: none;
+}
+
+.status-atelier-preview-direct-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.status-atelier-preview-direct-heading strong {
+    font-size: .88em;
+}
+
+.status-atelier-preview-direct-field {
+    display: grid;
+    gap: 5px;
+    color: var(--z-text, var(--saw-ink));
+    font-size: .75em;
+    font-weight: 800;
+}
+
+.status-atelier-preview-direct-field :is(input, select, textarea) {
+    width: 100%;
+}
+
+.status-atelier-preview-direct-target {
+    cursor: pointer;
+}
+
+.status-atelier-preview-direct-target:is(:hover, :focus-visible) {
+    outline: 3px solid var(--z-accent, var(--saw-accent));
+    outline-offset: 3px;
+}
+
+.status-atelier-rule-preview[data-structure="social"] .zrs-social-photo.is-placeholder::before {
+    content: "图片 URL" !important;
+}
+
 .status-atelier-preview-shell > :last-child {
     overflow: hidden;
     border: 1px solid var(--saw-line);
@@ -3806,13 +3925,17 @@ summary.status-atelier-section-heading {
     white-space: nowrap;
 }
 
-.status-atelier-schema-row details {
+.status-atelier-schema-instruction {
     grid-column: 2 / -1;
+    display: grid;
+    gap: 6px;
+    color: var(--saw-muted);
+    font-size: .78em;
 }
 
-.status-atelier-schema-row details textarea {
+.status-atelier-schema-instruction textarea {
     min-height: 60px;
-    margin-top: 6px;
+    resize: vertical;
 }
 
 .status-atelier-schema-remove {
@@ -4269,5 +4392,37 @@ summary.status-atelier-section-heading {
 
     .status-atelier-schema-row {
         grid-template-columns: 18px minmax(0, 1fr) 104px 30px;
+    }
+}
+
+.status-atelier-social-data-guide {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0 0 12px;
+}
+
+.status-atelier-social-data-guide[hidden] {
+    display: none;
+}
+
+.status-atelier-social-data-guide span {
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--sap-accent) 24%, transparent);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--sap-layer) 62%, transparent);
+    font-size: .78em;
+    line-height: 1.55;
+}
+
+.status-atelier-social-data-guide b {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--sap-accent);
+}
+
+@media (max-width: 620px) {
+    .status-atelier-social-data-guide {
+        grid-template-columns: 1fr;
     }
 }

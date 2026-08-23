@@ -86,26 +86,25 @@ test('long mobile opening editors are collapsed independently', () => {
     }
 });
 
-test('status workspace exposes component, palette, real avatar and audio controls', () => {
-    for (const id of ['status-atelier-structure', 'status-atelier-status-styles', 'status-atelier-status-palettes', 'status-atelier-avatar-source', 'status-atelier-avatar-url', 'status-atelier-image-url', 'status-atelier-audio-url', 'status-atelier-test-ai']) {
+test('status workspace exposes dedicated templates, palettes, real avatar and audio controls', () => {
+    for (const id of ['status-atelier-structure', 'status-atelier-status-palettes', 'status-atelier-avatar-source', 'status-atelier-avatar-url', 'status-atelier-image-url', 'status-atelier-audio-url', 'status-atelier-test-ai']) {
         assert.match(settingsMarkup, new RegExp(`id="${id}"`));
     }
-    assert.match(settingsMarkup, /20 套外观/);
-    assert.match(settingsMarkup, /24 套色卡/);
+    assert.doesNotMatch(settingsMarkup, /status-atelier-status-styles|20 套外观/);
+    assert.doesNotMatch(settingsMarkup, /当前 8 个状态栏模板都自带专属构图/);
+    assert.match(settingsMarkup, /32 套色卡/);
     assert.match(source, /thumbnail\('avatar', avatar\)/);
     assert.match(source, /thumbnail\('persona', user_avatar\)/);
     assert.match(source, /parseStatusOutput\(input, response\)/);
 });
 
 test('status appearance controls update in place and preserve readable selected text', () => {
-    assert.match(source, /styleHost\.children\.length !== STATUS_STYLE_PRESETS\.length/);
+    assert.doesNotMatch(source, /STATUS_STYLE_PRESETS|data-status-style|status-atelier-status-styles/);
     assert.match(source, /paletteHost\.children\.length !== STATUS_PALETTE_PRESETS\.length/);
-    const paletteClick = source.match(/const statusPaletteButton = event\.target\.closest\('\[data-status-palette\]'\);([\s\S]*?)const statusStyleButton/)?.[1] || '';
+    const paletteClick = source.match(/const statusPaletteButton = event\.target\.closest\('\[data-status-palette\]'\);([\s\S]*?)field\('status-atelier-test-ai'\)/)?.[1] || '';
     assert.doesNotMatch(paletteClick, /renderStatusDesignControls\(\)/);
     assert.match(paletteClick, /refreshStatusPalettePreview\(\)/);
-    const styleClick = source.match(/const statusStyleButton = event\.target\.closest\('\[data-status-style\]'\);([\s\S]*?)field\('status-atelier-test-ai'\)/)?.[1] || '';
-    assert.match(styleClick, /refreshStatusAppearancePreview\(\)/);
-    assert.doesNotMatch(styleClick, /updatePreview\(\)/);
+    assert.match(source, /stored\.theme = structure\.appearanceId/);
     assert.match(source, /style\.textContent = `\$\{STATUS_THEME_CSS\}\\n\$\{STATUS_PHONE_CSS\}`/);
     assert.match(source, /scope: 'shared'/);
     assert.match(source, /definitions\.filter\(item => item\.scope === 'shared'\)/);
@@ -152,7 +151,7 @@ test('mobile greeting modal offers a stateless copy-only overview and directly i
     assert.match(overviewBlock, /overwrite: false/);
     assert.doesNotMatch(overviewBlock, /settings\(\)\.openingHome\s*=|saveSettingsNow|renderGreetingList/);
     assert.doesNotMatch(source, /status-atelier-greeting-overview-preview/);
-    assert.match(source, /id="status-atelier-modal-status-style"/);
+    assert.doesNotMatch(source, /id="status-atelier-modal-status-style"/);
     assert.match(source, /id="status-atelier-modal-status-structure"/);
     assert.match(source, /id="status-atelier-modal-status-preview"/);
     assert.doesNotMatch(source, /id="status-atelier-modal-status-logos"/);
@@ -200,8 +199,8 @@ test('modal and palettes stay inside mobile viewport and palette library is coll
     assert.doesNotMatch(source, /status-atelier-status-logo-library/);
     assert.match(source, /structure: 'phone'/);
     assert.match(source, /PHONE_STRUCTURE_IDS = Object\.freeze\(\['phone', 'profile', 'social', 'forum', 'chat', 'music', 'casefile', 'quest'\]\)/);
-    assert.match(settingsMarkup, /24 套色卡（可折叠）/);
-    assert.match(settingsMarkup, /20 套外观（可折叠）/);
+    assert.match(settingsMarkup, /32 套色卡（可折叠）/);
+    assert.doesNotMatch(settingsMarkup, /20 套外观（可折叠）/);
     assert.match(styleSource, /max-height:\s*calc\(100dvh - 12px - env\(safe-area-inset-top\) - env\(safe-area-inset-bottom\)\)/);
     assert.match(styleSource, /\.status-atelier-dialog-body\s*\{[\s\S]*?overflow-y:\s*auto;[\s\S]*?overscroll-behavior:\s*contain;/);
 });
@@ -242,8 +241,8 @@ test('status workspace exposes a short one-click path and hides customization by
     assert.doesNotMatch(settingsMarkup, /id="status-atelier-fill-mode"/);
     assert.doesNotMatch(source, /id="status-atelier-modal-status-fill-mode"/);
     assert.match(source, /class="status-atelier-modal-status-advanced">/);
-    assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?字段显示与 AI 规则/);
-    assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?更多外观与配色/);
+    assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible" open>[\s\S]*?字段显示与 AI 规则/);
+    assert.match(settingsMarkup, /<details id="status-atelier-appearance-section"[\s\S]*?模板配色/);
     assert.match(settingsMarkup, /id="status-atelier-template-media"[\s\S]*?当前模板素材/);
     assert.doesNotMatch(settingsMarkup, /可选：头像、配图与音乐/);
     const block = source.match(/async function installRegex\(scope\) \{([\s\S]*?)\n\}/)?.[1] || '';
@@ -256,21 +255,30 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.doesNotMatch(settingsMarkup, /模板决定完整构图与交互/);
     assert.doesNotMatch(settingsMarkup, /换素材与动效|都是独立模板/);
     assert.match(settingsMarkup, /status-atelier-setting-section status-atelier-collapsible" open>[\s\S]*?选择状态栏模板/);
-    assert.match(settingsMarkup, /外观改字体、边框、材质、圆角和组件造型/);
-    assert.match(settingsMarkup, /色卡只改颜色/);
-    assert.match(settingsMarkup, /id="status-atelier-appearance-section"[^>]*>[\s\S]*?<h4>更多外观与配色<\/h4>/);
+    assert.doesNotMatch(settingsMarkup, /当前 8 个状态栏模板都自带专属构图|色卡只调整颜色|不会把模板换成/);
+    assert.match(settingsMarkup, /点击色卡即时预览/);
+    assert.match(settingsMarkup, /id="status-atelier-appearance-section"[^>]*>[\s\S]*?id="status-atelier-appearance-title"/);
+    assert.match(settingsMarkup, /id="status-atelier-social-appearance-section"[\s\S]*?id="status-atelier-social-appearances"/);
+    assert.match(source, /SOCIAL_APPEARANCE_PRESETS/);
+    assert.match(source, /dataset\.socialAppearance/);
     assert.match(source, /appearanceSection\.hidden = stored\.structure === 'phone'/);
     assert.match(styleSource, /\.status-atelier-workbench \[hidden\] \{\s*display: none !important;/);
     assert.match(settingsMarkup, /id="status-atelier-phone-petals-enabled"[^>]*type="checkbox"/);
     assert.match(source, /'status-atelier-phone-petals-enabled': 'petalsEnabled'/);
     assert.match(settingsMarkup, /id="status-atelier-phone-diy" class="status-atelier-setting-section status-atelier-collapsible">/);
     assert.doesNotMatch(settingsMarkup, /选择本地壁纸|status-atelier-phone-wallpaper-file/);
-    assert.match(settingsMarkup, /双击字段名修改 · 拖动字段排序/);
+    assert.match(settingsMarkup, /左侧修改字段名称和 AI 填写内容 · 右侧同步更新/);
     for (const removedId of ['status-atelier-title', 'status-atelier-subtitle', 'status-atelier-layout', 'status-atelier-theme']) {
         assert.doesNotMatch(settingsMarkup, new RegExp(`id="${removedId}"`));
     }
-    assert.ok(settingsMarkup.indexOf('更多外观与配色') < settingsMarkup.indexOf('一键启用状态栏'));
-    assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-advanced" open>[\s\S]*?<summary>手动下载与全局安装<\/summary>/);
+    assert.ok(settingsMarkup.indexOf('模板配色') < settingsMarkup.indexOf('一键启用状态栏'));
+    assert.doesNotMatch(settingsMarkup, /把 AI 输出规则写进当前角色世界书|无需先测试；一键应用会同时写入/);
+    assert.match(settingsMarkup, /<section class="status-atelier-setting-section status-atelier-advanced status-atelier-download-actions">[\s\S]*?<h4>手动下载与全局安装<\/h4>/);
+    assert.match(settingsMarkup, /id="status-atelier-template-media"[^>]*hidden open/);
+    assert.match(source, /status-atelier-schema-instruction/);
+    assert.match(source, /AI 填写内容/);
+    assert.match(source, /例如：填写角色此刻没有说出口的内心独白/);
+    assert.doesNotMatch(source, /details\.append\(makeElement\('summary', '', 'AI 填写要求'\)\)/);
     assert.match(source, /bindPreviewFieldLabelEditor/);
     assert.match(source, /bindPreviewTitleEditor/);
     assert.match(source, /bindPreviewFieldReorder/);
@@ -317,4 +325,41 @@ test('one-click scoped status installs and verifies a character-bound worldbook 
     assert.match(scopedInstall, /installStatusWorldbookRule\(\)/);
     assert.match(scopedInstall, /installGeneratedRegex/);
     assert.ok(scopedInstall.indexOf('installStatusWorldbookRule()') < scopedInstall.indexOf('installGeneratedRegex'));
+});
+
+test('personal feed clearly separates DIY media from story data and previews a two-sided paper dossier', () => {
+    assert.match(settingsMarkup, /id="status-atelier-social-data-guide"/);
+    assert.match(settingsMarkup, /图片设置/);
+    assert.match(settingsMarkup, /动态内容/);
+    assert.doesNotMatch(settingsMarkup, /你来 DIY|AI 随剧情更新|成品只显示自然资料/);
+    assert.match(source, /socialGuide\.hidden = structure !== 'social'/);
+    assert.match(source, /function renderSocialPage|const renderSocialPage/);
+    assert.match(source, /zrs-social-photo/);
+    assert.match(source, /zrs-social-theme-art/);
+    assert.match(source, /blue-fabric-scrapbook-v1-compact\.jpg/);
+    assert.match(source, /new URL\('\.\/assets\/personal-feed\/blue-fabric-scrapbook-v1-compact\.jpg', import\.meta\.url\)\.href/);
+    assert.match(source, /resolvedStatusExportInput/);
+    assert.match(settingsMarkup, /id="status-atelier-theme-asset-url"/);
+    assert.match(settingsMarkup, /留空时仅在插件预览里显示内置蓝布插画/);
+    assert.match(source, /output\.themeAssetUrl = String\(source\.media\?\.themeAssetUrl \|\| ''\)\.trim\(\)/);
+    assert.doesNotMatch(source, /blobAsDataUrl|socialThemeArtDataUrlPromise/);
+    assert.match(source, /physical_state/);
+    assert.match(source, /current_thought/);
+    assert.match(source, /zrs-social-intro-copy/);
+    assert.match(source, /zrs-social-scraps/);
+    assert.match(source, /openPreviewFieldEditor/);
+    assert.match(source, /openPreviewMediaEditor/);
+    assert.match(source, /status-atelier-preview-direct-editor/);
+    assert.match(source, /bindDirectPreviewTarget\(introCopy, 'introduction'/);
+    assert.match(source, /bindDirectMediaTarget\(portrait\)/);
+    assert.match(source, /if \(avatarUrl\.value\.trim\(\)\) avatarSource\.value = 'url'/);
+    assert.match(source, /AI 填写内容/);
+    assert.match(styleSource, /\.status-atelier-preview-direct-target:is\(:hover, :focus-visible\)/);
+    assert.match(source, /scraps\.setAttribute\('aria-hidden', 'true'\)/);
+    assert.match(source, /profileButton\.setAttribute\('aria-selected'/);
+    assert.match(source, /introButton\.setAttribute\('aria-selected'/);
+    assert.doesNotMatch(source, /likeButton\.setAttribute\('aria-pressed'/);
+    assert.doesNotMatch(source, /commentButton\.setAttribute\('aria-expanded'/);
+    assert.match(styleSource, /status-atelier-social-data-guide/);
+    assert.doesNotMatch(source, /renderArchiveDossierPage|zrs-storyboard/);
 });
