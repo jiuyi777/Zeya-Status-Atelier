@@ -3593,6 +3593,71 @@ summary.status-atelier-section-heading {
     font-size: 1.25em;
 }
 
+.status-atelier-chat-style-preview {
+    position: relative;
+    grid-row: 1 / 3;
+    width: 28px;
+    height: 24px;
+    border: 3px double #b68d76;
+    border-radius: 6px;
+    background: #fffaf0;
+    box-shadow: inset 0 0 0 2px #ead8c8, 1px 2px 0 rgb(73 49 37 / 18%);
+}
+
+.status-atelier-chat-style-preview::after {
+    content: "";
+    position: absolute;
+    right: 3px;
+    bottom: 4px;
+    width: 9px;
+    height: 5px;
+    border: 1px solid currentColor;
+    border-radius: 3px 3px 1px 3px;
+}
+
+.status-atelier-chat-style-preview.is-kitty {
+    color: #8b3d59;
+    border-color: #b65d7c;
+    background: linear-gradient(90deg, #ffd5e2 0 36%, #fff8f8 36%);
+    box-shadow: inset 0 6px #df6c98, 2px 2px 0 #dda0b5;
+}
+
+.status-atelier-chat-style-preview.is-mono {
+    color: #111;
+    border: 3px solid #111;
+    border-radius: 0;
+    background: linear-gradient(45deg, #fff 25%, #111 25% 50%, #fff 50% 75%, #111 75%) 0 0 / 6px 6px;
+    box-shadow: 2px 2px 0 #777;
+}
+
+.status-atelier-chat-style-preview.is-blue {
+    color: #285f96;
+    border-color: #6f9fc9;
+    background: linear-gradient(90deg, #cfe7fb 0 34%, #f8fcff 34%);
+    box-shadow: inset 0 6px #78aee0, 2px 2px 0 #9fc4e3;
+}
+
+.status-atelier-chat-style-preview.is-notepad {
+    color: #2d2026;
+    border: 3px solid #2d2026;
+    border-radius: 0;
+    background: linear-gradient(90deg, #fff 0 76%, #f3a9c2 76%);
+    box-shadow: inset 0 6px #e97ea2, 2px 2px 0 #db8da8;
+}
+
+.status-atelier-chat-style-preview.is-lace {
+    color: #b56f78;
+    border-color: #d7b9a2;
+    background: radial-gradient(circle, #fffaf0 0 2px, transparent 2.5px) 0 0 / 7px 7px, #ead9c8;
+}
+
+.status-atelier-chat-style-preview.is-velvet {
+    color: #702335;
+    border-color: #9a6a58;
+    background: linear-gradient(135deg, #b38e7e, #e0c6b4);
+    box-shadow: inset 0 0 0 3px #6d1f31, 1px 2px 0 rgb(73 28 30 / 24%);
+}
+
 .status-atelier-status-style small {
     min-width: 0;
     overflow: hidden;
@@ -4101,6 +4166,32 @@ summary.status-atelier-section-heading {
     .status-atelier-preview-shell {
         position: static;
     }
+}
+
+/* Complete plugin preview: present the real rendered result before its editor. */
+body:has(.preview-note) .preview-note,
+body:has(.preview-note) .inline-drawer-toggle,
+body:has(.preview-note) .status-atelier-workbench-header,
+body:has(.preview-note) .status-atelier-data-flow {
+    display: none;
+}
+
+body:has(.preview-note) [data-status-workspace-panel="status"] .status-atelier-workspace-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 0;
+}
+
+body:has(.preview-note) [data-status-workspace-panel="status"] .status-atelier-preview-shell {
+    position: static;
+    order: 1;
+    width: min(100%, 720px);
+    margin: 14px auto 0;
+}
+
+body:has(.preview-note) [data-status-workspace-panel="status"] .status-atelier-workspace-grid > main {
+    width: min(100%, 720px);
 }
 
 @media (max-width: 700px) {

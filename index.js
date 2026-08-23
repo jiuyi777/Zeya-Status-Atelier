@@ -1,4 +1,7 @@
 import {
+    CHAT_APPEARANCE_PRESETS,
+    CHAT_FRAME_ASSET_URLS,
+    CHAT_REFERENCE_CSS,
     RULE_PRESETS,
     STATUS_PALETTE_PRESETS,
     STATUS_STYLE_PRESETS,
@@ -11,6 +14,7 @@ import {
     makePreviewRecords,
     normalizePhoneDesktop,
     normalizeRule,
+    parseChatConversationLog,
     parseStatusOutput,
     parseFields,
 } from './rule-generator.js?v=0.10.0';
@@ -172,6 +176,7 @@ const PHONE_APP_ICON_PATHS = Object.freeze({
 });
 const phoneAppIconMarkup = id => `<svg class="zrs-app-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${PHONE_APP_ICON_PATHS[id] || PHONE_APP_ICON_PATHS.Personal}</svg>`;
 const PHONE_STRUCTURE_DEFAULT = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'phone');
+const CHAT_STRUCTURE_DEFAULT = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'chat');
 
 const OPENING_PALETTES = Object.freeze({
     navy: { background: '#f5ead7', cardBackground: '#fffaf0', text: '#2f261e', accent: '#914538', secondary: '#7d6a56', introBackground: '#e8e0d0', buttonColor: '#1a3048' },
@@ -198,6 +203,8 @@ const DEFAULT_SETTINGS = Object.freeze({
     sharedFieldsText: PHONE_STRUCTURE_DEFAULT.shared.map(item => item.join('|')).join('\n'),
     pageFieldsText: PHONE_STRUCTURE_DEFAULT.fields.map(item => item.join('|')).join('\n'),
     variant: 'auto',
+    chatAppearance: 'kitty-pink',
+    chatConversationSchemaVersion: 0,
     paletteId: 'ice-blue',
     media: { avatarSource: 'character', avatarUrl: '', imageUrl: '', audioUrl: '', imageAlt: '状态栏配图' },
     phoneDesktop: PHONE_DESKTOP_DEFAULTS,
@@ -371,6 +378,17 @@ function settings() {
     if (!['opening', 'status'].includes(stored.activeWorkspace)) stored.activeWorkspace = 'opening';
     if (!Array.isArray(stored.favoriteHomeTemplates)) stored.favoriteHomeTemplates = clone(DEFAULT_SETTINGS.favoriteHomeTemplates);
     if (!Array.isArray(stored.favoriteStatusTemplates)) stored.favoriteStatusTemplates = clone(DEFAULT_SETTINGS.favoriteStatusTemplates);
+    if (!CHAT_APPEARANCE_PRESETS.some(item => item.id === stored.chatAppearance)) stored.chatAppearance = DEFAULT_SETTINGS.chatAppearance;
+    if (stored.structure === 'chat' && stored.chatConversationSchemaVersion !== 3) {
+        stored.title = CHAT_STRUCTURE_DEFAULT.title;
+        stored.subtitle = CHAT_STRUCTURE_DEFAULT.subtitle;
+        stored.layout = CHAT_STRUCTURE_DEFAULT.layout;
+        stored.pagesText = CHAT_STRUCTURE_DEFAULT.pagesText;
+        stored.sharedFieldsText = '';
+        stored.pageFieldsText = CHAT_STRUCTURE_DEFAULT.fields.map(item => item.join('|')).join('\n');
+        stored.statusFieldsUnified = true;
+        stored.chatConversationSchemaVersion = 3;
+    }
     if (stored.statusFieldsUnified !== true && stored.structure !== 'phone') {
         const definitions = [...parseFields(stored.sharedFieldsText), ...parseFields(stored.pageFieldsText)];
         const used = new Set();
@@ -640,7 +658,12 @@ function renderPhoneDesktopControls() {
     const section = field('status-atelier-phone-diy');
     if (section) section.hidden = stored.structure !== 'phone';
     const appearanceSection = field('status-atelier-appearance-section');
-    if (appearanceSection) appearanceSection.hidden = stored.structure === 'phone';
+    if (appearanceSection) appearanceSection.hidden = ['phone', 'chat'].includes(stored.structure);
+    const chatAppearanceSection = field('status-atelier-chat-appearance');
+    if (chatAppearanceSection) chatAppearanceSection.hidden = stored.structure !== 'chat';
+    field('status-atelier-chat-appearances')?.querySelectorAll('[data-chat-appearance]').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.chatAppearance === stored.chatAppearance));
+    });
     renderTemplateMediaControls();
     for (const [id, key] of Object.entries(PHONE_DESKTOP_FIELDS)) {
         const control = field(id);
@@ -666,10 +689,13 @@ function renderTemplateMediaControls() {
     const usesImage = ['social', 'collage', 'music'].includes(structure);
     const usesAudio = structure === 'music';
     section.hidden = structure === 'phone' || (!usesAvatar && !usesImage && !usesAudio);
+    if (structure === 'chat') section.open = true;
     const title = field('status-atelier-template-media-title');
     const help = field('status-atelier-template-media-help');
-    if (title) title.textContent = usesAudio ? '播放界面素材' : usesImage ? '当前模板配图' : '当前模板头像';
-    if (help) help.textContent = usesAudio
+    if (title) title.textContent = structure === 'chat' ? '聊天头像 DIY' : usesAudio ? '播放界面素材' : usesImage ? '当前模板配图' : '当前模板头像';
+    if (help) help.textContent = structure === 'chat'
+        ? '左侧头像可选当前角色、当前 User、自定义 URL 或隐藏；右侧自动读取当前 User 头像。AI 只填写对象、在线状态、聊天内容、时间、语音与已读。'
+        : usesAudio
         ? '封面与音频只会进入播放界面，音频不会自动播放。'
         : usesImage
             ? '这些图片只会进入当前选中的模板。'
@@ -680,7 +706,7 @@ function renderTemplateMediaControls() {
     const audioUrlWrap = field('status-atelier-audio-url-wrap');
     const altWrap = field('status-atelier-image-alt-wrap');
     if (avatarSourceWrap) avatarSourceWrap.hidden = !usesAvatar;
-    if (avatarUrlWrap) avatarUrlWrap.hidden = !usesAvatar || settings().media?.avatarSource !== 'url';
+    if (avatarUrlWrap) avatarUrlWrap.hidden = !usesAvatar || (structure !== 'chat' && settings().media?.avatarSource !== 'url');
     if (imageUrlWrap) imageUrlWrap.hidden = !usesImage;
     if (audioUrlWrap) audioUrlWrap.hidden = !usesAudio;
     if (altWrap) altWrap.hidden = !usesAvatar && !usesImage;
@@ -698,6 +724,7 @@ function applyStatusStructure(structureId) {
     stored.pagesText = structure.pagesText;
     stored.sharedFieldsText = (structure.shared || []).map(field => field.join('|')).join('\n');
     stored.pageFieldsText = structure.fields.map(field => field.join('|')).join('\n');
+    if (structure.id === 'chat') stored.chatConversationSchemaVersion = 3;
     stored.preset = 'custom';
     stored.statusTemplate = 'custom';
     statusAiTestRecords = null;
@@ -760,9 +787,12 @@ function renderStatusSchema() {
     if (editLegend) editLegend.hidden = phoneMode;
     const editorTitle = field('status-atelier-status-editor-title');
     const editorHelp = field('status-atelier-status-editor-help');
-    if (editorTitle) editorTitle.textContent = phoneMode ? '个人页显示与 AI 规则' : '字段显示与 AI 规则';
+    const chatMode = settings().structure === 'chat';
+    if (editorTitle) editorTitle.textContent = phoneMode ? '个人页显示与 AI 规则' : chatMode ? '聊天会话数据与 AI 规则' : '字段显示与 AI 规则';
     if (editorHelp) editorHelp.textContent = phoneMode
         ? '字段名称在右侧“个人”页双击修改；这里只设置显示类型和 AI 填写要求。'
+        : chatMode
+            ? 'DIY：六套独立聊天构图、会话标题和左侧头像；右侧固定读取当前 User 头像。AI 动态填写：会话对象、在线状态、12–24 条或更多聊天、时间、语音与已读。'
         : '名称和顺序直接在预览修改；这里只设置显示类型和 AI 填写要求。';
     if (phoneMode) {
         const phone = settings().phoneDesktop;
@@ -1596,6 +1626,7 @@ function resolvedStatusInput(source = settings()) {
         theme: source.theme,
         structure: source.structure,
         variant: source.variant,
+        chatAppearance: source.chatAppearance,
         paletteId: source.paletteId,
         palette: source.palette && typeof source.palette === 'object' ? { ...source.palette } : undefined,
         layout: source.layout,
@@ -1618,6 +1649,11 @@ function resolvedStatusInput(source = settings()) {
         }
     } catch {
         output.media.avatarUrl = output.media.avatarSource === 'url' ? output.media.avatarUrl : '';
+    }
+    try {
+        output.media.userAvatarUrl = user_avatar ? thumbnail('persona', user_avatar) : '';
+    } catch {
+        output.media.userAvatarUrl = '';
     }
     try {
         if (output.phoneDesktop.personalAvatarSource === 'character') {
@@ -2112,7 +2148,7 @@ function renderStatusPreview(host) {
     if (!document.querySelector('#status-atelier-exported-theme-css')) {
         const style = document.createElement('style');
         style.id = 'status-atelier-exported-theme-css';
-        style.textContent = `${STATUS_THEME_CSS}\n${STATUS_PHONE_CSS}`;
+        style.textContent = `${STATUS_THEME_CSS}\n${CHAT_REFERENCE_CSS}\n${STATUS_PHONE_CSS}`;
         document.head.append(style);
     }
     if (!document.querySelector('#status-atelier-phone-font')) {
@@ -2130,8 +2166,15 @@ function renderStatusPreview(host) {
     root.dataset.theme = rule.theme;
     root.dataset.structure = rule.structure;
     root.dataset.variant = rule.variant;
+    root.dataset.chatAppearance = rule.chatAppearance;
     root.dataset.layout = rule.layout;
     root.dataset.hasImage = rule.media.imageUrl ? 'true' : 'false';
+    if (rule.structure === 'chat' && CHAT_FRAME_ASSET_URLS[rule.chatAppearance]) {
+        root.style.setProperty('--zrs-chat-frame', `url("${CHAT_FRAME_ASSET_URLS[rule.chatAppearance]}")`);
+    }
+    if (rule.structure === 'chat' && rule.chatMascotUrl) {
+        root.style.setProperty('--z-chat-mascot', `url("${rule.chatMascotUrl.replaceAll('"', '%22')}")`);
+    }
     if (rule.palette) {
         root.style.setProperty('--sap-accent', rule.palette.accent);
         root.style.setProperty('--sap-layer', rule.palette.background);
@@ -2163,7 +2206,7 @@ function renderStatusPreview(host) {
     const previewTitle = makeElement('h3', 'status-atelier-rule-preview-title zrs-title', rule.title);
     bindPreviewTitleEditor(previewTitle);
     heading.append(previewTitle, makeElement('p', 'status-atelier-rule-preview-subtitle zrs-subtitle', rule.subtitle));
-    header.append(heading, makeElement('span', 'status-atelier-preview-dynamic-badge', 'AI 动态数值'));
+    header.append(heading, makeElement('span', 'status-atelier-preview-dynamic-badge', rule.structure === 'chat' ? `${rule.chatAppearanceName} · AI` : 'AI 动态数值'));
     card.append(header);
 
     const body = makeElement('div', 'status-atelier-rule-preview-body zrs-content');
@@ -2238,7 +2281,7 @@ function renderStatusPreview(host) {
         image.addEventListener('error', () => image.remove());
         mediaHost.append(image);
     };
-    if (rule.structure !== 'forum' && !hasAvatarField) addPreviewImage(rule.media.avatarUrl, 'status-atelier-preview-avatar zrs-avatar', rule.media.imageAlt);
+    if (!['forum', 'chat'].includes(rule.structure) && !hasAvatarField) addPreviewImage(rule.media.avatarUrl, 'status-atelier-preview-avatar zrs-avatar', rule.media.imageAlt);
     addPreviewImage(rule.media.imageUrl, 'status-atelier-preview-cover zrs-cover', rule.media.imageAlt);
     if (rule.media.audioUrl) {
         const audio = makeElement('audio', 'status-atelier-preview-audio zrs-audio');
@@ -2354,15 +2397,131 @@ function renderStatusPreview(host) {
         }
         if (!pageHost.children.length) pageHost.append(makeElement('div', 'zrs-phone-empty', '购物车空空如也'));
     };
+    const renderChatConversation = (page, values) => {
+        const fields = page?.fields || rule.pageFields;
+        const valueFor = (id, fallback = '') => {
+            const index = fields.findIndex(definition => definition.id === id);
+            const value = index >= 0 ? String(values[index] || '').trim() : '';
+            return !value || value === '无' ? fallback : value;
+        };
+        const menu = makeElement('nav', 'zrs-chat-menu');
+        menu.setAttribute('aria-label', '聊天窗口菜单');
+        ['会话', '联系人', '查看', '帮助'].forEach(label => menu.append(makeElement('span', '', label)));
+        const windowBody = makeElement('div', 'zrs-chat-window');
+        const sidebar = makeElement('aside', 'zrs-chat-sidebar');
+        sidebar.append(makeElement('div', 'zrs-chat-sidebar-label', 'CURRENT CHAT'));
+        const profile = makeElement('div', 'zrs-chat-profile');
+        const avatarButton = makeElement('button', 'zrs-chat-avatar-button');
+        avatarButton.type = 'button';
+        avatarButton.setAttribute('aria-label', '查看会话资料');
+        avatarButton.setAttribute('aria-expanded', 'false');
+        if (rule.media.avatarUrl) {
+            const avatar = makeElement('img', 'zrs-chat-avatar');
+            avatar.src = rule.media.avatarUrl;
+            avatar.alt = rule.media.imageAlt || '聊天对象头像';
+            avatar.loading = 'lazy';
+            avatar.addEventListener('error', () => avatar.remove());
+            avatarButton.append(avatar);
+        } else {
+            avatarButton.append(makeElement('span', 'zrs-chat-avatar is-placeholder', 'TA'));
+        }
+        const profileCopy = makeElement('div', 'zrs-chat-profile-copy');
+        profileCopy.append(
+            makeElement('strong', '', valueFor('chat_name', page?.label || '当前会话')),
+            makeElement('small', '', valueFor('online', '离线')),
+        );
+        profile.append(avatarButton, profileCopy);
+        const detail = makeElement('div', 'zrs-chat-details');
+        detail.hidden = true;
+        detail.append(
+            makeElement('span', '', 'DIY：六套外观、会话标题与左侧头像'),
+            makeElement('span', '', '头像：左侧角色 · 右侧当前 User'),
+            makeElement('span', '', 'AI：对象、在线、消息、时间、语音与已读'),
+        );
+        const sidebarNote = makeElement('div', 'zrs-chat-sidebar-note');
+        sidebarNote.append(makeElement('b', '', 'MEOW MESSENGER'), makeElement('span', '', '长聊天可在右侧窗口上下滑动。'));
+        sidebar.append(profile, detail, sidebarNote);
+
+        const conversation = makeElement('section', 'zrs-chat-conversation');
+        const contact = makeElement('header', 'zrs-chat-contact');
+        const presence = makeElement('span', 'zrs-chat-presence');
+        const contactCopy = makeElement('div', 'zrs-chat-contact-copy');
+        contactCopy.append(
+            makeElement('strong', '', valueFor('chat_name', page?.label || '当前会话')),
+            makeElement('small', '', valueFor('online', '离线')),
+        );
+        const infoButton = makeElement('button', 'zrs-chat-info');
+        infoButton.type = 'button';
+        infoButton.setAttribute('aria-label', '展开会话资料');
+        infoButton.setAttribute('aria-expanded', 'false');
+        infoButton.append(makeElement('i'), makeElement('i'), makeElement('i'));
+        contact.append(presence, contactCopy, infoButton);
+        const toggleDetail = () => {
+            detail.hidden = !detail.hidden;
+            infoButton.setAttribute('aria-expanded', String(!detail.hidden));
+            avatarButton.setAttribute('aria-expanded', String(!detail.hidden));
+        };
+        avatarButton.addEventListener('click', toggleDetail);
+        infoButton.addEventListener('click', toggleDetail);
+
+        const transcript = makeElement('div', 'zrs-chat-transcript');
+        transcript.tabIndex = 0;
+        transcript.setAttribute('aria-label', '聊天记录，可上下滑动');
+        const makeAvatar = side => {
+            const avatar = makeElement('span', `zrs-chat-mini-avatar is-${side === 'right' ? 'user' : 'character'}`);
+            avatar.dataset.fallback = side === 'right' ? '我' : 'TA';
+            const avatarUrl = side === 'right' ? rule.media.userAvatarUrl : rule.media.avatarUrl;
+            if (avatarUrl) avatar.style.backgroundImage = `url("${avatarUrl.replaceAll('"', '%22')}")`;
+            return avatar;
+        };
+        const makeMessage = (side, message, time, state = '', type = 'text', duration = '') => {
+            const row = makeElement('article', `zrs-chat-row is-${side}${type === 'voice' ? ' is-voice-message' : ''}`);
+            const group = makeElement('div', 'zrs-chat-bubble-group');
+            if (type === 'voice') {
+                const bubble = makeElement('div', 'zrs-chat-bubble is-voice');
+                const play = makeElement('button', 'zrs-chat-voice-play');
+                play.type = 'button';
+                play.setAttribute('aria-label', '试听语音动效');
+                play.setAttribute('aria-pressed', 'false');
+                const wave = makeElement('span', 'zrs-chat-wave');
+                [38, 68, 46, 84, 56, 92, 62, 76, 48, 88, 58, 72, 42, 64].forEach((height, index) => {
+                    const bar = makeElement('i');
+                    bar.style.setProperty('--wave', `${height}%`);
+                    bar.style.setProperty('--i', String(index));
+                    wave.append(bar);
+                });
+                play.addEventListener('click', () => play.setAttribute('aria-pressed', String(play.getAttribute('aria-pressed') !== 'true')));
+                bubble.append(play, wave, makeElement('span', 'zrs-chat-voice-duration', duration || '0:12'));
+                if (message) bubble.append(makeElement('small', 'zrs-chat-voice-summary', message));
+                group.append(bubble);
+            } else {
+                group.append(makeElement('div', 'zrs-chat-bubble', message));
+            }
+            const meta = makeElement('small', 'zrs-chat-message-meta', [time, state].filter(Boolean).join(' · '));
+            if (meta.textContent) group.append(meta);
+            if (side === 'left') row.append(makeAvatar(side), group);
+            else row.append(group, makeAvatar(side));
+            return row;
+        };
+        parseChatConversationLog(valueFor('chat_log')).forEach(item => {
+            transcript.append(makeMessage(item.side, item.message, item.time, item.state, item.type, item.duration));
+        });
+        const statusbar = makeElement('footer', 'zrs-chat-statusbar');
+        statusbar.append(makeElement('span', '', 'DIY · 外观 / 标题 / 双方头像'), makeElement('b', '', 'AI · 可变长度会话'));
+        conversation.append(contact, transcript, statusbar);
+        windowBody.append(sidebar, conversation);
+        pageHost.append(menu, windowBody);
+    };
     const showPage = index => {
         pageHost.replaceChildren();
         const page = pages[index]?.page;
         const values = pages[index]?.values || [];
         if (phoneMode) renderPhonePage(page, values);
+        else if (rule.structure === 'chat') renderChatConversation(page, values);
         else (page?.fields || rule.pageFields).forEach((definition, fieldIndex) => {
             appendPreviewField(pageHost, definition, values[fieldIndex] || previewValue(definition), false, rule.glyph, rule);
         });
-        if (!phoneMode) bindPreviewFieldReorder(pageHost, rule, 'page');
+        if (!phoneMode && rule.structure !== 'chat') bindPreviewFieldReorder(pageHost, rule, 'page');
         [...tabs.children].forEach((button, buttonIndex) => button.classList.toggle('is-active', buttonIndex === index));
         if (phoneMode) {
             root.classList.remove('is-phone-home');
@@ -3909,6 +4068,19 @@ async function addSettingsPanel() {
                 button.setAttribute('aria-pressed', String(button === statusStyleButton));
             });
             refreshStatusAppearancePreview();
+            saveSettingsSoon({ snapshotOpening: false });
+            return;
+        }
+        const chatAppearanceButton = event.target.closest('#status-atelier-chat-appearances button[data-chat-appearance]');
+        if (chatAppearanceButton) {
+            const appearance = CHAT_APPEARANCE_PRESETS.find(item => item.id === chatAppearanceButton.dataset.chatAppearance);
+            if (!appearance) return;
+            settings().chatAppearance = appearance.id;
+            statusAiTestRecords = null;
+            field('status-atelier-chat-appearances')?.querySelectorAll('[data-chat-appearance]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button === chatAppearanceButton));
+            });
+            scheduleStatusPreviewUpdate();
             saveSettingsSoon({ snapshotOpening: false });
         }
     });
