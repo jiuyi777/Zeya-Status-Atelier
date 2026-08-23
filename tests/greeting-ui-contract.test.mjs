@@ -111,9 +111,9 @@ test('quest template opens the dedicated map editor inside the main plugin', () 
 });
 
 test('status appearance controls update in place and preserve readable selected text', () => {
-    assert.match(source, /styleHost\.children\.length !== STATUS_STYLE_PRESETS\.length/);
+    assert.doesNotMatch(source, /STATUS_STYLE_PRESETS|data-status-style|status-atelier-status-styles/);
     assert.match(source, /paletteHost\.children\.length !== STATUS_PALETTE_PRESETS\.length/);
-    const paletteClick = source.match(/const statusPaletteButton = event\.target\.closest\('\[data-status-palette\]'\);([\s\S]*?)const statusStyleButton/)?.[1] || '';
+    const paletteClick = source.match(/const statusPaletteButton = event\.target\.closest\('\[data-status-palette\]'\);([\s\S]*?)field\('status-atelier-test-ai'\)/)?.[1] || '';
     assert.doesNotMatch(paletteClick, /renderStatusDesignControls\(\)/);
     assert.match(paletteClick, /refreshStatusPalettePreview\(\)/);
     const styleClick = source.match(/const statusStyleButton = event\.target\.closest\('\[data-status-style\]'\);([\s\S]*?)field\('status-atelier-test-ai'\)/)?.[1] || '';
@@ -165,7 +165,7 @@ test('mobile greeting modal offers a stateless copy-only overview and directly i
     assert.match(overviewBlock, /overwrite: false/);
     assert.doesNotMatch(overviewBlock, /settings\(\)\.openingHome\s*=|saveSettingsNow|renderGreetingList/);
     assert.doesNotMatch(source, /status-atelier-greeting-overview-preview/);
-    assert.match(source, /id="status-atelier-modal-status-style"/);
+    assert.doesNotMatch(source, /id="status-atelier-modal-status-style"/);
     assert.match(source, /id="status-atelier-modal-status-structure"/);
     assert.match(source, /id="status-atelier-modal-status-preview"/);
     assert.doesNotMatch(source, /id="status-atelier-modal-status-logos"/);
@@ -395,4 +395,41 @@ test('one-click scoped status installs and verifies a character-bound worldbook 
     assert.match(scopedInstall, /installStatusWorldbookRule\(\)/);
     assert.match(scopedInstall, /installGeneratedRegex/);
     assert.ok(scopedInstall.indexOf('installStatusWorldbookRule()') < scopedInstall.indexOf('installGeneratedRegex'));
+});
+
+test('personal feed clearly separates DIY media from story data and previews a two-sided paper dossier', () => {
+    assert.match(settingsMarkup, /id="status-atelier-social-data-guide"/);
+    assert.match(settingsMarkup, /图片设置/);
+    assert.match(settingsMarkup, /动态内容/);
+    assert.doesNotMatch(settingsMarkup, /你来 DIY|AI 随剧情更新|成品只显示自然资料/);
+    assert.match(source, /socialGuide\.hidden = structure !== 'social'/);
+    assert.match(source, /function renderSocialPage|const renderSocialPage/);
+    assert.match(source, /zrs-social-photo/);
+    assert.match(source, /zrs-social-theme-art/);
+    assert.match(source, /blue-fabric-scrapbook-v1-compact\.jpg/);
+    assert.match(source, /new URL\('\.\/assets\/personal-feed\/blue-fabric-scrapbook-v1-compact\.jpg', import\.meta\.url\)\.href/);
+    assert.match(source, /resolvedStatusExportInput/);
+    assert.match(settingsMarkup, /id="status-atelier-theme-asset-url"/);
+    assert.match(settingsMarkup, /留空时仅在插件预览里显示内置蓝布插画/);
+    assert.match(source, /output\.themeAssetUrl = String\(source\.media\?\.themeAssetUrl \|\| ''\)\.trim\(\)/);
+    assert.doesNotMatch(source, /blobAsDataUrl|socialThemeArtDataUrlPromise/);
+    assert.match(source, /physical_state/);
+    assert.match(source, /current_thought/);
+    assert.match(source, /zrs-social-intro-copy/);
+    assert.match(source, /zrs-social-scraps/);
+    assert.match(source, /openPreviewFieldEditor/);
+    assert.match(source, /openPreviewMediaEditor/);
+    assert.match(source, /status-atelier-preview-direct-editor/);
+    assert.match(source, /bindDirectPreviewTarget\(introCopy, 'introduction'/);
+    assert.match(source, /bindDirectMediaTarget\(portrait\)/);
+    assert.match(source, /if \(avatarUrl\.value\.trim\(\)\) avatarSource\.value = 'url'/);
+    assert.match(source, /AI 填写内容/);
+    assert.match(styleSource, /\.status-atelier-preview-direct-target:is\(:hover, :focus-visible\)/);
+    assert.match(source, /scraps\.setAttribute\('aria-hidden', 'true'\)/);
+    assert.match(source, /profileButton\.setAttribute\('aria-selected'/);
+    assert.match(source, /introButton\.setAttribute\('aria-selected'/);
+    assert.doesNotMatch(source, /likeButton\.setAttribute\('aria-pressed'/);
+    assert.doesNotMatch(source, /commentButton\.setAttribute\('aria-expanded'/);
+    assert.match(styleSource, /status-atelier-social-data-guide/);
+    assert.doesNotMatch(source, /renderArchiveDossierPage|zrs-storyboard/);
 });

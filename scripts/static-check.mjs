@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url';
 import {
     RULE_PRESETS,
     STATUS_STRUCTURE_PRESETS,
-    STATUS_STYLE_PRESETS,
     buildRegexScript,
     buildWorldbookJson,
 } from '../rule-generator.js';
@@ -149,33 +148,41 @@ for (const [code, name] of openingDefinitions) {
     }
 }
 
-for (const style of STATUS_STYLE_PRESETS) {
-    const { code, id, name, title, subtitle, layout } = style;
+const selectableStatusIds = ['phone', 'profile', 'social', 'forum', 'chat', 'music', 'quest', 'casefile'];
+const selectableStructures = STATUS_STRUCTURE_PRESETS.filter(item => selectableStatusIds.includes(item.id));
+for (const structure of selectableStructures) {
+    const { id, name, title, subtitle, layout, appearanceId } = structure;
     try {
         const input = {
-            ...RULE_PRESETS.universalClassical,
-            ruleId: `zeya-status-style-${code}`,
-            ruleName: `通用状态栏${code}·${name}`,
-            theme: id,
+            ...RULE_PRESETS.custom,
+            ruleId: `zeya-status-template-${id}`,
+            ruleName: `${name}状态栏`,
+            structure: id,
             title,
             subtitle,
             layout,
+            pagesText: structure.pagesText,
+            sharedFieldsText: (structure.shared || []).map(field => field.join('|')).join('\n'),
+            pageFieldsText: structure.fields.map(field => field.join('|')).join('\n'),
         };
         const statusRegex = buildRegexScript(input);
         const worldbook = buildWorldbookJson(input);
         statusIds.add(statusRegex.id);
         const entry = worldbook.entries?.[0];
-        if (!statusRegex.replaceString.includes(`data-theme="${id}"`)) {
-            errors.push(`通用状态栏${code}没有写入主题 ${id}`);
+        if (!statusRegex.replaceString.includes(`data-theme="${appearanceId}"`)) {
+            errors.push(`${name}没有写入专属外观 ${appearanceId}`);
         }
         if (!entry?.constant || !entry.content?.includes('所有值都必须根据当前剧情动态生成')) {
-            errors.push(`通用状态栏${code}世界书没有动态输出规则`);
+            errors.push(`${name}世界书没有动态输出规则`);
         }
         if (!statusRegex.replaceString.includes('textContent')) {
-            errors.push(`通用状态栏${code}正则未安全写入动态数据`);
+            errors.push(`${name}正则未安全写入动态数据`);
+        }
+        if (id === 'social' && /林澈|旧港调查员|雾港公署|旧港北站|旧港档案室|第七码头办事处/.test(statusRegex.replaceString)) {
+            errors.push('个人动态导出不得包含预览示例人物资料');
         }
     } catch (error) {
-        errors.push(`通用状态栏${code}生成失败：${error.message}`);
+        errors.push(`${name}生成失败：${error.message}`);
     }
 }
 if (openingIds.size !== 4) errors.push('四套开场白主页必须使用四个独立正则 ID');

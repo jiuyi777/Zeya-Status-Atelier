@@ -12,7 +12,6 @@ import {
     PHONE_SHELL_STYLES,
     STATUS_PALETTE_PRESETS,
     STATUS_STRUCTURE_PRESETS,
-    STATUS_STYLE_PRESETS,
     STATUS_THEME_CSS,
     STATUS_PHONE_CSS,
     FORUM_THEME_CSS,
@@ -41,15 +40,131 @@ test('registers genuinely different component structures and composable palettes
     assert.equal(STATUS_PALETTE_PRESETS.length, 26);
     assert.equal(new Set(STATUS_PALETTE_PRESETS.map(item => item.id)).size, 26);
     assert.ok(STATUS_PALETTE_PRESETS.every(item => ['accent', 'background', 'card', 'text', 'muted'].every(key => /^#[0-9a-f]{6}$/i.test(item[key]))));
+    assert.deepEqual(STATUS_PALETTE_PRESETS.slice(-8).map(item => item.name), [
+        '敦煌橙青',
+        '土星复古',
+        '春芽柠檬',
+        '橙蓝碰撞',
+        '夜蓝蜜桃',
+        '雾灰森林',
+        '炭红旧书',
+        '冬夜霜蓝',
+    ]);
     for (const structure of STATUS_STRUCTURE_PRESETS) {
         assert.ok(structure.fields.length >= 3, `${structure.name} has an editable schema`);
         assert.ok(structure.fields.every(field => field.length === 4), `${structure.name} keeps stable field keys`);
     }
 });
 
+test('personal feed exports a two-sided paper dossier with DIY photos and story-filled records', () => {
+    const social = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'social');
+    assert.deepEqual(social.fields.map(field => field[3]), [
+        'full_name',
+        'identity',
+        'birthday',
+        'age',
+        'physical_state',
+        'current_location',
+        'record_date',
+        'record_channel',
+        'current_thought',
+        'current_state',
+        'introduction',
+    ]);
+    const input = {
+        ...RULE_PRESETS.custom,
+        structure: 'social',
+        title: social.title,
+        subtitle: social.subtitle,
+        layout: social.layout,
+        themeAssetUrl: 'https://cdn.example.com/blue-fabric.jpg',
+        pagesText: social.pagesText,
+        pageFieldsText: social.fields.map(field => field.join('|')).join('\n'),
+        media: {
+            avatarSource: 'character',
+            avatarUrl: 'https://example.com/avatar.webp',
+            imageUrl: 'https://example.com/archive.webp',
+            imageAlt: '人物档案附图',
+        },
+    };
+    const replacement = buildRegexScript(input).replaceString;
+    assert.match(replacement, /zrs-social-photo/);
+    assert.match(replacement, /zrs-social-archive-photo/);
+    assert.match(replacement, /zrs-social-switcher/);
+    assert.match(replacement, /zrs-social-theme-art/);
+    assert.match(replacement, /https:\/\/cdn\.example\.com\/blue-fabric\.jpg/);
+    assert.match(replacement, /身体状态/);
+    assert.match(replacement, /当前想法/);
+    assert.doesNotMatch(replacement, /国籍 \/ 所属|签发人 \/ 机构/);
+    assert.match(replacement, /zrs-social-scraps/);
+    assert.match(replacement, /scraps\.setAttribute\('aria-hidden','true'\)/);
+    assert.match(replacement, /aria-selected/);
+    assert.match(replacement, /showSocialSheet/);
+    assert.doesNotMatch(replacement, /zrs-social-actions|精选评论|点赞/);
+    for (const demoText of ['林澈', '旧港调查员', '雾港公署', '旧港北站', '旧港档案室', '第七码头办事处']) {
+        assert.doesNotMatch(replacement, new RegExp(demoText));
+    }
+    assert.match(STATUS_THEME_CSS, /zrs-social-switch[^}]*min-height:44px/);
+    assert.match(STATUS_THEME_CSS, /data-theme="personal-dossier"[^}]*--z-paper:#f4ecdc/);
+    assert.match(STATUS_THEME_CSS, /zrs-social-theme-art[^}]*object-fit:cover/);
+    assert.match(STATUS_THEME_CSS, /data-theme="personal-dossier"[^}]*zrs-social-scraps[^}]*display:none/);
+    assert.match(STATUS_THEME_CSS, /zrs-social-photo img\{filter:none\}/);
+    const instruction = buildAiInstruction(input);
+    assert.match(instruction, /记录日期/);
+    assert.match(instruction, /个人介绍 \/ 当前记录/);
+    assert.doesNotMatch(instruction, /图片 URL|头像来源/);
+    const preview = makePreviewRecords(input);
+    assert.equal(preview.pages[0].values.length, 11);
+    assert.equal(preview.pages[0].values[0], '姓名');
+    assert.equal(preview.pages[0].values[1], '身份 / 职位');
+    assert.deepEqual(preview.pages[0].values.slice(2), Array(9).fill('X'));
+    assert.doesNotMatch(preview.pages[0].values.join(' '), /AI：|点赞|评论/);
+});
+
+test('personal feed keeps every appearance on the same editable dossier format', () => {
+    assert.equal(SOCIAL_APPEARANCE_PRESETS.length, 3);
+    assert.equal(new Set(SOCIAL_APPEARANCE_PRESETS.map(item => item.id)).size, 3);
+    assert.deepEqual(SOCIAL_APPEARANCE_PRESETS.slice(1).map(item => item.name), [
+        '人物剪报卷宗',
+        '镜中记',
+    ]);
+    const social = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'social');
+    for (const appearance of SOCIAL_APPEARANCE_PRESETS) {
+        const normalized = normalizeRule({
+            ...RULE_PRESETS.custom,
+            structure: 'social',
+            theme: appearance.id,
+            pagesText: social.pagesText,
+            pageFieldsText: social.fields.map(field => field.join('|')).join('\n'),
+        });
+        assert.equal(normalized.theme, appearance.id);
+        assert.equal(normalized.styleName, appearance.name);
+        const replacement = buildRegexScript(normalized).replaceString;
+        assert.match(replacement, new RegExp(`data-theme="${appearance.id}"`));
+        assert.match(replacement, /function renderSocialPage/);
+        assert.match(replacement, /zrs-social-file/);
+        assert.doesNotMatch(replacement, /renderArchiveDossierPage|zrs-storyboard/);
+    }
+    assert.doesNotMatch(STATUS_THEME_CSS, /zrs-storyboard|zrs-archive-file/);
+});
+
+test('personal feed preview uses neutral placeholders and never exports a concrete demo identity', () => {
+    const social = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'social');
+    const input = {
+        ...RULE_PRESETS.custom,
+        structure: social.id,
+        pagesText: social.pagesText,
+        pageFieldsText: social.fields.map(field => field.join('|')).join('\n'),
+    };
+    assert.equal(makePreviewRecords(input).pages[0].values[0], '姓名');
+    assert.doesNotMatch(makePreviewRecords(input).pages[0].values.join(' '), /林澈|旧港调查员|雾港公署|旧港北站|旧港档案室|第七码头办事处/);
+    assert.doesNotMatch(buildRegexScript(input).replaceString, /林澈|旧港调查员|雾港公署|旧港北站|旧港档案室|第七码头办事处/);
+});
+
 test('dynamic progress always uses a solid fill without selectable objects', () => {
-    const normalized = normalizeRule({ ...RULE_PRESETS.universalClassical, theme: 'vinyl-mag', logoId: 'slider-apple', fillMode: 'object' });
+    const normalized = normalizeRule({ ...RULE_PRESETS.universalClassical, structure: 'music', theme: 'vinyl-mag', logoId: 'slider-apple', fillMode: 'object' });
     assert.equal(normalized.glyph, '♪');
+    assert.equal(normalized.theme, 'piano-player');
     assert.equal('logoId' in normalized, false);
     assert.equal('fillMode' in normalized, false);
     const generated = buildRegexScript({ ...RULE_PRESETS.universalClassical, logoId: 'slider-leaf', fillMode: 'object' }).replaceString;
@@ -915,31 +1030,37 @@ test('registers 22 distinct editable mobile themes with unique codes and ids', (
     assert.equal(STATUS_STYLE_PRESETS.find(style => style.id === 'ink-diary')?.glyph, '○');
 });
 
-test('editorial theme keeps the reference composition while consuming dynamic records', () => {
-    const style = STATUS_STYLE_PRESETS.find(item => item.id === 'minimal');
-    assert.equal(style?.name, '构成编辑');
+test('a real template overrides the removed generic appearance layer', () => {
+    const social = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'social');
     const script = buildRegexScript({
         ...RULE_PRESETS.universalClassical,
-        theme: style.id,
-        title: style.title,
-        subtitle: style.subtitle,
+        structure: social.id,
+        theme: 'minimal',
+        title: social.title,
+        subtitle: social.subtitle,
+        pagesText: social.pagesText,
+        pageFieldsText: social.fields.map(field => field.join('|')).join('\n'),
     });
+    assert.match(script.replaceString, /data-theme="personal-dossier"/);
     assert.match(script.replaceString, /LIVE \/ WORLD INFO/);
-    assert.match(script.replaceString, /--z-accent:#a7312e/);
     assert.match(script.replaceString, /var records=\{\}/);
-    assert.doesNotMatch(script.replaceString, /参考人物|示例人物/);
+    assert.doesNotMatch(script.replaceString, /林澈|旧港调查员|参考人物|示例人物/);
 });
 
-test('every status theme generates syntactically valid mobile renderer code', () => {
-    for (const style of STATUS_STYLE_PRESETS) {
+test('every selectable status template generates syntactically valid mobile renderer code', () => {
+    const selectableIds = ['phone', 'profile', 'social', 'forum', 'chat', 'music', 'quest', 'casefile'];
+    for (const structure of STATUS_STRUCTURE_PRESETS.filter(item => selectableIds.includes(item.id))) {
         const script = buildRegexScript({
-            ...RULE_PRESETS.universalClassical,
-            theme: style.id,
-            layout: style.layout,
-            title: style.title,
-            subtitle: style.subtitle,
+            ...RULE_PRESETS.custom,
+            structure: structure.id,
+            layout: structure.layout,
+            title: structure.title,
+            subtitle: structure.subtitle,
+            pagesText: structure.pagesText,
+            sharedFieldsText: (structure.shared || []).map(field => field.join('|')).join('\n'),
+            pageFieldsText: structure.fields.map(field => field.join('|')).join('\n'),
         });
-        assert.match(script.replaceString, new RegExp(`data-theme="${style.id}"`));
+        assert.match(script.replaceString, new RegExp(`data-theme="${structure.appearanceId}"`));
         assert.match(script.replaceString, /zrs-chrome/);
         assert.match(script.replaceString, /@media\(max-width:520px\)/);
         const browserScript = script.replaceString.match(/<script>\n([\s\S]*?)\n<\/script>/);
