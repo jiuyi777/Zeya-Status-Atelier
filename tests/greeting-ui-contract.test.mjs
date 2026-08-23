@@ -99,6 +99,17 @@ test('status workspace exposes component, palette, real avatar and audio control
     assert.match(source, /parseStatusOutput\(input, response\)/);
 });
 
+test('quest template opens the dedicated map editor inside the main plugin', () => {
+    assert.match(settingsMarkup, /id="status-atelier-quest-map-entry"[^>]*hidden/);
+    assert.match(settingsMarkup, /id="status-atelier-open-map-editor"[^>]*>打开任务地图编辑器</);
+    const syncBlock = source.match(/function syncQuestMapEditorEntry\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    assert.match(syncBlock, /settings\(\)\.structure !== 'quest'/);
+    assert.match(source, /new URL\('\.\/design-drafts\/map-beauty\/index\.html\?embedded=1', import\.meta\.url\)/);
+    assert.match(source, /event\.data\?\.type !== 'status-atelier-map-close'/);
+    assert.match(styleSource, /\.status-atelier-map-editor-overlay\s*\{[\s\S]*?position:\s*fixed;[\s\S]*?inset:\s*0;/);
+    assert.match(styleSource, /\.status-atelier-map-editor-frame\s*\{[\s\S]*?width:\s*100%;[\s\S]*?height:\s*100%;/);
+});
+
 test('status appearance controls update in place and preserve readable selected text', () => {
     assert.match(source, /styleHost\.children\.length !== STATUS_STYLE_PRESETS\.length/);
     assert.match(source, /paletteHost\.children\.length !== STATUS_PALETTE_PRESETS\.length/);

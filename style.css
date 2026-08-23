@@ -4653,3 +4653,64 @@ body:has(.preview-note) [data-status-workspace-panel="status"] .status-atelier-w
         justify-content: flex-end;
     }
 }
+
+.status-atelier-quest-map-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 10px;
+    padding: 12px;
+    border: 1px solid color-mix(in srgb, var(--saw-accent) 52%, transparent);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--saw-accent) 8%, transparent);
+}
+
+.status-atelier-quest-map-entry[hidden],
+.status-atelier-map-editor-overlay[hidden] {
+    display: none !important;
+}
+
+.status-atelier-quest-map-entry strong,
+.status-atelier-quest-map-entry small {
+    display: block;
+}
+
+.status-atelier-quest-map-entry small {
+    margin-top: 3px;
+    color: var(--saw-muted);
+    line-height: 1.45;
+}
+
+.status-atelier-quest-map-entry .menu_button {
+    min-height: 44px;
+    flex: 0 0 auto;
+}
+
+.status-atelier-map-editor-overlay {
+    position: fixed;
+    z-index: 100000;
+    inset: 0;
+    display: block;
+    min-width: 320px;
+    background: #151916;
+}
+
+.status-atelier-map-editor-frame {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: #151916;
+}
+
+@media (max-width: 560px) {
+    .status-atelier-quest-map-entry {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .status-atelier-quest-map-entry .menu_button {
+        width: 100%;
+    }
+}
