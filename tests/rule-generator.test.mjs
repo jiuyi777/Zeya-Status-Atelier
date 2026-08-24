@@ -619,9 +619,19 @@ test('the original phone, three handheld shells, two touch phone styles, and bla
     assert.match(white, /data-phone-decoration="petals"/);
     assert.match(white, /data-phone-control="Shop"/);
     assert.match(white, /data-phone-layout="handheld"/);
-    const bandage = buildRegexScript({ ...input, phoneDesktop: { shellStyle: 'bandage-pop' } }).replaceString;
+    const bandage = buildRegexScript({
+        ...input,
+        phoneDesktop: {
+            shellStyle: 'bandage-pop',
+            stickerPhotoOneUrl: 'https://example.com/sticker-one.png',
+            stickerPhotoTwoUrl: 'https://example.com/sticker-two.png',
+        },
+    }).replaceString;
     assert.match(bandage, /data-phone-shell="bandage-pop"/);
     assert.match(bandage, /Loading\.\.\./);
+    assert.match(bandage, /zrs-phone-sticker-photo/);
+    assert.match(bandage, /https:\/\/example\.com\/sticker-one\.png/);
+    assert.match(bandage, /https:\/\/example\.com\/sticker-two\.png/);
     assert.doesNotMatch(bandage, /frame-handheld-[^"']+\.png/);
     const mint = buildRegexScript({ ...input, phoneDesktop: { shellStyle: 'mint-archive' } }).replaceString;
     assert.match(mint, /data-phone-shell="mint-archive"/);
@@ -644,6 +654,8 @@ test('phone DIY settings are normalized separately from AI story values', () => 
             shellStyle: 'handheld',
             shellColor: '#e6a5c4',
             wallpaperUrl: 'https://example.com/wallpaper.jpg',
+            stickerPhotoOneUrl: 'https://example.com/photo-one.jpg',
+            stickerPhotoTwoUrl: 'javascript:alert(1)',
             wallpaperPositionX: 140,
             wallpaperPositionY: -10,
             wallpaperScale: 8,
@@ -679,6 +691,8 @@ test('phone DIY settings are normalized separately from AI story values', () => 
     assert.equal(phone.wallpaperPositionX, 100);
     assert.equal(phone.wallpaperPositionY, 0);
     assert.equal(phone.wallpaperScale, 3);
+    assert.equal(phone.stickerPhotoOneUrl, 'https://example.com/photo-one.jpg');
+    assert.equal(phone.stickerPhotoTwoUrl, '');
     assert.equal(phone.petalsEnabled, true);
     assert.equal(phone.personalAvatarScale, 3);
     assert.deepEqual(phone.widgetOrder, ['current_weather', 'current_location', 'current_time']);
@@ -715,6 +729,8 @@ test('phone DIY settings are normalized separately from AI story values', () => 
     assert.match(generated, /https:\/\/example\.com\/me\.png/);
     assert.match(generated, /widgetOrder/);
     assert.match(generated, /style\.transform='scale\('\+config\.phoneDesktop\.personalAvatarScale\+'\)'/);
+    assert.match(STATUS_PHONE_CSS, /data-phone-page="Personal"\] \.zrs-phone-pagebar\{[^}]*pointer-events:none/);
+    assert.match(STATUS_PHONE_CSS, /data-phone-page="Personal"\] \.zrs-phone-back\{pointer-events:auto/);
     assert.match(generated, /style\.transform='scale\('\+config\.phoneDesktop\.wallpaperScale\+'\)'/);
     assert.match(generated, /field&&field\.kind==='progress'/);
     assert.match(generated, /personalFields\[0\]/);

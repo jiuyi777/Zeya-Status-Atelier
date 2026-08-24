@@ -194,6 +194,7 @@ const PHONE_DESKTOP_DEFAULTS = Object.freeze({
     shellColor: '#e6a5c4',
     charmUrl: '',
     wallpaperUrl: '', wallpaperPositionX: 50, wallpaperPositionY: 50, wallpaperScale: 1,
+    stickerPhotoOneUrl: '', stickerPhotoTwoUrl: '',
     decorationStyle: 'petals', petalsEnabled: true, iconScale: 1,
     widgetX: 15, widgetY: 58,
     widgetOrder: ['current_location', 'current_time', 'current_weather'],
@@ -349,6 +350,8 @@ const PHONE_DESKTOP_FIELDS = Object.freeze({
     'status-atelier-phone-shell-color': 'shellColor',
     'status-atelier-phone-charm-url': 'charmUrl',
     'status-atelier-phone-wallpaper-url': 'wallpaperUrl',
+    'status-atelier-phone-sticker-photo-one-url': 'stickerPhotoOneUrl',
+    'status-atelier-phone-sticker-photo-two-url': 'stickerPhotoTwoUrl',
     'status-atelier-phone-decoration-style': 'decorationStyle',
     'status-atelier-phone-icon-scale': 'iconScale',
     'status-atelier-phone-avatar-source': 'personalAvatarSource',
@@ -940,6 +943,8 @@ function renderPhoneDesktopControls() {
     if (iconScaleOutput) iconScaleOutput.value = `${Math.round(Number(phone.iconScale || 1) * 100)}%`;
     const avatarUrlWrap = field('status-atelier-phone-avatar-url-wrap');
     if (avatarUrlWrap) avatarUrlWrap.hidden = phone.personalAvatarSource !== 'url';
+    const stickerPhotos = field('status-atelier-phone-sticker-photos');
+    if (stickerPhotos) stickerPhotos.hidden = stored.structure !== 'phone' || phone.shellStyle !== 'bandage-pop';
     phone.apps.forEach(app => {
         const name = field(`status-atelier-phone-app-${app.id.toLowerCase()}-name`);
         const icon = field(`status-atelier-phone-app-${app.id.toLowerCase()}-icon`);
@@ -2726,7 +2731,7 @@ function bindPhoneHomeIconDrag(homeGuide, openApp) {
     });
 }
 
-function bindPhoneAvatarDiy(avatarHolder, avatarImage) {
+function bindPhoneAvatarDiy(avatarHolder, avatarImage, openEditor) {
     if (!avatarHolder || !avatarImage) return;
     const phone = settings().phoneDesktop;
     const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
@@ -2737,17 +2742,23 @@ function bindPhoneAvatarDiy(avatarHolder, avatarImage) {
     const pointers = new Map();
     let dragStart = null;
     let pinchStart = null;
+    let gestureMoved = false;
     const pointerDistance = () => {
         const [first, second] = [...pointers.values()];
         return first && second ? Math.hypot(second.x - first.x, second.y - first.y) : 0;
     };
     avatarHolder.classList.add('is-diy-draggable');
-    avatarHolder.title = '拖动移动取景；滚轮或双指缩放';
+    avatarHolder.classList.add('status-atelier-preview-direct-target');
+    avatarHolder.tabIndex = 0;
+    avatarHolder.setAttribute('role', 'button');
+    avatarHolder.setAttribute('aria-label', '点击更换个人页头像；拖动移动取景，滚轮或双指缩放');
+    avatarHolder.title = '点击更换头像；拖动移动取景；滚轮或双指缩放';
     avatarImage.draggable = false;
     apply();
     avatarHolder.addEventListener('pointerdown', event => {
         if (event.button !== 0) return;
         event.preventDefault();
+        gestureMoved = false;
         avatarHolder.setPointerCapture?.(event.pointerId);
         pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
         if (pointers.size === 1) {
@@ -2763,6 +2774,8 @@ function bindPhoneAvatarDiy(avatarHolder, avatarImage) {
     });
     avatarHolder.addEventListener('pointermove', event => {
         if (!pointers.has(event.pointerId)) return;
+        if (dragStart && Math.hypot(event.clientX - dragStart.x, event.clientY - dragStart.y) > 5) gestureMoved = true;
+        if (pointers.size >= 2) gestureMoved = true;
         pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
         if (pointers.size >= 2 && pinchStart?.distance) {
             phone.personalAvatarScale = clamp(pinchStart.scale * pointerDistance() / pinchStart.distance, 1, 3);
@@ -2788,6 +2801,7 @@ function bindPhoneAvatarDiy(avatarHolder, avatarImage) {
             dragStart = null;
             pinchStart = null;
             saveSettingsSoon({ snapshotOpening: false });
+            if (!gestureMoved && event.type === 'pointerup') openEditor?.();
         }
     };
     avatarHolder.addEventListener('pointerup', finishPointer);
@@ -2798,6 +2812,11 @@ function bindPhoneAvatarDiy(avatarHolder, avatarImage) {
         apply();
         saveSettingsSoon({ snapshotOpening: false });
     }, { passive: false });
+    avatarHolder.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        openEditor?.();
+    });
 }
 
 function forumAvatarForName(name) {
@@ -2839,6 +2858,83 @@ function renderForumPreview(host, previewRecords) {
     };
     const root = makeElement('main', 'forum-2ch status-atelier-forum-preview');
     root.dataset.forumSkin = skin.id;
+    const directEditor = makeElement('section', 'status-atelier-preview-direct-editor');
+    directEditor.hidden = true;
+    const closeDirectEditor = () => {
+        directEditor.hidden = true;
+        directEditor.replaceChildren();
+    };
+    const directEditorField = (labelText, control) => {
+        const label = makeElement('label', 'status-atelier-preview-direct-field');
+        label.append(makeElement('span', '', labelText), control);
+        return label;
+    };
+    const openForumFieldEditor = fieldId => {
+        const definitions = fieldDefinitions();
+        const definition = definitions.find(item => item.scope === 'page' && item.id === fieldId);
+        if (!definition) return;
+        const heading = makeElement('div', 'status-atelier-preview-direct-heading');
+        const close = makeElement('button', 'menu_button', '关闭');
+        close.type = 'button';
+        close.addEventListener('click', closeDirectEditor);
+        heading.append(makeElement('strong', '', `编辑：${definition.label}`), close);
+        const labelInput = makeElement('input', 'text_pole');
+        labelInput.value = definition.label;
+        labelInput.maxLength = 30;
+        const kindSelect = makeElement('select', 'text_pole');
+        Object.entries(KIND_LABELS).forEach(([value, copy]) => {
+            const option = makeElement('option', '', copy);
+            option.value = value;
+            kindSelect.append(option);
+        });
+        kindSelect.value = definition.kind;
+        const instructionInput = makeElement('textarea', 'text_pole');
+        instructionInput.value = definition.instruction;
+        instructionInput.rows = 4;
+        instructionInput.placeholder = '这里写给 AI 的生成规则，不是手填贴子正文';
+        const save = makeElement('button', 'menu_button status-atelier-primary-action', '保存并更新预览');
+        save.type = 'button';
+        save.addEventListener('click', () => {
+            const nextLabel = String(labelInput.value || '').trim().slice(0, 30);
+            if (!nextLabel) return;
+            definition.label = nextLabel;
+            definition.kind = kindSelect.value;
+            definition.instruction = String(instructionInput.value || '').trim().slice(0, 300) || '根据当前剧情动态填写';
+            serializeFieldDefinitions(definitions);
+            renderStatusSchema();
+            renderModalStatusSchema();
+            saveSettingsSoon({ snapshotOpening: false });
+        });
+        directEditor.replaceChildren(
+            heading,
+            makeElement('p', 'status-atelier-beauty-editor-note', '论坛昵称、时间和正文仍由 AI 随剧情生成；这里修改它的名称、类型和生成要求。'),
+            directEditorField('显示名称', labelInput),
+            directEditorField('显示类型', kindSelect),
+            directEditorField('AI 填写内容', instructionInput),
+            save,
+        );
+        directEditor.hidden = false;
+        labelInput.focus();
+        directEditor.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+    };
+    const bindForumFieldTarget = (node, definition) => {
+        if (!node || !definition) return;
+        node.classList.add('status-atelier-preview-direct-target');
+        node.tabIndex = 0;
+        node.setAttribute('role', 'button');
+        node.title = `点击编辑${definition.label}的 AI 生成规则`;
+        node.setAttribute('aria-label', `编辑${definition.label}的显示名称、类型和 AI 生成规则`);
+        const open = event => {
+            event.preventDefault();
+            event.stopPropagation();
+            openForumFieldEditor(definition.id);
+        };
+        node.addEventListener('click', open);
+        node.addEventListener('keydown', event => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            open(event);
+        });
+    };
     const bindEditable = (node, saveValue, { maxLength = 600, multiline = false } = {}) => {
         node.dataset.forumPreviewEditable = 'true';
         node.tabIndex = 0;
@@ -2933,7 +3029,10 @@ function renderForumPreview(host, previewRecords) {
         if (pageDraft.boardTitle) data.board_title = pageDraft.boardTitle;
         const postDefinitions = (page?.fields || rule.pageFields).filter(definition => /^post_\d+$/.test(definition.id));
         const posts = postDefinitions
-            .map((definition, index) => parseForumPost(data[definition.id], index + 1, definition.label))
+            .map((definition, index) => {
+                const parsed = parseForumPost(data[definition.id], index + 1, definition.label);
+                return parsed ? { ...parsed, definition } : null;
+            })
             .filter(Boolean);
         const skinMeta = {
             'tieba-thread': [`主题 0${pageIndex + 1} · 回复 ${posts.length}`, '只看主题'],
@@ -2948,6 +3047,8 @@ function renderForumPreview(host, previewRecords) {
         const threadHead = makeElement('div', 'forum-thread-head');
         const threadTitle = makeElement('h2', 'forum-thread-title', data.thread_title || 'X');
         const threadTags = makeElement('div', 'forum-tags', data.tags || 'X');
+        bindForumFieldTarget(threadTitle, (page?.fields || rule.pageFields).find(item => item.id === 'thread_title'));
+        bindForumFieldTarget(threadTags, (page?.fields || rule.pageFields).find(item => item.id === 'tags'));
         threadHead.append(
             threadTitle,
             threadTags,
@@ -2955,6 +3056,7 @@ function renderForumPreview(host, previewRecords) {
         const postList = makeElement('div', 'forum-post-list');
         if (!posts.length) postList.append(makeElement('div', 'forum-empty', 'まだ書き込みがありません'));
         posts.forEach(post => {
+            const postDefinition = post.definition;
             const item = makeElement('article', 'forum-post');
             const metaRow = makeElement('div', 'forum-post-meta');
             const replyLabel = skin.id === 'ao3-archive'
@@ -2976,9 +3078,11 @@ function renderForumPreview(host, previewRecords) {
                 const avatar = forumAvatarForName(`${post.name}-${post.num}`);
                 const avatarNode = makeElement('span', 'forum-post-avatar', avatar.glyph);
                 avatarNode.dataset.avatarTone = avatar.tone;
+                bindForumFieldTarget(avatarNode, postDefinition);
                 metaRow.append(avatarNode);
             }
             const author = makeElement('span', 'forum-post-author', post.name);
+            bindForumFieldTarget(author, postDefinition);
             metaRow.append(
                 author,
                 makeElement('span', 'forum-post-id', post.id),
@@ -2986,6 +3090,7 @@ function renderForumPreview(host, previewRecords) {
             );
             const body = makeElement('div', 'forum-post-body');
             appendForumBody(body, post.body);
+            bindForumFieldTarget(body, postDefinition);
             item.append(metaRow, body);
             postList.append(item);
         });
@@ -3089,7 +3194,7 @@ function renderForumPreview(host, previewRecords) {
 
     const style = document.createElement('style');
     style.textContent = FORUM_THEME_CSS;
-    host.replaceChildren(style, root);
+    host.replaceChildren(style, root, directEditor);
     showPage(0);
 }
 
@@ -3698,9 +3803,9 @@ function renderStatusPreview(host) {
         label.append(makeElement('span', '', labelText), control);
         return label;
     };
-    const openPreviewFieldEditor = fieldId => {
+    const openPreviewFieldEditor = (fieldId, scope = 'page') => {
         const definitions = fieldDefinitions();
-        const definition = definitions.find(item => item.scope === 'page' && item.id === fieldId);
+        const definition = definitions.find(item => item.scope === scope && item.id === fieldId);
         if (!definition) return;
         const heading = makeElement('div', 'status-atelier-preview-direct-heading');
         const close = makeElement('button', 'menu_button', '关闭');
@@ -3745,6 +3850,54 @@ function renderStatusPreview(host) {
         labelInput.focus();
         directEditor.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
     };
+    const openPhoneFieldEditor = (pageId, fieldId) => {
+        const phone = settings().phoneDesktop;
+        const definitions = pageId === 'Personal' ? phone.personalFields : phone.pageFields?.[pageId];
+        const definition = definitions?.find(item => item.id === fieldId);
+        if (!definition) return;
+        const heading = makeElement('div', 'status-atelier-preview-direct-heading');
+        const close = makeElement('button', 'menu_button', '关闭');
+        close.type = 'button';
+        close.addEventListener('click', closeDirectEditor);
+        heading.append(makeElement('strong', '', `编辑：${definition.label}`), close);
+        const labelInput = makeElement('input', 'text_pole');
+        labelInput.value = definition.label;
+        labelInput.maxLength = 30;
+        const kindSelect = makeElement('select', 'text_pole');
+        Object.entries(KIND_LABELS).forEach(([value, copy]) => {
+            const option = makeElement('option', '', copy);
+            option.value = value;
+            kindSelect.append(option);
+        });
+        kindSelect.value = definition.kind;
+        const instructionInput = makeElement('textarea', 'text_pole');
+        instructionInput.value = definition.instruction;
+        instructionInput.rows = 4;
+        instructionInput.placeholder = '例如：填写角色此刻没有说出口的内心独白';
+        const save = makeElement('button', 'menu_button status-atelier-primary-action', '保存并更新预览');
+        save.type = 'button';
+        save.addEventListener('click', () => {
+            const nextLabel = String(labelInput.value || '').trim().slice(0, 30);
+            if (!nextLabel) return;
+            definition.label = nextLabel;
+            definition.kind = kindSelect.value;
+            definition.instruction = String(instructionInput.value || '').trim().slice(0, 300) || '根据当前剧情动态填写';
+            statusAiTestRecords = null;
+            renderStatusSchema();
+            scheduleStatusPreviewUpdate();
+            saveSettingsSoon({ snapshotOpening: false });
+        });
+        directEditor.replaceChildren(
+            heading,
+            directEditorField('显示名称', labelInput),
+            directEditorField('显示类型', kindSelect),
+            directEditorField('AI 填写内容', instructionInput),
+            save,
+        );
+        directEditor.hidden = false;
+        labelInput.focus();
+        directEditor.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+    };
     const openPreviewMediaEditor = () => {
         const media = settings().media || clone(DEFAULT_SETTINGS.media);
         const heading = makeElement('div', 'status-atelier-preview-direct-heading');
@@ -3773,6 +3926,10 @@ function renderStatusPreview(host) {
         const imageAlt = makeElement('input', 'text_pole');
         imageAlt.value = media.imageAlt || '';
         imageAlt.maxLength = 80;
+        const audioUrl = makeElement('input', 'text_pole');
+        audioUrl.type = 'url';
+        audioUrl.value = media.audioUrl || '';
+        audioUrl.placeholder = 'https://example.com/audio.mp3';
         const save = makeElement('button', 'menu_button status-atelier-primary-action', '保存并更新预览');
         save.type = 'button';
         save.addEventListener('click', () => {
@@ -3781,6 +3938,7 @@ function renderStatusPreview(host) {
             settings().media.avatarUrl = avatarUrl.value;
             settings().media.imageUrl = imageUrl.value;
             settings().media.imageAlt = imageAlt.value;
+            settings().media.audioUrl = audioUrl.value;
             statusAiTestRecords = null;
             renderStatusDesignControls();
             scheduleStatusPreviewUpdate();
@@ -3792,13 +3950,93 @@ function renderStatusPreview(host) {
             directEditorField('头像来源', avatarSource),
             directEditorField('档案附图 URL', imageUrl),
             directEditorField('图片替代文字', imageAlt),
+            directEditorField('音乐 URL', audioUrl),
             save,
         );
         directEditor.hidden = false;
         avatarUrl.focus();
         directEditor.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
     };
-    const bindDirectPreviewTarget = (element, fieldId, labelText) => {
+    const openPhoneAvatarEditor = () => {
+        const phone = settings().phoneDesktop;
+        const heading = makeElement('div', 'status-atelier-preview-direct-heading');
+        const close = makeElement('button', 'menu_button', '关闭');
+        close.type = 'button';
+        close.addEventListener('click', closeDirectEditor);
+        heading.append(makeElement('strong', '', '编辑：手机个人页头像'), close);
+        const avatarSource = makeElement('select', 'text_pole');
+        [['character', '当前角色头像'], ['user', '当前 user 头像'], ['url', '直接 URL'], ['none', '不显示头像']].forEach(([value, copy]) => {
+            const option = makeElement('option', '', copy);
+            option.value = value;
+            avatarSource.append(option);
+        });
+        avatarSource.value = phone.personalAvatarSource || 'character';
+        const avatarUrl = makeElement('input', 'text_pole');
+        avatarUrl.type = 'url';
+        avatarUrl.value = phone.personalAvatarUrl || '';
+        avatarUrl.placeholder = 'https://example.com/avatar.png';
+        avatarUrl.addEventListener('input', () => {
+            if (avatarUrl.value.trim()) avatarSource.value = 'url';
+        });
+        const save = makeElement('button', 'menu_button status-atelier-primary-action', '保存并更新预览');
+        save.type = 'button';
+        save.addEventListener('click', () => {
+            phone.personalAvatarSource = avatarSource.value;
+            phone.personalAvatarUrl = avatarUrl.value.trim();
+            statusAiTestRecords = null;
+            renderPhoneDesktopControls();
+            scheduleStatusPreviewUpdate();
+            saveSettingsSoon({ snapshotOpening: false });
+        });
+        directEditor.replaceChildren(
+            heading,
+            makeElement('p', 'status-atelier-beauty-editor-note', '可选当前角色、当前 user 或图片 URL；保留原来的拖动取景和缩放。'),
+            directEditorField('头像来源', avatarSource),
+            directEditorField('头像 URL', avatarUrl),
+            save,
+        );
+        directEditor.hidden = false;
+        avatarSource.focus();
+        directEditor.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+    };
+    const openPhoneStickerPhotosEditor = () => {
+        const phone = settings().phoneDesktop || clone(DEFAULT_SETTINGS.phoneDesktop);
+        const heading = makeElement('div', 'status-atelier-preview-direct-heading');
+        const close = makeElement('button', 'menu_button', '关闭');
+        close.type = 'button';
+        close.addEventListener('click', closeDirectEditor);
+        heading.append(makeElement('strong', '', '编辑：04 贴纸照片'), close);
+        const photoOneUrl = makeElement('input', 'text_pole');
+        photoOneUrl.type = 'url';
+        photoOneUrl.value = phone.stickerPhotoOneUrl || '';
+        photoOneUrl.placeholder = 'https://example.com/photo-1.png';
+        const photoTwoUrl = makeElement('input', 'text_pole');
+        photoTwoUrl.type = 'url';
+        photoTwoUrl.value = phone.stickerPhotoTwoUrl || '';
+        photoTwoUrl.placeholder = 'https://example.com/photo-2.png';
+        const save = makeElement('button', 'menu_button status-atelier-primary-action', '保存并更新预览');
+        save.type = 'button';
+        save.addEventListener('click', () => {
+            settings().phoneDesktop ??= clone(DEFAULT_SETTINGS.phoneDesktop);
+            settings().phoneDesktop.stickerPhotoOneUrl = photoOneUrl.value.trim();
+            settings().phoneDesktop.stickerPhotoTwoUrl = photoTwoUrl.value.trim();
+            statusAiTestRecords = null;
+            renderPhoneDesktopControls();
+            scheduleStatusPreviewUpdate();
+            saveSettingsSoon({ snapshotOpening: false });
+        });
+        directEditor.replaceChildren(
+            heading,
+            makeElement('p', 'status-atelier-beauty-editor-note', '这两张图片只填入 04 黑粉贴纸小手机的桌面拼贴。'),
+            directEditorField('照片一 URL', photoOneUrl),
+            directEditorField('照片二 URL', photoTwoUrl),
+            save,
+        );
+        directEditor.hidden = false;
+        photoOneUrl.focus();
+        directEditor.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+    };
+    const bindDirectPreviewTarget = (element, fieldId, labelText, scope = 'page') => {
         if (!element) return;
         element.classList.add('status-atelier-preview-direct-target');
         element.tabIndex = 0;
@@ -3806,9 +4044,10 @@ function renderStatusPreview(host) {
         element.setAttribute('role', 'button');
         element.setAttribute('aria-label', `编辑${labelText || '这个字段'}的显示名称、类型和 AI 填写内容`);
         const open = event => {
+            if (event.type === 'click' && event.target !== element && event.target.closest?.('button, a, input, select, textarea, audio, summary')) return;
             event.preventDefault();
             event.stopPropagation();
-            openPreviewFieldEditor(fieldId);
+            openPreviewFieldEditor(fieldId, scope);
         };
         element.addEventListener('click', open);
         element.addEventListener('keydown', event => {
@@ -3827,6 +4066,42 @@ function renderStatusPreview(host) {
             event.preventDefault();
             event.stopPropagation();
             openPreviewMediaEditor();
+        };
+        element.addEventListener('click', open);
+        element.addEventListener('keydown', event => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            open(event);
+        });
+    };
+    const bindPhoneFieldTarget = (element, pageId, definition) => {
+        if (!element || !definition) return;
+        element.classList.add('status-atelier-preview-direct-target');
+        element.tabIndex = 0;
+        element.title = `点击编辑${definition.label}`;
+        element.setAttribute('role', 'button');
+        element.setAttribute('aria-label', `编辑${definition.label}的显示名称、类型和 AI 填写内容`);
+        const open = event => {
+            event.preventDefault();
+            event.stopPropagation();
+            openPhoneFieldEditor(pageId, definition.id);
+        };
+        element.addEventListener('click', open);
+        element.addEventListener('keydown', event => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            open(event);
+        });
+    };
+    const bindPhoneStickerPhotoTarget = element => {
+        if (!element) return;
+        element.classList.add('status-atelier-preview-direct-target');
+        element.tabIndex = 0;
+        element.title = '点击替换两张贴纸照片';
+        element.setAttribute('role', 'button');
+        element.setAttribute('aria-label', '替换黑粉贴纸小手机的两张照片');
+        const open = event => {
+            event.preventDefault();
+            event.stopPropagation();
+            openPhoneStickerPhotosEditor();
         };
         element.addEventListener('click', open);
         element.addEventListener('keydown', event => {
@@ -3993,6 +4268,7 @@ function renderStatusPreview(host) {
         image.alt = alt || '';
         image.loading = 'lazy';
         image.addEventListener('error', () => image.remove());
+        bindDirectMediaTarget(image);
         mediaHost.append(image);
     };
     if (!['forum', 'chat'].includes(rule.structure) && !hasAvatarField) addPreviewImage(rule.media.avatarUrl, 'status-atelier-preview-avatar zrs-avatar', rule.media.imageAlt);
@@ -4015,7 +4291,18 @@ function renderStatusPreview(host) {
             sharedHost.style.top = `${rule.phoneDesktop.widgetY}px`;
             phoneSharedHost = sharedHost;
         }
-        definitions.forEach(item => appendPreviewField(sharedHost, item.definition, item.value, true, rule.glyph, rule));
+        definitions.forEach(item => {
+            appendPreviewField(sharedHost, item.definition, item.value, true, rule.glyph, rule);
+            bindDirectPreviewTarget(
+                sharedHost.lastElementChild?.querySelector('.zrs-value'),
+                item.definition.id,
+                item.definition.label,
+                'shared',
+            );
+            if (item.definition.kind === 'avatar') {
+                bindDirectMediaTarget(sharedHost.lastElementChild?.querySelector('.zrs-field-avatar'));
+            }
+        });
         if (rule.structure === 'phone') {
             sharedHost.querySelectorAll('.zrs-shared-item').forEach(item => {
                 const offset = rule.phoneDesktop.widgetOffsets[item.dataset.field] || { x: 0, y: 0 };
@@ -4086,16 +4373,30 @@ function renderStatusPreview(host) {
                     avatar.classList.add('is-placeholder');
                 });
                 avatar.append(avatarImage);
-                bindPhoneAvatarDiy(avatar, avatarImage);
+                bindPhoneAvatarDiy(avatar, avatarImage, openPhoneAvatarEditor);
+            }
+            if (!avatarUrl) {
+                avatar.classList.add('status-atelier-preview-direct-target');
+                avatar.tabIndex = 0;
+                avatar.setAttribute('role', 'button');
+                avatar.setAttribute('aria-label', '点击设置手机个人页头像');
+                avatar.title = '点击设置手机个人页头像';
+                avatar.addEventListener('click', openPhoneAvatarEditor);
+                avatar.addEventListener('keydown', event => {
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    event.preventDefault();
+                    openPhoneAvatarEditor();
+                });
             }
             hero.append(avatar);
-            pageHost.append(
-                hero,
+            const personalCards = [
                 phoneDataCard(personalFields[0], values[0]),
                 phoneDataCard(personalFields[1], values[1], 'is-desire'),
                 phoneDataCard(personalFields[2], values[2], 'is-wide'),
                 phoneDataCard(personalFields[3], values[3], 'is-wide is-thought'),
-            );
+            ];
+            personalCards.forEach((card, index) => bindPhoneFieldTarget(card, page.id, personalFields[index]));
+            pageHost.append(hero, ...personalCards);
             return;
         }
         if (page.id === 'Memo') {
@@ -4115,22 +4416,32 @@ function renderStatusPreview(host) {
                 pageHost.append(diary);
                 return;
             }
-            values.filter(value => phoneText(value)).forEach(value => pageHost.append(makeElement('div', 'zrs-phone-list-card', value)));
+            values.forEach((value, index) => {
+                if (!phoneText(value)) return;
+                const card = makeElement('div', 'zrs-phone-list-card', value);
+                bindPhoneFieldTarget(card, page.id, page.fields?.[index]);
+                pageHost.append(card);
+            });
             if (!pageHost.children.length) pageHost.append(makeElement('div', 'zrs-phone-empty', '暂无备忘事项'));
             return;
         }
         if (page.id === 'Wechat') {
-            phoneTitle.textContent = phoneText(values[0], '未知');
+            const chatTitle = makeElement('span', '', phoneText(values[0], '未知'));
+            phoneTitle.replaceChildren(chatTitle);
+            bindPhoneFieldTarget(chatTitle, page.id, page.fields?.[0]);
             values.slice(1).forEach((value, index) => {
                 if (!phoneText(value)) return;
                 const side = index % 2 === 0 ? 'is-left' : 'is-right';
                 if (!handheldMode) {
-                    pageHost.append(makeElement('div', `zrs-phone-chat ${side}`, value));
+                    const bubble = makeElement('div', `zrs-phone-chat ${side}`, value);
+                    bindPhoneFieldTarget(bubble, page.id, page.fields?.[index + 1]);
+                    pageHost.append(bubble);
                     return;
                 }
                 const row = makeElement('div', `zrs-phone-chat-row ${side}`);
                 const avatar = makeElement('span', 'zrs-phone-chat-avatar', side === 'is-left' ? phoneTitle.textContent.slice(0, 1) : '我');
                 const bubble = makeElement('div', `zrs-phone-chat ${side}`, value);
+                bindPhoneFieldTarget(bubble, page.id, page.fields?.[index + 1]);
                 if (side === 'is-left') row.append(avatar, bubble);
                 else row.append(bubble, avatar);
                 pageHost.append(row);
@@ -4142,10 +4453,13 @@ function renderStatusPreview(host) {
             const itemName = phoneText(values[index]);
             if (!itemName) continue;
             const detail = makeElement('details', 'zrs-phone-shop');
-            detail.append(
-                makeElement('summary', '', itemName),
-                makeElement('div', 'zrs-phone-shop-desc', phoneText(values[index + 1], '暂无说明')),
-            );
+            const itemTitle = makeElement('summary');
+            const itemTitleTarget = makeElement('span', '', itemName);
+            const itemDescription = makeElement('div', 'zrs-phone-shop-desc', phoneText(values[index + 1], '暂无说明'));
+            bindPhoneFieldTarget(itemTitleTarget, page.id, page.fields?.[index]);
+            bindPhoneFieldTarget(itemDescription, page.id, page.fields?.[index + 1]);
+            itemTitle.append(itemTitleTarget);
+            detail.append(itemTitle, itemDescription);
             pageHost.append(detail);
         }
         if (!pageHost.children.length) pageHost.append(makeElement('div', 'zrs-phone-empty', '购物车空空如也'));
@@ -4179,10 +4493,11 @@ function renderStatusPreview(host) {
             avatarButton.append(makeElement('span', 'zrs-chat-avatar is-placeholder', 'TA'));
         }
         const profileCopy = makeElement('div', 'zrs-chat-profile-copy');
-        profileCopy.append(
-            makeElement('strong', '', valueFor('chat_name', page?.label || '当前会话')),
-            makeElement('small', '', valueFor('online', '离线')),
-        );
+        const profileName = makeElement('strong', '', valueFor('chat_name', page?.label || '当前会话'));
+        const profileOnline = makeElement('small', '', valueFor('online', '离线'));
+        bindDirectPreviewTarget(profileName, 'chat_name', fields.find(item => item.id === 'chat_name')?.label || '会话对象');
+        bindDirectPreviewTarget(profileOnline, 'online', fields.find(item => item.id === 'online')?.label || '在线状态');
+        profileCopy.append(profileName, profileOnline);
         profile.append(avatarButton, profileCopy);
         const detail = makeElement('div', 'zrs-chat-details');
         detail.hidden = true;
@@ -4199,10 +4514,11 @@ function renderStatusPreview(host) {
         const contact = makeElement('header', 'zrs-chat-contact');
         const presence = makeElement('span', 'zrs-chat-presence');
         const contactCopy = makeElement('div', 'zrs-chat-contact-copy');
-        contactCopy.append(
-            makeElement('strong', '', valueFor('chat_name', page?.label || '当前会话')),
-            makeElement('small', '', valueFor('online', '离线')),
-        );
+        const contactName = makeElement('strong', '', valueFor('chat_name', page?.label || '当前会话'));
+        const contactOnline = makeElement('small', '', valueFor('online', '离线'));
+        bindDirectPreviewTarget(contactName, 'chat_name', fields.find(item => item.id === 'chat_name')?.label || '会话对象');
+        bindDirectPreviewTarget(contactOnline, 'online', fields.find(item => item.id === 'online')?.label || '在线状态');
+        contactCopy.append(contactName, contactOnline);
         const infoButton = makeElement('button', 'zrs-chat-info');
         infoButton.type = 'button';
         infoButton.setAttribute('aria-label', '展开会话资料');
@@ -4214,7 +4530,7 @@ function renderStatusPreview(host) {
             infoButton.setAttribute('aria-expanded', String(!detail.hidden));
             avatarButton.setAttribute('aria-expanded', String(!detail.hidden));
         };
-        avatarButton.addEventListener('click', toggleDetail);
+        bindDirectMediaTarget(avatarButton);
         infoButton.addEventListener('click', toggleDetail);
 
         const transcript = makeElement('div', 'zrs-chat-transcript');
@@ -4259,6 +4575,7 @@ function renderStatusPreview(host) {
         parseChatConversationLog(valueFor('chat_log')).forEach(item => {
             transcript.append(makeMessage(item.side, item.message, item.time, item.state, item.type, item.duration));
         });
+        bindDirectPreviewTarget(transcript, 'chat_log', fields.find(item => item.id === 'chat_log')?.label || '聊天记录');
         const statusbar = makeElement('footer', 'zrs-chat-statusbar');
         statusbar.append(makeElement('span', '', 'DIY · 外观 / 标题 / 双方头像'), makeElement('b', '', 'AI · 可变长度会话'));
         conversation.append(contact, transcript, statusbar);
@@ -4426,6 +4743,14 @@ function renderStatusPreview(host) {
         else if (rule.structure === 'social') renderSocialPage(page, values);
         else (page?.fields || rule.pageFields).forEach((definition, fieldIndex) => {
             appendPreviewField(pageHost, definition, values[fieldIndex] || previewValue(definition), false, rule.glyph, rule);
+            bindDirectPreviewTarget(
+                pageHost.lastElementChild?.querySelector('.zrs-value'),
+                definition.id,
+                definition.label,
+            );
+            if (definition.kind === 'avatar') {
+                bindDirectMediaTarget(pageHost.lastElementChild?.querySelector('.zrs-field-avatar'));
+            }
         });
         if (!phoneMode && !['chat', 'social'].includes(rule.structure)) bindPreviewFieldReorder(pageHost, rule, 'page');
         [...tabs.children].forEach((button, buttonIndex) => {
@@ -4482,6 +4807,27 @@ function renderStatusPreview(host) {
     let phoneControls = null;
     let phoneCharm = null;
     if (handheldMode) {
+        if (rule.phoneDesktop.shellStyle === 'bandage-pop') {
+            [
+                ['is-one', '照片一', rule.phoneDesktop.stickerPhotoOneUrl],
+                ['is-two', '照片二', rule.phoneDesktop.stickerPhotoTwoUrl],
+            ].forEach(([className, label, url]) => {
+                const photo = makeElement('figure', `zrs-phone-sticker-photo ${className}${url ? '' : ' is-placeholder'}`);
+                if (url) {
+                    const image = makeElement('img');
+                    image.src = url;
+                    image.alt = label;
+                    image.addEventListener('error', () => {
+                        image.remove();
+                        photo.classList.add('is-placeholder');
+                        photo.append(makeElement('span', '', label));
+                    });
+                    photo.append(image);
+                } else photo.append(makeElement('span', '', label));
+                bindPhoneStickerPhotoTarget(photo);
+                phoneHomeGuide.append(photo);
+            });
+        }
         [['Y', 'Wechat'], ['X', 'Personal'], ['B', 'Shop'], ['A', 'Memo']].forEach(([key, appId]) => {
             const app = rule.phoneDesktop.apps.find(item => item.id === appId);
             if (app?.enabled === false) return;
@@ -4533,7 +4879,7 @@ function renderStatusPreview(host) {
     card.append(body);
     if (phoneFrame) root.append(phoneFrame);
     root.append(card);
-    host.replaceChildren(root);
+    host.replaceChildren(root, directEditor);
     if (phoneMode) {
         root.append(tabs);
         if (phoneControls) root.append(phoneControls);
@@ -4629,7 +4975,10 @@ async function resolveStatusRegexScript(input = resolvedStatusExportInput()) {
     if (isStatusBeauty01To15(rule.structure)) {
         const script = await loadStatusBeautyBundledRegex(rule.structure);
         const edited = applyStatusBeautyTextOverrides(script, settings().profileTextOverrides?.[rule.structure]);
-        return applyStatusBeautyMediaSettings(edited, rule.media);
+        return {
+            ...applyStatusBeautyMediaSettings(edited, rule.media),
+            markdownOnly: rule.displayOnlyRegex,
+        };
     }
     const script = buildRegexScript(resolvedInput);
     return isStatusBeauty16To20(rule.structure)
@@ -4776,6 +5125,7 @@ function exportProfile() {
     delete exported.statusWorldbookBindings;
     if (exported.openingSummary) delete exported.openingSummary.apiKey;
     downloadJson('jiuyi-regex-status-profile.json', { format: 'jiuyi-regex-status-profile', version: 2, settings: exported });
+    notify('success', '编辑配置备份已下载');
 }
 
 async function importProfile(fileToImport) {
