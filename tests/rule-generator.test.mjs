@@ -116,6 +116,9 @@ test('personal feed exports a two-sided paper dossier with DIY photos and story-
     assert.match(STATUS_THEME_CSS, /zrs-social-theme-art[^}]*object-fit:cover/);
     assert.match(STATUS_THEME_CSS, /data-theme="personal-dossier"[^}]*zrs-social-scraps[^}]*display:none/);
     assert.match(STATUS_THEME_CSS, /zrs-social-photo img\{filter:none\}/);
+    assert.match(STATUS_THEME_CSS, /data-theme="dossier-clipping"[^}]*--z-paper:#efe2c9/);
+    assert.match(STATUS_THEME_CSS, /data-theme="dossier-clipping"[^}]*zrs-social-theme-art[^}]*object-fit:cover/);
+    assert.match(STATUS_THEME_CSS, /data-theme="dossier-clipping"[^}]*zrs-social-intro-head[^}]*border-left:9px solid #c65b32/);
     const instruction = buildAiInstruction(input);
     assert.match(instruction, /记录日期/);
     assert.match(instruction, /个人介绍 \/ 当前记录/);
