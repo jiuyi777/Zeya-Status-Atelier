@@ -1,3 +1,5 @@
+import { STATUS_BEAUTY_05_09_PRESETS } from './status-beauty-05-09.js';
+
 const BUNDLE_ROOT = new URL('./assets/status-beauty/regexes/', import.meta.url);
 
 const COMMON_10_15_FIELDS = Object.freeze([
@@ -94,6 +96,23 @@ const BUNDLED = Object.freeze({
 
 export const STATUS_BEAUTY_01_15_IDS = Object.freeze(Object.keys(BUNDLED));
 const cache = new Map();
+
+const MOON_COLLAGE_FIELDS = Object.freeze([
+    ['情愫', '填写角色当前情愫数值或简短阶段', 'text', 'affection'],
+    ['欲念', '填写角色当前欲念数值或简短状态', 'text', 'desire'],
+    ['衣冠', '具体描述角色当前衣着、配饰与可见细节', 'long', 'attire'],
+    ['身处', '具体描述角色当前地点与周围环境', 'long', 'location'],
+    ['心语', '第一人称填写角色没有说出口的真实想法', 'long', 'inner_voice'],
+    ['书信', '以角色口吻填写此刻最想传达的话', 'long', 'letter'],
+    ['情愫注', '概括本轮情愫变化及原因', 'long', 'affection_note'],
+    ['欲念注', '概括欲念当前的克制、动摇或变化', 'long', 'desire_note'],
+]);
+
+const BUNDLED_DEFAULT_FIELDS = new Map([
+    ...STATUS_BEAUTY_01_04_10_15_PRESETS.map(item => [item.id, item.fields]),
+    ...STATUS_BEAUTY_05_09_PRESETS.map(item => [item.id, item.fields]),
+    ['moon-collage', MOON_COLLAGE_FIELDS],
+]);
 
 export function isStatusBeauty01To15(structure) {
     return Object.hasOwn(BUNDLED, structure);
@@ -209,6 +228,44 @@ export function buildStatusBeautyBundledPreviewDocument(regexScript) {
     return /<\/body>/i.test(html)
         ? html.replace(/<\/body>/i, `${previewPatch}</body>`)
         : `${html}${previewPatch}`;
+}
+
+function annotateLayoutCaptures(source) {
+    return String(source || '').replace(
+        /<script\b[^>]*>[\s\S]*?<\/script\s*>|<style\b[^>]*>[\s\S]*?<\/style\s*>|<[^>]+>|\$(\d{1,2})/gi,
+        (match, capture) => capture
+            ? `<span class="sta-layout-capture" data-capture="${capture}">${match}</span>`
+            : match,
+    );
+}
+
+export function applyStatusBeautyFieldLayout(regexScript, rule) {
+    const defaults = BUNDLED_DEFAULT_FIELDS.get(rule?.structure) || [];
+    const page = rule?.pages?.[0];
+    const fields = page?.fields || rule?.pageFields || [];
+    const slots = defaults.map((fallback, index) => {
+        const field = fields[index] || {};
+        return {
+            slot: index + 1,
+            id: String(field.id || fallback?.[3] || `field_${index + 1}`),
+            label: String(field.label || fallback?.[0] || `字段${index + 1}`).slice(0, 30),
+        };
+    });
+    const changed = slots.some((slot, index) => (
+        slot.id !== String(defaults[index]?.[3] || '')
+        || slot.label !== String(defaults[index]?.[0] || '')
+    ));
+    if (!changed) return regexScript;
+
+    const payload = JSON.stringify(slots).replace(/</g, '\\u003c');
+    const patch = `<style>.sta-layout-capture{display:contents}</style><script>(function(){var slots=${payload};var root=document.querySelector('.status-card')||Array.from(document.body.children).find(function(node){return node.matches&&node.matches('details,section,article,main,div');})||document.body;if(!root)return;var captures=Array.from(root.querySelectorAll('.sta-layout-capture'));captures.forEach(function(node){var slot=slots[Number(node.dataset.capture)-1];if(!slot)return;node.dataset.staFieldId=slot.id;node.dataset.staFieldSlot=String(slot.slot);node.setAttribute('aria-label',slot.label);if(node.closest('.compact-summary'))return;var branch=node.parentElement;for(var depth=0;branch&&branch!==root&&depth<4;depth+=1,branch=branch.parentElement){var peers=Array.from(branch.querySelectorAll('.sta-layout-capture'));if(!peers.length||peers[0]!==node)continue;var labels=Array.from(branch.querySelectorAll('[data-label],label,.label,.field-label,.status-label,h2,h3,h4,span')).filter(function(candidate){var text=(candidate.textContent||'').trim();return text&&text.length<=24&&!candidate.closest('button')&&!candidate.matches('.sta-layout-capture,[data-capture]')&&!candidate.querySelector('.sta-layout-capture,[data-capture]');});if(labels.length){labels[0].textContent=slot.label;branch.dataset.staFieldId=slot.id;branch.dataset.staFieldSlot=String(slot.slot);break;}}});})();</script>`;
+    const replacement = annotateLayoutCaptures(regexScript?.replaceString);
+    return {
+        ...regexScript,
+        replaceString: /<\/body>/i.test(replacement)
+            ? replacement.replace(/<\/body>/i, `${patch}</body>`)
+            : `${replacement}${patch}`,
+    };
 }
 
 export function applyStatusBeautyTextOverrides(regexScript, overrides = {}) {

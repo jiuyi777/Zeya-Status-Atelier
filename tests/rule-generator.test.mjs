@@ -32,6 +32,7 @@ import {
 } from '../rule-generator.js';
 import {
     STATUS_BEAUTY_01_15_IDS,
+    applyStatusBeautyFieldLayout,
     applyStatusBeautyMediaSettings,
     applyStatusBeautyTextOverrides,
     buildStatusBeautyBundledPreviewDocument,
@@ -312,6 +313,70 @@ test('status beauty visible copy edits are injected into the exported regex', ()
     assert.match(edited.replaceString, /document\.querySelector\('\.status-card'\)\|\|Array\.from\(document\.body\.children\)/);
     assert.match(edited.replaceString, /root\.querySelectorAll\('h1,h2,h3,h4,h5,h6,span,strong,small,em,b,p,label'\)/);
     assert.match(edited.replaceString, /<\/script><\/body>/);
+});
+
+test('status beauty 01 to 15 export the edited field order into their bundled layouts', () => {
+    const script = {
+        scriptName: 'position-preview',
+        replaceString: '```html\n<html><body><article class="status-card"><section><span>时间</span><strong data-capture="1">$1</strong></section><section><span>位置</span><strong data-capture="2">$2</strong></section></article></body></html>\n```',
+    };
+    const preset = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'beauty-current-status-05');
+    const originalRule = normalizeRule({
+        ...RULE_PRESETS.custom,
+        structure: preset.id,
+        pagesText: preset.pagesText,
+        pageFieldsText: preset.fields.map(field => field.join('|')).join('\n'),
+    });
+    assert.equal(applyStatusBeautyFieldLayout(script, originalRule), script);
+
+    const movedFields = [preset.fields[1], preset.fields[0], ...preset.fields.slice(2)];
+    const movedRule = normalizeRule({
+        ...RULE_PRESETS.custom,
+        structure: preset.id,
+        pagesText: preset.pagesText,
+        pageFieldsText: movedFields.map(field => field.join('|')).join('\n'),
+    });
+    const moved = applyStatusBeautyFieldLayout(script, movedRule);
+    assert.notEqual(moved, script);
+    assert.match(moved.replaceString, /var slots=\[\{"slot":1,"id":"location","label":"位置"\},\{"slot":2,"id":"time","label":"时间"\}/);
+    assert.match(moved.replaceString, /class="sta-layout-capture" data-capture="1">\$1<\/span>/);
+    assert.match(moved.replaceString, /node\.dataset\.staFieldSlot=String\(slot\.slot\)/);
+    assert.match(moved.replaceString, /labels\[0\]\.textContent=slot\.label/);
+    assert.match(moved.replaceString, /<\/script><\/body>/);
+    const browserScripts = [...moved.replaceString.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+    assert.ok(browserScripts.length);
+    browserScripts.forEach(match => assert.doesNotThrow(() => new Function(match[1])));
+
+    for (const id of STATUS_BEAUTY_01_15_IDS) {
+        const bundledPreset = STATUS_STRUCTURE_PRESETS.find(item => item.id === id);
+        const meta = statusBeautyBundleMeta(id);
+        const bundledScript = JSON.parse(readFileSync(new URL(`../assets/status-beauty/regexes/${meta.file}`, import.meta.url), 'utf8'));
+        const reorderedFields = [bundledPreset.fields[1], bundledPreset.fields[0], ...bundledPreset.fields.slice(2)];
+        const reorderedRule = normalizeRule({
+            ...RULE_PRESETS.custom,
+            structure: id,
+            pagesText: bundledPreset.pagesText,
+            pageFieldsText: reorderedFields.map(field => field.join('|')).join('\n'),
+        });
+        const reorderedScript = applyStatusBeautyFieldLayout(bundledScript, reorderedRule);
+        assert.notEqual(reorderedScript.replaceString, bundledScript.replaceString, `${id} exports its changed order`);
+        assert.equal(reorderedScript.findRegex, bundledScript.findRegex, `${id} keeps its accepted capture contract`);
+        assert.deepEqual(reorderedScript.placement, bundledScript.placement, `${id} keeps its accepted placement`);
+        assert.match(reorderedScript.replaceString, new RegExp(`"slot":1,"id":"${reorderedFields[0][3]}"`));
+        assert.match(reorderedScript.replaceString, /sta-layout-capture/);
+        assert.match(reorderedScript.replaceString, /<\/body>/i);
+        const reorderedInstruction = buildAiInstruction({
+            ...RULE_PRESETS.custom,
+            structure: id,
+            pagesText: bundledPreset.pagesText,
+            pageFieldsText: reorderedFields.map(field => field.join('|')).join('\n'),
+        });
+        assert.match(reorderedInstruction, new RegExp(`\\{\\{当前角色·${reorderedFields[0][0]}`));
+        const layoutPatch = [...reorderedScript.replaceString.matchAll(/<script>([\s\S]*?)<\/script>/g)]
+            .find(match => match[1].includes('var slots='));
+        assert.ok(layoutPatch, `${id} includes the layout patch`);
+        assert.doesNotThrow(() => new Function(layoutPatch[1]), `${id} layout patch parses`);
+    }
 });
 
 test('status beauty bundled portraits use the selected character, user or URL image', () => {

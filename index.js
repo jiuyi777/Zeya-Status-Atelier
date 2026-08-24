@@ -25,33 +25,34 @@ import {
     parseChatConversationLog,
     parseStatusOutput,
     parseFields,
-} from './rule-generator.js?v=0.11.0';
-import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.0';
+} from './rule-generator.js?v=0.11.1';
+import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.1';
 import {
     STATUS_BEAUTY_01_15_IDS,
+    applyStatusBeautyFieldLayout,
     applyStatusBeautyMediaSettings,
     applyStatusBeautyTextOverrides,
     buildStatusBeautyBundledPreviewDocument,
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.0';
+} from './status-beauty-01-15-bundle.js?v=0.11.1';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
-} from './status-beauty-05-09.js?v=0.11.0';
+} from './status-beauty-05-09.js?v=0.11.1';
 import {
     STATUS_BEAUTY_16_20_IDS,
     buildStatusBeauty16To20Preview,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.0';
+} from './status-beauty-16-20.js?v=0.11.1';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.0';
+} from './opening-home-generator.js?v=0.11.1';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -63,19 +64,19 @@ import {
     parseSummaryResponse,
     responseText,
     usableGreetingRecords,
-} from './response-parser.js?v=0.11.0';
+} from './response-parser.js?v=0.11.1';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.11.0';
+} from './worldbook-routes.js?v=0.11.1';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.11.0';
+} from './entry-dialog.js?v=0.11.1';
 import {
     greetingBindingSummary,
     keepOnlyOpenGreetingCard,
@@ -84,14 +85,14 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.11.0';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.0';
-import { buildCharacterHomepageContext } from './opening-context.js?v=0.11.0';
+} from './greeting-workflow.js?v=0.11.1';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.1';
+import { buildCharacterHomepageContext } from './opening-context.js?v=0.11.1';
 import {
     STATUS_WORLDBOOK_ENTRY_ID,
     buildStatusWorldbookName,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.11.0';
+} from './status-worldbook.js?v=0.11.1';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -112,7 +113,7 @@ import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.0';
+const VERSION = '0.11.1';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -967,20 +968,7 @@ function renderTemplateMediaControls() {
     section.hidden = structure === 'phone' || (!usesAvatar && !usesImage && !usesArchiveImages && !usesAudio);
     if (['chat', 'social'].includes(structure)) section.open = true;
     const title = field('status-atelier-template-media-title');
-    const help = field('status-atelier-template-media-help');
     if (title) title.textContent = usesArchiveImages ? '档案头像与拍立得' : structure === 'profile' ? '当前模板角色字段设置' : structure === 'chat' ? '聊天头像 DIY' : structure === 'social' ? '个人档案 · 图片设置' : usesAudio ? '播放界面素材' : usesImage ? '当前模板配图' : '当前模板头像';
-    if (help) help.textContent = structure === 'profile'
-        ? ''
-        : structure === 'chat'
-        ? '左侧头像可选当前角色、当前 User、自定义 URL 或隐藏；右侧自动读取当前 User 头像。AI 只填写对象、在线状态、聊天内容、时间、语音与已读。'
-        : structure === 'social'
-            ? '选择证件照、档案附图和可替换的纸张拼贴底图。'
-        : usesAudio
-        ? '封面与音频只会进入播放界面，音频不会自动播放。'
-        : usesImage
-            ? '这些图片只会进入当前选中的模板。'
-            : '';
-    if (help) help.hidden = !help.textContent;
     const socialGuide = field('status-atelier-social-data-guide');
     if (socialGuide) socialGuide.hidden = structure !== 'social';
     const avatarSourceWrap = field('status-atelier-media-avatar-source-wrap');
@@ -1168,17 +1156,9 @@ function renderStatusSchema() {
         legendItems[2].innerHTML = '<b>自动锁定</b> 字段 key、标签和捕获结构';
     }
     const editorTitle = field('status-atelier-status-editor-title');
-    const editorHelp = field('status-atelier-status-editor-help');
     const previewHelp = field('status-atelier-preview-help');
     const chatMode = settings().structure === 'chat';
     if (editorTitle) editorTitle.textContent = phoneMode ? 'APP 页面数据' : forumMode ? '论坛版块与回复字段' : chatMode ? '聊天会话数据与 AI 规则' : '字段设置';
-    if (editorHelp) editorHelp.textContent = phoneMode
-        ? '四个页面都写入同一条世界书规则。'
-        : forumMode
-            ? '每版默认 12 楼：主楼 4–6 句，其余每楼 1–3 句；楼层仍可增加、删除或调整顺序。'
-            : chatMode
-                ? 'DIY：六套独立聊天构图、会话标题和左侧头像；右侧固定读取当前 User 头像。AI 动态填写：会话对象、在线状态、12–24 条或更多聊天、时间、语音与已读。'
-                : '显示方式与 AI 内容。';
     if (previewHelp) previewHelp.textContent = forumMode
         ? '主楼 4–6 句 · 其余 1–3 句 · 昵称与内容由 AI 动态生成'
         : phoneMode
@@ -3642,7 +3622,7 @@ function renderStatusBeautyBundledPreview(host, rule) {
     mountStatusBeautyPreview(host, frame, rule, { captureMap, labeled: rule.structure === 'moon-collage' });
     loadStatusBeautyBundledRegex(rule.structure).then(script => {
         if (request !== statusBeautyBundlePreviewRequest || !frame.isConnected) return;
-        frame.srcdoc = buildStatusBeautyBundledPreviewDocument(script);
+        frame.srcdoc = buildStatusBeautyBundledPreviewDocument(applyStatusBeautyFieldLayout(script, rule));
     }).catch(error => {
         if (request !== statusBeautyBundlePreviewRequest || !frame.isConnected) return;
         host.replaceChildren(makeElement('div', 'status-atelier-empty', error.message || '原始正则预览读取失败'));
@@ -4974,7 +4954,8 @@ async function resolveStatusRegexScript(input = resolvedStatusExportInput()) {
     const rule = normalizeRule(resolvedInput);
     if (isStatusBeauty01To15(rule.structure)) {
         const script = await loadStatusBeautyBundledRegex(rule.structure);
-        const edited = applyStatusBeautyTextOverrides(script, settings().profileTextOverrides?.[rule.structure]);
+        const positioned = applyStatusBeautyFieldLayout(script, rule);
+        const edited = applyStatusBeautyTextOverrides(positioned, settings().profileTextOverrides?.[rule.structure]);
         return {
             ...applyStatusBeautyMediaSettings(edited, rule.media),
             markdownOnly: rule.displayOnlyRegex,

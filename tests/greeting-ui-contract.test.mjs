@@ -301,8 +301,7 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /status-atelier-forum-field-slot/);
     assert.match(source, /AI 怎么写这项（可选）/);
     assert.match(source, /isRestrictedPage[\s\S]*?深\(\?:页\|夜\)档案/);
-    assert.match(source, /六套独立聊天构图/);
-    assert.match(source, /左侧头像可选当前角色、当前 User、自定义 URL 或隐藏；右侧自动读取当前 User 头像/);
+    assert.doesNotMatch(source, /六套独立聊天构图|左侧头像可选当前角色、当前 User、自定义 URL 或隐藏/);
     assert.match(source, /structure === 'profile' \? '当前模板角色字段设置'/);
     assert.doesNotMatch(source, /头像会绑定当前角色、当前 user 或图片 URL/);
     assert.match(source, /function bindStatusBeautyPreviewEditing\(frame, rule/);
@@ -335,7 +334,6 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /settings\(\)\.structure === 'profile'[\s\S]*?makePreviewRecords\(previewInput\)/);
     assert.match(styleSource, /data-preview-structure="profile"/);
     assert.match(styleSource, /\.status-atelier-beauty-preview-stack/);
-    assert.match(settingsMarkup, /聊天结构、左右头像和长对话都保留/);
     assert.match(source, /chatConversationSchemaVersion !== 3/);
     assert.match(source, /parseChatConversationLog\(valueFor\('chat_log'\)\)/);
     assert.match(settingsMarkup, /id="status-atelier-chat-appearance"[^>]*hidden open/);
@@ -392,6 +390,12 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /displayOnlyRegex: source\.displayOnlyRegex !== false/);
     assert.match(source, /applyStatusBeautyMediaSettings\(edited, rule\.media\),\s*markdownOnly: rule\.displayOnlyRegex/);
     assert.match(source, /编辑配置备份已下载/);
+    assert.match(source, /delete exported\.openingNotes;[\s\S]*?delete exported\.openingProfiles;[\s\S]*?delete exported\.statusWorldbookBindings;/);
+    assert.match(source, /delete exported\.openingSummary\.apiKey/);
+    assert.match(source, /format: 'jiuyi-regex-status-profile', version: 2, settings: exported/);
+    assert.match(source, /!\['jiuyi-regex-status-profile', 'zeya-regex-status-profile'\]\.includes\(data\?\.format\)/);
+    assert.match(source, /openingNotes: notes,[\s\S]*?openingProfiles: profiles,[\s\S]*?statusWorldbookBindings,[\s\S]*?openingProfilesMigrated: true/);
+    assert.match(source, /stored\.openingSummary\.apiKey = apiKey/);
     assert.match(settingsMarkup, /id="status-atelier-phone-shell-color"[^>]*type="color"/);
     assert.match(source, /'status-atelier-phone-shell-color': 'shellColor'/);
     assert.match(settingsMarkup, /id="status-atelier-phone-diy" class="status-atelier-setting-section status-atelier-collapsible">/);
@@ -415,7 +419,13 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(settingsMarkup, /id="status-atelier-regex-display-only"[^>]*type="checkbox"/);
     assert.match(settingsMarkup, /美化只显示，不发送给 AI/);
     assert.match(settingsMarkup, /APP 页面数据/);
-    assert.match(settingsMarkup, /四个页面都写入同一条世界书规则/);
+    for (const removedHeadingHelp of [
+        '款式、外壳颜色、挂饰与桌面动效。',
+        '壁纸、桌面排版、个人页头像和 APP。',
+        '四个页面都写入同一条世界书规则。',
+        '六套独立主题；聊天结构、左右头像和长对话都保留。',
+    ]) assert.doesNotMatch(settingsMarkup, new RegExp(removedHeadingHelp));
+    assert.doesNotMatch(source, /status-atelier-template-media-help|status-atelier-status-editor-help/);
     assert.match(settingsMarkup, /双击字段名修改 · 拖动字段排序/);
     for (const removedId of ['status-atelier-title', 'status-atelier-subtitle', 'status-atelier-layout', 'status-atelier-theme']) {
         assert.doesNotMatch(settingsMarkup, new RegExp(`id="${removedId}"`));
