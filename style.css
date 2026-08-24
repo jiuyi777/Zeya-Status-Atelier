@@ -3739,6 +3739,12 @@ summary.status-atelier-section-heading {
 .status-atelier-status-palette-library > summary {
     min-height: 44px;
     cursor: pointer;
+    list-style: none;
+}
+
+.status-atelier-status-style-library > summary::-webkit-details-marker,
+.status-atelier-status-palette-library > summary::-webkit-details-marker {
+    display: none;
 }
 
 .status-atelier-status-style-library > summary small,
@@ -4949,15 +4955,95 @@ body:has(.preview-note) [data-status-workspace-panel="status"] .status-atelier-w
 .status-atelier-beauty-preview-frame {
     display: block;
     width: 100%;
-    aspect-ratio: 900 / 580;
-    min-height: 320px;
+    min-height: 220px;
     border: 0;
     border-radius: 12px;
     background: transparent;
 }
 
+.status-atelier-beauty-preview-stack {
+    display: grid;
+    width: 100%;
+    gap: 10px;
+}
+
+.status-atelier-beauty-preview-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: min(100%, 760px);
+    margin-inline: auto;
+    padding: 9px 11px;
+    border: 1px dashed color-mix(in srgb, var(--saw-accent) 72%, transparent);
+    border-radius: 9px;
+    color: var(--SmartThemeBodyColor);
+    background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 86%, transparent);
+    font-size: .76em;
+    line-height: 1.45;
+}
+
+.status-atelier-beauty-preview-actions .menu_button {
+    flex: 0 0 auto;
+}
+
+.status-atelier-beauty-direct-editor {
+    width: min(100%, 760px);
+    margin: 0 auto 8px;
+    border-radius: 10px;
+}
+
+.status-atelier-beauty-editor-note {
+    margin: 0;
+    padding: 9px 11px;
+    border-left: 4px solid var(--saw-accent);
+    color: var(--SmartThemeBodyColor);
+    background: color-mix(in srgb, var(--SmartThemeQuoteColor) 12%, transparent);
+    font-size: .76em;
+    line-height: 1.55;
+}
+
+.status-atelier-beauty-editor-portrait {
+    display: block;
+    width: 112px;
+    height: 148px;
+    margin-inline: auto;
+    border: 5px solid #fff;
+    border-radius: 8px;
+    object-fit: cover;
+    object-position: center 20%;
+    box-shadow: 0 0 0 1px var(--saw-ink), 5px 6px 0 color-mix(in srgb, var(--saw-accent) 55%, transparent);
+}
+
+.status-atelier-schema-row.is-preview-target {
+    outline: 3px solid color-mix(in srgb, var(--saw-accent) 72%, white);
+    outline-offset: 3px;
+    animation: status-atelier-preview-target 1.8s ease both;
+}
+
+@keyframes status-atelier-preview-target {
+    0%, 100% { box-shadow: 0 0 0 0 transparent; }
+    28% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--saw-accent) 18%, transparent); }
+}
+
+.status-atelier-workspace-grid:has(.status-atelier-preview-shell[data-preview-structure="profile"]) {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.status-atelier-preview-shell[data-preview-structure="profile"] {
+    position: static;
+    order: -1;
+    width: min(100%, 940px);
+    margin-inline: auto;
+}
+
 @media (max-width: 700px) {
     .status-atelier-beauty-preview-frame {
-        min-height: 250px;
+        min-height: 220px;
+    }
+
+    .status-atelier-beauty-preview-actions {
+        align-items: stretch;
+        flex-direction: column;
     }
 }

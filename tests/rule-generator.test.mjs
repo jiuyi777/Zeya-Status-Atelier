@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
     PHONE_APP_ICON_ASSETS,
     PHONE_PAGE_SCHEMAS,
@@ -31,9 +32,13 @@ import {
 } from '../rule-generator.js';
 import {
     STATUS_BEAUTY_01_15_IDS,
+    applyStatusBeautyMediaSettings,
+    applyStatusBeautyTextOverrides,
     buildStatusBeautyBundledPreviewDocument,
     statusBeautyBundleMeta,
 } from '../status-beauty-01-15-bundle.js';
+
+const statusBeauty16To20Css = readFileSync(new URL('../status-beauty-16-20.css', import.meta.url), 'utf8');
 
 test('parses any number of switch pages without storing story values', () => {
     const pages = parsePages('喻生|谨慎克制\n喻黎|老城区生活\n旁观者|第三视角');
@@ -65,6 +70,7 @@ test('registers genuinely different component structures and composable palettes
 
 test('personal feed exports a two-sided paper dossier with DIY photos and story-filled records', () => {
     const social = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'social');
+    assert.equal(social.name, '个人档案');
     assert.deepEqual(social.fields.map(field => field[3]), [
         'full_name',
         'identity',
@@ -261,6 +267,14 @@ test('status beauty 01 to 15 map every bundled original regex to its exact AI ou
     assert.equal(new Set(STATUS_BEAUTY_01_15_IDS).size, 15);
     const expectedFiles = Array.from({ length: 15 }, (_, index) => String(index + 1).padStart(2, '0'));
     assert.deepEqual(STATUS_BEAUTY_01_15_IDS.map(id => statusBeautyBundleMeta(id).file.slice(3, 5)), expectedFiles);
+    assert.deepEqual(
+        STATUS_STRUCTURE_PRESETS.find(item => item.id === 'beauty-crimson-letter-01').fields.map(field => field[0]),
+        ['情愫', '欲念', '衣冠', '身处', '心语', '书信', '情愫注', '欲念注', '时间', '当前章节'],
+    );
+    assert.deepEqual(
+        STATUS_STRUCTURE_PRESETS.find(item => item.id === 'moon-collage').fields.map(field => field[0]),
+        ['情愫', '欲念', '衣冠', '身处', '心语', '书信', '情愫注', '欲念注'],
+    );
     for (const id of STATUS_BEAUTY_01_15_IDS) {
         const preset = STATUS_STRUCTURE_PRESETS.find(item => item.id === id);
         assert.ok(preset, `${id} is selectable`);
@@ -281,7 +295,38 @@ test('status beauty 01 to 15 map every bundled original regex to its exact AI ou
         const parsed = parseStatusOutput(input, `<${meta.tag}>\n${body}\n</${meta.tag}>`);
         assert.deepEqual(parsed.pages[0].values, values);
     }
-    assert.equal(buildStatusBeautyBundledPreviewDocument({ replaceString: '```html\n<body>$1 / $12</body>\n```' }), '<body>X / X</body>');
+    const previewDocument = buildStatusBeautyBundledPreviewDocument({ replaceString: '```html\n<body>$1 / $12</body>\n```' });
+    assert.match(previewDocument, /span\.dataset\.capture=match\[1\]/);
+    assert.match(previewDocument, /span\.textContent='X'/);
+    assert.match(previewDocument, /root\.querySelectorAll\('\[data-capture\]'\)/);
+});
+
+test('status beauty visible copy edits are injected into the exported regex', () => {
+    const script = {
+        scriptName: 'preview',
+        replaceString: '```html\n<html><body><article class="status-card"><span>情愫</span><em>渐深</em></article></body></html>\n```',
+    };
+    const edited = applyStatusBeautyTextOverrides(script, { 0: '关系温度', 1: '靠近中' });
+    assert.notEqual(edited, script);
+    assert.match(edited.replaceString, /var edits=\{"0":"关系温度","1":"靠近中"\}/);
+    assert.match(edited.replaceString, /document\.querySelector\('\.status-card'\)\|\|Array\.from\(document\.body\.children\)/);
+    assert.match(edited.replaceString, /root\.querySelectorAll\('h1,h2,h3,h4,h5,h6,span,strong,small,em,b,p,label'\)/);
+    assert.match(edited.replaceString, /<\/script><\/body>/);
+});
+
+test('status beauty bundled portraits use the selected character, user or URL image', () => {
+    const script = {
+        scriptName: 'portrait-preview',
+        replaceString: '```html\n<html><body><article class="status-card"><img class="avatar" src="data:image/png;base64,old" alt="角色头像"></article></body></html>\n```',
+    };
+    const edited = applyStatusBeautyMediaSettings(script, {
+        avatarSource: 'user',
+        avatarUrl: '/thumbnail?type=persona&file=user.png',
+        imageAlt: '当前 User 头像',
+    });
+    assert.match(edited.replaceString, /img\[data-st-avatar\],img\[alt\*="角色头像"\],img\.avatar,img\.art-photo/);
+    assert.match(edited.replaceString, /thumbnail\?type=persona&file=user\.png/);
+    assert.match(edited.replaceString, /image\.setAttribute\('data-st-avatar',''\)/);
 });
 
 test('status beauty 05 to 09 keep the approved field contracts and export their real layouts', () => {
@@ -337,6 +382,7 @@ test('status beauty 05 to 09 keep the approved field contracts and export their 
 });
 
 test('status beauty 16 to 20 keep their own field contracts and export complete interactive documents', () => {
+    assert.match(statusBeauty16To20Css, /header\{position:absolute;z-index:3\}/);
     const expected = new Map([
         ['beauty-mailbox-16', ['时间', '位置', '衣冠', '情愫', '欲念', '来信', '心声']],
         ['beauty-double-heart-17', ['时间', '位置', '衣冠', '情愫', '欲念', '内心状态', '来信']],
@@ -344,6 +390,10 @@ test('status beauty 16 to 20 keep their own field contracts and export complete 
         ['beauty-broadcast-19', ['时间', '位置', '今日播报', '今日宜', '今日忌', '章节', '角色心声', '御神签', '签文']],
         ['beauty-wallet-20', ['时间', '位置', '身体状态', '双手动作', '当前姿态', '心绪', '好感度', '关系状态']],
     ]);
+    for (const id of ['beauty-checklist-18', 'beauty-wallet-20']) {
+        const affection = STATUS_STRUCTURE_PRESETS.find(item => item.id === id).fields.find(field => field[3] === 'affection');
+        assert.deepEqual(affection.slice(1, 3), ['填写0到100之间的整数，只写数字', 'progress']);
+    }
     for (const [id, labels] of expected) {
         const preset = STATUS_STRUCTURE_PRESETS.find(item => item.id === id);
         assert.ok(preset, `${id} is registered`);
@@ -508,7 +558,7 @@ test('phone desktop is editable and exports real app navigation with a back acti
     assert.doesNotMatch(generated, /img\.remit\.ee/);
     assert.match(STATUS_PHONE_CSS, /data-phone-page="Personal"/);
     assert.match(STATUS_PHONE_CSS, /data-phone-page="Wechat"/);
-    assert.deepEqual(PHONE_SHELL_STYLES, ['classic', 'handheld', 'handheld-pink', 'handheld-white', 'bandage-pop', 'mint-archive']);
+    assert.deepEqual(PHONE_SHELL_STYLES, ['classic', 'handheld', 'handheld-pink', 'handheld-white', 'bandage-pop', 'mint-archive', 'blackberry']);
     for (const shellStyle of PHONE_SHELL_STYLES) {
         const shellRule = normalizeRule({ ...phoneInput, phoneDesktop: { shellStyle } });
         assert.equal(shellRule.phoneDesktop.shellStyle, shellStyle);
@@ -525,7 +575,7 @@ test('phone desktop is editable and exports real app navigation with a back acti
     assert.match(STATUS_PHONE_CSS, /prefers-reduced-motion:reduce/);
 });
 
-test('the original phone, three handheld shells, and two touch phone styles are selectable', () => {
+test('the original phone, three handheld shells, two touch phone styles, and blackberry are selectable', () => {
     const preset = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'phone');
     const input = {
         ...RULE_PRESETS.custom,
@@ -583,6 +633,9 @@ test('the original phone, three handheld shells, and two touch phone styles are 
     assert.match(mint, /config\.phoneDesktop\.widgetOffsets\[item\.dataset\.field\]/);
     assert.match(mint, /ownerDocument\.addEventListener\('pointermove',moveWidget,\{passive:false\}\)/);
     assert.match(STATUS_PHONE_CSS, /--z-phone-widget-x/);
+    const blackberry = buildRegexScript({ ...input, phoneDesktop: { shellStyle: 'blackberry' } }).replaceString;
+    assert.match(blackberry, /data-phone-shell="blackberry"/);
+    assert.match(blackberry, /Q  W  E  R  T  Y/);
 });
 
 test('phone DIY settings are normalized separately from AI story values', () => {
@@ -1024,9 +1077,9 @@ test('chat session exports a scrollable variable-length phone-literature convers
     assert.doesNotMatch(CHAT_REFERENCE_CSS, /zrs-chat-bubble::after\{[^}]*border-(?:left|bottom):[^;}]*(?:dashed|dotted)/);
     assert.match(CHAT_REFERENCE_CSS, /zrs-chat-voice-play[^}]*width:32px;height:32px/);
     assert.match(CHAT_REFERENCE_CSS, /@media\(max-width:520px\)[\s\S]*zrs-chat-transcript\{height:430px/);
-    assert.equal(CHAT_APPEARANCE_PRESETS.length, 6);
+    assert.equal(CHAT_APPEARANCE_PRESETS.length, 7);
     assert.deepEqual(CHAT_APPEARANCE_PRESETS.map(item => item.id), [
-        'kitty-pink', 'meow-mono', 'cloud-blue', 'notepad-pink', 'lace-ivory', 'velvet-wine',
+        'kitty-pink', 'meow-mono', 'cloud-blue', 'notepad-pink', 'lace-ivory', 'velvet-wine', 'retro-pink-pc',
     ]);
     for (const appearance of CHAT_APPEARANCE_PRESETS) {
         const appearanceInput = { ...input, chatAppearance: appearance.id };
@@ -1041,6 +1094,7 @@ test('chat session exports a scrollable variable-length phone-literature convers
     assert.match(CHAT_REFERENCE_CSS, /data-chat-appearance="notepad-pink"/);
     assert.match(CHAT_REFERENCE_CSS, /data-chat-appearance="lace-ivory"/);
     assert.match(CHAT_REFERENCE_CSS, /data-chat-appearance="velvet-wine"/);
+    assert.match(CHAT_REFERENCE_CSS, /data-chat-appearance="retro-pink-pc"/);
     assert.match(CHAT_REFERENCE_CSS, /05\/06 are standalone tactile chat cards/);
     assert.match(CHAT_REFERENCE_CSS, /:is\(\[data-chat-appearance="lace-ivory"\],\[data-chat-appearance="velvet-wine"\]\)[^{]*\.zrs-header[^}]*display:none!important/);
     assert.match(CHAT_REFERENCE_CSS, /:is\(\[data-chat-appearance="lace-ivory"\],\[data-chat-appearance="velvet-wine"\]\)[^{]*\.zrs-chat-window\{[^}]*height:930px[^}]*overflow:hidden/);

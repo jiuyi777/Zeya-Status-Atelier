@@ -2,6 +2,7 @@
 html,body{margin:0;width:100%;min-height:100%;overflow:hidden;background:transparent}
 .design-page{display:grid;place-items:center;padding:10px;background:transparent;font-family:"Noto Serif SC","Microsoft YaHei",serif}
 .status-card{position:relative;width:900px;height:560px;overflow:hidden;isolation:isolate}
+header{position:absolute;z-index:3}
 .avatar{position:absolute;object-fit:cover;object-position:center 18%}
 .fold{position:absolute;right:22px;top:18px;z-index:7}
 .status-card [data-label],.status-card [data-value]{font-style:normal}

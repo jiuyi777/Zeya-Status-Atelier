@@ -29,9 +29,12 @@ import {
 import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.0';
 import {
     STATUS_BEAUTY_01_15_IDS,
+    applyStatusBeautyMediaSettings,
+    applyStatusBeautyTextOverrides,
     buildStatusBeautyBundledPreviewDocument,
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
+    statusBeautyBundleMeta,
 } from './status-beauty-01-15-bundle.js?v=0.11.0';
 import {
     buildStatusBeauty05To09Preview,
@@ -176,8 +179,8 @@ const STATUS_TEMPLATES = Object.freeze([
 ]);
 
 const KIND_LABELS = Object.freeze({ text: '短文本', long: '长文本', number: '数字', progress: '数值 0–100', currency: '金额', avatar: '头像' });
-const PHONE_STRUCTURE_IDS = Object.freeze(['phone', 'profile', 'social', 'forum', 'chat', 'music', 'casefile', 'quest', 'archive-status', 'pixel-chat', 'pixel-handheld']);
-const PROFILE_APPEARANCE_IDS = Object.freeze([...STATUS_BEAUTY_01_15_IDS, ...STATUS_BEAUTY_16_20_IDS]);
+const PHONE_STRUCTURE_IDS = Object.freeze(['phone', 'profile', 'social', 'forum', 'chat', 'music', 'quest']);
+const PROFILE_APPEARANCE_IDS = Object.freeze([...STATUS_BEAUTY_01_15_IDS, ...STATUS_BEAUTY_16_20_IDS, 'archive-status']);
 const PROFILE_APPEARANCE_PRESETS = Object.freeze(PROFILE_APPEARANCE_IDS.map((id, index) => {
     const structure = STATUS_STRUCTURE_PRESETS.find(item => item.id === id);
     return { ...structure, code: String(index + 1).padStart(2, '0') };
@@ -185,6 +188,7 @@ const PROFILE_APPEARANCE_PRESETS = Object.freeze(PROFILE_APPEARANCE_IDS.map((id,
 const PROFILE_APPEARANCE_DEFAULT = PROFILE_APPEARANCE_PRESETS[0];
 const MOON_COLLAGE_BACKGROUND_URL = new URL('./assets/status-beauty/images/design-03-background-v3.png', import.meta.url).href;
 const MOON_COLLAGE_FOREGROUND_URL = new URL('./assets/status-beauty/images/design-03-photo-foreground-v1.png', import.meta.url).href;
+const DEFAULT_CHARACTER_PORTRAIT_URL = new URL('./assets/status-beauty/images/default-character-portrait-v1.png', import.meta.url).href;
 const PHONE_DESKTOP_DEFAULTS = Object.freeze({
     shellStyle: 'classic',
     shellColor: '#e6a5c4',
@@ -260,11 +264,14 @@ const DEFAULT_SETTINGS = Object.freeze({
     displayOnlyRegex: true,
     installScope: 'scoped',
     ruleId: 'zeya-status-rule-v2',
-    activeWorkspace: 'opening',
+    activeWorkspace: 'status',
     favoriteHomeTemplates: ['classical', 'newspaper', 'timeline'],
     favoriteStatusTemplates: ['relationship', 'worldNpc'],
     structure: 'phone',
     profileAppearance: PROFILE_APPEARANCE_DEFAULT.id,
+    profileTemplateSchemaVersion: 1,
+    profileTemplateDrafts: {},
+    profileTextOverrides: {},
     title: PHONE_STRUCTURE_DEFAULT.title,
     subtitle: PHONE_STRUCTURE_DEFAULT.subtitle,
     layout: PHONE_STRUCTURE_DEFAULT.layout,
@@ -452,9 +459,21 @@ function settings() {
     if (!ctx?.extensionSettings) return clone(DEFAULT_SETTINGS);
     ctx.extensionSettings[MODULE_NAME] ??= {};
     const stored = ctx.extensionSettings[MODULE_NAME];
+    const legacyStructure = stored.structure;
     const legacyProfileAppearance = PROFILE_APPEARANCE_IDS.includes(stored.structure) ? stored.structure : '';
+    const legacyProfileTemplateSchemaVersion = Number(stored.profileTemplateSchemaVersion || 0);
     for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
         if (!Object.hasOwn(stored, key)) stored[key] = clone(value);
+    }
+    if (legacyStructure === 'archive-status') {
+        stored.structure = 'profile';
+        stored.profileAppearance = 'archive-status';
+    } else if (legacyStructure === 'pixel-chat') {
+        stored.structure = 'chat';
+        stored.chatAppearance = 'retro-pink-pc';
+    } else if (legacyStructure === 'pixel-handheld') {
+        stored.structure = 'phone';
+        stored.phoneDesktop = { ...(stored.phoneDesktop || {}), shellStyle: 'blackberry' };
     }
     if (legacyProfileAppearance) {
         stored.profileAppearance = legacyProfileAppearance;
@@ -462,6 +481,25 @@ function settings() {
     }
     if (!PROFILE_APPEARANCE_IDS.includes(stored.profileAppearance)) {
         stored.profileAppearance = PROFILE_APPEARANCE_DEFAULT.id;
+    }
+    if (!stored.profileTextOverrides || typeof stored.profileTextOverrides !== 'object' || Array.isArray(stored.profileTextOverrides)) {
+        stored.profileTextOverrides = {};
+    }
+    if (!stored.profileTemplateDrafts || typeof stored.profileTemplateDrafts !== 'object' || Array.isArray(stored.profileTemplateDrafts)) {
+        stored.profileTemplateDrafts = {};
+    }
+    if (legacyProfileTemplateSchemaVersion < 1) {
+        const appearance = PROFILE_APPEARANCE_PRESETS.find(item => item.id === stored.profileAppearance) || PROFILE_APPEARANCE_DEFAULT;
+        stored.profileTemplateDrafts = {};
+        if (stored.structure === 'profile') {
+            stored.title = appearance.title;
+            stored.subtitle = appearance.subtitle;
+            stored.layout = appearance.layout;
+            stored.pagesText = appearance.pagesText;
+            stored.sharedFieldsText = (appearance.shared || []).map(item => item.join('|')).join('\n');
+            stored.pageFieldsText = appearance.fields.map(item => item.join('|')).join('\n');
+        }
+        stored.profileTemplateSchemaVersion = 1;
     }
     if (!stored.openingNotes || typeof stored.openingNotes !== 'object' || Array.isArray(stored.openingNotes)) {
         stored.openingNotes = {};
@@ -514,7 +552,7 @@ function settings() {
     }
     stored.layout = activeStructure.layout;
     if (stored.openingSummary.source === 'manual') stored.openingSummary.source = 'main';
-    if (!['opening', 'status'].includes(stored.activeWorkspace)) stored.activeWorkspace = 'opening';
+    if (!['opening', 'status'].includes(stored.activeWorkspace)) stored.activeWorkspace = 'status';
     if (!Array.isArray(stored.favoriteHomeTemplates)) stored.favoriteHomeTemplates = clone(DEFAULT_SETTINGS.favoriteHomeTemplates);
     if (!Array.isArray(stored.favoriteStatusTemplates)) stored.favoriteStatusTemplates = clone(DEFAULT_SETTINGS.favoriteStatusTemplates);
     if (!CHAT_APPEARANCE_PRESETS.some(item => item.id === stored.chatAppearance)) stored.chatAppearance = DEFAULT_SETTINGS.chatAppearance;
@@ -754,9 +792,9 @@ function populateStatusStructureSelect(structureSelect) {
         });
         structureSelect.append(group);
     };
-    appendGroup('手机', ['phone', 'pixel-handheld']);
-    appendGroup('聊天会话', ['chat', 'pixel-chat']);
-    appendGroup('其他状态栏', selectable.map(item => item.id).filter(id => !['phone', 'pixel-handheld', 'chat', 'pixel-chat'].includes(id)));
+    appendGroup('手机桌面', ['phone']);
+    appendGroup('聊天会话', ['chat']);
+    appendGroup('其他状态栏', selectable.map(item => item.id).filter(id => !['phone', 'chat'].includes(id)));
 }
 
 function renderStatusDesignControls() {
@@ -874,14 +912,16 @@ function renderPhoneDesktopControls() {
     const phone = stored.phoneDesktop || DEFAULT_SETTINGS.phoneDesktop;
     const section = field('status-atelier-phone-diy');
     if (section) section.hidden = stored.structure !== 'phone';
+    const appearanceControls = field('status-atelier-phone-appearance');
+    if (appearanceControls) appearanceControls.hidden = stored.structure !== 'phone';
     const appearanceSection = field('status-atelier-appearance-section');
-    if (appearanceSection) appearanceSection.hidden = ['phone', 'forum', 'chat', 'archive-status', 'pixel-chat', 'pixel-handheld'].includes(stored.structure);
+    if (appearanceSection) appearanceSection.hidden = ['phone', 'forum', 'chat'].includes(stored.structure);
     const appearanceTitle = field('status-atelier-appearance-title');
     if (appearanceTitle) appearanceTitle.textContent = stored.structure === 'social'
         ? '个人档案外观与配色'
         : stored.structure === 'profile'
-            ? '人物状态栏 01–20 与配色'
-            : '更多外观与配色';
+            ? '外观与配色'
+            : '外观与配色';
     const socialAppearanceSection = field('status-atelier-social-appearance-section');
     if (socialAppearanceSection) socialAppearanceSection.hidden = stored.structure !== 'social';
     const chatAppearanceSection = field('status-atelier-chat-appearance');
@@ -914,16 +954,19 @@ function renderTemplateMediaControls() {
     const structure = settings().structure;
     const section = field('status-atelier-template-media');
     if (!section) return;
-    const usesAvatar = ['profile', 'social', 'chat', 'casefile', 'archive-status', 'pixel-chat'].includes(structure);
+    const archiveProfile = structure === 'profile' && settings().profileAppearance === 'archive-status';
+    const usesAvatar = ['profile', 'social', 'chat'].includes(structure);
     const usesImage = ['social', 'collage', 'music'].includes(structure);
-    const usesArchiveImages = structure === 'archive-status';
+    const usesArchiveImages = archiveProfile;
     const usesAudio = structure === 'music';
     section.hidden = structure === 'phone' || (!usesAvatar && !usesImage && !usesArchiveImages && !usesAudio);
     if (['chat', 'social'].includes(structure)) section.open = true;
     const title = field('status-atelier-template-media-title');
     const help = field('status-atelier-template-media-help');
-    if (title) title.textContent = structure === 'chat' ? '聊天头像 DIY' : structure === 'social' ? '个人档案 · 图片设置' : usesArchiveImages ? '档案头像与拍立得' : usesAudio ? '播放界面素材' : usesImage ? '当前模板配图' : '当前模板头像';
-    if (help) help.textContent = structure === 'chat'
+    if (title) title.textContent = usesArchiveImages ? '档案头像与拍立得' : structure === 'profile' ? '当前模板角色字段设置' : structure === 'chat' ? '聊天头像 DIY' : structure === 'social' ? '个人档案 · 图片设置' : usesAudio ? '播放界面素材' : usesImage ? '当前模板配图' : '当前模板头像';
+    if (help) help.textContent = structure === 'profile'
+        ? ''
+        : structure === 'chat'
         ? '左侧头像可选当前角色、当前 User、自定义 URL 或隐藏；右侧自动读取当前 User 头像。AI 只填写对象、在线状态、聊天内容、时间、语音与已读。'
         : structure === 'social'
             ? '选择证件照、档案附图和可替换的纸张拼贴底图。'
@@ -931,7 +974,8 @@ function renderTemplateMediaControls() {
         ? '封面与音频只会进入播放界面，音频不会自动播放。'
         : usesImage
             ? '这些图片只会进入当前选中的模板。'
-            : '头像会绑定当前角色、当前 user 或图片 URL。';
+            : '';
+    if (help) help.hidden = !help.textContent;
     const socialGuide = field('status-atelier-social-data-guide');
     if (socialGuide) socialGuide.hidden = structure !== 'social';
     const avatarSourceWrap = field('status-atelier-media-avatar-source-wrap');
@@ -1011,18 +1055,39 @@ function applyStatusStructure(structureId) {
     scheduleStatusPreviewUpdate();
 }
 
+function currentProfileTemplateDraft(stored = settings()) {
+    if (stored.structure !== 'profile' || !PROFILE_APPEARANCE_IDS.includes(stored.profileAppearance)) return null;
+    return {
+        title: stored.title,
+        subtitle: stored.subtitle,
+        layout: stored.layout,
+        pagesText: stored.pagesText,
+        sharedFieldsText: stored.sharedFieldsText,
+        pageFieldsText: stored.pageFieldsText,
+    };
+}
+
+function saveCurrentProfileTemplateDraft(stored = settings()) {
+    const draft = currentProfileTemplateDraft(stored);
+    if (!draft) return;
+    stored.profileTemplateDrafts ??= {};
+    stored.profileTemplateDrafts[stored.profileAppearance] = clone(draft);
+}
+
 function applyProfileAppearance(appearanceId) {
     const appearance = PROFILE_APPEARANCE_PRESETS.find(item => item.id === appearanceId);
     const stored = settings();
     if (!appearance || stored.structure !== 'profile') return false;
+    saveCurrentProfileTemplateDraft(stored);
     stored.profileAppearance = appearance.id;
     stored.variant = 'auto';
-    stored.title = appearance.title;
-    stored.subtitle = appearance.subtitle;
-    stored.layout = appearance.layout;
-    stored.pagesText = appearance.pagesText;
-    stored.sharedFieldsText = (appearance.shared || []).map(field => field.join('|')).join('\n');
-    stored.pageFieldsText = appearance.fields.map(field => field.join('|')).join('\n');
+    const draft = stored.profileTemplateDrafts?.[appearance.id];
+    stored.title = draft?.title ?? appearance.title;
+    stored.subtitle = draft?.subtitle ?? appearance.subtitle;
+    stored.layout = draft?.layout ?? appearance.layout;
+    stored.pagesText = draft?.pagesText ?? appearance.pagesText;
+    stored.sharedFieldsText = draft?.sharedFieldsText ?? (appearance.shared || []).map(field => field.join('|')).join('\n');
+    stored.pageFieldsText = draft?.pageFieldsText ?? appearance.fields.map(field => field.join('|')).join('\n');
     stored.preset = 'custom';
     stored.statusTemplate = 'custom';
     statusAiTestRecords = null;
@@ -1069,6 +1134,7 @@ function serializeFieldDefinitions(definitions) {
     if (sharedControl) sharedControl.value = settings().sharedFieldsText;
     if (pageControl) pageControl.value = settings().pageFieldsText;
     settings().preset = 'custom';
+    saveCurrentProfileTemplateDraft();
     const presetControl = field('status-atelier-preset');
     if (presetControl) presetControl.value = 'custom';
     scheduleStatusPreviewUpdate();
@@ -1168,6 +1234,8 @@ function renderStatusSchema() {
             lastScope = definition.scope;
         }
         const row = makeElement('article', `status-atelier-schema-row${forumMode ? ' is-forum' : ''}`);
+        row.dataset.statusFieldId = definition.id;
+        row.dataset.statusFieldScope = definition.scope;
         const postNumber = Number(definition.id.match(/^post_(\d+)$/)?.[1]);
         const forumPlaces = {
             forum_title: '顶部站名', forum_notice: '顶部公告', board_title: '版块标签',
@@ -1922,6 +1990,7 @@ function readSettingsControl(control) {
         return;
     }
     settings()[key] = control.type === 'checkbox' ? control.checked : control.value;
+    saveCurrentProfileTemplateDraft();
     statusAiTestRecords = null;
     if (!['promptEnabled', 'installScope'].includes(key)) {
         settings().preset = 'custom';
@@ -3073,12 +3142,217 @@ function renderForumPreview(host, previewRecords) {
     host.replaceChildren(root);
 }
 
+function statusBeautyDirectEditorField(labelText, control) {
+    const label = makeElement('label', 'status-atelier-preview-direct-field');
+    label.append(makeElement('span', '', labelText), control);
+    return label;
+}
+
+function createStatusBeautyDirectEditor(rule) {
+    const root = makeElement('section', 'status-atelier-preview-direct-editor status-atelier-beauty-direct-editor');
+    root.hidden = true;
+    const close = () => {
+        root.hidden = true;
+        root.replaceChildren();
+    };
+    const heading = title => {
+        const row = makeElement('div', 'status-atelier-preview-direct-heading');
+        const closeButton = makeElement('button', 'menu_button', '关闭');
+        closeButton.type = 'button';
+        closeButton.addEventListener('click', close);
+        row.append(makeElement('strong', '', title), closeButton);
+        return row;
+    };
+    const show = (children, focusTarget) => {
+        root.replaceChildren(...children);
+        root.hidden = false;
+        focusTarget?.focus();
+        focusTarget?.select?.();
+        root.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+    };
+    const openFieldId = fieldId => {
+        const definitions = fieldDefinitions();
+        const definition = definitions.find(item => item.id === fieldId);
+        if (!definition) return;
+        const labelInput = makeElement('input', 'text_pole');
+        labelInput.value = definition.label;
+        labelInput.maxLength = 30;
+        const kindSelect = makeElement('select', 'text_pole');
+        Object.entries(KIND_LABELS).forEach(([value, text]) => {
+            const option = makeElement('option', '', text);
+            option.value = value;
+            kindSelect.append(option);
+        });
+        kindSelect.value = definition.kind;
+        const instructionInput = makeElement('textarea', 'text_pole');
+        instructionInput.value = definition.instruction;
+        instructionInput.rows = 4;
+        instructionInput.placeholder = '例如：填写角色此刻没有说出口的内心独白';
+        const note = makeElement('p', 'status-atelier-beauty-editor-note', '这是 AI 动态字段，编辑预览中统一显示 X。');
+        const save = makeElement('button', 'menu_button status-atelier-primary-action', '保存并更新预览');
+        save.type = 'button';
+        save.addEventListener('click', () => {
+            const nextLabel = String(labelInput.value || '').trim().slice(0, 30);
+            if (!nextLabel) return;
+            definition.label = nextLabel;
+            definition.kind = kindSelect.value;
+            definition.instruction = String(instructionInput.value || '').trim().slice(0, 300) || '根据当前剧情动态填写';
+            serializeFieldDefinitions(definitions);
+            renderStatusSchema();
+            renderModalStatusSchema();
+            saveSettingsSoon({ snapshotOpening: false });
+        });
+        show([
+            heading(`正在编辑：${definition.label}`),
+            note,
+            statusBeautyDirectEditorField('画面里的字段名称', labelInput),
+            statusBeautyDirectEditorField('显示类型', kindSelect),
+            statusBeautyDirectEditorField('这个位置需要 AI 填写什么？', instructionInput),
+            save,
+        ], labelInput);
+    };
+    const openField = fieldIndex => {
+        const previewDefinition = statusBeautyFieldDefinition(rule, fieldIndex);
+        if (previewDefinition) openFieldId(previewDefinition.id);
+    };
+    const openTitle = nodes => {
+        const stored = settings();
+        const original = String(stored.title || rule.title || nodes?.[0]?.textContent || '').trim();
+        const input = makeElement('input', 'text_pole');
+        input.value = original;
+        input.maxLength = 80;
+        input.addEventListener('input', () => {
+            const next = String(input.value || '').trim();
+            if (next) nodes?.forEach(node => { node.textContent = next; });
+        });
+        const save = makeElement('button', 'menu_button status-atelier-primary-action', '保存并更新预览');
+        save.type = 'button';
+        save.addEventListener('click', () => {
+            const next = String(input.value || '').trim().slice(0, 80);
+            if (!next) return;
+            stored.title = next;
+            const titleControl = field('status-atelier-title');
+            if (titleControl) titleControl.value = next;
+            saveCurrentProfileTemplateDraft(stored);
+            saveSettingsSoon({ snapshotOpening: false });
+            scheduleStatusPreviewUpdate();
+        });
+        show([
+            heading(`正在编辑：${original}`),
+            makeElement('p', 'status-atelier-beauty-editor-note', '这是当前模板的标题；修改只保留在这一款模板里。'),
+            statusBeautyDirectEditorField('状态栏标题', input),
+            save,
+        ], input);
+    };
+    const openText = (structure, key, node) => {
+        const original = String(node?.textContent || '').trim();
+        const input = makeElement('input', 'text_pole');
+        input.value = settings().profileTextOverrides?.[structure]?.[key] || original;
+        input.maxLength = 80;
+        input.addEventListener('input', () => {
+            const next = String(input.value || '').trim();
+            if (node && next) node.textContent = next;
+        });
+        const save = makeElement('button', 'menu_button status-atelier-primary-action', '保存并更新预览');
+        save.type = 'button';
+        save.addEventListener('click', () => {
+            const next = String(input.value || '').trim().slice(0, 80);
+            if (!next) return;
+            settings().profileTextOverrides ??= {};
+            settings().profileTextOverrides[structure] ??= {};
+            settings().profileTextOverrides[structure][key] = next;
+            saveSettingsSoon({ snapshotOpening: false });
+            scheduleStatusPreviewUpdate();
+        });
+        show([
+            heading(`正在编辑：画面文字“${original}”`),
+            makeElement('p', 'status-atelier-beauty-editor-note', '这是固定画面文字；时间、地点、好感度等剧情值仍由 AI 填写并显示为 X。'),
+            statusBeautyDirectEditorField('画面文字', input),
+            save,
+        ], input);
+    };
+    const openMedia = () => {
+        const media = settings().media || clone(DEFAULT_SETTINGS.media);
+        const portrait = makeElement('img', 'status-atelier-beauty-editor-portrait');
+        portrait.src = media.avatarUrl || DEFAULT_CHARACTER_PORTRAIT_URL;
+        portrait.alt = '默认角色头像预览';
+        const source = makeElement('select', 'text_pole');
+        [
+            ['character', '当前角色头像'],
+            ['user', '当前 User 头像'],
+            ['url', '图片 URL'],
+            ['none', '不显示头像'],
+        ].forEach(([value, text]) => {
+            const option = makeElement('option', '', text);
+            option.value = value;
+            source.append(option);
+        });
+        source.value = media.avatarSource || 'character';
+        const url = makeElement('input', 'text_pole');
+        url.type = 'url';
+        url.value = media.avatarUrl || '';
+        url.placeholder = 'https://example.com/avatar.png';
+        url.addEventListener('input', () => {
+            if (url.value.trim()) {
+                source.value = 'url';
+                portrait.src = url.value.trim();
+            } else {
+                portrait.src = DEFAULT_CHARACTER_PORTRAIT_URL;
+            }
+        });
+        const archiveUrls = makeElement('textarea', 'text_pole');
+        archiveUrls.rows = 4;
+        archiveUrls.value = String(media.archiveImageUrls || '');
+        archiveUrls.placeholder = '每行一张拍立得图片 URL';
+        const save = makeElement('button', 'menu_button status-atelier-primary-action', '保存并更新预览');
+        save.type = 'button';
+        save.addEventListener('click', () => {
+            settings().media ??= clone(DEFAULT_SETTINGS.media);
+            settings().media.avatarSource = source.value;
+            settings().media.avatarUrl = url.value.trim();
+            if (rule.structure === 'archive-status') settings().media.archiveImageUrls = archiveUrls.value.trim();
+            statusAiTestRecords = null;
+            renderStatusDesignControls();
+            scheduleStatusPreviewUpdate();
+            saveSettingsSoon({ snapshotOpening: false });
+        });
+        const controls = [
+            heading('正在编辑：角色头像'),
+            makeElement('p', 'status-atelier-beauty-editor-note', rule.structure === 'archive-status' ? '档案状态栏可同时设置角色头像和拍立得图片。' : '21 款共用这套头像设置；没有可用头像时，编辑预览显示默认图。'),
+            portrait,
+            statusBeautyDirectEditorField('头像来源', source),
+            statusBeautyDirectEditorField('图片 URL', url),
+        ];
+        if (rule.structure === 'archive-status') controls.push(statusBeautyDirectEditorField('拍立得图片 URL', archiveUrls));
+        controls.push(save);
+        show(controls, source);
+    };
+    return { root, openField, openFieldId, openTitle, openText, openMedia };
+}
+
+function mountStatusBeautyPreview(host, frame, rule, options = {}) {
+    const editor = createStatusBeautyDirectEditor(rule);
+    const stack = makeElement('div', 'status-atelier-beauty-preview-stack');
+    const actions = makeElement('div', 'status-atelier-beauty-preview-actions');
+    const avatarButton = makeElement('button', 'menu_button', '修改角色头像');
+    avatarButton.type = 'button';
+    avatarButton.addEventListener('click', editor.openMedia);
+    actions.append(
+        makeElement('span', '', '点击画面中的字段名称、X、固定文字或头像即可修改。'),
+        avatarButton,
+    );
+    stack.append(frame, actions, editor.root);
+    host.replaceChildren(stack);
+    bindStatusBeautyPreviewEditing(frame, rule, { ...options, editor });
+    return stack;
+}
+
 function renderStatusBeauty16To20Preview(host, rule, pages) {
     const frame = makeElement('iframe', 'status-atelier-rule-preview status-atelier-beauty-preview-frame');
     frame.title = `${rule.structureName}预览`;
     frame.srcdoc = buildStatusBeauty16To20Preview(rule, pages[0]?.values || []);
     frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-    host.replaceChildren(frame);
+    mountStatusBeautyPreview(host, frame, rule, { labeled: true });
 }
 
 function renderStatusBeauty05To09Preview(host, rule, pages) {
@@ -3086,7 +3360,170 @@ function renderStatusBeauty05To09Preview(host, rule, pages) {
     frame.title = `${rule.structureName}预览`;
     frame.srcdoc = buildStatusBeauty05To09Preview(rule, pages[0]?.values || []);
     frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-    host.replaceChildren(frame);
+    mountStatusBeautyPreview(host, frame, rule, { labeled: true });
+}
+
+function statusBeautyFieldDefinition(rule, fieldIndex) {
+    return rule.pages?.[0]?.fields?.[fieldIndex] || rule.pageFields?.[fieldIndex] || null;
+}
+
+function focusStatusBeautyFieldEditor(rule, fieldIndex, target = 'instruction') {
+    const definition = statusBeautyFieldDefinition(rule, fieldIndex);
+    const host = field('status-atelier-status-schema');
+    if (!definition || !host) return;
+    const row = [...host.querySelectorAll('.status-atelier-schema-row')].find(item => (
+        item.dataset.statusFieldId === definition.id && item.dataset.statusFieldScope === 'page'
+    ));
+    if (!row) return;
+    const section = host.closest('details');
+    if (section) section.open = true;
+    row.classList.remove('is-preview-target');
+    void row.offsetWidth;
+    row.classList.add('is-preview-target');
+    window.setTimeout(() => row.classList.remove('is-preview-target'), 1800);
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (target === 'label') {
+        row.querySelector('input')?.focus();
+        row.querySelector('input')?.select();
+        return;
+    }
+    const details = row.querySelector('details');
+    if (details) details.open = true;
+    row.querySelector('textarea')?.focus();
+}
+
+function statusBeautyPreviewRoot(doc) {
+    return doc?.querySelector?.('.status-card')
+        || [...(doc?.body?.children || [])].find(node => node.matches?.('details,section,article,main,div'))
+        || doc?.body?.firstElementChild
+        || null;
+}
+
+function resizeStatusBeautyPreviewFrame(frame) {
+    const doc = frame.contentDocument;
+    if (!doc?.body) return;
+    const resize = () => {
+        const card = statusBeautyPreviewRoot(doc);
+        if (!card) return;
+        card.style.flex = '0 0 auto';
+        card.style.zoom = '1';
+        card.style.setProperty('transform', 'none', 'important');
+        const naturalWidth = Math.max(card.offsetWidth || 0, Number.parseFloat(doc.defaultView?.getComputedStyle(card).width) || 0, 1);
+        const naturalHeight = Math.max(card.offsetHeight || 0, 1);
+        const availableWidth = Math.max(1, (frame.clientWidth || doc.documentElement.clientWidth || naturalWidth) - 20);
+        const scale = Math.min(1, availableWidth / naturalWidth);
+        card.style.setProperty('transform', `scale(${scale})`, 'important');
+        card.style.transformOrigin = 'top center';
+        doc.body.style.minHeight = `${Math.ceil(naturalHeight * scale + 20)}px`;
+        const contentHeight = naturalHeight * scale + 20;
+        frame.style.height = `${Math.max(220, Math.ceil(contentHeight))}px`;
+    };
+    resize();
+    if (typeof MutationObserver === 'function') {
+        const card = statusBeautyPreviewRoot(doc);
+        if (card) {
+            const observer = new MutationObserver(() => frame.contentWindow?.requestAnimationFrame(resize));
+            observer.observe(card, { attributes: true, attributeFilter: ['class', 'open'] });
+        }
+    }
+    frame.contentWindow?.addEventListener('resize', resize);
+}
+
+function bindStatusBeautyPreviewTarget(node, title, open) {
+    if (!node || typeof open !== 'function') return;
+    node.classList.add('status-atelier-beauty-edit-target');
+    node.tabIndex = 0;
+    node.title = title;
+    node.setAttribute('role', 'button');
+    const activate = event => {
+        event.preventDefault();
+        event.stopPropagation();
+        open();
+    };
+    node.addEventListener('click', activate);
+    node.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        activate(event);
+    });
+}
+
+function makeStatusBeautyLabelEditable(node, rule, fieldIndex, editor) {
+    const definition = statusBeautyFieldDefinition(rule, fieldIndex);
+    if (!definition) return;
+    bindStatusBeautyPreviewTarget(node, `点击编辑“${definition.label}”`, () => editor.openField(fieldIndex));
+}
+
+function statusBeautyStaticTextNodes(doc) {
+    const root = statusBeautyPreviewRoot(doc);
+    if (!root) return [];
+    return [...root.querySelectorAll('h1,h2,h3,h4,h5,h6,span,strong,small,em,b,p,label')].filter(node => {
+        const text = String(node.textContent || '').trim();
+        return text
+            && text.length <= 80
+            && /[A-Za-z0-9\u3400-\u9fff]/.test(text)
+            && !node.closest('button')
+            && !node.matches('[data-capture],[data-value],[data-label],[data-design-title]')
+            && !node.querySelector('[data-capture],[data-value],[data-label]')
+            && node.children.length === 0;
+    });
+}
+
+function makeStatusBeautyStaticTextEditable(node, structure, key, editor) {
+    bindStatusBeautyPreviewTarget(node, '点击修改画面文字', () => editor.openText(structure, key, node));
+}
+
+function bindStatusBeautyPreviewEditing(frame, rule, { labeled = false, captureMap = [], editor } = {}) {
+    frame.addEventListener('load', () => {
+        const doc = frame.contentDocument;
+        if (!doc || !editor) return;
+        const interactionStyle = doc.createElement('style');
+        interactionStyle.textContent = 'html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!important}body{display:flex!important;justify-content:center!important;align-items:flex-start!important;padding:10px!important}.status-atelier-beauty-edit-target{cursor:pointer;pointer-events:auto!important;touch-action:manipulation}.status-atelier-beauty-edit-target:is(:hover,:focus-visible){outline:3px solid #d45f75!important;outline-offset:3px!important}';
+        doc.head?.append(interactionStyle);
+        resizeStatusBeautyPreviewFrame(frame);
+        doc.querySelectorAll('img[data-st-avatar],img[alt*="角色头像"],img.avatar,img.art-photo').forEach(image => {
+            image.setAttribute('data-st-avatar', '');
+            if (rule.media?.avatarSource === 'none') {
+                image.removeAttribute('src');
+                image.hidden = true;
+            } else {
+                image.src = rule.media?.avatarUrl || DEFAULT_CHARACTER_PORTRAIT_URL;
+                image.hidden = false;
+            }
+            bindStatusBeautyPreviewTarget(image, '点击修改角色头像', editor.openMedia);
+        });
+        const textOverrides = settings().profileTextOverrides?.[rule.structure] || {};
+        const definitions = rule.pages?.[0]?.fields || rule.pageFields || [];
+        const designTitleNodes = [...doc.querySelectorAll('[data-design-title]')];
+        designTitleNodes.forEach(node => bindStatusBeautyPreviewTarget(node, '点击修改状态栏标题', () => editor.openTitle(designTitleNodes)));
+        statusBeautyStaticTextNodes(doc).forEach((node, index) => {
+            const key = String(index);
+            if (textOverrides[key]) node.textContent = textOverrides[key];
+            const text = String(node.textContent || '').trim();
+            const fieldIndex = definitions.findIndex(definition => String(definition.label || '').trim() === text);
+            if (fieldIndex >= 0) makeStatusBeautyLabelEditable(node, rule, fieldIndex, editor);
+            else makeStatusBeautyStaticTextEditable(node, rule.structure, key, editor);
+        });
+        doc.querySelectorAll('[data-capture]').forEach(node => {
+            const fieldIndex = captureMap[Number(node.dataset.capture) - 1];
+            if (!Number.isInteger(fieldIndex) || !statusBeautyFieldDefinition(rule, fieldIndex)) return;
+            const definition = statusBeautyFieldDefinition(rule, fieldIndex);
+            const open = () => editor.openField(fieldIndex);
+            bindStatusBeautyPreviewTarget(node, `点击编辑“${definition.label}”`, open);
+            const row = node.closest('section,article,.paper,.record,.entry,.item');
+            if (row && row.querySelectorAll('[data-capture],[data-value]').length === 1 && !row.classList.contains('status-atelier-beauty-edit-target')) {
+                bindStatusBeautyPreviewTarget(row, `点击编辑“${definition.label}”整行`, open);
+            }
+        });
+        if (labeled) {
+            doc.querySelectorAll('[data-label]').forEach(node => makeStatusBeautyLabelEditable(node, rule, Number(node.dataset.label), editor));
+            doc.querySelectorAll('[data-value]').forEach(node => {
+                const fieldIndex = Number(node.dataset.value);
+                if (!Number.isInteger(fieldIndex) || !statusBeautyFieldDefinition(rule, fieldIndex)) return;
+                const definition = statusBeautyFieldDefinition(rule, fieldIndex);
+                bindStatusBeautyPreviewTarget(node, `点击编辑“${definition.label}”`, () => editor.openField(fieldIndex));
+            });
+        }
+    });
 }
 
 let statusBeautyBundlePreviewRequest = 0;
@@ -3095,7 +3532,9 @@ function renderStatusBeautyBundledPreview(host, rule) {
     const frame = makeElement('iframe', 'status-atelier-rule-preview status-atelier-beauty-preview-frame');
     frame.title = `${rule.structureName}原始正则预览`;
     frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-    host.replaceChildren(frame);
+    const meta = statusBeautyBundleMeta(rule.structure);
+    const captureMap = meta?.lines.flatMap(([, indexes]) => indexes) || [];
+    mountStatusBeautyPreview(host, frame, rule, { captureMap, labeled: rule.structure === 'moon-collage' });
     loadStatusBeautyBundledRegex(rule.structure).then(script => {
         if (request !== statusBeautyBundlePreviewRequest || !frame.isConnected) return;
         frame.srcdoc = buildStatusBeautyBundledPreviewDocument(script);
@@ -3115,7 +3554,15 @@ function renderStatusPreview(host) {
         document.head.append(style);
     }
     const previewInput = resolvedStatusInput();
-    const previewRecords = statusAiTestRecords || makePreviewRecords(previewInput);
+    const previewShell = host.closest('.status-atelier-preview-shell');
+    if (previewShell) previewShell.dataset.previewStructure = settings().structure;
+    if ((isStatusBeauty01To15(previewInput.structure) || isStatusBeauty05To09(previewInput.structure) || isStatusBeauty16To20(previewInput.structure))
+        && previewInput.media.avatarSource !== 'none' && !previewInput.media.avatarUrl) {
+        previewInput.media.avatarUrl = DEFAULT_CHARACTER_PORTRAIT_URL;
+    }
+    const previewRecords = settings().structure === 'profile'
+        ? makePreviewRecords(previewInput)
+        : statusAiTestRecords || makePreviewRecords(previewInput);
     const { rule, shared, pages } = previewRecords;
     if (isStatusBeauty01To15(rule.structure)) {
         renderStatusBeautyBundledPreview(host, rule);
@@ -3139,8 +3586,61 @@ function renderStatusPreview(host) {
     }
     if (isOriginalRoleCardStructure(rule.structure)) {
         const root = makeElement('section', 'status-atelier-rule-preview status-atelier-original-rolecard');
-        mountOriginalRoleCard(root, rule, previewRecords);
-        host.replaceChildren(root);
+        const shadow = mountOriginalRoleCard(root, rule, previewRecords);
+        if (rule.structure === 'archive-status' && shadow) {
+            const editor = createStatusBeautyDirectEditor(rule);
+            const stack = makeElement('div', 'status-atelier-beauty-preview-stack');
+            const actions = makeElement('div', 'status-atelier-beauty-preview-actions');
+            const avatarButton = makeElement('button', 'menu_button', '修改角色头像与拍立得');
+            avatarButton.type = 'button';
+            avatarButton.addEventListener('click', editor.openMedia);
+            actions.append(
+                makeElement('span', '', '点击档案中的 X 或头像即可修改字段要求与图片。'),
+                avatarButton,
+            );
+            const editableStyle = document.createElement('style');
+            editableStyle.textContent = '.sta-archive-edit-target{cursor:pointer;outline:1px dashed transparent;outline-offset:3px}.sta-archive-edit-target:is(:hover,:focus-visible){outline-color:#4384c4}.sta-archive-edit-target:focus-visible{border-radius:2px}';
+            shadow.append(editableStyle);
+            const bindField = (selector, fieldId) => {
+                shadow.querySelectorAll(selector).forEach(node => {
+                    node.classList.add('sta-archive-edit-target');
+                    node.tabIndex = 0;
+                    node.title = '点击修改这个 AI 字段';
+                    const open = event => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        editor.openFieldId(fieldId);
+                    };
+                    node.addEventListener('click', open);
+                    node.addEventListener('keydown', event => {
+                        if (event.key === 'Enter' || event.key === ' ') open(event);
+                    });
+                });
+            };
+            Object.entries({
+                '#mvu-time': 'scene_time', '#mvu-good': 'good_omen', '#mvu-bad': 'bad_omen', '#mvu-location': 'location',
+                '#mvu-broadcast': 'broadcast', '.mvu-title': 'scene_title', '#mvu-front-chapter': 'front_chapter',
+                '#mvu-front-thought': 'front_thought', '#mvu-back-chapter': 'back_chapter', '#mvu-back-thought': 'back_thought',
+                '#mvu-letter-to': 'letter_to', '#mvu-letter-body': 'letter_body', '#mvu-letter-from': 'letter_from',
+                '#mvu-photo-loc': 'photo_location', '#mvu-omi-level': 'fortune_level', '#mvu-omi-text': 'fortune_text',
+            }).forEach(([selector, fieldId]) => bindField(selector, fieldId));
+            shadow.querySelectorAll('.fb-avatar-frame,.fb-polaroid-img-container').forEach(node => {
+                node.classList.add('sta-archive-edit-target');
+                node.tabIndex = 0;
+                node.title = '点击修改头像与拍立得';
+                const open = event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    editor.openMedia();
+                };
+                node.addEventListener('click', open);
+                node.addEventListener('keydown', event => {
+                    if (event.key === 'Enter' || event.key === ' ') open(event);
+                });
+            });
+            stack.append(root, actions, editor.root);
+            host.replaceChildren(stack);
+        } else host.replaceChildren(root);
         return;
     }
     const root = makeElement('section', 'status-atelier-rule-preview zeya-regex-status');
@@ -3475,7 +3975,8 @@ function renderStatusPreview(host) {
             petals.setAttribute('aria-hidden', 'true');
             for (let index = 0; index < 15; index += 1) {
                 const decoration = makeElement('i');
-                if (handheldMode) decoration.innerHTML = PHONE_DECORATION_MARKUP[rule.phoneDesktop.decorationStyle] || PHONE_DECORATION_MARKUP.snow;
+                decoration.classList.add('has-custom-decoration');
+                decoration.innerHTML = PHONE_DECORATION_MARKUP[rule.phoneDesktop.decorationStyle] || PHONE_DECORATION_MARKUP.snow;
                 petals.append(decoration);
             }
             body.append(petals);
@@ -3532,7 +4033,7 @@ function renderStatusPreview(host) {
         body.append(phoneHomeGuide);
     }
     const phonePagebar = makeElement('div', 'zrs-phone-pagebar');
-    const touchPhoneMode = ['bandage-pop', 'mint-archive'].includes(rule.phoneDesktop.shellStyle);
+    const touchPhoneMode = ['bandage-pop', 'mint-archive', 'blackberry'].includes(rule.phoneDesktop.shellStyle);
     const phoneBack = makeElement('button', 'zrs-phone-back', touchPhoneMode ? '‹' : handheldMode ? '返回' : '‹');
     phoneBack.type = 'button';
     phoneBack.setAttribute('aria-label', '返回状态主页');
@@ -4125,9 +4626,15 @@ function safeFileName(value) {
 async function resolveStatusRegexScript(input = resolvedStatusExportInput()) {
     const resolvedInput = await input;
     const rule = normalizeRule(resolvedInput);
-    return isStatusBeauty01To15(rule.structure)
-        ? loadStatusBeautyBundledRegex(rule.structure)
-        : buildRegexScript(resolvedInput);
+    if (isStatusBeauty01To15(rule.structure)) {
+        const script = await loadStatusBeautyBundledRegex(rule.structure);
+        const edited = applyStatusBeautyTextOverrides(script, settings().profileTextOverrides?.[rule.structure]);
+        return applyStatusBeautyMediaSettings(edited, rule.media);
+    }
+    const script = buildRegexScript(resolvedInput);
+    return isStatusBeauty16To20(rule.structure)
+        ? applyStatusBeautyTextOverrides(script, settings().profileTextOverrides?.[rule.structure])
+        : script;
 }
 
 async function downloadRegex() {
@@ -5040,7 +5547,7 @@ function buildGreetingModal() {
                         <summary><strong>调整状态栏</strong><small>结构、字段与色卡</small></summary>
                         <div class="status-atelier-modal-status-controls">
                             <label>状态栏模板<select id="status-atelier-modal-status-structure" class="text_pole"></select></label>
-                            <label>人物状态栏 01–20<select id="status-atelier-modal-status-style" class="text_pole"></select></label>
+                            <label>人物状态栏外观<select id="status-atelier-modal-status-style" class="text_pole"></select></label>
                         </div>
                         <details class="status-atelier-modal-schema-editor">
                             <summary><strong>字段与 AI 动态数值</strong><small>增加、改名、改类型或删除</small></summary>

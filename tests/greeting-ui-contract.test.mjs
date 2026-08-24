@@ -92,8 +92,8 @@ test('status workspace exposes component, palette, real avatar and audio control
     }
     assert.match(settingsMarkup, /拍立得图片链接（每行一个，随机显示）/);
     assert.match(source, /'status-atelier-archive-image-urls': 'archiveImageUrls'/);
-    assert.match(settingsMarkup, /人物状态栏 01–20/);
-    assert.match(settingsMarkup, /26 套色卡/);
+    assert.match(settingsMarkup, /<strong>人物状态栏<\/strong>/);
+    assert.match(settingsMarkup, /26 套配色/);
     assert.match(source, /thumbnail\('avatar', avatar\)/);
     assert.match(source, /thumbnail\('persona', user_avatar\)/);
     assert.match(source, /parseStatusOutput\(input, response\)/);
@@ -101,14 +101,19 @@ test('status workspace exposes component, palette, real avatar and audio control
     assert.doesNotMatch(source, /instructionWrap\.append\(instruction\)/);
 });
 
-test('profile appearance keeps structure profile while exposing status beauty 01 to 20', () => {
-    assert.match(source, /const PROFILE_APPEARANCE_IDS = Object\.freeze\(\[\.\.\.STATUS_BEAUTY_01_15_IDS, \.\.\.STATUS_BEAUTY_16_20_IDS\]\)/);
+test('profile appearance keeps structure profile while exposing status beauty 01 to 21', () => {
+    assert.match(source, /const PROFILE_APPEARANCE_IDS = Object\.freeze\(\[\.\.\.STATUS_BEAUTY_01_15_IDS, \.\.\.STATUS_BEAUTY_16_20_IDS, 'archive-status'\]\)/);
     assert.match(source, /profileAppearance: PROFILE_APPEARANCE_DEFAULT\.id/);
+    assert.match(source, /profileTemplateSchemaVersion: 1/);
+    assert.match(source, /profileTemplateDrafts: \{\}/);
+    assert.match(source, /legacyProfileTemplateSchemaVersion < 1[\s\S]*?stored\.profileTemplateDrafts = \{\}[\s\S]*?stored\.pageFieldsText = appearance\.fields\.map/);
+    assert.match(source, /function saveCurrentProfileTemplateDraft\(stored = settings\(\)\)/);
+    assert.match(source, /stored\.profileTemplateDrafts\?\.\[appearance\.id\]/);
     assert.match(source, /function applyProfileAppearance\(appearanceId\)/);
     assert.match(source, /stored\.structure = 'profile'/);
     assert.match(source, /async function resolveStatusRegexScript\(input = resolvedStatusExportInput\(\)\)/);
     assert.match(source, /isStatusBeauty01To15\(rule\.structure\)[\s\S]*?loadStatusBeautyBundledRegex\(rule\.structure\)/);
-    assert.match(settingsMarkup, /人物状态栏 01–20/);
+    assert.match(settingsMarkup, /<strong>人物状态栏<\/strong>/);
 });
 
 test('quest template opens the dedicated map editor inside the main plugin', () => {
@@ -223,9 +228,10 @@ test('modal and palettes stay inside mobile viewport and palette library is coll
     assert.doesNotMatch(settingsMarkup, /status-atelier-status-logo-library/);
     assert.doesNotMatch(source, /status-atelier-status-logo-library/);
     assert.match(source, /structure: 'phone'/);
-    assert.match(source, /PHONE_STRUCTURE_IDS = Object\.freeze\(\['phone', 'profile', 'social', 'forum', 'chat', 'music', 'casefile', 'quest', 'archive-status', 'pixel-chat', 'pixel-handheld'\]\)/);
-    assert.match(settingsMarkup, /<summary><strong>26 套色卡<\/strong><\/summary>/);
-    assert.match(settingsMarkup, /<summary><strong>人物状态栏 01–20<\/strong><small>20 款完整设计；每款保留自己的字段与构图<\/small><\/summary>/);
+    assert.match(source, /PHONE_STRUCTURE_IDS = Object\.freeze\(\['phone', 'profile', 'social', 'forum', 'chat', 'music', 'quest'\]\)/);
+    assert.match(settingsMarkup, /<summary><strong>色卡<\/strong><small>26 套配色<\/small><\/summary>/);
+    assert.match(settingsMarkup, /<details class="status-atelier-status-style-library" open>[\s\S]*?<strong>人物状态栏<\/strong><small>21 款完整设计；每款保留自己的字段与构图<\/small>/);
+    assert.match(styleSource, /status-atelier-status-style-library > summary::\-webkit-details-marker[\s\S]*?status-atelier-status-palette-library > summary::\-webkit-details-marker[\s\S]*?display:\s*none/);
     assert.match(styleSource, /max-height:\s*calc\(100dvh - 12px - env\(safe-area-inset-top\) - env\(safe-area-inset-bottom\)\)/);
     assert.match(styleSource, /\.status-atelier-dialog-body\s*\{[\s\S]*?overflow-y:\s*auto;[\s\S]*?overscroll-behavior:\s*contain;/);
 });
@@ -267,8 +273,8 @@ test('status workspace exposes a short one-click path and hides customization by
     assert.doesNotMatch(source, /id="status-atelier-modal-status-fill-mode"/);
     assert.match(source, /class="status-atelier-modal-status-advanced">/);
     assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?APP 页面数据/);
-    assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?更多外观与配色/);
-    assert.match(settingsMarkup, /id="status-atelier-template-media"[\s\S]*?当前模板素材/);
+    assert.match(settingsMarkup, /<details id="status-atelier-appearance-section" class="status-atelier-setting-section status-atelier-collapsible" open>[\s\S]*?外观与配色/);
+    assert.match(settingsMarkup, /id="status-atelier-template-media"[\s\S]*?当前模板角色字段设置/);
     assert.doesNotMatch(settingsMarkup, /可选：头像、配图与音乐/);
     const block = source.match(/async function installRegex\(scope\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(block, /settings\(\)\.promptEnabled = false/);
@@ -281,11 +287,11 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.doesNotMatch(settingsMarkup, /换素材与动效|都是独立模板/);
     assert.match(settingsMarkup, /status-atelier-setting-section status-atelier-collapsible" open>[\s\S]*?选择状态栏模板/);
     assert.doesNotMatch(settingsMarkup, /外观改字体、边框、材质、圆角和组件造型|色卡只控制颜色/);
-    assert.match(settingsMarkup, /id="status-atelier-appearance-section"[^>]*>[\s\S]*?<h4[^>]*>更多外观与配色<\/h4>/);
-    assert.match(source, /appearanceSection\.hidden = \['phone', 'forum', 'chat', 'archive-status', 'pixel-chat', 'pixel-handheld'\]\.includes\(stored\.structure\)/);
+    assert.match(settingsMarkup, /id="status-atelier-appearance-section"[^>]*open>[\s\S]*?<h4[^>]*>外观与配色<\/h4>/);
+    assert.match(source, /appearanceSection\.hidden = \['phone', 'forum', 'chat'\]\.includes\(stored\.structure\)/);
     assert.match(source, /function populateStatusStructureSelect\(structureSelect\)/);
-    assert.match(source, /appendGroup\('手机', \['phone', 'pixel-handheld'\]\)/);
-    assert.match(source, /appendGroup\('聊天会话', \['chat', 'pixel-chat'\]\)/);
+    assert.match(source, /appendGroup\('手机桌面', \['phone'\]\)/);
+    assert.match(source, /appendGroup\('聊天会话', \['chat'\]\)/);
     assert.match(source, /appendGroup\('其他状态栏'/);
     assert.match(source, /forumSkinButton[\s\S]*?settings\(\)\.forumSkin = skin\.id/);
     assert.match(settingsMarkup, /<details id="status-atelier-forum-skins-section"[^>]*status-atelier-collapsible[^>]*open hidden>/);
@@ -297,6 +303,38 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /isRestrictedPage[\s\S]*?深\(\?:页\|夜\)档案/);
     assert.match(source, /六套独立聊天构图/);
     assert.match(source, /左侧头像可选当前角色、当前 User、自定义 URL 或隐藏；右侧自动读取当前 User 头像/);
+    assert.match(source, /structure === 'profile' \? '当前模板角色字段设置'/);
+    assert.doesNotMatch(source, /头像会绑定当前角色、当前 user 或图片 URL/);
+    assert.match(source, /function bindStatusBeautyPreviewEditing\(frame, rule/);
+    assert.match(source, /function makeStatusBeautyStaticTextEditable\(node, structure, key, editor\)/);
+    assert.match(source, /function createStatusBeautyDirectEditor\(rule\)/);
+    assert.match(source, /function mountStatusBeautyPreview\(host, frame, rule/);
+    assert.match(source, /点击画面中的字段名称、X、固定文字或头像即可修改/);
+    assert.match(source, /修改角色头像/);
+    assert.match(source, /这个位置需要 AI 填写什么？/);
+    assert.match(source, /状态栏标题/);
+    assert.match(source, /querySelectorAll\('\[data-design-title\]'\)/);
+    assert.match(source, /editor\.openTitle\(designTitleNodes\)/);
+    assert.match(source, /这是 AI 动态字段，编辑预览中统一显示 X/);
+    assert.match(source, /点击修改角色头像/);
+    assert.match(source, /img\[data-st-avatar\],img\[alt\*="角色头像"\],img\.avatar,img\.art-photo/);
+    assert.match(source, /applyStatusBeautyMediaSettings\(edited, rule\.media\)/);
+    assert.match(source, /profileTextOverrides\[structure\]\[key\] = next/);
+    assert.match(source, /applyStatusBeautyTextOverrides\(script, settings\(\)\.profileTextOverrides\?\.\[rule\.structure\]\)/);
+    assert.match(source, /querySelectorAll\('\[data-capture\]'\)/);
+    assert.match(source, /querySelectorAll\('\[data-label\]'\)/);
+    assert.match(source, /editor\.openField\(fieldIndex\)/);
+    assert.match(source, /DEFAULT_CHARACTER_PORTRAIT_URL/);
+    assert.match(source, /function statusBeautyPreviewRoot\(doc\)/);
+    assert.match(source, /card\.style\.flex = '0 0 auto'/);
+    assert.doesNotMatch(source, /naturalWidth = Math\.max\(card\.scrollWidth/);
+    assert.match(source, /naturalWidth = Math\.max\(card\.offsetWidth/);
+    assert.match(source, /const scale = Math\.min\(1, availableWidth \/ naturalWidth\)/);
+    assert.match(source, /card\.style\.setProperty\('transform', `scale\(\$\{scale\}\)`, 'important'\)/);
+    assert.match(source, /new MutationObserver\(\(\) => frame\.contentWindow\?\.requestAnimationFrame\(resize\)\)/);
+    assert.match(source, /settings\(\)\.structure === 'profile'[\s\S]*?makePreviewRecords\(previewInput\)/);
+    assert.match(styleSource, /data-preview-structure="profile"/);
+    assert.match(styleSource, /\.status-atelier-beauty-preview-stack/);
     assert.match(settingsMarkup, /聊天结构、左右头像和长对话都保留/);
     assert.match(source, /chatConversationSchemaVersion !== 3/);
     assert.match(source, /parseChatConversationLog\(valueFor\('chat_log'\)\)/);
@@ -308,6 +346,7 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(settingsMarkup, /data-chat-appearance="notepad-pink"/);
     assert.match(settingsMarkup, /data-chat-appearance="lace-ivory"/);
     assert.match(settingsMarkup, /data-chat-appearance="velvet-wine"/);
+    assert.match(source, /retro-pink-pc/);
     assert.match(source, /if \(\['chat', 'social'\]\.includes\(structure\)\) section\.open = true/);
     assert.match(source, /structure !== 'chat' && settings\(\)\.media\?\.avatarSource !== 'url'/);
     assert.match(source, /chatAppearanceSection\.hidden = stored\.structure !== 'chat'/);
@@ -320,17 +359,19 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /'status-atelier-phone-icon-scale': 'iconScale'/);
     assert.match(source, /ownerDocument\.addEventListener\('pointermove', move, \{ passive: false \}\)/);
     assert.match(source, /moveEvent\.pointerId !== event\.pointerId/);
-    assert.match(settingsMarkup, /id="status-atelier-phone-shell-style"[\s\S]*?value="classic"[\s\S]*?value="handheld"[\s\S]*?value="handheld-pink"[\s\S]*?value="handheld-white"[\s\S]*?value="bandage-pop"[\s\S]*?value="mint-archive"/);
+    assert.match(settingsMarkup, /id="status-atelier-phone-shell-style"[\s\S]*?value="classic"[\s\S]*?value="handheld"[\s\S]*?value="handheld-pink"[\s\S]*?value="handheld-white"[\s\S]*?value="bandage-pop"[\s\S]*?value="mint-archive"[\s\S]*?value="blackberry"/);
     assert.match(settingsMarkup, /02 粉色心形掌机/);
     assert.match(settingsMarkup, /03 白色竖键掌机/);
     assert.match(settingsMarkup, /04 黑粉贴纸小手机/);
     assert.match(settingsMarkup, /05 薄荷格纹小手机/);
+    assert.match(settingsMarkup, /06 黑莓键盘手机/);
     assert.doesNotMatch(settingsMarkup, /value="(?:clamshell|orbit|slider)"|横向掌机（新增款）/);
     assert.match(source, /'status-atelier-phone-shell-style': 'shellStyle'/);
     assert.match(source, /displayOnlyRegex: source\.displayOnlyRegex !== false/);
     assert.match(settingsMarkup, /id="status-atelier-phone-shell-color"[^>]*type="color"/);
     assert.match(source, /'status-atelier-phone-shell-color': 'shellColor'/);
     assert.match(settingsMarkup, /id="status-atelier-phone-diy" class="status-atelier-setting-section status-atelier-collapsible">/);
+    assert.match(settingsMarkup, /id="status-atelier-phone-appearance" class="status-atelier-setting-section status-atelier-collapsible" open>/);
     assert.match(source, /forumPreviewDraftForSkin/);
     assert.doesNotMatch(source, /status-atelier-forum-edit-toggle|forumPreviewEditMode/);
     assert.match(source, /dataForumPreviewEditable|forumPreviewEditable/);
@@ -355,7 +396,7 @@ test('status workbench separates templates, appearance and palettes and supports
     for (const removedId of ['status-atelier-title', 'status-atelier-subtitle', 'status-atelier-layout', 'status-atelier-theme']) {
         assert.doesNotMatch(settingsMarkup, new RegExp(`id="${removedId}"`));
     }
-    assert.ok(settingsMarkup.indexOf('更多外观与配色') < settingsMarkup.indexOf('启用状态栏'));
+    assert.ok(settingsMarkup.indexOf('外观与配色') < settingsMarkup.indexOf('启用状态栏'));
     assert.match(settingsMarkup, /<section class="status-atelier-setting-section status-atelier-advanced status-atelier-download-actions">[\s\S]*?<h4>手动下载与全局安装<\/h4>/);
     assert.match(source, /bindPreviewFieldLabelEditor/);
     assert.match(source, /bindPreviewTitleEditor/);
