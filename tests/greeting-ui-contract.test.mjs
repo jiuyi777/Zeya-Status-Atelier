@@ -338,9 +338,10 @@ test('personal feed clearly separates DIY media from story data and previews a t
     assert.match(source, /zrs-social-theme-art/);
     assert.match(source, /blue-fabric-scrapbook-v1-compact\.jpg/);
     assert.match(source, /new URL\('\.\/assets\/personal-feed\/blue-fabric-scrapbook-v1-compact\.jpg', import\.meta\.url\)\.href/);
+    assert.match(source, /new URL\('\.\/assets\/personal-feed\/editorial-clipping-dossier-v1\.jpg', import\.meta\.url\)\.href/);
     assert.match(source, /resolvedStatusExportInput/);
     assert.match(settingsMarkup, /id="status-atelier-theme-asset-url"/);
-    assert.match(settingsMarkup, /留空时仅在插件预览里显示内置蓝布插画/);
+    assert.match(settingsMarkup, /留空时预览当前外观的内置插画/);
     assert.match(source, /output\.themeAssetUrl = String\(source\.media\?\.themeAssetUrl \|\| ''\)\.trim\(\)/);
     assert.doesNotMatch(source, /blobAsDataUrl|socialThemeArtDataUrlPromise/);
     assert.match(source, /physical_state/);

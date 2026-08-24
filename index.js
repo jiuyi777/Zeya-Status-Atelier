@@ -83,7 +83,10 @@ const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
 const VERSION = '0.10.0';
 const OPENING_HOME_SCHEMA_VERSION = 2;
-const SOCIAL_THEME_ART_URL = new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href;
+const SOCIAL_THEME_ART_URLS = Object.freeze({
+    'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
+    'dossier-clipping': new URL('./assets/personal-feed/editorial-clipping-dossier-v1.jpg', import.meta.url).href,
+});
 
 const HOME_TEMPLATES = Object.freeze([
     {
@@ -1616,6 +1619,9 @@ function readPhoneDesktopControl(control) {
 }
 
 function resolvedStatusInput(source = settings()) {
+    const socialThemeAssetUrl = source.structure === 'social'
+        ? String(source.media?.themeAssetUrl || '').trim() || SOCIAL_THEME_ART_URLS[source.theme] || ''
+        : '';
     const output = {
         ruleId: source.ruleId,
         ruleName: source.ruleName,
@@ -1631,9 +1637,7 @@ function resolvedStatusInput(source = settings()) {
         pagesText: source.pagesText,
         sharedFieldsText: source.sharedFieldsText,
         pageFieldsText: source.pageFieldsText,
-        themeAssetUrl: source.structure === 'social' && source.theme === 'personal-dossier'
-            ? String(source.media?.themeAssetUrl || '').trim() || SOCIAL_THEME_ART_URL
-            : '',
+        themeAssetUrl: socialThemeAssetUrl,
         media: { ...DEFAULT_SETTINGS.media, ...(source.media || {}) },
         phoneDesktop: clone(source.phoneDesktop || DEFAULT_SETTINGS.phoneDesktop),
     };
@@ -1668,7 +1672,7 @@ function resolvedStatusInput(source = settings()) {
 
 function resolvedStatusExportInput(source = settings()) {
     const output = resolvedStatusInput(source);
-    if (output.structure === 'social' && output.theme === 'personal-dossier') {
+    if (output.structure === 'social') {
         output.themeAssetUrl = String(source.media?.themeAssetUrl || '').trim();
     }
     return output;
