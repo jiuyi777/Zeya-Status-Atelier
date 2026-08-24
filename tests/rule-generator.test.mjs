@@ -29,6 +29,11 @@ import {
     parseFields,
     parsePages,
 } from '../rule-generator.js';
+import {
+    STATUS_BEAUTY_01_15_IDS,
+    buildStatusBeautyBundledPreviewDocument,
+    statusBeautyBundleMeta,
+} from '../status-beauty-01-15-bundle.js';
 
 test('parses any number of switch pages without storing story values', () => {
     const pages = parsePages('喻生|谨慎克制\n喻黎|老城区生活\n旁观者|第三视角');
@@ -37,8 +42,8 @@ test('parses any number of switch pages without storing story values', () => {
 });
 
 test('registers genuinely different component structures and composable palettes', () => {
-    assert.equal(STATUS_STRUCTURE_PRESETS.length, 13);
-    assert.equal(new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id)).size, 13);
+    assert.equal(STATUS_STRUCTURE_PRESETS.length, 33);
+    assert.equal(new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id)).size, 33);
     assert.equal(STATUS_PALETTE_PRESETS.length, 26);
     assert.equal(new Set(STATUS_PALETTE_PRESETS.map(item => item.id)).size, 26);
     assert.ok(STATUS_PALETTE_PRESETS.every(item => ['accent', 'background', 'card', 'text', 'muted'].every(key => /^#[0-9a-f]{6}$/i.test(item[key]))));
@@ -232,13 +237,136 @@ test('the workbench can reuse every exported theme instead of showing a color-on
 
 test('removes the rejected 40-card recipe collection from selectable structures', () => {
     const ids = STATUS_STRUCTURE_PRESETS.map(item => item.id);
-    assert.deepEqual(ids, ['phone', 'profile', 'archive-status', 'pixel-chat', 'pixel-handheld', 'social', 'forum', 'chat', 'collage', 'music', 'quest', 'casefile', 'custom']);
+    assert.deepEqual(ids, [
+        'phone', 'profile', 'archive-status', 'pixel-chat', 'pixel-handheld', 'social', 'forum', 'chat', 'collage', 'music', 'quest', 'casefile',
+        'beauty-crimson-letter-01', 'beauty-burgundy-album-02', 'moon-collage', 'beauty-dossier-04',
+        'beauty-current-status-05', 'beauty-card-status-06', 'beauty-letter-status-07', 'beauty-record-status-08', 'beauty-archive-status-09',
+        'beauty-flower-echo-10', 'beauty-clock-travel-11', 'beauty-flower-reader-12', 'beauty-olive-ticket-13', 'beauty-cat-rabbit-14', 'beauty-rabbit-track-15',
+        'beauty-mailbox-16', 'beauty-double-heart-17', 'beauty-checklist-18', 'beauty-broadcast-19', 'beauty-wallet-20',
+        'custom',
+    ]);
     for (const removedId of ['shop', 'travel', 'weather', 'holo', 'specimen', 'memory', 'livestream']) {
         assert.equal(ids.includes(removedId), false, `${removedId} is no longer selectable`);
     }
     const generated = buildRegexScript({ ...RULE_PRESETS.custom, variant: 'glass-orbit', structure: 'shop' }).replaceString;
     assert.match(generated, /data-structure="custom"/);
     assert.match(generated, /data-variant="auto"/);
+});
+
+test('status beauty 01 to 15 map every bundled original regex to its exact AI output contract', () => {
+    assert.equal(STATUS_BEAUTY_01_15_IDS.length, 15);
+    assert.equal(new Set(STATUS_BEAUTY_01_15_IDS).size, 15);
+    const expectedFiles = Array.from({ length: 15 }, (_, index) => String(index + 1).padStart(2, '0'));
+    assert.deepEqual(STATUS_BEAUTY_01_15_IDS.map(id => statusBeautyBundleMeta(id).file.slice(3, 5)), expectedFiles);
+    for (const id of STATUS_BEAUTY_01_15_IDS) {
+        const preset = STATUS_STRUCTURE_PRESETS.find(item => item.id === id);
+        assert.ok(preset, `${id} is selectable`);
+        const input = {
+            ...RULE_PRESETS.custom,
+            structure: id,
+            title: preset.title,
+            pagesText: preset.pagesText,
+            pageFieldsText: preset.fields.map(field => field.join('|')).join('\n'),
+        };
+        const instruction = buildAiInstruction(input);
+        const meta = statusBeautyBundleMeta(id);
+        assert.match(instruction, new RegExp(`<${meta.tag}>`));
+        assert.match(instruction, new RegExp(`<\\/${meta.tag}>`));
+        for (const [key] of meta.lines) assert.match(instruction, new RegExp(`\\[${key}\\|`));
+        const values = preset.fields.map((_, index) => `值${index + 1}`);
+        const body = meta.lines.map(([key, indexes]) => `[${key}|${indexes.map(index => values[index]).join('|')}]`).join('\n');
+        const parsed = parseStatusOutput(input, `<${meta.tag}>\n${body}\n</${meta.tag}>`);
+        assert.deepEqual(parsed.pages[0].values, values);
+    }
+    assert.equal(buildStatusBeautyBundledPreviewDocument({ replaceString: '```html\n<body>$1 / $12</body>\n```' }), '<body>X / X</body>');
+});
+
+test('status beauty 05 to 09 keep the approved field contracts and export their real layouts', () => {
+    const expected = new Map([
+        ['beauty-current-status-05', ['时间', '位置', '好感度', '好感变化', '身体情况', '双手动作', '当前动作', '对白', '心声']],
+        ['beauty-card-status-06', ['时间', '位置', '情愫', '情愫状态', '身体情况', '身体细节', '双手动作', '双手细节', '心情', '心情细节', '衣着', '欲念', '欲念状态', '心声']],
+        ['beauty-letter-status-07', ['时间', '位置', '好感度', '好感状态', '身体情况', '双手动作', '正在做', '心声', '附言']],
+        ['beauty-record-status-08', ['时间', '位置', '好感度', '身体情况', '双手动作', '隐秘行动', '近期计划', '心声']],
+        ['beauty-archive-status-09', ['时间', '位置', '好感度', '好感状态', '对白', '体温', '呼吸', '肩颈', '掌心', '此刻体感', '当前章节', '御神签', '心声']],
+    ]);
+    for (const [id, labels] of expected) {
+        const preset = STATUS_STRUCTURE_PRESETS.find(item => item.id === id);
+        assert.ok(preset, `${id} is registered`);
+        assert.deepEqual(preset.fields.map(field => field[0]), labels);
+        const input = {
+            ...RULE_PRESETS.custom,
+            structure: id,
+            title: preset.title,
+            pagesText: preset.pagesText,
+            pageFieldsText: preset.fields.map(field => field.join('|')).join('\n'),
+            media: { avatarSource: 'url', avatarUrl: 'https://example.com/character.png', imageAlt: '当前角色头像' },
+        };
+        const instruction = buildAiInstruction(input);
+        const replacement = buildRegexScript(input).replaceString;
+        assert.match(instruction, new RegExp(`\\{\\{当前角色·${labels[0]}`));
+        assert.match(replacement, /^```html\n<!doctype html>/);
+        assert.match(replacement, /<body class="design-page beauty-/);
+        assert.match(replacement, /status-beauty-05-09\.css/);
+        assert.match(replacement, /https:\/\/example\.com\/character\.png/);
+        assert.match(replacement, /\$1/);
+        assert.match(replacement, /classList\.toggle\('is-collapsed'\)/);
+        assert.match(replacement, /<\/body><\/html>\n```$/);
+        const browserScript = replacement.match(/<script>\n([\s\S]*?)\n<\/script>/);
+        assert.ok(browserScript, `${id} includes browser script`);
+        assert.doesNotThrow(() => new Function(browserScript[1]), `${id} browser script parses`);
+    }
+    const cardReplacement = buildRegexScript({
+        ...RULE_PRESETS.custom,
+        structure: 'beauty-card-status-06',
+        pagesText: STATUS_STRUCTURE_PRESETS.find(item => item.id === 'beauty-card-status-06').pagesText,
+        pageFieldsText: STATUS_STRUCTURE_PRESETS.find(item => item.id === 'beauty-card-status-06').fields.map(field => field.join('|')).join('\n'),
+    }).replaceString;
+    assert.match(cardReplacement, /status-hand/);
+    const archiveReplacement = buildRegexScript({
+        ...RULE_PRESETS.custom,
+        structure: 'beauty-archive-status-09',
+        pagesText: STATUS_STRUCTURE_PRESETS.find(item => item.id === 'beauty-archive-status-09').pagesText,
+        pageFieldsText: STATUS_STRUCTURE_PRESETS.find(item => item.id === 'beauty-archive-status-09').fields.map(field => field.join('|')).join('\n'),
+    }).replaceString;
+    assert.match(archiveReplacement, /pointerdown/);
+    assert.match(archiveReplacement, /showCard/);
+    assert.match(archiveReplacement, /frame-mirror-botanical-generated-alpha\.png/);
+});
+
+test('status beauty 16 to 20 keep their own field contracts and export complete interactive documents', () => {
+    const expected = new Map([
+        ['beauty-mailbox-16', ['时间', '位置', '衣冠', '情愫', '欲念', '来信', '心声']],
+        ['beauty-double-heart-17', ['时间', '位置', '衣冠', '情愫', '欲念', '内心状态', '来信']],
+        ['beauty-checklist-18', ['时间', '位置', '身体状态', '双手动作', '当前姿态', '心绪', '好感度', '关系状态']],
+        ['beauty-broadcast-19', ['时间', '位置', '今日播报', '今日宜', '今日忌', '章节', '角色心声', '御神签', '签文']],
+        ['beauty-wallet-20', ['时间', '位置', '身体状态', '双手动作', '当前姿态', '心绪', '好感度', '关系状态']],
+    ]);
+    for (const [id, labels] of expected) {
+        const preset = STATUS_STRUCTURE_PRESETS.find(item => item.id === id);
+        assert.ok(preset, `${id} is registered`);
+        assert.deepEqual(preset.fields.map(field => field[0]), labels);
+        const input = {
+            ...RULE_PRESETS.custom,
+            structure: id,
+            title: preset.title,
+            pagesText: preset.pagesText,
+            pageFieldsText: preset.fields.map(field => field.join('|')).join('\n'),
+            media: { avatarSource: 'url', avatarUrl: 'https://example.com/character.png', imageAlt: '当前角色头像' },
+        };
+        const instruction = buildAiInstruction(input);
+        const replacement = buildRegexScript(input).replaceString;
+        assert.match(instruction, new RegExp(`\\[View1\\|\\{\\{当前角色·${labels[0]}`));
+        assert.match(replacement, /^```html\n<!doctype html>/);
+        assert.match(replacement, /<body class="design-page beauty-/);
+        assert.match(replacement, /status-beauty-16-20\.css/);
+        assert.match(replacement, /https:\/\/example\.com\/character\.png/);
+        assert.match(replacement, /\$1/);
+        assert.match(replacement, /classList\.toggle\('is-collapsed'\)/);
+        assert.match(replacement, /<\/body><\/html>\n```$/);
+        const browserScript = replacement.match(/<script>\n([\s\S]*?)\n<\/script>/);
+        assert.ok(browserScript, `${id} includes browser script`);
+        assert.doesNotThrow(() => new Function(browserScript[1]), `${id} browser script parses`);
+    }
 });
 
 test('three original role-card regex layouts keep separate fields, interactions and dynamic X preview', () => {

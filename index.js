@@ -25,15 +25,30 @@ import {
     parseChatConversationLog,
     parseStatusOutput,
     parseFields,
-} from './rule-generator.js?v=0.10.1';
-import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.10.1';
+} from './rule-generator.js?v=0.11.0';
+import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.0';
+import {
+    STATUS_BEAUTY_01_15_IDS,
+    buildStatusBeautyBundledPreviewDocument,
+    isStatusBeauty01To15,
+    loadStatusBeautyBundledRegex,
+} from './status-beauty-01-15-bundle.js?v=0.11.0';
+import {
+    buildStatusBeauty05To09Preview,
+    isStatusBeauty05To09,
+} from './status-beauty-05-09.js?v=0.11.0';
+import {
+    STATUS_BEAUTY_16_20_IDS,
+    buildStatusBeauty16To20Preview,
+    isStatusBeauty16To20,
+} from './status-beauty-16-20.js?v=0.11.0';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.10.1';
+} from './opening-home-generator.js?v=0.11.0';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -45,19 +60,19 @@ import {
     parseSummaryResponse,
     responseText,
     usableGreetingRecords,
-} from './response-parser.js?v=0.10.1';
+} from './response-parser.js?v=0.11.0';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.10.1';
+} from './worldbook-routes.js?v=0.11.0';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.10.1';
+} from './entry-dialog.js?v=0.11.0';
 import {
     greetingBindingSummary,
     keepOnlyOpenGreetingCard,
@@ -66,14 +81,14 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.10.1';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.10.1';
-import { buildCharacterHomepageContext } from './opening-context.js?v=0.10.1';
+} from './greeting-workflow.js?v=0.11.0';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.0';
+import { buildCharacterHomepageContext } from './opening-context.js?v=0.11.0';
 import {
     STATUS_WORLDBOOK_ENTRY_ID,
     buildStatusWorldbookName,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.10.1';
+} from './status-worldbook.js?v=0.11.0';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -94,7 +109,7 @@ import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.10.1';
+const VERSION = '0.11.0';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URL = new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href;
 
@@ -159,6 +174,14 @@ const STATUS_TEMPLATES = Object.freeze([
 
 const KIND_LABELS = Object.freeze({ text: '短文本', long: '长文本', number: '数字', progress: '数值 0–100', currency: '金额', avatar: '头像' });
 const PHONE_STRUCTURE_IDS = Object.freeze(['phone', 'profile', 'social', 'forum', 'chat', 'music', 'casefile', 'quest', 'archive-status', 'pixel-chat', 'pixel-handheld']);
+const PROFILE_APPEARANCE_IDS = Object.freeze([...STATUS_BEAUTY_01_15_IDS, ...STATUS_BEAUTY_16_20_IDS]);
+const PROFILE_APPEARANCE_PRESETS = Object.freeze(PROFILE_APPEARANCE_IDS.map((id, index) => {
+    const structure = STATUS_STRUCTURE_PRESETS.find(item => item.id === id);
+    return { ...structure, code: String(index + 1).padStart(2, '0') };
+}));
+const PROFILE_APPEARANCE_DEFAULT = PROFILE_APPEARANCE_PRESETS[0];
+const MOON_COLLAGE_BACKGROUND_URL = new URL('./assets/status-beauty/images/design-03-background-v3.png', import.meta.url).href;
+const MOON_COLLAGE_FOREGROUND_URL = new URL('./assets/status-beauty/images/design-03-photo-foreground-v1.png', import.meta.url).href;
 const PHONE_DESKTOP_DEFAULTS = Object.freeze({
     shellStyle: 'classic',
     shellColor: '#e6a5c4',
@@ -238,6 +261,7 @@ const DEFAULT_SETTINGS = Object.freeze({
     favoriteHomeTemplates: ['classical', 'newspaper', 'timeline'],
     favoriteStatusTemplates: ['relationship', 'worldNpc'],
     structure: 'phone',
+    profileAppearance: PROFILE_APPEARANCE_DEFAULT.id,
     title: PHONE_STRUCTURE_DEFAULT.title,
     subtitle: PHONE_STRUCTURE_DEFAULT.subtitle,
     layout: PHONE_STRUCTURE_DEFAULT.layout,
@@ -425,8 +449,16 @@ function settings() {
     if (!ctx?.extensionSettings) return clone(DEFAULT_SETTINGS);
     ctx.extensionSettings[MODULE_NAME] ??= {};
     const stored = ctx.extensionSettings[MODULE_NAME];
+    const legacyProfileAppearance = PROFILE_APPEARANCE_IDS.includes(stored.structure) ? stored.structure : '';
     for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
         if (!Object.hasOwn(stored, key)) stored[key] = clone(value);
+    }
+    if (legacyProfileAppearance) {
+        stored.profileAppearance = legacyProfileAppearance;
+        stored.structure = 'profile';
+    }
+    if (!PROFILE_APPEARANCE_IDS.includes(stored.profileAppearance)) {
+        stored.profileAppearance = PROFILE_APPEARANCE_DEFAULT.id;
     }
     if (!stored.openingNotes || typeof stored.openingNotes !== 'object' || Array.isArray(stored.openingNotes)) {
         stored.openingNotes = {};
@@ -729,9 +761,12 @@ function renderStatusDesignControls() {
     populateStatusStructureSelect(structureSelect);
     if (structureSelect) structureSelect.value = settings().structure || 'custom';
     const styleHost = field('status-atelier-status-styles');
-    if (styleHost && styleHost.children.length !== STATUS_STYLE_PRESETS.length) {
+    const profileAppearanceMode = settings().structure === 'profile';
+    const styleLibrary = styleHost?.closest('.status-atelier-status-style-library');
+    if (styleLibrary) styleLibrary.hidden = !profileAppearanceMode;
+    if (styleHost && profileAppearanceMode && styleHost.children.length !== PROFILE_APPEARANCE_PRESETS.length) {
         styleHost.replaceChildren();
-        STATUS_STYLE_PRESETS.forEach(style => {
+        PROFILE_APPEARANCE_PRESETS.forEach(style => {
             const button = makeElement('button', 'status-atelier-status-style');
             button.type = 'button';
             button.dataset.statusStyle = style.id;
@@ -745,7 +780,7 @@ function renderStatusDesignControls() {
         });
     }
     styleHost?.querySelectorAll('[data-status-style]').forEach(button => {
-        button.setAttribute('aria-pressed', String(button.dataset.statusStyle === settings().theme));
+        button.setAttribute('aria-pressed', String(button.dataset.statusStyle === settings().profileAppearance));
     });
     const socialAppearanceHost = field('status-atelier-social-appearances');
     if (socialAppearanceHost && socialAppearanceHost.children.length !== SOCIAL_APPEARANCE_PRESETS.length) {
@@ -839,7 +874,11 @@ function renderPhoneDesktopControls() {
     const appearanceSection = field('status-atelier-appearance-section');
     if (appearanceSection) appearanceSection.hidden = ['phone', 'forum', 'chat', 'archive-status', 'pixel-chat', 'pixel-handheld'].includes(stored.structure);
     const appearanceTitle = field('status-atelier-appearance-title');
-    if (appearanceTitle) appearanceTitle.textContent = stored.structure === 'social' ? '个人档案外观与配色' : '更多外观与配色';
+    if (appearanceTitle) appearanceTitle.textContent = stored.structure === 'social'
+        ? '个人档案外观与配色'
+        : stored.structure === 'profile'
+            ? '人物状态栏 01–20 与配色'
+            : '更多外观与配色';
     const socialAppearanceSection = field('status-atelier-social-appearance-section');
     if (socialAppearanceSection) socialAppearanceSection.hidden = stored.structure !== 'social';
     const chatAppearanceSection = field('status-atelier-chat-appearance');
@@ -912,20 +951,23 @@ function applyStatusStructure(structureId) {
     const structure = STATUS_STRUCTURE_PRESETS.find(item => item.id === structureId);
     if (!structure) return;
     const stored = settings();
+    const contentPreset = structure.id === 'profile'
+        ? PROFILE_APPEARANCE_PRESETS.find(item => item.id === stored.profileAppearance) || PROFILE_APPEARANCE_DEFAULT
+        : structure;
     stored.structure = structure.id;
     stored.variant = 'auto';
     if (structure.id === 'forum' && !FORUM_SKIN_PRESETS.some(item => item.id === stored.forumSkin)) stored.forumSkin = 'mist-bbs';
-    stored.title = structure.title;
-    stored.subtitle = structure.subtitle;
-    stored.layout = structure.layout;
-    if (structure.theme) stored.theme = structure.theme;
-    if (structure.paletteId) stored.paletteId = structure.paletteId;
-    if (structure.avatarSource) {
-        stored.media = { ...DEFAULT_SETTINGS.media, ...(stored.media || {}), avatarSource: structure.avatarSource };
+    stored.title = contentPreset.title;
+    stored.subtitle = contentPreset.subtitle;
+    stored.layout = contentPreset.layout;
+    if (contentPreset.theme) stored.theme = contentPreset.theme;
+    if (contentPreset.paletteId) stored.paletteId = contentPreset.paletteId;
+    if (contentPreset.avatarSource) {
+        stored.media = { ...DEFAULT_SETTINGS.media, ...(stored.media || {}), avatarSource: contentPreset.avatarSource };
     }
-    stored.pagesText = structure.pagesText;
-    stored.sharedFieldsText = (structure.shared || []).map(field => field.join('|')).join('\n');
-    stored.pageFieldsText = structure.fields.map(field => field.join('|')).join('\n');
+    stored.pagesText = contentPreset.pagesText;
+    stored.sharedFieldsText = (contentPreset.shared || []).map(field => field.join('|')).join('\n');
+    stored.pageFieldsText = contentPreset.fields.map(field => field.join('|')).join('\n');
     if (structure.id === 'chat') stored.chatConversationSchemaVersion = 3;
     stored.preset = 'custom';
     stored.statusTemplate = 'custom';
@@ -941,7 +983,7 @@ function applyStatusStructure(structureId) {
     const themeControl = field('status-atelier-theme');
     if (themeControl) themeControl.value = stored.theme;
     field('status-atelier-status-styles')?.querySelectorAll('[data-status-style]').forEach(button => {
-        button.setAttribute('aria-pressed', String(button.dataset.statusStyle === stored.theme));
+        button.setAttribute('aria-pressed', String(button.dataset.statusStyle === stored.profileAppearance));
     });
     field('status-atelier-status-palettes')?.querySelectorAll('[data-status-palette]').forEach(button => {
         button.setAttribute('aria-pressed', String(button.dataset.statusPalette === stored.paletteId));
@@ -958,10 +1000,46 @@ function applyStatusStructure(structureId) {
     if (pageControl) pageControl.value = stored.pageFieldsText;
     renderStatusSchema();
     renderModalStatusSchema();
+    renderStatusDesignControls();
+    renderTemplateMediaControls();
     renderPhoneDesktopControls();
     renderForumSkinControls();
     syncQuestMapEditorEntry();
     scheduleStatusPreviewUpdate();
+}
+
+function applyProfileAppearance(appearanceId) {
+    const appearance = PROFILE_APPEARANCE_PRESETS.find(item => item.id === appearanceId);
+    const stored = settings();
+    if (!appearance || stored.structure !== 'profile') return false;
+    stored.profileAppearance = appearance.id;
+    stored.variant = 'auto';
+    stored.title = appearance.title;
+    stored.subtitle = appearance.subtitle;
+    stored.layout = appearance.layout;
+    stored.pagesText = appearance.pagesText;
+    stored.sharedFieldsText = (appearance.shared || []).map(field => field.join('|')).join('\n');
+    stored.pageFieldsText = appearance.fields.map(field => field.join('|')).join('\n');
+    stored.preset = 'custom';
+    stored.statusTemplate = 'custom';
+    statusAiTestRecords = null;
+    const titleControl = field('status-atelier-title');
+    if (titleControl) titleControl.value = stored.title;
+    const subtitleControl = field('status-atelier-subtitle');
+    if (subtitleControl) subtitleControl.value = stored.subtitle;
+    const layoutControl = field('status-atelier-layout');
+    if (layoutControl) layoutControl.value = stored.layout;
+    const pagesControl = field('status-atelier-pages');
+    if (pagesControl) pagesControl.value = stored.pagesText;
+    const sharedControl = field('status-atelier-shared-fields');
+    if (sharedControl) sharedControl.value = stored.sharedFieldsText;
+    const pageControl = field('status-atelier-page-fields');
+    if (pageControl) pageControl.value = stored.pageFieldsText;
+    renderStatusSchema();
+    renderModalStatusSchema();
+    renderTemplateMediaControls();
+    updatePreview();
+    return true;
 }
 
 function fieldDefinitions() {
@@ -1142,7 +1220,7 @@ function renderStatusSchema() {
         instruction.rows = 3;
         instruction.placeholder = '例如：填写角色此刻没有说出口的内心独白';
         instruction.setAttribute('aria-label', `${definition.label}的 AI 填写内容`);
-        instructionWrap.append(instruction);
+        details.append(instruction);
         label.addEventListener('input', () => { definition.label = label.value; serializeFieldDefinitions(definitions); });
         kind.addEventListener('change', () => { definition.kind = kind.value; serializeFieldDefinitions(definitions); });
         instruction.addEventListener('input', () => { definition.instruction = instruction.value; serializeFieldDefinitions(definitions); });
@@ -1989,7 +2067,9 @@ function resolvedStatusInput(source = settings()) {
         title: source.title,
         subtitle: source.subtitle,
         theme: source.theme,
-        structure: source.structure,
+        structure: source.structure === 'profile'
+            ? (PROFILE_APPEARANCE_PRESETS.find(item => item.id === source.profileAppearance) || PROFILE_APPEARANCE_DEFAULT).id
+            : source.structure,
         forumSkin: source.forumSkin,
         variant: source.variant,
         chatAppearance: source.chatAppearance,
@@ -2940,6 +3020,88 @@ function renderForumPreview(host, previewRecords) {
     showPage(0);
 }
 
++function renderMoonCollagePreview(host, rule, pages) {
+    const page = pages[0]?.page;
+    const definitions = page?.fields || rule.pageFields;
+    const samples = [
+        '72 · 渐深',
+        '39 · 克制',
+        '月白交领长衫外罩玄色大氅，袖口沾着融雪，腰间仍系旧玉佩。',
+        '山寺西廊尽头的梅窗旁，雪后初晴，檐角水声断断续续。',
+        '若今夜再多留她片刻，是否就算逾矩？可她转身时，我还是不愿松手。',
+        '见字如晤。阶前梅枝已开第三回，我将未说出口的话都藏在回信里。',
+        '尚未言明，却已在每次沉默里偏向她。',
+        '暗潮微动，仍以礼数与克制压在眼底。',
+    ];
+    const values = pages[0]?.values || [];
+    const root = makeElement('details', 'status-atelier-rule-preview status-atelier-moon-preview');
+    root.open = true;
+    const summary = makeElement('summary');
+    summary.setAttribute('aria-label', '展开或收起状态栏');
+    const stage = makeElement('div', 'status-atelier-moon-stage');
+    const base = makeElement('img', 'status-atelier-moon-base');
+    base.src = MOON_COLLAGE_BACKGROUND_URL;
+    base.alt = '';
+    stage.append(base);
+    if (rule.media.avatarUrl) {
+        const photo = makeElement('img', 'status-atelier-moon-photo');
+        photo.src = rule.media.avatarUrl;
+        photo.alt = rule.media.imageAlt || '当前角色照片';
+        photo.addEventListener('error', () => photo.remove());
+        stage.append(photo);
+    }
+    const foreground = makeElement('img', 'status-atelier-moon-foreground');
+    foreground.src = MOON_COLLAGE_FOREGROUND_URL;
+    foreground.alt = '';
+    stage.append(foreground);
+    const valuesHost = makeElement('main', 'status-atelier-moon-values');
+    definitions.slice(0, 8).forEach((definition, index) => {
+        const flat = index < 2 || index > 5;
+        const label = makeElement('strong', `status-atelier-moon-label ${flat ? 'is-flat' : 'is-vertical'} moon-label-${index}`, definition.label);
+        bindPreviewFieldLabelEditor(label, definition, 'page');
+        const kind = index < 2 ? 'is-metric' : index > 5 ? 'is-note' : 'is-long';
+        const rawValue = String(values[index] || '');
+        const value = !rawValue || rawValue.startsWith('AI动态') || rawValue.startsWith('这里显示') ? samples[index] : rawValue;
+        valuesHost.append(label, makeElement('strong', `status-atelier-moon-value ${kind} moon-value-${index}`, value));
+    });
+    stage.append(valuesHost);
+    root.append(summary, stage, makeElement('div', 'status-atelier-moon-compact', '月下蝶影'));
+    host.replaceChildren(root);
+}
+
+function renderStatusBeauty16To20Preview(host, rule, pages) {
+    const frame = makeElement('iframe', 'status-atelier-rule-preview status-atelier-beauty-preview-frame');
+    frame.title = `${rule.structureName}预览`;
+    frame.srcdoc = buildStatusBeauty16To20Preview(rule, pages[0]?.values || []);
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+    host.replaceChildren(frame);
+}
+
+function renderStatusBeauty05To09Preview(host, rule, pages) {
+    const frame = makeElement('iframe', 'status-atelier-rule-preview status-atelier-beauty-preview-frame');
+    frame.title = `${rule.structureName}预览`;
+    frame.srcdoc = buildStatusBeauty05To09Preview(rule, pages[0]?.values || []);
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+    host.replaceChildren(frame);
+}
+
+let statusBeautyBundlePreviewRequest = 0;
+function renderStatusBeautyBundledPreview(host, rule) {
+    const request = ++statusBeautyBundlePreviewRequest;
+    const frame = makeElement('iframe', 'status-atelier-rule-preview status-atelier-beauty-preview-frame');
+    frame.title = `${rule.structureName}原始正则预览`;
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+    host.replaceChildren(frame);
+    loadStatusBeautyBundledRegex(rule.structure).then(script => {
+        if (request !== statusBeautyBundlePreviewRequest || !frame.isConnected) return;
+        frame.srcdoc = buildStatusBeautyBundledPreviewDocument(script);
+    }).catch(error => {
+        if (request !== statusBeautyBundlePreviewRequest || !frame.isConnected) return;
+        host.replaceChildren(makeElement('div', 'status-atelier-empty', error.message || '原始正则预览读取失败'));
+    });
+}
+
+
 function renderStatusPreview(host) {
     if (!host) return;
     if (!document.querySelector('#status-atelier-exported-theme-css')) {
@@ -2951,6 +3113,22 @@ function renderStatusPreview(host) {
     const previewInput = resolvedStatusInput();
     const previewRecords = statusAiTestRecords || makePreviewRecords(previewInput);
     const { rule, shared, pages } = previewRecords;
+    if (isStatusBeauty01To15(rule.structure)) {
+        renderStatusBeautyBundledPreview(host, rule);
+        return;
+    }
+    if (isStatusBeauty05To09(rule.structure)) {
+        renderStatusBeauty05To09Preview(host, rule, pages);
+        return;
+    }
+    if (isStatusBeauty16To20(rule.structure)) {
+        renderStatusBeauty16To20Preview(host, rule, pages);
+        return;
+    }
+    if (rule.structure === 'moon-collage') {
+        renderMoonCollagePreview(host, rule, pages);
+        return;
+    }
     if (rule.structure === 'forum') {
         renderForumPreview(host, previewRecords);
         return;
@@ -3940,10 +4118,24 @@ function safeFileName(value) {
     return String(value || 'jiuyi-status').replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').trim() || 'jiuyi-status';
 }
 
+async function resolveStatusRegexScript(input = resolvedStatusExportInput()) {
+    const resolvedInput = await input;
+    const rule = normalizeRule(resolvedInput);
+    return isStatusBeauty01To15(rule.structure)
+        ? loadStatusBeautyBundledRegex(rule.structure)
+        : buildRegexScript(resolvedInput);
+}
+
 async function downloadRegex() {
-    const script = buildRegexScript(await resolvedStatusExportInput());
-    downloadJson(`regex-${safeFileName(settings().ruleName)}.json`, script);
-    notify('success', '正则 JSON 已生成；里面没有写死剧情数值');
+    try {
+        const script = await resolveStatusRegexScript();
+        downloadJson(`regex-${safeFileName(script.scriptName || settings().ruleName)}.json`, script);
+        notify('success', isStatusBeauty01To15(resolvedStatusInput().structure)
+            ? '原始正则成品已下载；结构与人物状态栏 01–15 的成品一致'
+            : '正则 JSON 已生成；里面没有写死剧情数值');
+    } catch (error) {
+        notify('error', error.message || '正则 JSON 读取失败');
+    }
 }
 
 function downloadWorldbook() {
@@ -3958,7 +4150,10 @@ async function installGeneratedRegex(script, requestedScope = settings().install
         throw new Error('请先打开一个单人角色聊天，再安装到当前角色');
     }
 
-    const scripts = [...getScriptsByType(type)];
+    const bundledScript = /^九一 · 状态栏(?:0[1-9]|1[0-5])(?: ·|$)/.test(String(script?.scriptName || ''));
+    const scripts = [...getScriptsByType(type)].filter(item => !bundledScript
+        || item.id === script.id
+        || (item.id !== settings().ruleId && !/^九一 · 状态栏(?:0[1-9]|1[0-5])(?: ·|$)/.test(String(item?.scriptName || ''))));
     const existingIndex = scripts.findIndex(item => item.id === script.id || item.scriptName === script.scriptName);
     if (existingIndex >= 0) scripts[existingIndex] = script;
     else scripts.push(script);
@@ -4034,7 +4229,7 @@ async function installRegex(scope) {
     const worldbook = scope === 'scoped'
         ? await installStatusWorldbookRule()
         : await installGlobalStatusWorldbookRule();
-    await installGeneratedRegex(buildRegexScript(await resolvedStatusExportInput()), scope);
+    await installGeneratedRegex(await resolveStatusRegexScript(), scope);
     settings().promptEnabled = false;
     const promptToggle = field('status-atelier-prompt-enabled');
     if (promptToggle) promptToggle.checked = settings().promptEnabled;
@@ -4623,18 +4818,23 @@ function renderGreetingThemeChooser() {
 }
 
 function renderGreetingStatusChooser() {
+    const select = greetingModal?.querySelector('#status-atelier-modal-status-style');
     const structureSelect = greetingModal?.querySelector('#status-atelier-modal-status-structure');
     const paletteHost = greetingModal?.querySelector('#status-atelier-modal-status-palettes');
     const state = greetingModal?.querySelector('.status-atelier-modal-status-state');
     if (!select) return;
-    if (!select.options.length) {
-        STATUS_STYLE_PRESETS.forEach(style => {
+    const profileAppearanceMode = settings().structure === 'profile';
+    const selectLabel = select.closest('label');
+    if (selectLabel) selectLabel.hidden = !profileAppearanceMode;
+    if (profileAppearanceMode && select.options.length !== PROFILE_APPEARANCE_PRESETS.length) {
+        select.replaceChildren();
+        PROFILE_APPEARANCE_PRESETS.forEach(style => {
             const option = makeElement('option', '', `${style.code} · ${style.name}`);
             option.value = style.id;
             select.append(option);
         });
     }
-    select.value = settings().theme || 'classical';
+    if (profileAppearanceMode) select.value = settings().profileAppearance || PROFILE_APPEARANCE_DEFAULT.id;
     populateStatusStructureSelect(structureSelect);
     if (structureSelect) structureSelect.value = settings().structure || 'custom';
     if (paletteHost && paletteHost.children.length !== STATUS_PALETTE_PRESETS.length) {
@@ -4836,6 +5036,7 @@ function buildGreetingModal() {
                         <summary><strong>调整状态栏</strong><small>结构、字段与色卡</small></summary>
                         <div class="status-atelier-modal-status-controls">
                             <label>状态栏模板<select id="status-atelier-modal-status-structure" class="text_pole"></select></label>
+                            <label>人物状态栏 01–20<select id="status-atelier-modal-status-style" class="text_pole"></select></label>
                         </div>
                         <details class="status-atelier-modal-schema-editor">
                             <summary><strong>字段与 AI 动态数值</strong><small>增加、改名、改类型或删除</small></summary>
@@ -4886,6 +5087,12 @@ function buildGreetingModal() {
     greetingModal.querySelector('#status-atelier-open-full-workbench').addEventListener('click', openFullWorkbench);
     greetingModal.querySelector('#status-atelier-modal-status-structure').addEventListener('change', event => {
         applyStatusStructure(event.currentTarget.value);
+        renderGreetingStatusChooser();
+    });
+    greetingModal.querySelector('#status-atelier-modal-status-style').addEventListener('change', event => {
+        if (!applyProfileAppearance(event.currentTarget.value)) return;
+        renderGreetingStatusChooser();
+        saveSettingsSoon({ snapshotOpening: false });
     });
     greetingModal.querySelector('#status-atelier-modal-status-palettes').addEventListener('click', event => {
         const button = event.target.closest('[data-modal-status-palette]');
@@ -5329,21 +5536,10 @@ async function addSettingsPanel() {
         }
         const statusStyleButton = event.target.closest('[data-status-style]');
         if (statusStyleButton) {
-            const style = STATUS_STYLE_PRESETS.find(item => item.id === statusStyleButton.dataset.statusStyle);
-            if (!style) return;
-            settings().theme = style.id;
-            const themeControl = field('status-atelier-theme');
-            if (themeControl) themeControl.value = style.id;
-            settings().layout = style.layout;
-            const layoutControl = field('status-atelier-layout');
-            if (layoutControl) layoutControl.value = style.layout;
-            settings().preset = 'custom';
-            field('status-atelier-preset').value = 'custom';
-            statusAiTestRecords = null;
+            if (!applyProfileAppearance(statusStyleButton.dataset.statusStyle)) return;
             field('status-atelier-status-styles')?.querySelectorAll('[data-status-style]').forEach(button => {
                 button.setAttribute('aria-pressed', String(button === statusStyleButton));
             });
-            refreshStatusAppearancePreview();
             saveSettingsSoon({ snapshotOpening: false });
             return;
         }

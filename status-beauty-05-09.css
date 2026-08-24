@@ -1,0 +1,81 @@
+@import url('./assets/status-beauty/css/design-05.css');
+@import url('./assets/status-beauty/css/design-06.css');
+@import url('./assets/status-beauty/css/design-07.css');
+@import url('./assets/status-beauty/css/design-08.css');
+@import url('./assets/status-beauty/css/design-09.css');
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  height: auto;
+  overflow: hidden;
+  background: transparent;
+  font-family: "Noto Serif SC", "Microsoft YaHei", serif;
+}
+
+.design-page {
+  display: grid;
+  min-height: 0;
+  place-items: center;
+  padding: 10px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.status-card {
+  position: relative;
+  flex: 0 0 auto;
+  margin: 0 auto;
+  overflow: hidden;
+  isolation: isolate;
+  transform: none !important;
+}
+
+header {
+  position: absolute;
+  z-index: 3;
+}
+
+.fold {
+  position: absolute;
+  right: 22px;
+  top: 18px;
+  z-index: 7;
+}
+
+.status-card [data-label],
+.status-card [data-value] {
+  font-style: normal;
+}
+
+img[data-st-avatar]:not([src]) {
+  background: linear-gradient(145deg, #eee9e3, #b9b9b4);
+}
+
+.design-05 .summary-avatar {
+  display: block;
+  object-fit: cover;
+  object-position: 50% 22%;
+  background: linear-gradient(145deg, #dce6eb, #718999);
+}
+
+@media (max-width: 920px) {
+  html,
+  body {
+    min-height: 0;
+  }
+
+  .design-page {
+    display: block;
+    padding: 10px;
+  }
+
+  .status-card {
+    zoom: calc((100vw - 20px) / 900);
+  }
+}

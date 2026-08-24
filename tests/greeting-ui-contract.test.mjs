@@ -92,11 +92,23 @@ test('status workspace exposes component, palette, real avatar and audio control
     }
     assert.match(settingsMarkup, /拍立得图片链接（每行一个，随机显示）/);
     assert.match(source, /'status-atelier-archive-image-urls': 'archiveImageUrls'/);
-    assert.match(settingsMarkup, /22 套外观/);
+    assert.match(settingsMarkup, /人物状态栏 01–20/);
     assert.match(settingsMarkup, /26 套色卡/);
     assert.match(source, /thumbnail\('avatar', avatar\)/);
     assert.match(source, /thumbnail\('persona', user_avatar\)/);
     assert.match(source, /parseStatusOutput\(input, response\)/);
+    assert.match(source, /details\.append\(instruction\)/);
+    assert.doesNotMatch(source, /instructionWrap\.append\(instruction\)/);
+});
+
+test('profile appearance keeps structure profile while exposing status beauty 01 to 20', () => {
+    assert.match(source, /const PROFILE_APPEARANCE_IDS = Object\.freeze\(\[\.\.\.STATUS_BEAUTY_01_15_IDS, \.\.\.STATUS_BEAUTY_16_20_IDS\]\)/);
+    assert.match(source, /profileAppearance: PROFILE_APPEARANCE_DEFAULT\.id/);
+    assert.match(source, /function applyProfileAppearance\(appearanceId\)/);
+    assert.match(source, /stored\.structure = 'profile'/);
+    assert.match(source, /async function resolveStatusRegexScript\(input = resolvedStatusExportInput\(\)\)/);
+    assert.match(source, /isStatusBeauty01To15\(rule\.structure\)[\s\S]*?loadStatusBeautyBundledRegex\(rule\.structure\)/);
+    assert.match(settingsMarkup, /人物状态栏 01–20/);
 });
 
 test('quest template opens the dedicated map editor inside the main plugin', () => {
@@ -164,7 +176,7 @@ test('mobile greeting modal offers a stateless copy-only overview and directly i
     assert.match(overviewBlock, /overwrite: false/);
     assert.doesNotMatch(overviewBlock, /settings\(\)\.openingHome\s*=|saveSettingsNow|renderGreetingList/);
     assert.doesNotMatch(source, /status-atelier-greeting-overview-preview/);
-    assert.doesNotMatch(source, /id="status-atelier-modal-status-style"/);
+    assert.match(source, /id="status-atelier-modal-status-style"/);
     assert.match(source, /id="status-atelier-modal-status-structure"/);
     assert.match(source, /id="status-atelier-modal-status-preview"/);
     assert.doesNotMatch(source, /id="status-atelier-modal-status-logos"/);
@@ -213,7 +225,7 @@ test('modal and palettes stay inside mobile viewport and palette library is coll
     assert.match(source, /structure: 'phone'/);
     assert.match(source, /PHONE_STRUCTURE_IDS = Object\.freeze\(\['phone', 'profile', 'social', 'forum', 'chat', 'music', 'casefile', 'quest', 'archive-status', 'pixel-chat', 'pixel-handheld'\]\)/);
     assert.match(settingsMarkup, /<summary><strong>26 套色卡<\/strong><\/summary>/);
-    assert.match(settingsMarkup, /<summary><strong>22 套外观<\/strong><\/summary>/);
+    assert.match(settingsMarkup, /<summary><strong>人物状态栏 01–20<\/strong><small>20 款完整设计；每款保留自己的字段与构图<\/small><\/summary>/);
     assert.match(styleSource, /max-height:\s*calc\(100dvh - 12px - env\(safe-area-inset-top\) - env\(safe-area-inset-bottom\)\)/);
     assert.match(styleSource, /\.status-atelier-dialog-body\s*\{[\s\S]*?overflow-y:\s*auto;[\s\S]*?overscroll-behavior:\s*contain;/);
 });

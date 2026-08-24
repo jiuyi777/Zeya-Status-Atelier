@@ -18,6 +18,11 @@ const requiredFiles = [
     'opening-overview.js',
     'worldbook-routes.js',
     'rule-generator.js',
+    'status-beauty-01-15-bundle.js',
+    'status-beauty-05-09.js',
+    'status-beauty-05-09.css',
+    'status-beauty-16-20.js',
+    'status-beauty-16-20.css',
     'role-card-originals.js',
     'role-card-originals/archive.css',
     'role-card-originals/pixel-chat.css',
@@ -56,6 +61,13 @@ const settingsSource = await readFile(join(root, 'settings.html'), 'utf8');
 const readmeSource = await readFile(join(root, 'README.md'), 'utf8');
 const generatorSource = await readFile(join(root, 'rule-generator.js'), 'utf8');
 const openingGeneratorSource = await readFile(join(root, 'opening-home-generator.js'), 'utf8');
+const statusBeautySources = await Promise.all([
+    'status-beauty-01-15-bundle.js',
+    'status-beauty-05-09.js',
+    'status-beauty-05-09.css',
+    'status-beauty-16-20.js',
+    'status-beauty-16-20.css',
+].map(file => readFile(join(root, file), 'utf8')));
 
 for (const forbidden of ['eval(', 'new Function(', 'innerHTML = message', 'innerHTML = value']) {
     if (indexSource.includes(forbidden)) {
@@ -85,6 +97,9 @@ if (!indexSource.includes('saveScriptsByType')) {
 }
 if (!generatorSource.includes('buildAiInstruction') || !generatorSource.includes('buildRegexScript')) {
     errors.push('缺少 AI 规则或正则 JSON 生成器');
+}
+if ([indexSource, generatorSource, ...statusBeautySources].some(source => source.includes('design-drafts/status-beauty'))) {
+    errors.push('人物状态栏 01–20 的生产代码不得依赖设计草稿目录');
 }
 if (manifest.author !== '九一') {
     errors.push('manifest 作者必须为 九一');
@@ -200,7 +215,15 @@ if (STATUS_STYLE_PRESETS.length !== 22) errors.push('状态栏外观注册表必
 if (new Set(STATUS_STYLE_PRESETS.map(style => style.id)).size !== 22) errors.push('22套状态栏外观必须使用22个独立主题 ID');
 if (statusIds.size !== selectableStructures.length) errors.push('可选状态栏模板必须生成独立正则 ID');
 
-if (STATUS_STRUCTURE_PRESETS.length !== 13) errors.push('编辑器必须保留9种基础结构、1种手机桌面结构与3种原版角色卡结构');
+if (STATUS_STRUCTURE_PRESETS.length !== 33) errors.push('编辑器必须保留原有13种结构并注册人物状态栏01至20');
+const bundledRegexFolder = join(root, 'assets', 'status-beauty', 'regexes');
+try {
+    const bundledRegexFiles = (await readdir(bundledRegexFolder)).filter(file => file.endsWith('.json'));
+    if (bundledRegexFiles.length !== 15) errors.push('人物状态栏01至15必须包含15份生产正则成品');
+    for (const file of bundledRegexFiles) JSON.parse(await readFile(join(bundledRegexFolder, file), 'utf8'));
+} catch (error) {
+    errors.push(`人物状态栏01至15生产正则缺失或无效：${error.message}`);
+}
 try {
     await readdir(join(root, 'starter-packs', '状态栏一键配方'));
     errors.push('已删除的40套状态栏一键配方不应继续生成');

@@ -1,4 +1,25 @@
 import { buildOriginalRoleCardReplacement, isOriginalRoleCardStructure } from './role-card-originals.js';
+import {
+    STATUS_BEAUTY_01_02_PRESETS,
+    STATUS_BEAUTY_04_PRESETS,
+    STATUS_BEAUTY_10_15_PRESETS,
+    buildStatusBeautyBundledInstruction,
+    isStatusBeauty01To15,
+    parseStatusBeautyBundledOutput,
+} from './status-beauty-01-15-bundle.js';
+import {
+    STATUS_BEAUTY_05_09_PRESETS,
+    buildStatusBeauty05To09Replacement,
+    isStatusBeauty05To09,
+} from './status-beauty-05-09.js';
+import {
+    STATUS_BEAUTY_16_20_PRESETS,
+    buildStatusBeauty16To20Replacement,
+    isStatusBeauty16To20,
+} from './status-beauty-16-20.js';
+
+const MOON_COLLAGE_BACKGROUND_URL = new URL('./assets/status-beauty/images/design-03-background-v3.png', import.meta.url).href;
+const MOON_COLLAGE_FOREGROUND_URL = new URL('./assets/status-beauty/images/design-03-photo-foreground-v1.png', import.meta.url).href;
 
 const FIELD_KINDS = new Set(['text', 'long', 'number', 'progress', 'currency', 'avatar']);
 
@@ -334,6 +355,30 @@ export const STATUS_STRUCTURE_PRESETS = Object.freeze([
             ['当前推论', '填写目前最合理但尚未证实的推论', 'long', 'theory'],
         ],
     },
+    ...STATUS_BEAUTY_01_02_PRESETS,
+    {
+        id: 'moon-collage', name: '03 · 月下蝶影', description: '蓝白古风拼贴、左侧角色照片与八项人物状态',
+        title: '月下蝶影', subtitle: 'STATUS ATELIER', layout: 'stack', glyph: '☾',
+        pagesText: '当前角色|填写当前主要角色或视角',
+        fields: [
+            ['情愫', '填写情愫数值和简短阶段，例如72 · 渐深', 'text', 'affection'],
+            ['欲念', '填写欲念数值和简短状态，例如39 · 克制', 'text', 'desire'],
+            ['衣冠', '具体描述当前衣着与主要可见细节', 'long', 'attire'],
+            ['衣冠补充', '补充配饰、材质或衣着状态', 'long', 'attire_note'],
+            ['身处', '具体描述当前地点', 'long', 'location'],
+            ['环境补充', '补充天气、光线或周围声音', 'long', 'location_note'],
+            ['心语', '第一人称填写角色没有说出口的真实想法', 'long', 'inner_voice'],
+            ['心语补充', '补充此刻心绪变化或原因', 'long', 'inner_voice_note'],
+            ['书信', '以书信或寄语口吻填写当前最想传达的话', 'long', 'letter'],
+            ['书信补充', '补充书信中未说完的一句内容', 'long', 'letter_note'],
+            ['情愫注', '概括本轮情愫变化及原因', 'long', 'affection_note'],
+            ['欲念注', '概括本轮欲念变化、克制或动摇', 'long', 'desire_note'],
+        ],
+    },
+    ...STATUS_BEAUTY_04_PRESETS,
+    ...STATUS_BEAUTY_05_09_PRESETS,
+    ...STATUS_BEAUTY_10_15_PRESETS,
+    ...STATUS_BEAUTY_16_20_PRESETS,
     {
         id: 'custom', name: '自由组件板', description: '保留完全可编辑的通用字段容器',
         title: '自定义状态面板', subtitle: 'CUSTOM COMPONENTS', layout: 'grid', appearanceId: 'component-canvas', appearanceName: '自由组件板', glyph: '✦',
@@ -1120,6 +1165,7 @@ function placeholder(field, pageLabel = '') {
 
 export function buildAiInstruction(input) {
     const rule = normalizeRule(input);
+    if (isStatusBeauty01To15(rule.structure)) return buildStatusBeautyBundledInstruction(rule);
     if (rule.structure === 'forum') {
         const forumGuide = FORUM_SKIN_PRESETS.find(item => item.id === rule.forumSkin)?.aiGuide || FORUM_SKIN_PRESETS[0].aiGuide;
         const forumReplyCount = rule.pageFields.filter(field => /^post_\d+$/.test(field.id)).length;
@@ -1203,6 +1249,7 @@ export function buildAiInstruction(input) {
 
 export function parseStatusOutput(input, rawOutput) {
     const rule = normalizeRule(input);
+    if (isStatusBeauty01To15(rule.structure)) return parseStatusBeautyBundledOutput(rule, rawOutput);
     const source = String(rawOutput || '');
     const block = source.match(new RegExp(`<${rule.tagName}>\\s*([\\s\\S]*?)\\s*<\\/${rule.tagName}>`, 'i'))?.[1] || source;
     const records = {};
@@ -1860,7 +1907,29 @@ function generatedForumReplacement(rule) {
 \`\`\``;
 }
 
++function generatedMoonCollageReplacement(rule) {
+    const page = rule.pages[0];
+    const fields = page?.fields || rule.pageFields;
+    const configJson = safeJsonForScript({
+        backgroundUrl: MOON_COLLAGE_BACKGROUND_URL,
+        foregroundUrl: MOON_COLLAGE_FOREGROUND_URL,
+        photoUrl: rule.media.avatarUrl,
+        photoAlt: rule.media.imageAlt || '当前角色照片',
+        pageId: page?.id || 'View1',
+        labels: fields.map(field => field.label),
+    });
+    return `\`\`\`html
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;min-height:100%;background:transparent}.moon-card{position:relative;width:min(1100px,100%);margin:8px auto;overflow:hidden;border-radius:6px;box-shadow:0 16px 45px #080b1c66;font-family:"Noto Serif SC","Source Han Serif SC","Songti SC",serif}.moon-card>summary{position:absolute;z-index:20;right:10px;top:9px;display:grid;width:30px;height:30px;place-items:center;border:1px solid #5b60788c;border-radius:50%;background:#f7f2e7c9;color:#38405d;cursor:pointer;list-style:none}.moon-card>summary::-webkit-details-marker{display:none}.moon-card>summary:after{content:"⌃";font:700 17px/1 Georgia,serif}.moon-card:not([open])>summary:after{content:"⌄"}.moon-stage{position:relative;width:100%;aspect-ratio:99/64;overflow:hidden;background:#eee8dc}.moon-base{position:absolute;z-index:1;inset:0;width:100%;height:100%;object-fit:cover}.moon-photo{position:absolute;z-index:2;left:10.6%;top:29.3%;width:25.6%;height:47%;object-fit:cover;object-position:50% 18%}.moon-foreground{position:absolute;z-index:3;left:1.5%;top:17%;width:88.2%;height:86.5%;pointer-events:none}.moon-values{position:absolute;inset:0;z-index:5}.moon-value,.moon-label{position:absolute;margin:0;overflow:hidden;color:#382d35;font-weight:500}.moon-metric{display:flex;align-items:center;height:5%;font-size:clamp(10px,1.55vw,25px);line-height:1.2;white-space:nowrap}.moon-long{display:flex;align-items:center;height:11.5%;padding-right:1%;font-size:clamp(9px,1.42vw,23px);line-height:1.58}.moon-note{display:flex;align-items:center;height:6.2%;font-size:clamp(8px,1.18vw,19px);line-height:1.45}.moon-label{display:grid;place-items:center;color:#263e62;font-size:clamp(8px,1.55vw,24px);font-weight:600;line-height:1.05}.moon-label-mid{width:4.4%;height:10.2%;letter-spacing:.08em;writing-mode:vertical-rl;text-orientation:upright}.moon-label-flat{height:4.4%;padding:0 .3%;background:#f3eee4e8;white-space:nowrap}.ml0{left:51.6%;top:8.3%;width:7.5%}.ml1{left:76.5%;top:8.3%;width:7.2%}.ml2{left:47.5%;top:20.8%}.ml3{left:47.5%;top:34.9%}.ml4{left:47.5%;top:49%}.ml5{left:47.5%;top:63.1%}.ml6{left:47.5%;top:77.1%;width:8.7%}.ml7{left:47.5%;top:85.6%;width:8.7%}.mv0{left:59.8%;top:8.3%;width:9.5%}.mv1{left:84.4%;top:8.3%;width:8.6%}.mv2{left:54.8%;top:19.8%;width:39.2%}.mv3{left:54.8%;top:33.9%;width:39.2%}.mv4{left:54.8%;top:48%;width:39.2%}.mv5{left:54.8%;top:62.1%;width:39.2%}.mv6{left:56.9%;top:76.2%;width:31.2%}.mv7{left:56.9%;top:84.7%;width:31.2%}.moon-card:not([open]) .moon-stage{display:none}.moon-compact{display:none;min-height:66px;align-items:center;padding:15px 55px 15px 18px;color:#f6f1e8;background:linear-gradient(110deg,#333c5c,#676077)}.moon-card:not([open]) .moon-compact{display:flex}@media(max-width:560px){.moon-card{margin:3px auto}.moon-card>summary{right:5px;top:5px;width:24px;height:24px}.moon-metric{font-size:clamp(6px,2.3vw,11px)}.moon-label{font-size:clamp(6px,2.15vw,10px)}.moon-long{font-size:clamp(5px,2.05vw,10px);line-height:1.45}.moon-note{font-size:clamp(5px,1.8vw,9px)}}
+</style></head><body><details class="moon-card" open><summary aria-label="展开或收起状态栏"></summary><div class="moon-stage"><img class="moon-base" alt=""><img class="moon-photo" alt=""><img class="moon-foreground" alt=""><main class="moon-values"><strong class="moon-label moon-label-flat ml0" data-label="0"></strong><strong class="moon-label moon-label-flat ml1" data-label="1"></strong><strong class="moon-label moon-label-mid ml2" data-label="2"></strong><strong class="moon-label moon-label-mid ml3" data-label="3"></strong><strong class="moon-label moon-label-mid ml4" data-label="4"></strong><strong class="moon-label moon-label-mid ml5" data-label="5"></strong><strong class="moon-label moon-label-flat ml6" data-label="6"></strong><strong class="moon-label moon-label-flat ml7" data-label="7"></strong><strong class="moon-value moon-metric mv0" data-value="0"></strong><strong class="moon-value moon-metric mv1" data-value="1"></strong><strong class="moon-value moon-long mv2" data-value="2"></strong><strong class="moon-value moon-long mv3" data-value="3"></strong><strong class="moon-value moon-long mv4" data-value="4"></strong><strong class="moon-value moon-long mv5" data-value="5"></strong><strong class="moon-value moon-note mv6" data-value="6"></strong><strong class="moon-value moon-note mv7" data-value="7"></strong></main></div><div class="moon-compact">月下蝶影</div><textarea class="moon-source" hidden>$1</textarea></details><script>(function(script){var card=script.previousElementSibling;var config=${configJson};var raw=card.querySelector('.moon-source').value||'';var values=[];raw.split(/\\r?\\n/).forEach(function(line){var text=line.trim();if(text.charAt(0)!=='['||text.charAt(text.length-1)!==']')return;var parts=text.slice(1,-1).split('|').map(function(item){return item.trim();});var key=parts.shift();if(key===config.pageId)values=parts;});var base=card.querySelector('.moon-base');base.src=config.backgroundUrl;var foreground=card.querySelector('.moon-foreground');foreground.src=config.foregroundUrl;var photo=card.querySelector('.moon-photo');if(config.photoUrl){photo.src=config.photoUrl;photo.alt=config.photoAlt;photo.referrerPolicy='no-referrer';photo.addEventListener('error',function(){photo.remove();});}else photo.remove();card.querySelectorAll('[data-label]').forEach(function(node){node.textContent=config.labels[Number(node.dataset.label)]||'';});card.querySelectorAll('[data-value]').forEach(function(node){node.textContent=values[Number(node.dataset.value)]||'—';});})(document.currentScript);</script></body></html>
+\`\`\``;
+}
+
+
 function generatedReplacement(rule) {
+    if (isStatusBeauty05To09(rule.structure)) return buildStatusBeauty05To09Replacement(rule);
+    if (isStatusBeauty16To20(rule.structure)) return buildStatusBeauty16To20Replacement(rule);
+    if (rule.structure === 'moon-collage') return generatedMoonCollageReplacement(rule);
     if (rule.structure === 'forum') return generatedForumReplacement(rule);
     if (isOriginalRoleCardStructure(rule.structure)) return buildOriginalRoleCardReplacement(rule);
     const renderConfig = {
@@ -2127,7 +2196,7 @@ export function makePreviewRecords(input) {
         if (rule.structure === 'forum' && field.id === 'forum_notice') return forumSample.notice;
         if (rule.structure === 'chat' && chatSamples[field.id]) return chatSamples[field.id];
         if (rule.structure === 'forum' && field.id === 'forum_presence') return 'X';
-        if (isOriginalRoleCardStructure(rule.structure)) return 'X';
+        if (isOriginalRoleCardStructure(rule.structure) || isStatusBeauty01To15(rule.structure) || isStatusBeauty16To20(rule.structure)) return 'X';
         if (field.kind === 'progress') return 'AI动态数值';
         if (field.kind === 'currency') return 'AI动态金额';
         if (field.kind === 'avatar') return '当前角色';

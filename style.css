@@ -4869,3 +4869,95 @@ body:has(.preview-note) [data-status-workspace-panel="status"] .status-atelier-w
         width: 100%;
     }
 }
++        grid-template-columns: 18px minmax(0, 1fr) 104px 30px;
+    }
+}
+
+.status-atelier-moon-preview {
+    position: relative;
+    width: min(1100px, 100%);
+    margin: 0 auto;
+    overflow: hidden;
+    border-radius: 6px;
+    background: #eee8dc;
+    box-shadow: 0 14px 42px rgba(8, 11, 28, .42);
+    font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
+}
+
+.status-atelier-moon-preview > summary {
+    position: absolute;
+    z-index: 20;
+    right: 9px;
+    top: 8px;
+    display: grid;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border: 1px solid rgba(91, 96, 120, .55);
+    border-radius: 50%;
+    color: #38405d;
+    background: rgba(247, 242, 231, .82);
+    cursor: pointer;
+    list-style: none;
+}
+
+.status-atelier-moon-preview > summary::-webkit-details-marker { display: none; }
+.status-atelier-moon-preview > summary::after { content: "⌃"; font: 700 17px/1 Georgia, serif; }
+.status-atelier-moon-preview:not([open]) > summary::after { content: "⌄"; }
+.status-atelier-moon-stage { position: relative; width: 100%; aspect-ratio: 99 / 64; overflow: hidden; }
+.status-atelier-moon-base { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.status-atelier-moon-photo { position: absolute; z-index: 2; left: 10.6%; top: 29.3%; width: 25.6%; height: 47%; object-fit: cover; object-position: 50% 18%; }
+.status-atelier-moon-foreground { position: absolute; z-index: 3; left: 1.5%; top: 17%; width: 88.2%; height: 86.5%; pointer-events: none; }
+.status-atelier-moon-values { position: absolute; inset: 0; z-index: 5; }
+.status-atelier-moon-label,
+.status-atelier-moon-value { position: absolute; margin: 0; overflow: hidden; color: #382d35; font-weight: 500; }
+.status-atelier-moon-label { display: grid; place-items: center; color: #263e62; font-size: clamp(8px, 1.55vw, 24px); font-weight: 600; line-height: 1.05; cursor: text; }
+.status-atelier-moon-label.is-editing { outline: 1px dashed #784a55; background: rgba(255, 250, 240, .96); }
+.status-atelier-moon-label.is-vertical { width: 4.4%; height: 10.2%; letter-spacing: .08em; writing-mode: vertical-rl; text-orientation: upright; }
+.status-atelier-moon-label.is-flat { height: 4.4%; padding: 0 .3%; background: rgba(243, 238, 228, .9); white-space: nowrap; }
+.status-atelier-moon-value.is-metric { display: flex; align-items: center; height: 5%; font-size: clamp(10px, 1.55vw, 25px); line-height: 1.2; white-space: nowrap; }
+.status-atelier-moon-value.is-long { display: flex; align-items: center; height: 11.5%; padding-right: 1%; font-size: clamp(9px, 1.42vw, 23px); line-height: 1.58; }
+.status-atelier-moon-value.is-note { display: flex; align-items: center; height: 6.2%; font-size: clamp(8px, 1.18vw, 19px); line-height: 1.45; }
+.moon-label-0 { left: 51.6%; top: 8.3%; width: 7.5%; }
+.moon-label-1 { left: 76.5%; top: 8.3%; width: 7.2%; }
+.moon-label-2 { left: 47.5%; top: 20.8%; }
+.moon-label-3 { left: 47.5%; top: 34.9%; }
+.moon-label-4 { left: 47.5%; top: 49%; }
+.moon-label-5 { left: 47.5%; top: 63.1%; }
+.moon-label-6 { left: 47.5%; top: 77.1%; width: 8.7%; }
+.moon-label-7 { left: 47.5%; top: 85.6%; width: 8.7%; }
+.moon-value-0 { left: 59.8%; top: 8.3%; width: 9.5%; }
+.moon-value-1 { left: 84.4%; top: 8.3%; width: 8.6%; }
+.moon-value-2 { left: 54.8%; top: 19.8%; width: 39.2%; }
+.moon-value-3 { left: 54.8%; top: 33.9%; width: 39.2%; }
+.moon-value-4 { left: 54.8%; top: 48%; width: 39.2%; }
+.moon-value-5 { left: 54.8%; top: 62.1%; width: 39.2%; }
+.moon-value-6 { left: 56.9%; top: 76.2%; width: 31.2%; }
+.moon-value-7 { left: 56.9%; top: 84.7%; width: 31.2%; }
+.status-atelier-moon-compact { display: none; min-height: 66px; align-items: center; padding: 15px 55px 15px 18px; color: #f6f1e8; background: linear-gradient(110deg, #333c5c, #676077); }
+.status-atelier-moon-preview:not([open]) .status-atelier-moon-stage { display: none; }
+.status-atelier-moon-preview:not([open]) .status-atelier-moon-compact { display: flex; }
+
+@media (max-width: 560px) {
+    .status-atelier-moon-preview > summary { right: 5px; top: 5px; width: 24px; height: 24px; }
+    .status-atelier-moon-label { font-size: clamp(6px, 2.15vw, 10px); }
+    .status-atelier-moon-value.is-metric { font-size: clamp(6px, 2.3vw, 11px); }
+    .status-atelier-moon-value.is-long { font-size: clamp(5px, 2.05vw, 10px); line-height: 1.45; }
+    .status-atelier-moon-value.is-note { font-size: clamp(5px, 1.8vw, 9px); }
+}
+
+.status-atelier-beauty-preview-frame {
+    display: block;
+    width: 100%;
+    aspect-ratio: 900 / 580;
+    min-height: 320px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+}
+
+@media (max-width: 700px) {
+    .status-atelier-beauty-preview-frame {
+        min-height: 250px;
+    }
+}
