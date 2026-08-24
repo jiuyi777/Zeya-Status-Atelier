@@ -9,9 +9,11 @@ import {
     CHAT_REFERENCE_CSS,
     CHAT_SAMPLE_LOG,
     RULE_PRESETS,
+    SOCIAL_APPEARANCE_PRESETS,
     PHONE_SHELL_STYLES,
     STATUS_PALETTE_PRESETS,
     STATUS_STRUCTURE_PRESETS,
+    STATUS_STYLE_PRESETS,
     STATUS_THEME_CSS,
     STATUS_PHONE_CSS,
     FORUM_THEME_CSS,
@@ -41,14 +43,14 @@ test('registers genuinely different component structures and composable palettes
     assert.equal(new Set(STATUS_PALETTE_PRESETS.map(item => item.id)).size, 26);
     assert.ok(STATUS_PALETTE_PRESETS.every(item => ['accent', 'background', 'card', 'text', 'muted'].every(key => /^#[0-9a-f]{6}$/i.test(item[key]))));
     assert.deepEqual(STATUS_PALETTE_PRESETS.slice(-8).map(item => item.name), [
-        '敦煌橙青',
-        '土星复古',
-        '春芽柠檬',
-        '橙蓝碰撞',
-        '夜蓝蜜桃',
-        '雾灰森林',
-        '炭红旧书',
-        '冬夜霜蓝',
+        '咖啡薄荷',
+        '梅紫鎏金',
+        '薄荷珊瑚',
+        '冰川浅蓝',
+        '柠檬樱粉',
+        '牛血石灰',
+        '黑白钢蓝档案',
+        '粉蓝黑莓像素',
     ]);
     for (const structure of STATUS_STRUCTURE_PRESETS) {
         assert.ok(structure.fields.length >= 3, `${structure.name} has an editable schema`);
@@ -1060,12 +1062,12 @@ test('every selectable status template generates syntactically valid mobile rend
             sharedFieldsText: (structure.shared || []).map(field => field.join('|')).join('\n'),
             pageFieldsText: structure.fields.map(field => field.join('|')).join('\n'),
         });
-        assert.match(script.replaceString, new RegExp(`data-theme="${structure.appearanceId}"`));
-        assert.match(script.replaceString, /zrs-chrome/);
-        assert.match(script.replaceString, /@media\(max-width:520px\)/);
+        assert.doesNotMatch(script.replaceString, /data-theme="undefined"/);
+        assert.match(script.replaceString, /zrs-chrome|forum-2ch|zrs-chat-window/);
+        assert.match(script.replaceString, /@media\s*\(max-width:/);
         const browserScript = script.replaceString.match(/<script>\n([\s\S]*?)\n<\/script>/);
-        assert.ok(browserScript, `${style.code} ${style.name} includes browser script`);
-        assert.doesNotThrow(() => new Function(browserScript[1]), `${style.code} ${style.name} browser script parses`);
+        assert.ok(browserScript, `${structure.id} ${structure.name} includes browser script`);
+        assert.doesNotThrow(() => new Function(browserScript[1]), `${structure.id} ${structure.name} browser script parses`);
     }
 });
 

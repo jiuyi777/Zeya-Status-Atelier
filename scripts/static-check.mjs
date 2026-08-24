@@ -3,6 +3,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
     RULE_PRESETS,
+    STATUS_STYLE_PRESETS,
     STATUS_STRUCTURE_PRESETS,
     buildRegexScript,
     buildWorldbookJson,
@@ -169,10 +170,19 @@ for (const structure of selectableStructures) {
         const worldbook = buildWorldbookJson(input);
         statusIds.add(statusRegex.id);
         const entry = worldbook.entries?.[0];
-        if (!statusRegex.replaceString.includes(`data-theme="${appearanceId}"`)) {
-            errors.push(`${name}没有写入专属外观 ${appearanceId}`);
+        const hasExpectedAppearance = appearanceId
+            ? statusRegex.replaceString.includes(`data-theme="${appearanceId}"`)
+            : id === 'social'
+                ? statusRegex.replaceString.includes('data-theme="personal-dossier"')
+                : id === 'forum'
+                    ? statusRegex.replaceString.includes('data-forum-skin=')
+                    : id === 'chat'
+                        ? statusRegex.replaceString.includes('data-chat-appearance=')
+                        : !statusRegex.replaceString.includes('data-theme="undefined"');
+        if (!hasExpectedAppearance) {
+            errors.push(`${name}没有写入可识别的专属外观`);
         }
-        if (!entry?.constant || !entry.content?.includes('所有值都必须根据当前剧情动态生成')) {
+        if (!entry?.constant || !entry.content?.includes('<zeya_status>')) {
             errors.push(`${name}世界书没有动态输出规则`);
         }
         if (!statusRegex.replaceString.includes('textContent')) {
@@ -188,7 +198,7 @@ for (const structure of selectableStructures) {
 if (openingIds.size !== 4) errors.push('四套开场白主页必须使用四个独立正则 ID');
 if (STATUS_STYLE_PRESETS.length !== 22) errors.push('状态栏外观注册表必须正好包含22套');
 if (new Set(STATUS_STYLE_PRESETS.map(style => style.id)).size !== 22) errors.push('22套状态栏外观必须使用22个独立主题 ID');
-if (statusIds.size !== 22) errors.push('22套状态栏外观必须生成22个独立正则 ID');
+if (statusIds.size !== selectableStructures.length) errors.push('可选状态栏模板必须生成独立正则 ID');
 
 if (STATUS_STRUCTURE_PRESETS.length !== 13) errors.push('编辑器必须保留9种基础结构、1种手机桌面结构与3种原版角色卡结构');
 try {

@@ -250,7 +250,7 @@ const DEFAULT_SETTINGS = Object.freeze({
     chatAppearance: 'kitty-pink',
     chatConversationSchemaVersion: 0,
     paletteId: 'ice-blue',
-    media: { avatarSource: 'character', avatarUrl: '', imageUrl: '', archiveImageUrls: '', audioUrl: '', imageAlt: '状态栏配图' },
+    media: { avatarSource: 'character', avatarUrl: '', imageUrl: '', themeAssetUrl: '', archiveImageUrls: '', audioUrl: '', imageAlt: '状态栏配图' },
     phoneDesktop: PHONE_DESKTOP_DEFAULTS,
     openingNotes: {},
     openingProfiles: {},
@@ -304,6 +304,7 @@ const STATUS_MEDIA_FIELDS = Object.freeze({
     'status-atelier-avatar-source': 'avatarSource',
     'status-atelier-avatar-url': 'avatarUrl',
     'status-atelier-image-url': 'imageUrl',
+    'status-atelier-theme-asset-url': 'themeAssetUrl',
     'status-atelier-archive-image-urls': 'archiveImageUrls',
     'status-atelier-audio-url': 'audioUrl',
     'status-atelier-image-alt': 'imageAlt',
@@ -727,6 +728,25 @@ function renderStatusDesignControls() {
     const structureSelect = field('status-atelier-structure');
     populateStatusStructureSelect(structureSelect);
     if (structureSelect) structureSelect.value = settings().structure || 'custom';
+    const styleHost = field('status-atelier-status-styles');
+    if (styleHost && styleHost.children.length !== STATUS_STYLE_PRESETS.length) {
+        styleHost.replaceChildren();
+        STATUS_STYLE_PRESETS.forEach(style => {
+            const button = makeElement('button', 'status-atelier-status-style');
+            button.type = 'button';
+            button.dataset.statusStyle = style.id;
+            button.title = `${style.code} ${style.name}`;
+            button.append(
+                makeElement('b', '', style.code),
+                makeElement('span', 'status-atelier-status-style-glyph', style.glyph || '✦'),
+                makeElement('small', '', style.name),
+            );
+            styleHost.append(button);
+        });
+    }
+    styleHost?.querySelectorAll('[data-status-style]').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.statusStyle === settings().theme));
+    });
     const socialAppearanceHost = field('status-atelier-social-appearances');
     if (socialAppearanceHost && socialAppearanceHost.children.length !== SOCIAL_APPEARANCE_PRESETS.length) {
         socialAppearanceHost.replaceChildren();
@@ -818,6 +838,10 @@ function renderPhoneDesktopControls() {
     if (section) section.hidden = stored.structure !== 'phone';
     const appearanceSection = field('status-atelier-appearance-section');
     if (appearanceSection) appearanceSection.hidden = ['phone', 'forum', 'chat', 'archive-status', 'pixel-chat', 'pixel-handheld'].includes(stored.structure);
+    const appearanceTitle = field('status-atelier-appearance-title');
+    if (appearanceTitle) appearanceTitle.textContent = stored.structure === 'social' ? '个人档案外观与配色' : '更多外观与配色';
+    const socialAppearanceSection = field('status-atelier-social-appearance-section');
+    if (socialAppearanceSection) socialAppearanceSection.hidden = stored.structure !== 'social';
     const chatAppearanceSection = field('status-atelier-chat-appearance');
     if (chatAppearanceSection) chatAppearanceSection.hidden = stored.structure !== 'chat';
     field('status-atelier-chat-appearances')?.querySelectorAll('[data-chat-appearance]').forEach(button => {
@@ -853,12 +877,14 @@ function renderTemplateMediaControls() {
     const usesArchiveImages = structure === 'archive-status';
     const usesAudio = structure === 'music';
     section.hidden = structure === 'phone' || (!usesAvatar && !usesImage && !usesArchiveImages && !usesAudio);
-    if (structure === 'chat') section.open = true;
+    if (['chat', 'social'].includes(structure)) section.open = true;
     const title = field('status-atelier-template-media-title');
     const help = field('status-atelier-template-media-help');
-    if (title) title.textContent = structure === 'chat' ? '聊天头像 DIY' : usesArchiveImages ? '档案头像与拍立得' : usesAudio ? '播放界面素材' : usesImage ? '当前模板配图' : '当前模板头像';
+    if (title) title.textContent = structure === 'chat' ? '聊天头像 DIY' : structure === 'social' ? '个人档案 · 图片设置' : usesArchiveImages ? '档案头像与拍立得' : usesAudio ? '播放界面素材' : usesImage ? '当前模板配图' : '当前模板头像';
     if (help) help.textContent = structure === 'chat'
         ? '左侧头像可选当前角色、当前 User、自定义 URL 或隐藏；右侧自动读取当前 User 头像。AI 只填写对象、在线状态、聊天内容、时间、语音与已读。'
+        : structure === 'social'
+            ? '选择证件照、档案附图和可替换的纸张拼贴底图。'
         : usesAudio
         ? '封面与音频只会进入播放界面，音频不会自动播放。'
         : usesImage
@@ -869,12 +895,14 @@ function renderTemplateMediaControls() {
     const avatarSourceWrap = field('status-atelier-media-avatar-source-wrap');
     const avatarUrlWrap = field('status-atelier-avatar-url-wrap');
     const imageUrlWrap = field('status-atelier-image-url-wrap');
+    const themeAssetUrlWrap = field('status-atelier-theme-asset-url-wrap');
     const archiveImageUrlsWrap = field('status-atelier-archive-image-urls-wrap');
     const audioUrlWrap = field('status-atelier-audio-url-wrap');
     const altWrap = field('status-atelier-image-alt-wrap');
     if (avatarSourceWrap) avatarSourceWrap.hidden = !usesAvatar;
     if (avatarUrlWrap) avatarUrlWrap.hidden = !usesAvatar || (structure !== 'chat' && settings().media?.avatarSource !== 'url');
     if (imageUrlWrap) imageUrlWrap.hidden = !usesImage;
+    if (themeAssetUrlWrap) themeAssetUrlWrap.hidden = structure !== 'social';
     if (archiveImageUrlsWrap) archiveImageUrlsWrap.hidden = !usesArchiveImages;
     if (audioUrlWrap) audioUrlWrap.hidden = !usesAudio;
     if (altWrap) altWrap.hidden = !usesAvatar && !usesImage && !usesArchiveImages;
@@ -3554,16 +3582,169 @@ function renderStatusPreview(host) {
         windowBody.append(sidebar, conversation);
         pageHost.append(menu, windowBody);
     };
+    const socialValue = (page, values, id, fallback = '') => {
+        const definitions = page?.fields || rule.pageFields;
+        const index = definitions.findIndex(definition => definition.id === id);
+        const value = index >= 0 ? String(values[index] || '').trim() : '';
+        return value && value !== '无' ? value : fallback;
+    };
+    const renderSocialPage = (page, values) => {
+        const socialDefinitions = page?.fields || rule.pageFields;
+        const socialDefinition = id => socialDefinitions.find(definition => definition.id === id);
+        const socialLabel = (id, fallback) => socialDefinition(id)?.label || fallback;
+        const article = makeElement('article', 'zrs-social-file');
+        if (rule.themeAssetUrl) {
+            const themeArt = makeElement('img', 'zrs-social-theme-art');
+            themeArt.src = rule.themeAssetUrl;
+            themeArt.alt = '';
+            themeArt.loading = 'lazy';
+            themeArt.draggable = false;
+            themeArt.setAttribute('aria-hidden', 'true');
+            themeArt.addEventListener('error', () => themeArt.remove());
+            article.append(themeArt);
+        }
+        const scraps = makeElement('div', 'zrs-social-scraps');
+        scraps.setAttribute('aria-hidden', 'true');
+        [
+            ['is-label', 'MY FILE'],
+            ['is-heart', '♥'],
+            ['is-star', '★'],
+            ['is-tape', ''],
+            ['is-grid', ''],
+        ].forEach(([className, copy]) => scraps.append(makeElement('span', `zrs-social-scrap ${className}`, copy)));
+        const switcher = makeElement('div', 'zrs-social-switcher');
+        switcher.setAttribute('role', 'tablist');
+        switcher.setAttribute('aria-label', '个人档案页面');
+        const profileButton = makeElement('button', 'zrs-social-switch is-active', '资料卡');
+        const introButton = makeElement('button', 'zrs-social-switch', '个人介绍');
+        [profileButton, introButton].forEach(button => {
+            button.type = 'button';
+            button.setAttribute('role', 'tab');
+        });
+        profileButton.setAttribute('aria-selected', 'true');
+        introButton.setAttribute('aria-selected', 'false');
+        switcher.append(profileButton, introButton);
+
+        const profileSheet = makeElement('section', 'zrs-social-sheet zrs-social-profile is-active');
+        profileSheet.setAttribute('role', 'tabpanel');
+        const ticket = makeElement('aside', 'zrs-social-ticket');
+        ticket.setAttribute('aria-hidden', 'true');
+        ticket.append(
+            makeElement('b', '', 'FILE'),
+            makeElement('span', '', 'NO. 0217'),
+            makeElement('i'),
+            makeElement('small', '', 'IDENTITY RECORD'),
+        );
+        const portrait = makeElement('figure', 'zrs-social-photo');
+        if (rule.media.avatarUrl) {
+            const image = makeElement('img');
+            image.src = rule.media.avatarUrl;
+            image.alt = rule.media.imageAlt || '人物证件照';
+            image.loading = 'lazy';
+            image.addEventListener('error', () => {
+                image.remove();
+                portrait.classList.add('is-placeholder');
+            });
+            portrait.append(image);
+        } else {
+            portrait.classList.add('is-placeholder');
+        }
+        portrait.append(makeElement('figcaption', '', 'PORTRAIT / 01'));
+        bindDirectMediaTarget(portrait);
+
+        const identityBlock = makeElement('div', 'zrs-social-identity');
+        const name = makeElement('strong', 'zrs-social-name', socialValue(page, values, 'full_name', '姓名'));
+        name.dataset.field = 'full_name';
+        const role = makeElement('span', 'zrs-social-role', socialValue(page, values, 'identity', '身份 / 职位'));
+        role.dataset.field = 'identity';
+        bindDirectPreviewTarget(name, 'full_name', socialLabel('full_name', '姓名'));
+        bindDirectPreviewTarget(role, 'identity', socialLabel('identity', '身份 / 职位'));
+        identityBlock.append(makeElement('small', '', 'PASSENGER DETAILS'), name, role);
+
+        const details = makeElement('dl', 'zrs-social-details');
+        [
+            ['birthday', '生日', 'X'],
+            ['age', '年龄', 'X'],
+            ['physical_state', '身体状态', 'X'],
+            ['current_location', '当前地点', 'X'],
+            ['record_date', '记录日期', 'X'],
+            ['record_channel', '记录渠道', 'X'],
+            ['current_thought', '当前想法', 'X'],
+        ].forEach(([id, fallbackLabel, fallback]) => {
+            const row = makeElement('div', 'zrs-social-detail');
+            const label = socialLabel(id, fallbackLabel);
+            const term = makeElement('dt', '', label);
+            const description = makeElement('dd', '', socialValue(page, values, id, fallback));
+            description.dataset.field = id;
+            row.append(term, description);
+            bindDirectPreviewTarget(row, id, label);
+            details.append(row);
+        });
+        const status = makeElement('div', 'zrs-social-state');
+        const statusLabel = socialLabel('current_state', '当前状态');
+        status.append(
+            makeElement('span', '', statusLabel),
+            makeElement('strong', '', socialValue(page, values, 'current_state', 'X')),
+        );
+        status.querySelector('strong').dataset.field = 'current_state';
+        bindDirectPreviewTarget(status, 'current_state', statusLabel);
+        const profileBody = makeElement('div', 'zrs-social-profile-body');
+        profileBody.append(portrait, identityBlock, details, status);
+        profileSheet.append(ticket, profileBody);
+
+        const introSheet = makeElement('section', 'zrs-social-sheet zrs-social-intro');
+        introSheet.setAttribute('role', 'tabpanel');
+        introSheet.hidden = true;
+        const introHead = makeElement('header', 'zrs-social-intro-head');
+        const introductionLabel = socialLabel('introduction', '个人介绍 / 当前记录');
+        const introName = makeElement('small', '', socialValue(page, values, 'full_name', '姓名'));
+        introHead.append(
+            makeElement('span', '', 'PERSONAL'),
+            makeElement('strong', '', introductionLabel),
+            introName,
+        );
+        bindDirectPreviewTarget(introName, 'full_name', socialLabel('full_name', '姓名'));
+        const introCopy = makeElement('p', 'zrs-social-intro-copy', socialValue(page, values, 'introduction', 'X'));
+        introCopy.dataset.field = 'introduction';
+        bindDirectPreviewTarget(introCopy, 'introduction', introductionLabel);
+        introSheet.append(introHead, introCopy);
+        if (rule.media.imageUrl) {
+            const archivePhoto = makeElement('figure', 'zrs-social-archive-photo');
+            const archiveImage = makeElement('img');
+            archiveImage.src = rule.media.imageUrl;
+            archiveImage.alt = rule.media.imageAlt || '档案附图';
+            archiveImage.loading = 'lazy';
+            archiveImage.addEventListener('error', () => archivePhoto.remove());
+            archivePhoto.append(archiveImage, makeElement('figcaption', '', 'ARCHIVE / ATTACHED'));
+            bindDirectMediaTarget(archivePhoto);
+            introSheet.append(archivePhoto);
+        }
+        const showSocialSheet = introVisible => {
+            profileSheet.hidden = introVisible;
+            introSheet.hidden = !introVisible;
+            profileSheet.classList.toggle('is-active', !introVisible);
+            introSheet.classList.toggle('is-active', introVisible);
+            profileButton.classList.toggle('is-active', !introVisible);
+            introButton.classList.toggle('is-active', introVisible);
+            profileButton.setAttribute('aria-selected', String(!introVisible));
+            introButton.setAttribute('aria-selected', String(introVisible));
+        };
+        profileButton.addEventListener('click', () => showSocialSheet(false));
+        introButton.addEventListener('click', () => showSocialSheet(true));
+        article.append(scraps, switcher, profileSheet, introSheet);
+        pageHost.append(article);
+    };
     const showPage = index => {
         pageHost.replaceChildren();
         const page = pages[index]?.page;
         const values = pages[index]?.values || [];
         if (phoneMode) renderPhonePage(page, values);
         else if (rule.structure === 'chat') renderChatConversation(page, values);
+        else if (rule.structure === 'social') renderSocialPage(page, values);
         else (page?.fields || rule.pageFields).forEach((definition, fieldIndex) => {
             appendPreviewField(pageHost, definition, values[fieldIndex] || previewValue(definition), false, rule.glyph, rule);
         });
-        if (!phoneMode && rule.structure !== 'chat') bindPreviewFieldReorder(pageHost, rule, 'page');
+        if (!phoneMode && !['chat', 'social'].includes(rule.structure)) bindPreviewFieldReorder(pageHost, rule, 'page');
         [...tabs.children].forEach((button, buttonIndex) => {
             const active = handheldMode
                 ? Number(button.dataset.pageIndex) === index
@@ -5146,6 +5327,26 @@ async function addSettingsPanel() {
             saveSettingsSoon({ snapshotOpening: false });
             return;
         }
+        const statusStyleButton = event.target.closest('[data-status-style]');
+        if (statusStyleButton) {
+            const style = STATUS_STYLE_PRESETS.find(item => item.id === statusStyleButton.dataset.statusStyle);
+            if (!style) return;
+            settings().theme = style.id;
+            const themeControl = field('status-atelier-theme');
+            if (themeControl) themeControl.value = style.id;
+            settings().layout = style.layout;
+            const layoutControl = field('status-atelier-layout');
+            if (layoutControl) layoutControl.value = style.layout;
+            settings().preset = 'custom';
+            field('status-atelier-preset').value = 'custom';
+            statusAiTestRecords = null;
+            field('status-atelier-status-styles')?.querySelectorAll('[data-status-style]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button === statusStyleButton));
+            });
+            refreshStatusAppearancePreview();
+            saveSettingsSoon({ snapshotOpening: false });
+            return;
+        }
         const socialAppearanceButton = event.target.closest('[data-social-appearance]');
         if (socialAppearanceButton && settings().structure === 'social') {
             const appearance = SOCIAL_APPEARANCE_PRESETS.find(item => item.id === socialAppearanceButton.dataset.socialAppearance);
@@ -5155,7 +5356,7 @@ async function addSettingsPanel() {
             field('status-atelier-social-appearances')?.querySelectorAll('[data-social-appearance]').forEach(button => {
                 button.setAttribute('aria-pressed', String(button === socialAppearanceButton));
             });
-            updatePreview();
+            refreshStatusAppearancePreview();
             saveSettingsSoon({ snapshotOpening: false });
             return;
         }

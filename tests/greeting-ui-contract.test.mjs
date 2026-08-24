@@ -111,7 +111,6 @@ test('quest template opens the dedicated map editor inside the main plugin', () 
 });
 
 test('status appearance controls update in place and preserve readable selected text', () => {
-    assert.doesNotMatch(source, /STATUS_STYLE_PRESETS|data-status-style|status-atelier-status-styles/);
     assert.match(source, /paletteHost\.children\.length !== STATUS_PALETTE_PRESETS\.length/);
     const paletteClick = source.match(/const statusPaletteButton = event\.target\.closest\('\[data-status-palette\]'\);([\s\S]*?)field\('status-atelier-test-ai'\)/)?.[1] || '';
     assert.doesNotMatch(paletteClick, /renderStatusDesignControls\(\)/);
@@ -270,7 +269,7 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.doesNotMatch(settingsMarkup, /换素材与动效|都是独立模板/);
     assert.match(settingsMarkup, /status-atelier-setting-section status-atelier-collapsible" open>[\s\S]*?选择状态栏模板/);
     assert.doesNotMatch(settingsMarkup, /外观改字体、边框、材质、圆角和组件造型|色卡只控制颜色/);
-    assert.match(settingsMarkup, /id="status-atelier-appearance-section"[^>]*>[\s\S]*?<h4>更多外观与配色<\/h4>/);
+    assert.match(settingsMarkup, /id="status-atelier-appearance-section"[^>]*>[\s\S]*?<h4[^>]*>更多外观与配色<\/h4>/);
     assert.match(source, /appearanceSection\.hidden = \['phone', 'forum', 'chat', 'archive-status', 'pixel-chat', 'pixel-handheld'\]\.includes\(stored\.structure\)/);
     assert.match(source, /function populateStatusStructureSelect\(structureSelect\)/);
     assert.match(source, /appendGroup\('手机', \['phone', 'pixel-handheld'\]\)/);
@@ -297,7 +296,7 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(settingsMarkup, /data-chat-appearance="notepad-pink"/);
     assert.match(settingsMarkup, /data-chat-appearance="lace-ivory"/);
     assert.match(settingsMarkup, /data-chat-appearance="velvet-wine"/);
-    assert.match(source, /if \(structure === 'chat'\) section\.open = true/);
+    assert.match(source, /if \(\['chat', 'social'\]\.includes\(structure\)\) section\.open = true/);
     assert.match(source, /structure !== 'chat' && settings\(\)\.media\?\.avatarSource !== 'url'/);
     assert.match(source, /chatAppearanceSection\.hidden = stored\.structure !== 'chat'/);
     assert.match(source, /closest\('#status-atelier-chat-appearances button\[data-chat-appearance\]'\)/);
@@ -345,7 +344,7 @@ test('status workbench separates templates, appearance and palettes and supports
         assert.doesNotMatch(settingsMarkup, new RegExp(`id="${removedId}"`));
     }
     assert.ok(settingsMarkup.indexOf('更多外观与配色') < settingsMarkup.indexOf('启用状态栏'));
-    assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-advanced" open>[\s\S]*?<summary>手动下载与全局安装<\/summary>/);
+    assert.match(settingsMarkup, /<section class="status-atelier-setting-section status-atelier-advanced status-atelier-download-actions">[\s\S]*?<h4>手动下载与全局安装<\/h4>/);
     assert.match(source, /bindPreviewFieldLabelEditor/);
     assert.match(source, /bindPreviewTitleEditor/);
     assert.match(source, /bindPreviewFieldReorder/);

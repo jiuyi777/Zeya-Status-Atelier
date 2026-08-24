@@ -3233,6 +3233,38 @@ summary.status-atelier-section-heading {
     margin-bottom: 14px;
 }
 
+.status-atelier-social-data-guide {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0 0 12px;
+}
+
+.status-atelier-social-data-guide[hidden] {
+    display: none;
+}
+
+.status-atelier-social-data-guide span {
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--sap-accent) 24%, transparent);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--sap-layer) 62%, transparent);
+    font-size: .78em;
+    line-height: 1.55;
+}
+
+.status-atelier-social-data-guide b {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--sap-accent);
+}
+
+@media (max-width: 620px) {
+    .status-atelier-social-data-guide {
+        grid-template-columns: 1fr;
+    }
+}
+
 .status-atelier-social-appearance-section h5 {
     margin: 0 0 10px;
 }

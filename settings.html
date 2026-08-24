@@ -215,7 +215,11 @@
                     </details>
 
                     <details id="status-atelier-template-media" class="status-atelier-setting-section status-atelier-collapsible" hidden>
-                        <summary class="status-atelier-section-heading"><div><h4 id="status-atelier-template-media-title">当前模板素材</h4></div></summary>
+                        <summary class="status-atelier-section-heading"><div><h4 id="status-atelier-template-media-title">当前模板素材</h4><small id="status-atelier-template-media-help">这里只显示当前模板真正会用到的素材。</small></div></summary>
+                        <div id="status-atelier-social-data-guide" class="status-atelier-social-data-guide" hidden>
+                            <span><b>图片设置</b>证件照、档案附图和替代文字。</span>
+                            <span><b>动态内容</b>姓名、身份、地点、身体状态、当前状态和个人介绍。</span>
+                        </div>
                         <div class="status-atelier-settings-grid">
                             <label id="status-atelier-media-avatar-source-wrap">头像 / 证件照来源<select id="status-atelier-avatar-source" class="text_pole">
                                 <option value="character">当前角色头像</option>
@@ -225,6 +229,7 @@
                             </select></label>
                             <label id="status-atelier-avatar-url-wrap" hidden>自定义头像 URL<input id="status-atelier-avatar-url" class="text_pole" type="url" placeholder="选择“直接 URL”后填写 https://..."></label>
                             <label id="status-atelier-image-url-wrap">主图 / 封面 URL<input id="status-atelier-image-url" class="text_pole" type="url" placeholder="https://example.com/cover.png"></label>
+                            <label id="status-atelier-theme-asset-url-wrap" hidden>纸张拼贴底图 URL<input id="status-atelier-theme-asset-url" class="text_pole" type="url" placeholder="留空时仅在插件预览里显示内置蓝布插画"></label>
                             <label id="status-atelier-archive-image-urls-wrap" hidden>拍立得图片链接（每行一个，随机显示）<textarea id="status-atelier-archive-image-urls" class="text_pole" rows="4" placeholder="https://example.com/photo-1.png&#10;https://example.com/photo-2.png"></textarea></label>
                             <label id="status-atelier-audio-url-wrap">音频 URL<input id="status-atelier-audio-url" class="text_pole" type="url" placeholder="https://example.com/audio.mp3"></label>
                             <label id="status-atelier-image-alt-wrap">图片替代文字<input id="status-atelier-image-alt" class="text_pole" type="text" maxlength="80" placeholder="用于图片加载失败和无障碍阅读"></label>
@@ -257,7 +262,11 @@
                     </details>
 
                     <details id="status-atelier-appearance-section" class="status-atelier-setting-section status-atelier-collapsible">
-                        <summary class="status-atelier-section-heading"><div><h4>更多外观与配色</h4></div></summary>
+                        <summary class="status-atelier-section-heading"><div><h4 id="status-atelier-appearance-title">更多外观与配色</h4></div></summary>
+                        <section id="status-atelier-social-appearance-section" class="status-atelier-social-appearance-section" hidden>
+                            <h5>个人档案构图</h5>
+                            <div id="status-atelier-social-appearances" class="status-atelier-social-appearances" aria-label="个人档案构图"></div>
+                        </section>
                         <details class="status-atelier-status-style-library">
                             <summary><strong>22 套外观</strong></summary>
                             <div id="status-atelier-status-styles" class="status-atelier-status-styles" aria-label="状态栏外观"></div>

@@ -1046,6 +1046,8 @@ export function normalizeRule(input = {}) {
     const sharedFields = parseFields(input.sharedFieldsText);
     const pageFields = parseFields(input.pageFieldsText);
     const structure = STATUS_STRUCTURE_IDS.has(input.structure) ? input.structure : 'custom';
+    const structurePreset = STATUS_STRUCTURE_PRESETS.find(item => item.id === structure)
+        || STATUS_STRUCTURE_PRESETS.find(item => item.id === 'custom');
     const forumSkin = FORUM_SKIN_IDS.has(input.forumSkin) ? input.forumSkin : 'mist-bbs';
     const forumSkinPreset = FORUM_SKIN_PRESETS.find(item => item.id === forumSkin) || FORUM_SKIN_PRESETS[0];
     const forumStructurePreset = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'forum');
@@ -1075,14 +1077,21 @@ export function normalizeRule(input = {}) {
                 instruction: forumSkinPreset.sections[index]?.[1] || page.instruction,
             }))
             : basePages);
+    const socialAppearance = structure === 'social'
+        ? (SOCIAL_APPEARANCE_PRESETS.find(item => item.id === input.theme) || SOCIAL_APPEARANCE_PRESETS[0])
+        : null;
+    const fallbackStyle = STATUS_STYLE_PRESETS.find(item => item.id === input.theme) || STATUS_STYLE_PRESETS[0];
+    const themeAssetUrl = structure === 'social'
+        ? safeMediaUrl(input.themeAssetUrl, 'image')
+        : '';
     return {
         ruleId: String(input.ruleId || 'zeya-status-rule'),
         ruleName: String(input.ruleName || '双页剧情状态').trim() || '双页剧情状态',
         tagName: sanitizeTagName(input.tagName),
         title: String(input.title || '人物状态记录'),
         subtitle: String(input.subtitle || 'STORY STATUS'),
-        theme: socialAppearance?.id || structurePreset.appearanceId,
-        styleName: socialAppearance?.name || structurePreset.appearanceName,
+        theme: socialAppearance?.id || structurePreset.appearanceId || fallbackStyle.id,
+        styleName: socialAppearance?.name || structurePreset.appearanceName || fallbackStyle.name,
         themeAssetUrl,
         glyph: structurePreset.glyph,
         structure,
@@ -1091,12 +1100,12 @@ export function normalizeRule(input = {}) {
         chatAppearance,
         chatAppearanceName: CHAT_APPEARANCE_PRESETS.find(item => item.id === chatAppearance)?.name || CHAT_APPEARANCE_PRESETS[0].name,
         chatMascotUrl: CHAT_MASCOT_URL,
-        structureName: STATUS_STRUCTURE_PRESETS.find(item => item.id === structure)?.name || '自由组件板',
+        structureName: structurePreset.name,
         palette: normalizePalette(input),
         media,
         phoneDesktop,
         displayOnlyRegex: input.displayOnlyRegex !== false,
-        layout: input.layout === 'stack' ? 'stack' : 'grid',
+        layout: structure === 'social' ? structurePreset.layout : (input.layout === 'stack' ? 'stack' : 'grid'),
         pages: normalizedPages,
         sharedFields: normalizedSharedFields,
         pageFields: pageFields.length ? pageFields : DEFAULT_PAGE_FIELDS,
@@ -1977,6 +1986,26 @@ ${STATUS_PHONE_CSS}
   function phoneAvatar(){var holder=make('div','zrs-phone-avatar');var url=config.phoneDesktop.personalAvatarUrl||config.media.avatarUrl;if(url){var img=make('img');img.src=url;img.alt=config.media.imageAlt||'当前角色头像';img.loading='lazy';img.referrerPolicy='no-referrer';img.style.objectPosition=config.phoneDesktop.personalAvatarPositionX+'% '+config.phoneDesktop.personalAvatarPositionY+'%';img.style.transform='scale('+config.phoneDesktop.personalAvatarScale+')';img.addEventListener('error',function(){img.remove();holder.classList.add('is-placeholder');});holder.append(img);}else holder.classList.add('is-placeholder');return holder;}
   function phoneDataCard(field,value,extraClass){var progress=field&&field.kind==='progress';var card=make('div','zrs-phone-data-card'+(extraClass?' '+extraClass:''));var head=make('div','zrs-phone-data-head');head.append(make('span','',field&&field.label||'未命名字段'));if(progress)head.append(make('span','',phoneText(value,'0')+'/100'));card.append(head);if(progress){var bar=make('div','zrs-phone-bar');var fill=make('i');var amount=Number(String(value||'').match(/-?\\d+(?:\\.\\d+)?/)?.[0]);if(!Number.isFinite(amount))amount=0;fill.style.width=Math.max(0,Math.min(100,amount))+'%';bar.append(fill);card.append(bar);}else card.append(make('div','zrs-phone-copy',phoneText(value,'暂无记录')));return card;}
   function renderPhonePage(page,values){fields.replaceChildren();root.dataset.phonePage=page.id;phoneTitle.textContent=page.label;if(page.id==='Personal'){var personalFields=page.fields||config.phoneDesktop.personalFields||[];var hero=make('div','zrs-phone-personal-hero');hero.append(phoneAvatar());fields.append(hero,phoneDataCard(personalFields[0],values[0]),phoneDataCard(personalFields[1],values[1],'is-desire'),phoneDataCard(personalFields[2],values[2],'is-wide'),phoneDataCard(personalFields[3],values[3],'is-wide is-thought'));return;}if(page.id==='Memo'){if(handheldMode){phoneTitle.textContent='日记';var diary=make('article','zrs-phone-diary');var diaryHead=make('header','zrs-phone-diary-head');diaryHead.append(make('small','','PRIVATE DIARY · '+phoneText(sharedValues[1],'此刻')));var diaryText=values.map(function(value){return phoneText(value,'');}).filter(Boolean).join('\\n\\n');var diaryBody=make('p','zrs-phone-diary-body',diaryText);diaryBody.contentEditable='true';diaryBody.spellcheck=true;diaryBody.setAttribute('role','textbox');diaryBody.setAttribute('aria-label','编辑日记正文');diaryBody.dataset.placeholder='在这里写下今天的日记……';diary.append(diaryHead,diaryBody);fields.append(diary);}else{values.forEach(function(value){if(phoneText(value,'')!=='')fields.append(make('div','zrs-phone-list-card',value));});if(!fields.children.length)fields.append(make('div','zrs-phone-empty','暂无备忘事项'));}return;}if(page.id==='Wechat'){phoneTitle.textContent=phoneText(values[0],'未知');for(var i=1;i<values.length;i++){var message=phoneText(values[i],'');if(!message)continue;if(handheldMode){var side=i%2===1?'is-left':'is-right';var row=make('div','zrs-phone-chat-row '+side);var avatar=make('span','zrs-phone-chat-avatar',side==='is-left'?phoneTitle.textContent.slice(0,1):'我');var bubble=make('div','zrs-phone-chat '+side,message);if(side==='is-left')row.append(avatar,bubble);else row.append(bubble,avatar);fields.append(row);}else fields.append(make('div','zrs-phone-chat '+(i%2===1?'is-left':'is-right'),message));}if(!fields.children.length)fields.append(make('div','zrs-phone-empty','暂无聊天记录'));return;}for(var itemIndex=0;itemIndex<values.length;itemIndex+=2){var itemName=phoneText(values[itemIndex],'');if(!itemName)continue;var detail=make('details','zrs-phone-shop');var summary=make('summary','',itemName);detail.append(summary,make('div','zrs-phone-shop-desc',phoneText(values[itemIndex+1],'暂无说明')));fields.append(detail);}if(!fields.children.length)fields.append(make('div','zrs-phone-empty','购物车空空如也'));}
+  function socialValue(page,values,id,fallback){var definitions=page.fields||config.pageFields;var index=definitions.findIndex(function(field){return field.id===id;});return index>=0?phoneText(values[index],fallback):fallback;}
+  function renderSocialPage(page,values){
+    var article=make('article','zrs-social-file');
+    if(config.themeAssetUrl){var themeArt=make('img','zrs-social-theme-art');themeArt.src=config.themeAssetUrl;themeArt.alt='';themeArt.loading='lazy';themeArt.draggable=false;themeArt.setAttribute('aria-hidden','true');themeArt.addEventListener('error',function(){themeArt.remove();});article.append(themeArt);}
+    var scraps=make('div','zrs-social-scraps');scraps.setAttribute('aria-hidden','true');[['is-label','MY FILE'],['is-heart','♥'],['is-star','★'],['is-tape',''],['is-grid','']].forEach(function(item){scraps.append(make('span','zrs-social-scrap '+item[0],item[1]));});
+    var switcher=make('div','zrs-social-switcher');switcher.setAttribute('role','tablist');switcher.setAttribute('aria-label','个人档案页面');
+    var profileButton=make('button','zrs-social-switch is-active','资料卡');var introButton=make('button','zrs-social-switch','个人介绍');[profileButton,introButton].forEach(function(button){button.type='button';button.setAttribute('role','tab');});profileButton.setAttribute('aria-selected','true');introButton.setAttribute('aria-selected','false');switcher.append(profileButton,introButton);
+    var profileSheet=make('section','zrs-social-sheet zrs-social-profile is-active');profileSheet.setAttribute('role','tabpanel');
+    var ticket=make('aside','zrs-social-ticket');ticket.setAttribute('aria-hidden','true');ticket.append(make('b','','FILE'),make('span','','NO. 0217'),make('i'),make('small','','IDENTITY RECORD'));
+    var portrait=make('figure','zrs-social-photo');
+    if(config.media.avatarUrl){var avatarImage=make('img');avatarImage.src=config.media.avatarUrl;avatarImage.alt=config.media.imageAlt||'人物证件照';avatarImage.loading='lazy';avatarImage.referrerPolicy='no-referrer';avatarImage.addEventListener('error',function(){avatarImage.remove();portrait.classList.add('is-placeholder');});portrait.append(avatarImage);}else portrait.classList.add('is-placeholder');portrait.append(make('figcaption','','PORTRAIT / 01'));
+    var identity=make('div','zrs-social-identity');var name=make('strong','zrs-social-name',socialValue(page,values,'full_name','—'));name.dataset.field='full_name';var role=make('span','zrs-social-role',socialValue(page,values,'identity','—'));role.dataset.field='identity';identity.append(make('small','','PASSENGER DETAILS'),name,role);
+    var details=make('dl','zrs-social-details');[['生日','birthday'],['年龄','age'],['身体状态','physical_state'],['当前地点','current_location'],['记录日期','record_date'],['记录渠道','record_channel'],['当前想法','current_thought']].forEach(function(item){var row=make('div','zrs-social-detail');var description=make('dd','',socialValue(page,values,item[1],'—'));description.dataset.field=item[1];row.append(make('dt','',item[0]),description);details.append(row);});
+    var state=make('div','zrs-social-state');var stateValue=make('strong','',socialValue(page,values,'current_state','—'));stateValue.dataset.field='current_state';state.append(make('span','','CURRENT STATUS'),stateValue);
+    var profileBody=make('div','zrs-social-profile-body');profileBody.append(portrait,identity,details,state);profileSheet.append(ticket,profileBody);
+    var introSheet=make('section','zrs-social-sheet zrs-social-intro');introSheet.setAttribute('role','tabpanel');introSheet.hidden=true;var introHead=make('header','zrs-social-intro-head');introHead.append(make('span','','PERSONAL'),make('strong','','Introduction'),make('small','',socialValue(page,values,'full_name','—')));var introCopy=make('p','zrs-social-intro-copy',socialValue(page,values,'introduction','—'));introCopy.dataset.field='introduction';introSheet.append(introHead,introCopy);
+    if(config.media.imageUrl){var archivePhoto=make('figure','zrs-social-archive-photo');var archiveImage=make('img');archiveImage.src=config.media.imageUrl;archiveImage.alt=config.media.imageAlt||'档案附图';archiveImage.loading='lazy';archiveImage.referrerPolicy='no-referrer';archiveImage.addEventListener('error',function(){archivePhoto.remove();});archivePhoto.append(archiveImage,make('figcaption','','ARCHIVE / ATTACHED'));introSheet.append(archivePhoto);}
+    function showSocialSheet(introVisible){profileSheet.hidden=introVisible;introSheet.hidden=!introVisible;profileSheet.classList.toggle('is-active',!introVisible);introSheet.classList.toggle('is-active',introVisible);profileButton.classList.toggle('is-active',!introVisible);introButton.classList.toggle('is-active',introVisible);profileButton.setAttribute('aria-selected',String(!introVisible));introButton.setAttribute('aria-selected',String(introVisible));}
+    profileButton.addEventListener('click',function(){showSocialSheet(false);});introButton.addEventListener('click',function(){showSocialSheet(true);});article.append(scraps,switcher,profileSheet,introSheet);fields.append(article);
+  }
   function forumRecord(page,values){var result={};(page.fields||config.pageFields).forEach(function(field,index){result[field.id]=values[index]||'';});return result;}
   function parseForumPost(value,fallbackNumber){var parts=String(value||'').split('◆');if(parts.length<5||!String(parts.slice(4).join('◆')).trim())return null;return {num:String(parts[0]||fallbackNumber).trim().replace(/^#/,''),name:String(parts[1]||'匿名用户').trim(),id:String(parts[2]||'ID:----').trim(),time:String(parts[3]||'--/-- --:--').trim(),body:parts.slice(4).join('◆').trim()};}
   function appendForumBody(host,text){String(text||'').split(/(>>\\d+)/g).forEach(function(part){if(!part)return;if(/^>>\\d+$/.test(part))host.append(make('span','zrs-forum-quote-ref',part));else host.append(document.createTextNode(part));});}
@@ -1986,7 +2015,7 @@ ${STATUS_PHONE_CSS}
   function unlockForumPage(){if(forumPendingIndex===null)return;var index=forumPendingIndex;forumUnlocked[index]=true;closeForumConfirm();var button=tabs.querySelector('[data-forum-index="'+index+'"]');if(button){button.classList.add('is-unlocked');var lock=button.querySelector('.zrs-forum-tab-lock');if(lock)lock.remove();button.setAttribute('aria-label',button.dataset.forumLabel||button.textContent.trim());}showPage(index);}
   function buildForumConfirm(){var modal=make('div','zrs-forum-confirm');modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','限制版块确认');var box=make('div','zrs-forum-confirm-box');box.append(make('div','zrs-forum-confirm-mark','18+'),make('h4','zrs-forum-confirm-title','限制版块确认'),make('p','zrs-forum-confirm-copy','此版块包含未公开或限制阅读的讨论。继续进入即表示你愿意查看这些内容。'));var actions=make('div','zrs-forum-confirm-actions');var cancel=make('button','zrs-forum-confirm-button','返回');cancel.type='button';cancel.addEventListener('click',closeForumConfirm);var confirm=make('button','zrs-forum-confirm-button is-primary','确认进入');confirm.type='button';confirm.addEventListener('click',unlockForumPage);actions.append(cancel,confirm);box.append(actions);modal.append(box);modal.addEventListener('click',function(event){if(event.target===modal)closeForumConfirm();});root.append(modal);return modal;}
   function requestForumPage(index){if(index>0&&!forumUnlocked[index]){forumPendingIndex=index;if(!forumModal)forumModal=buildForumConfirm();forumModal.classList.add('is-visible');var confirm=forumModal.querySelector('.is-primary');if(confirm)confirm.focus();return;}showPage(index);}
-  function showPage(index){var page=config.pages[index];if(!page)return;var values=records[page.id]||[];fields.replaceChildren();if(phoneMode)renderPhonePage(page,values);else if(forumMode)renderForumPage(page,values,index);else if(config.structure==='chat')renderChatConversation(page,values);else (page.fields||config.pageFields).forEach(function(field,fieldIndex){addValue(fields,field,values[fieldIndex]);});root.querySelectorAll('.zrs-tab').forEach(function(button,buttonIndex){var active=handheldMode?Number(button.dataset.pageIndex)===index:buttonIndex===index;button.classList.toggle('is-active',active);button.setAttribute('aria-pressed',String(active));});if(phoneMode)root.classList.remove('is-phone-home');}
+  function showPage(index){var page=config.pages[index];if(!page)return;var values=records[page.id]||[];fields.replaceChildren();if(phoneMode)renderPhonePage(page,values);else if(forumMode)renderForumPage(page,values,index);else if(config.structure==='chat')renderChatConversation(page,values);else if(config.structure==='social')renderSocialPage(page,values);else (page.fields||config.pageFields).forEach(function(field,fieldIndex){addValue(fields,field,values[fieldIndex]);});root.querySelectorAll('.zrs-tab').forEach(function(button,buttonIndex){var active=handheldMode?Number(button.dataset.pageIndex)===index:buttonIndex===index;button.classList.toggle('is-active',active);button.setAttribute('aria-pressed',String(active));});if(phoneMode)root.classList.remove('is-phone-home');}
   function renderChatConversation(page,values){
     fields.replaceChildren();
     var definitions=page.fields||config.pageFields;
@@ -2078,6 +2107,22 @@ export function makePreviewRecords(input) {
         chat_log: CHAT_SAMPLE_LOG,
     };
     const sampleFor = field => {
+        if (rule.structure === 'social') {
+            const socialSamples = {
+                full_name: '姓名',
+                identity: '身份 / 职位',
+                birthday: 'X',
+                age: 'X',
+                physical_state: 'X',
+                current_location: 'X',
+                record_date: 'X',
+                record_channel: 'X',
+                current_thought: 'X',
+                current_state: 'X',
+                introduction: 'X',
+            };
+            if (socialSamples[field.id]) return socialSamples[field.id];
+        }
         if (rule.structure === 'forum' && field.id === 'forum_title') return forumSample.title;
         if (rule.structure === 'forum' && field.id === 'forum_notice') return forumSample.notice;
         if (rule.structure === 'chat' && chatSamples[field.id]) return chatSamples[field.id];
