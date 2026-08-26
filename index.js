@@ -25,8 +25,8 @@ import {
     parseChatConversationLog,
     parseStatusOutput,
     parseFields,
-} from './rule-generator.js?v=0.11.1';
-import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.1';
+} from './rule-generator.js?v=0.11.2';
+import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.2';
 import {
     STATUS_BEAUTY_01_15_IDS,
     applyStatusBeautyFieldLayout,
@@ -36,23 +36,23 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.1';
+} from './status-beauty-01-15-bundle.js?v=0.11.2';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
-} from './status-beauty-05-09.js?v=0.11.1';
+} from './status-beauty-05-09.js?v=0.11.2';
 import {
     STATUS_BEAUTY_16_20_IDS,
     buildStatusBeauty16To20Preview,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.1';
+} from './status-beauty-16-20.js?v=0.11.2';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.1';
+} from './opening-home-generator.js?v=0.11.2';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -64,19 +64,19 @@ import {
     parseSummaryResponse,
     responseText,
     usableGreetingRecords,
-} from './response-parser.js?v=0.11.1';
+} from './response-parser.js?v=0.11.2';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.11.1';
+} from './worldbook-routes.js?v=0.11.2';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.11.1';
+} from './entry-dialog.js?v=0.11.2';
 import {
     greetingBindingSummary,
     keepOnlyOpenGreetingCard,
@@ -85,14 +85,14 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.11.1';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.1';
-import { buildCharacterHomepageContext } from './opening-context.js?v=0.11.1';
+} from './greeting-workflow.js?v=0.11.2';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.2';
+import { buildCharacterHomepageContext } from './opening-context.js?v=0.11.2';
 import {
     STATUS_WORLDBOOK_ENTRY_ID,
     buildStatusWorldbookName,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.11.1';
+} from './status-worldbook.js?v=0.11.2';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -113,7 +113,7 @@ import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.1';
+const VERSION = '0.11.2';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -180,7 +180,7 @@ const STATUS_TEMPLATES = Object.freeze([
 ]);
 
 const KIND_LABELS = Object.freeze({ text: '短文本', long: '长文本', number: '数字', progress: '数值 0–100', currency: '金额', avatar: '头像' });
-const PHONE_STRUCTURE_IDS = Object.freeze(['phone', 'profile', 'social', 'forum', 'chat', 'music', 'quest']);
+const PHONE_STRUCTURE_IDS = Object.freeze(['phone', 'profile', 'social', 'forum', 'chat', 'quest']);
 const PROFILE_APPEARANCE_IDS = Object.freeze([...STATUS_BEAUTY_01_15_IDS, ...STATUS_BEAUTY_16_20_IDS, 'archive-status']);
 const PROFILE_APPEARANCE_PRESETS = Object.freeze(PROFILE_APPEARANCE_IDS.map((id, index) => {
     const structure = STATUS_STRUCTURE_PRESETS.find(item => item.id === id);
@@ -6342,12 +6342,9 @@ async function addSettingsPanel() {
     });
     settingsRoot.addEventListener('change', event => {
         if (event.target.id !== 'status-atelier-preset' && event.target.id !== 'status-atelier-import-file') {
-            const isStatusControl = Boolean(SETTING_FIELDS[event.target.id] || STATUS_MEDIA_FIELDS[event.target.id] || PHONE_DESKTOP_FIELDS[event.target.id] || event.target.dataset?.phoneAppId);
-            if (!isStatusControl) {
-                readSettingsControl(event.target);
-                readStatusMediaControl(event.target);
-                readPhoneDesktopControl(event.target);
-            }
+            readSettingsControl(event.target);
+            readStatusMediaControl(event.target);
+            readPhoneDesktopControl(event.target);
             readOpeningHomeControl(event.target);
             readOpeningSummaryControl(event.target);
             updateOpeningEntry(event.target);

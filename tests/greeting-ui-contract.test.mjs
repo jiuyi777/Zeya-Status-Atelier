@@ -228,7 +228,8 @@ test('modal and palettes stay inside mobile viewport and palette library is coll
     assert.doesNotMatch(settingsMarkup, /status-atelier-status-logo-library/);
     assert.doesNotMatch(source, /status-atelier-status-logo-library/);
     assert.match(source, /structure: 'phone'/);
-    assert.match(source, /PHONE_STRUCTURE_IDS = Object\.freeze\(\['phone', 'profile', 'social', 'forum', 'chat', 'music', 'quest'\]\)/);
+    assert.match(source, /PHONE_STRUCTURE_IDS = Object\.freeze\(\['phone', 'profile', 'social', 'forum', 'chat', 'quest'\]\)/);
+    assert.doesNotMatch(source.match(/const PHONE_STRUCTURE_IDS = Object\.freeze\(([^\n]+)\)/)?.[1] || '', /music/);
     assert.match(settingsMarkup, /<summary><strong>色卡<\/strong><small>26 套配色<\/small><\/summary>/);
     assert.match(settingsMarkup, /<details class="status-atelier-status-style-library" open>[\s\S]*?<strong>人物状态栏<\/strong><small>21 款完整设计；每款保留自己的字段与构图<\/small>/);
     assert.match(styleSource, /status-atelier-status-style-library > summary::\-webkit-details-marker[\s\S]*?status-atelier-status-palette-library > summary::\-webkit-details-marker[\s\S]*?display:\s*none/);
@@ -454,6 +455,14 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /function previewLocalPhoneWallpaper/);
     assert.match(source, /PHONE_PAGE_SCHEMAS\.forEach/);
     assert.match(source, /wallpaperScale/);
+});
+
+test('status template selection also works in change-only webviews', () => {
+    const changeHandler = source.match(/settingsRoot\.addEventListener\('change', event => \{([\s\S]*?)\n    \}\);/)?.[1] || '';
+    assert.match(changeHandler, /readSettingsControl\(event\.target\)/);
+    assert.match(changeHandler, /readStatusMediaControl\(event\.target\)/);
+    assert.match(changeHandler, /readPhoneDesktopControl\(event\.target\)/);
+    assert.doesNotMatch(changeHandler, /if \(!isStatusControl\)/);
 });
 
 test('dynamic numbers keep one solid progress treatment without object controls', () => {
