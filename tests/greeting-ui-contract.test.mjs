@@ -5,6 +5,7 @@ import fs from 'node:fs';
 const source = fs.readFileSync(new URL('../index.js', import.meta.url), 'utf8');
 const settingsMarkup = fs.readFileSync(new URL('../settings.html', import.meta.url), 'utf8');
 const styleSource = fs.readFileSync(new URL('../style.css', import.meta.url), 'utf8');
+const mapEditorMarkup = fs.readFileSync(new URL('../design-drafts/map-beauty/index.html', import.meta.url), 'utf8');
 
 test('greeting modal exposes explicit fill-missing and regenerate-all actions', () => {
     assert.match(source, /id="status-atelier-read-current-card">补全缺失项</);
@@ -118,9 +119,17 @@ test('profile appearance keeps structure profile while exposing status beauty 01
 
 test('quest template opens the dedicated map editor inside the main plugin', () => {
     assert.match(settingsMarkup, /id="status-atelier-quest-map-entry"[^>]*hidden/);
-    assert.match(settingsMarkup, /id="status-atelier-open-map-editor"[^>]*>打开任务地图编辑器</);
+    assert.match(settingsMarkup, /任务地图模板都在地图编辑器里/);
+    assert.match(settingsMarkup, /id="status-atelier-open-map-editor"[^>]*>进入地图模板编辑器</);
+    assert.equal((mapEditorMarkup.match(/<option value="(?:desk-casebook|travel-atlas|urban-research|noir-network|crime-collage|travel-souvenir|urban-investigation|retro-archive)"/g) || []).length, 8);
     const syncBlock = source.match(/function syncQuestMapEditorEntry\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
-    assert.match(syncBlock, /settings\(\)\.structure !== 'quest'/);
+    assert.match(syncBlock, /const questMode = settings\(\)\.structure === 'quest'/);
+    for (const id of ['status-atelier-status-schema-section', 'status-atelier-quick-apply-section', 'status-atelier-download-actions-section', 'status-atelier-advanced-rules-section', 'status-atelier-preview-shell']) {
+        assert.match(syncBlock, new RegExp(id));
+        assert.match(settingsMarkup, new RegExp(`id="${id}"`));
+    }
+    assert.match(source, /if \(settings\(\)\.structure === 'quest'\) \{\s*host\.replaceChildren\(\);\s*return;/);
+    assert.doesNotMatch(source, /\[\['当前区域', questValues\[0\]\]/);
     assert.match(source, /new URL\('\.\/design-drafts\/map-beauty\/index\.html\?embedded=1', import\.meta\.url\)/);
     assert.match(source, /event\.data\?\.type !== 'status-atelier-map-close'/);
     assert.match(styleSource, /\.status-atelier-map-editor-overlay\s*\{[\s\S]*?position:\s*fixed;[\s\S]*?inset:\s*0;/);
@@ -197,7 +206,7 @@ test('mobile greeting modal offers a stateless copy-only overview and directly i
     assert.doesNotMatch(source, /id="status-atelier-modal-download-regex"/);
 });
 
-test('wand exposes separate opening and status actions and quick theme choices are collapsible favorites first', () => {
+test('wand exposes a simple AI status flow while the plugin settings keep the full workbench', () => {
     assert.match(source, /制作开场白 · 九一/);
     assert.match(source, /制作状态栏 · 九一/);
     assert.match(source, /status-atelier-greeting-theme-favorites/);
@@ -205,12 +214,32 @@ test('wand exposes separate opening and status actions and quick theme choices a
     assert.match(source, /function openGreetingModal\(target = 'opening'\)/);
     assert.match(source, /target === 'status'/);
     assert.match(styleSource, /#status-atelier-modal\[data-workspace="status"\] \.status-atelier-opening-only/);
+    assert.match(source, /id="status-atelier-modal-test-ai"[^>]*>AI 分析并生成美化</);
+    assert.match(source, /id="status-atelier-modal-ai-idea"[^>]*maxlength="240"/);
+    assert.match(settingsMarkup, /id="status-atelier-ai-idea"[^>]*maxlength="240"/);
+    assert.match(source, /id="status-atelier-modal-apply-status"[^>]*disabled[^>]*>确认安装到当前角色</);
+    assert.match(source, /id="status-atelier-modal-ai-recommendation"[^>]*hidden/);
+    assert.match(source, /class="status-atelier-modal-status-preview-wrap" hidden/);
+    assert.doesNotMatch(source, /id="status-atelier-open-full-status-workbench"/);
+    assert.match(source, /testStatusAiGeneration\(event\.currentTarget, 'modal'\)/);
+    assert.match(settingsMarkup, /id="status-atelier-settings"[^>]*data-entry-mode="expert"/);
+    assert.match(settingsMarkup, /<details id="status-atelier-expert-workshop" class="status-atelier-expert-workshop" open>/);
+    assert.match(styleSource, /data-entry-mode="expert"[^\n]*status-atelier-quick-apply-section/);
     assert.doesNotMatch(source, /data-greeting-workspace=/);
     const openBlock = source.match(/function openGreetingModal\(target = 'opening'\) \{([\s\S]*?)\n\}/)?.[1] || '';
     const statusFastPath = openBlock.match(/if \(target === 'status'\) \{([\s\S]*?)\n    \}/)?.[1] || '';
     assert.match(statusFastPath, /setGreetingModalWorkspace\('status'\)/);
     assert.match(statusFastPath, /return;/);
     assert.doesNotMatch(statusFastPath, /ensureLocalGreetingDrafts|renderGreetingList|renderGreetingThemeChooser|updateOpeningHomePreview/);
+    const aiGenerationBlock = source.match(/async function testStatusAiGeneration\(button, viewName = 'settings'\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    assert.match(aiGenerationBlock, /compactStatusAiText\(idea\?\.value, 240\)/);
+    assert.match(aiGenerationBlock, /用户简要想法/);
+    const simpleFlowStyle = styleSource.match(/\.status-atelier-ai-simple-flow \{([\s\S]*?)\n\}/)?.[1] || '';
+    const aiActionStyle = styleSource.match(/\.status-atelier-workbench \.status-atelier-ai-generate,([\s\S]*?)\n\}/)?.[1] || '';
+    const emptyPreviewStyle = styleSource.match(/\.status-atelier-ai-preview-empty \{([\s\S]*?)\n\}/)?.[1] || '';
+    assert.doesNotMatch(simpleFlowStyle, /gradient/i);
+    assert.doesNotMatch(aiActionStyle, /gradient/i);
+    assert.doesNotMatch(emptyPreviewStyle, /gradient/i);
 });
 
 test('status quick editor updates fields without reloading the whole opening-home workbench', () => {
@@ -266,13 +295,24 @@ test('one-click homepage updates the local regex and character greeting without 
     assert.match(settingsMarkup, /原主开场白会自动移入额外问候语/);
 });
 
-test('status workspace exposes a short one-click path and hides customization by default', () => {
-    assert.match(settingsMarkup, /id="status-atelier-install-scoped"[^>]*>生成并应用</);
+test('status AI generation stays preview-only until either entry explicitly installs', () => {
+    assert.match(settingsMarkup, /id="status-atelier-test-ai"[^>]*>AI 分析并生成美化</);
+    assert.match(settingsMarkup, /id="status-atelier-install-scoped"[^>]*disabled[^>]*>确认安装到当前角色</);
+    assert.match(settingsMarkup, /id="status-atelier-ai-recommendation"[^>]*hidden/);
+    assert.match(source, /async function currentStatusAiContext\(\)/);
+    assert.match(source, /currentEmbeddedWorldbooks\(\)/);
+    assert.match(source, /currentLinkedWorldbooks\(\)/);
+    assert.match(source, /\.slice\(-12\)/);
+    const generateBlock = source.match(/async function testStatusAiGeneration\(button, viewName = 'settings'\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    assert.match(generateBlock, /currentStatusAiContext\(\)/);
+    assert.match(generateBlock, /applyStatusAiRecommendation\(recommendation\)/);
+    assert.match(generateBlock, /showStatusAiRecommendation\(recommendation, contextSnapshot, viewName\)/);
+    assert.doesNotMatch(generateBlock, /installRegex\(/);
     assert.doesNotMatch(settingsMarkup, /status-atelier-shuffle-recipe|完整 40 套|20 套自由面板/);
     assert.doesNotMatch(source, /status-atelier-modal-shuffle-recipe|applyStatusRecipe|shuffleStatusRecipe/);
     assert.doesNotMatch(settingsMarkup, /id="status-atelier-fill-mode"/);
     assert.doesNotMatch(source, /id="status-atelier-modal-status-fill-mode"/);
-    assert.match(source, /class="status-atelier-modal-status-advanced">/);
+    assert.match(source, /class="status-atelier-modal-status-advanced" hidden>/);
     assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?APP 页面数据/);
     assert.match(settingsMarkup, /<details id="status-atelier-appearance-section" class="status-atelier-setting-section status-atelier-collapsible" open>[\s\S]*?外观与配色/);
     assert.match(settingsMarkup, /id="status-atelier-template-media"[\s\S]*?当前模板角色字段设置/);
@@ -289,7 +329,7 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(settingsMarkup, /status-atelier-setting-section status-atelier-collapsible" open>[\s\S]*?选择状态栏模板/);
     assert.doesNotMatch(settingsMarkup, /外观改字体、边框、材质、圆角和组件造型|色卡只控制颜色/);
     assert.match(settingsMarkup, /id="status-atelier-appearance-section"[^>]*open>[\s\S]*?<h4[^>]*>外观与配色<\/h4>/);
-    assert.match(source, /appearanceSection\.hidden = \['phone', 'forum', 'chat'\]\.includes\(stored\.structure\)/);
+    assert.match(source, /appearanceSection\.hidden = \['phone', 'forum', 'chat', 'quest'\]\.includes\(stored\.structure\)/);
     assert.match(source, /function populateStatusStructureSelect\(structureSelect\)/);
     assert.match(source, /appendGroup\('手机桌面', \['phone'\]\)/);
     assert.match(source, /appendGroup\('聊天会话', \['chat'\]\)/);
@@ -309,6 +349,8 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /function makeStatusBeautyStaticTextEditable\(node, structure, key, editor\)/);
     assert.match(source, /function createStatusBeautyDirectEditor\(rule\)/);
     assert.match(source, /function mountStatusBeautyPreview\(host, frame, rule/);
+    assert.match(source, /const statusBeautyBundlePreviewRequests = new WeakMap\(\)/);
+    assert.match(source, /statusBeautyBundlePreviewRequests\.get\(host\)/);
     assert.match(source, /点击画面中的字段名称、X、固定文字或头像即可修改/);
     assert.match(source, /修改角色头像/);
     assert.match(source, /这个位置需要 AI 填写什么？/);
@@ -329,8 +371,9 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /card\.style\.flex = '0 0 auto'/);
     assert.doesNotMatch(source, /naturalWidth = Math\.max\(card\.scrollWidth/);
     assert.match(source, /naturalWidth = Math\.max\(card\.offsetWidth/);
-    assert.match(source, /const scale = Math\.min\(1, availableWidth \/ naturalWidth\)/);
-    assert.match(source, /card\.style\.setProperty\('transform', `scale\(\$\{scale\}\)`, 'important'\)/);
+    assert.match(source, /const scale = Math\.min\(1, Math\.max\(minimumTouchScale, availableWidth \/ naturalWidth\)\)/);
+    assert.match(source, /card\.style\.zoom = String\(scale\)/);
+    assert.match(source, /card\.style\.setProperty\('transform', 'none', 'important'\)/);
     assert.match(source, /new MutationObserver\(\(\) => frame\.contentWindow\?\.requestAnimationFrame\(resize\)\)/);
     assert.match(source, /settings\(\)\.structure === 'profile'[\s\S]*?makePreviewRecords\(previewInput\)/);
     assert.match(styleSource, /data-preview-structure="profile"/);
@@ -419,6 +462,11 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /bindPhoneWidgetItemDrag\(phoneSharedHost\)/);
     assert.match(settingsMarkup, /id="status-atelier-regex-display-only"[^>]*type="checkbox"/);
     assert.match(settingsMarkup, /美化只显示，不发送给 AI/);
+    assert.equal((settingsMarkup.match(/id="status-atelier-regex-display-only"/g) || []).length, 1);
+    assert.ok(settingsMarkup.indexOf('status-atelier-regex-display-only') < settingsMarkup.indexOf('status-atelier-status-editor-title'));
+    assert.match(source, /scheduleStatusPreviewUpdate\(\);[\s\S]*?heading\(`正在编辑：\$\{definition\.label\}`\)/);
+    assert.match(source, /minimumTouchScale = frame\.clientWidth <= 700 \? 0\.62 : 0/);
+    assert.match(styleSource, /status-atelier-preview-shell\[data-preview-structure="profile"\][\s\S]*?order: 1/);
     assert.match(settingsMarkup, /APP 页面数据/);
     for (const removedHeadingHelp of [
         '款式、外壳颜色、挂饰与桌面动效。',
@@ -431,8 +479,9 @@ test('status workbench separates templates, appearance and palettes and supports
     for (const removedId of ['status-atelier-title', 'status-atelier-subtitle', 'status-atelier-layout', 'status-atelier-theme']) {
         assert.doesNotMatch(settingsMarkup, new RegExp(`id="${removedId}"`));
     }
-    assert.ok(settingsMarkup.indexOf('外观与配色') < settingsMarkup.indexOf('启用状态栏'));
-    assert.match(settingsMarkup, /<section class="status-atelier-setting-section status-atelier-advanced status-atelier-download-actions">[\s\S]*?<h4>手动下载与全局安装<\/h4>/);
+    assert.ok(settingsMarkup.indexOf('让 AI 按这个角色直接做好') < settingsMarkup.indexOf('高级自定义'));
+    assert.ok(settingsMarkup.indexOf('高级自定义') < settingsMarkup.indexOf('外观与配色'));
+    assert.match(settingsMarkup, /<section[^>]*class="status-atelier-setting-section status-atelier-advanced status-atelier-download-actions"[^>]*>[\s\S]*?<h4>手动下载与全局安装<\/h4>/);
     assert.match(source, /bindPreviewFieldLabelEditor/);
     assert.match(source, /bindPreviewTitleEditor/);
     assert.match(source, /bindPreviewFieldReorder/);

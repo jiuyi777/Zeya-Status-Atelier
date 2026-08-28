@@ -32,6 +32,7 @@ import {
 } from '../rule-generator.js';
 import {
     STATUS_BEAUTY_01_15_IDS,
+    applyStatusBeautyControlChrome,
     applyStatusBeautyFieldLayout,
     applyStatusBeautyMediaSettings,
     applyStatusBeautyTextOverrides,
@@ -311,8 +312,20 @@ test('status beauty visible copy edits are injected into the exported regex', ()
     assert.notEqual(edited, script);
     assert.match(edited.replaceString, /var edits=\{"0":"关系温度","1":"靠近中"\}/);
     assert.match(edited.replaceString, /document\.querySelector\('\.status-card'\)\|\|Array\.from\(document\.body\.children\)/);
-    assert.match(edited.replaceString, /root\.querySelectorAll\('h1,h2,h3,h4,h5,h6,span,strong,small,em,b,p,label'\)/);
+    assert.match(edited.replaceString, /root\.querySelectorAll\('h1,h2,h3,h4,h5,h6,span,strong,small,em,b,p,label,figcaption,dt,dd,li'\)/);
     assert.match(edited.replaceString, /<\/script><\/body>/);
+});
+
+test('status beauty bundled collapse control stays inside the artwork layer', () => {
+    const script = {
+        scriptName: 'collapse-preview',
+        replaceString: '```html\n<html><head></head><body><details><summary aria-label="展开或收起状态栏"></summary></details></body></html>\n```',
+    };
+    const edited = applyStatusBeautyControlChrome(script);
+    assert.match(edited.replaceString, /data-status-atelier-control-chrome/);
+    assert.match(edited.replaceString, /right:8px!important;top:8px!important/);
+    assert.match(edited.replaceString, /border-radius:7px!important/);
+    assert.equal(applyStatusBeautyControlChrome(edited), edited);
 });
 
 test('status beauty 01 to 15 export the edited field order into their bundled layouts', () => {

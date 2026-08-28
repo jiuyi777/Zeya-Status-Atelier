@@ -222,7 +222,7 @@ export function parseStatusBeautyBundledOutput(rule, rawOutput) {
 }
 
 export function buildStatusBeautyBundledPreviewDocument(regexScript) {
-    let html = String(regexScript?.replaceString || '').trim();
+    let html = String(applyStatusBeautyControlChrome(regexScript)?.replaceString || '').trim();
     html = html.replace(/^```html\s*/i, '').replace(/\s*```$/, '');
     const previewPatch = `<script>(function(){var root=document.body;if(!root)return;var pending=[];var walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);while(walker.nextNode()){var node=walker.currentNode;var parent=node.parentElement;if(!parent||parent.closest('script,style,[data-capture]'))continue;if(/\\$\\d{1,2}/.test(node.nodeValue||''))pending.push(node);}pending.forEach(function(node){var parts=(node.nodeValue||'').split(/(\\$\\d{1,2})/g);var fragment=document.createDocumentFragment();parts.forEach(function(part){var match=part.match(/^\\$(\\d{1,2})$/);if(match){var span=document.createElement('span');span.dataset.capture=match[1];span.textContent='X';fragment.appendChild(span);}else if(part){fragment.appendChild(document.createTextNode(part));}});node.replaceWith(fragment);});root.querySelectorAll('[data-capture]').forEach(function(node){node.textContent='X';});root.querySelectorAll('*').forEach(function(node){Array.from(node.attributes||[]).forEach(function(attribute){if(/\\$\\d{1,2}/.test(attribute.value))node.setAttribute(attribute.name,attribute.value.replace(/\\$\\d{1,2}/g,'X'));});});})();</script>`;
     return /<\/body>/i.test(html)
@@ -272,13 +272,26 @@ export function applyStatusBeautyTextOverrides(regexScript, overrides = {}) {
     const entries = Object.entries(overrides || {}).filter(([, value]) => String(value || '').trim());
     if (!entries.length) return regexScript;
     const payload = JSON.stringify(Object.fromEntries(entries)).replace(/</g, '\\u003c');
-    const patch = `<script>(function(){var edits=${payload};var root=document.querySelector('.status-card')||Array.from(document.body.children).find(function(node){return node.matches&&node.matches('details,section,article,main,div');})||document.body.firstElementChild;if(!root)return;var nodes=Array.from(root.querySelectorAll('h1,h2,h3,h4,h5,h6,span,strong,small,em,b,p,label')).filter(function(node){var text=(node.textContent||'').trim();return text&&text.length<=80&&/[A-Za-z0-9\\u3400-\\u9fff]/.test(text)&&!node.closest('button')&&!node.matches('[data-capture],[data-value],[data-label],[data-design-title]')&&!node.querySelector('[data-capture],[data-value],[data-label]')&&node.children.length===0;});Object.keys(edits).forEach(function(key){var node=nodes[Number(key)];if(node)node.textContent=edits[key];});})();</script>`;
+    const patch = `<script>(function(){var edits=${payload};var root=document.querySelector('.status-card')||Array.from(document.body.children).find(function(node){return node.matches&&node.matches('details,section,article,main,div');})||document.body.firstElementChild;if(!root)return;var nodes=Array.from(root.querySelectorAll('h1,h2,h3,h4,h5,h6,span,strong,small,em,b,p,label,figcaption,dt,dd,li')).filter(function(node){var text=(node.textContent||'').trim();return text&&text.length<=80&&/[A-Za-z0-9\\u3400-\\u9fff]/.test(text)&&!node.closest('button')&&!node.matches('[data-capture],[data-value],[data-label],[data-design-title]')&&!node.querySelector('[data-capture],[data-value],[data-label]')&&node.children.length===0;});Object.keys(edits).forEach(function(key){var node=nodes[Number(key)];if(node)node.textContent=edits[key];});})();</script>`;
     const replacement = String(regexScript?.replaceString || '');
     return {
         ...regexScript,
         replaceString: /<\/body>/i.test(replacement)
             ? replacement.replace(/<\/body>/i, `${patch}</body>`)
             : `${replacement}${patch}`,
+    };
+}
+
+export function applyStatusBeautyControlChrome(regexScript) {
+    const marker = 'data-status-atelier-control-chrome';
+    const replacement = String(regexScript?.replaceString || '');
+    if (!replacement || replacement.includes(marker)) return regexScript;
+    const patch = `<style ${marker}>details>summary[aria-label="展开或收起状态栏"]{right:8px!important;top:8px!important;display:grid!important;width:28px!important;height:24px!important;min-width:28px!important;min-height:24px!important;place-items:center!important;padding:0!important;border:1px solid rgba(255,255,255,.7)!important;border-radius:7px!important;color:#fff!important;background:rgba(39,37,34,.58)!important;box-shadow:0 2px 7px rgba(0,0,0,.18)!important;backdrop-filter:blur(6px);opacity:.72;overflow:hidden;font-size:0!important;line-height:1!important}details>summary[aria-label="展开或收起状态栏"]:hover,details>summary[aria-label="展开或收起状态栏"]:focus-visible{opacity:1}details>summary[aria-label="展开或收起状态栏"]:after{content:"⌃"!important;display:block!important;color:inherit!important;font:700 15px/1 Arial,sans-serif!important;transform:translateY(2px)!important}details:not([open])>summary[aria-label="展开或收起状态栏"]:after{content:"⌄"!important;transform:translateY(-1px)!important}</style>`;
+    return {
+        ...regexScript,
+        replaceString: /<\/head>/i.test(replacement)
+            ? replacement.replace(/<\/head>/i, `${patch}</head>`)
+            : `${patch}${replacement}`,
     };
 }
 

@@ -1,4 +1,4 @@
-<div id="status-atelier-settings" class="status-atelier-settings inline-drawer">
+<div id="status-atelier-settings" class="status-atelier-settings inline-drawer" data-entry-mode="expert">
     <div class="inline-drawer-toggle inline-drawer-header">
         <b>九一 · 酒馆美化工坊</b>
         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
@@ -6,21 +6,20 @@
     <div class="inline-drawer-content status-atelier-workbench">
         <header class="status-atelier-workbench-header">
             <div class="status-atelier-workbench-title">
-                <span class="status-atelier-kicker">JIUYI / MOBILE EDITION / 01</span>
-                <h3><span>酒馆</span>美化工坊</h3>
-                <p>可编辑前端 · 世界书动态数据 · 正则安全显示</p>
+                <span class="status-atelier-kicker">九一 · 正则状态工坊</span>
+                <h3><span>九一</span> 酒馆美化工坊</h3>
+                <p>完整编辑模板、字段、外观、安装范围与导入导出。</p>
             </div>
             <nav class="status-atelier-workspace-tabs" aria-label="选择工作区">
-                <button type="button" class="menu_button is-active" data-status-workspace="status" aria-pressed="true"><small>01</small> 状态栏库</button>
-                <button type="button" class="menu_button" data-status-workspace="opening" aria-pressed="false"><small>02</small> 通用开场白主页</button>
+                <button type="button" class="menu_button is-active" data-status-workspace="status" aria-pressed="true"><small>01</small> 状态栏美化</button>
+                <button type="button" class="menu_button" data-status-workspace="opening" aria-pressed="false"><small>02</small> 开场白主页</button>
             </nav>
         </header>
 
         <div class="status-atelier-data-flow" aria-label="内容生成链路">
-            <span><b>EDIT</b> 编辑字段</span><i aria-hidden="true"></i>
-            <span><b>WORLD INFO</b> 世界书约束 AI</span><i aria-hidden="true"></i>
-            <span><b>REGEX</b> 正则解析</span><i aria-hidden="true"></i>
-            <span><b>LIVE</b> 状态栏显示真实值</span>
+            <span><b>1</b>读取角色</span><i aria-hidden="true"></i>
+            <span><b>2</b>生成预览</span><i aria-hidden="true"></i>
+            <span><b>3</b>确认安装</span>
         </div>
 
         <section class="status-atelier-workspace" data-status-workspace-panel="opening" hidden>
@@ -150,15 +149,45 @@
         <section class="status-atelier-workspace" data-status-workspace-panel="status">
             <div class="status-atelier-workspace-grid">
                 <main>
+                    <section id="status-atelier-quick-apply-section" class="status-atelier-setting-section status-atelier-quick-apply status-atelier-ai-simple-flow">
+                        <span class="status-atelier-ai-simple-badge">简单模式</span>
+                        <div class="status-atelier-ai-simple-copy">
+                            <h4>让 AI 按这个角色直接做好</h4>
+                            <p>读取当前角色卡、当前选中剧情与启用世界书，自动选择适合的内置正则模板并生成真实预览。</p>
+                        </div>
+                        <div class="status-atelier-ai-source-list" aria-label="AI 读取范围">
+                            <span>角色卡设定</span><span>当前选中剧情</span><span>启用世界书</span>
+                        </div>
+                        <label class="status-atelier-ai-idea-field" for="status-atelier-ai-idea">
+                            <span>简要想法 <small>可留空</small></span>
+                            <textarea id="status-atelier-ai-idea" class="text_pole" rows="2" maxlength="240" placeholder="例如：冷淡黑金，突出好感度和任务进度"></textarea>
+                            <small>点击 AI 后才会读取这段想法。</small>
+                        </label>
+                        <p id="status-atelier-ai-source-summary" class="status-atelier-ai-source-summary">打开一个单人角色聊天后即可开始。</p>
+                        <button id="status-atelier-test-ai" type="button" class="menu_button status-atelier-primary-action status-atelier-ai-generate">AI 分析并生成美化</button>
+                        <p id="status-atelier-ai-test-status" class="status-atelier-ai-test-status" role="status" aria-live="polite"></p>
+                        <section id="status-atelier-ai-recommendation" class="status-atelier-ai-recommendation" hidden>
+                            <small>AI 推荐方案</small>
+                            <strong id="status-atelier-ai-template"></strong>
+                            <p id="status-atelier-ai-reason"></p>
+                            <button id="status-atelier-install-scoped" type="button" class="menu_button status-atelier-primary-action" disabled>确认安装到当前角色</button>
+                            <small>安装会写入当前角色的世界书与局部正则，不会影响其他角色。</small>
+                        </section>
+                    </section>
+
+                    <details id="status-atelier-expert-workshop" class="status-atelier-expert-workshop" open>
+                        <summary><span><strong>高级自定义</strong><small>手动换模板、改字段、做手机桌面或导入导出</small></span></summary>
+                        <div class="status-atelier-expert-workshop-body">
                     <details class="status-atelier-setting-section status-atelier-collapsible" open>
                         <summary class="status-atelier-section-heading"><div><h4>选择状态栏模板</h4></div></summary>
                         <label>状态栏模板<select id="status-atelier-structure" class="text_pole"></select></label>
+                        <label class="checkbox_label status-atelier-display-only-toggle"><input id="status-atelier-regex-display-only" type="checkbox" checked><span>美化只显示，不发送给 AI</span></label>
                         <div id="status-atelier-quest-map-entry" class="status-atelier-quest-map-entry" hidden>
                             <div>
-                                <strong>任务地图画布</strong>
-                                <small>八套地图模板，支持地点照片、名称、数量、位置、多路线与正则导出。</small>
+                                <strong>任务地图模板都在地图编辑器里</strong>
+                                <small>木桌案件簿、旅行地图册、城市研究板等 8 套模板；在编辑器里选模板、放地点、连路线并生成正则。</small>
                             </div>
-                            <button id="status-atelier-open-map-editor" type="button" class="menu_button">打开任务地图编辑器</button>
+                            <button id="status-atelier-open-map-editor" type="button" class="menu_button">进入地图模板编辑器</button>
                         </div>
                     </details>
 
@@ -266,7 +295,7 @@
                         </div>
                     </details>
 
-                    <details class="status-atelier-setting-section status-atelier-collapsible">
+                    <details id="status-atelier-status-schema-section" class="status-atelier-setting-section status-atelier-collapsible">
                         <summary class="status-atelier-section-heading">
                             <div><h4 id="status-atelier-status-editor-title">APP 页面数据</h4></div>
                         </summary>
@@ -291,27 +320,18 @@
                         <input id="status-atelier-palette" type="hidden">
                     </details>
 
-                    <section class="status-atelier-setting-section status-atelier-quick-apply">
-                        <div class="status-atelier-section-heading"><div><h4>启用状态栏</h4><small>应用到当前角色。</small></div></div>
-                        <div class="status-atelier-setting-actions">
-                            <button id="status-atelier-install-scoped" type="button" class="menu_button status-atelier-primary-action">生成并应用</button>
-                            <button id="status-atelier-test-ai" type="button" class="menu_button">测试 AI</button>
-                        </div>
-                        <label class="checkbox_label"><input id="status-atelier-regex-display-only" type="checkbox" checked><span>美化只显示，不发送给 AI</span></label>
-                        <p id="status-atelier-ai-test-status" class="status-atelier-ai-test-status" role="status" aria-live="polite"></p>
-                    </section>
-
-                    <section class="status-atelier-setting-section status-atelier-advanced status-atelier-download-actions">
+                    <section id="status-atelier-download-actions-section" class="status-atelier-setting-section status-atelier-advanced status-atelier-download-actions">
                         <div class="status-atelier-section-heading"><div><h4>手动下载与全局安装</h4></div></div>
                         <div class="status-atelier-setting-actions">
                             <button id="status-atelier-copy-prompt" type="button" class="menu_button">复制 AI 输出规则</button>
                             <button id="status-atelier-download-worldbook" type="button" class="menu_button">下载世界书</button>
                             <button id="status-atelier-download-regex" type="button" class="menu_button">下载正则</button>
+                            <button id="status-atelier-install-scoped-advanced" type="button" class="menu_button">安装当前手动配置到角色</button>
                             <button id="status-atelier-install-global" type="button" class="menu_button">应用到全局</button>
                         </div>
                     </section>
 
-                    <details class="status-atelier-setting-section status-atelier-advanced">
+                    <details id="status-atelier-advanced-rules-section" class="status-atelier-setting-section status-atelier-advanced">
                         <summary>高级规则与备份</summary>
                         <label class="checkbox_label"><input id="status-atelier-prompt-enabled" type="checkbox"><span>兼容模式：不用角色世界书时，由插件临时接入输出规则</span></label>
                         <div class="status-atelier-settings-grid">
@@ -330,8 +350,11 @@
                         </div>
                     </details>
 
+                        </div>
+                    </details>
+
                 </main>
-                <aside class="status-atelier-preview-shell">
+                <aside id="status-atelier-preview-shell" class="status-atelier-preview-shell">
                     <div class="status-atelier-preview-heading"><small>可直接编辑的实时预览</small><span id="status-atelier-preview-help">双击字段名修改 · 拖动字段排序 · 数值由 AI 填写</span></div>
                     <div id="status-atelier-preview"></div>
                 </aside>

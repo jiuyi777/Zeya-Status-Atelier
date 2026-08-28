@@ -2866,7 +2866,7 @@ summary.status-atelier-section-heading {
 }
 
 .status-atelier-workbench-title::before {
-    content: "Z";
+    content: "九";
     position: absolute;
     left: 0;
     top: 1px;
@@ -2916,7 +2916,7 @@ summary.status-atelier-section-heading {
 
 .status-atelier-data-flow {
     display: grid;
-    grid-template-columns: auto minmax(18px, 1fr) auto minmax(18px, 1fr) auto minmax(18px, 1fr) auto;
+    grid-template-columns: auto minmax(18px, 1fr) auto minmax(18px, 1fr) auto;
     align-items: center;
     gap: 8px;
     padding: 8px 14px;
@@ -2934,8 +2934,7 @@ summary.status-atelier-section-heading {
 
 .status-atelier-data-flow b {
     color: var(--saw-ink);
-    font: 800 9px/1.2 "Cascadia Mono", monospace;
-    letter-spacing: .08em;
+    font: 900 10px/1.2 "Cascadia Mono", monospace;
 }
 
 .status-atelier-data-flow i {
@@ -3040,6 +3039,242 @@ summary.status-atelier-section-heading {
 .status-atelier-workbench .status-atelier-setting-section + .status-atelier-setting-section,
 .status-atelier-workbench details.status-atelier-setting-section + .status-atelier-setting-section {
     margin-top: 10px;
+}
+
+.status-atelier-settings[data-entry-mode="expert"] #status-atelier-quick-apply-section,
+.status-atelier-settings[data-entry-mode="expert"] .status-atelier-data-flow {
+    display: none;
+}
+
+.status-atelier-ai-simple-flow {
+    display: grid;
+    gap: 14px;
+    padding: clamp(18px, 4vw, 28px) !important;
+    overflow: hidden;
+    border: 1px solid #d9d4c8 !important;
+    border-radius: 24px !important;
+    background: #f8f2e8 !important;
+    box-shadow: 0 10px 28px rgba(53, 42, 32, .10) !important;
+}
+
+.status-atelier-ai-simple-flow::before,
+.status-atelier-ai-simple-flow > .status-atelier-section-heading:first-child h4::before {
+    content: none !important;
+}
+
+.status-atelier-ai-simple-badge {
+    justify-self: start;
+    padding: 6px 10px;
+    border-radius: 999px;
+    color: #7f2e2b;
+    background: #f2d9d3;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.status-atelier-ai-simple-copy {
+    display: grid;
+    gap: 7px;
+}
+
+.status-atelier-ai-simple-copy h4 {
+    font-size: clamp(22px, 4vw, 30px);
+    line-height: 1.12;
+}
+
+.status-atelier-ai-simple-copy p,
+.status-atelier-ai-source-summary,
+.status-atelier-ai-recommendation p,
+.status-atelier-ai-recommendation > small:last-child {
+    color: #6b625a;
+    line-height: 1.65;
+}
+
+.status-atelier-ai-source-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.status-atelier-ai-source-list span {
+    padding: 7px 10px;
+    border: 1px solid #d6cec2;
+    border-radius: 999px;
+    color: #514943;
+    background: #fffaf3;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.status-atelier-ai-idea-field {
+    display: grid;
+    gap: 7px;
+    color: #514943;
+    font-weight: 750;
+}
+
+.status-atelier-ai-idea-field > span {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.status-atelier-ai-idea-field small {
+    color: #766d65;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-atelier-ai-idea-field textarea {
+    width: 100%;
+    min-height: 76px;
+    resize: vertical;
+    border: 1px solid #cfc4b6;
+    border-radius: 12px;
+    color: #2d2925;
+    background: #fffaf3;
+    box-shadow: none;
+    line-height: 1.55;
+}
+
+.status-atelier-ai-idea-field textarea:focus {
+    border-color: #8f3531;
+    outline: 2px solid rgba(143, 53, 49, .16);
+    outline-offset: 1px;
+}
+
+.status-atelier-workbench .status-atelier-ai-generate,
+.status-atelier-workbench .status-atelier-ai-recommendation .status-atelier-primary-action,
+#status-atelier-modal .status-atelier-ai-generate,
+#status-atelier-modal .status-atelier-ai-recommendation .status-atelier-primary-action {
+    width: 100%;
+    min-height: 50px;
+    padding: 12px 18px;
+    border: 0;
+    border-radius: 14px;
+    color: #fff;
+    background: #8f3531;
+    box-shadow: 0 8px 18px rgba(113, 49, 46, .22);
+    font-size: 15px;
+    font-weight: 850;
+}
+
+.status-atelier-workbench .status-atelier-ai-generate:is(:hover, :focus-visible),
+.status-atelier-workbench .status-atelier-ai-recommendation .status-atelier-primary-action:is(:hover, :focus-visible),
+#status-atelier-modal .status-atelier-ai-generate:is(:hover, :focus-visible),
+#status-atelier-modal .status-atelier-ai-recommendation .status-atelier-primary-action:is(:hover, :focus-visible) {
+    color: #fff;
+    background: #a23d38;
+}
+
+.status-atelier-workbench .status-atelier-ai-generate:disabled,
+.status-atelier-workbench .status-atelier-ai-recommendation .status-atelier-primary-action:disabled,
+#status-atelier-modal .status-atelier-ai-generate:disabled,
+#status-atelier-modal .status-atelier-ai-recommendation .status-atelier-primary-action:disabled {
+    cursor: wait;
+    opacity: .64;
+}
+
+.status-atelier-ai-recommendation {
+    display: grid;
+    gap: 8px;
+    padding: 15px;
+    border: 1px solid #d9c8b7;
+    border-radius: 16px;
+    background: #fffaf3;
+}
+
+.status-atelier-ai-recommendation[hidden] {
+    display: none !important;
+}
+
+.status-atelier-ai-recommendation > strong {
+    color: #7f2e2b;
+    font-size: 18px;
+}
+
+#status-atelier-modal[data-workspace="status"] .status-atelier-greeting-status-step {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.status-atelier-modal-ai-simple-flow {
+    padding: clamp(16px, 4vw, 24px) !important;
+    box-shadow: none !important;
+}
+
+.status-atelier-ai-preview-empty {
+    display: grid;
+    min-height: 260px;
+    place-content: center;
+    gap: 8px;
+    padding: 24px;
+    color: #6b625a;
+    background: #f2e8dc;
+    text-align: center;
+}
+
+.status-atelier-ai-preview-empty strong {
+    color: #8f302d;
+    font-size: 20px;
+}
+
+.status-atelier-ai-preview-empty p {
+    margin: 0;
+}
+
+.status-atelier-modal-open-expert {
+    width: 100%;
+    min-height: 46px;
+}
+
+.status-atelier-expert-workshop {
+    margin-top: 12px;
+    border: 1px solid #d4cec4;
+    border-radius: 16px;
+    background: rgba(250, 248, 241, .72);
+}
+
+.status-atelier-expert-workshop > summary {
+    display: flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.status-atelier-expert-workshop > summary::-webkit-details-marker {
+    display: none;
+}
+
+.status-atelier-expert-workshop > summary::after {
+    content: "展开";
+    color: var(--saw-accent);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.status-atelier-expert-workshop[open] > summary::after {
+    content: "收起";
+}
+
+.status-atelier-expert-workshop > summary span,
+.status-atelier-expert-workshop > summary small {
+    display: block;
+}
+
+.status-atelier-expert-workshop > summary small {
+    margin-top: 3px;
+    color: var(--saw-muted);
+}
+
+.status-atelier-expert-workshop-body {
+    padding: 0 10px 10px;
 }
 
 .status-atelier-section-heading {
@@ -4639,10 +4874,20 @@ body:has(.preview-note) [data-status-workspace-panel="status"] .status-atelier-w
     }
 
     .status-atelier-data-flow {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 1px;
         padding: 1px;
         background: var(--saw-line);
+    }
+
+    .status-atelier-data-flow i {
+        display: none;
+    }
+
+    .status-atelier-data-flow span {
+        padding: 8px 6px;
+        background: #dad9d3;
+        text-align: center;
     }
 
     .status-atelier-data-flow span {
@@ -4956,6 +5201,7 @@ body:has(.preview-note) [data-status-workspace-panel="status"] .status-atelier-w
     display: block;
     width: 100%;
     min-height: 220px;
+    overscroll-behavior-x: contain;
     border: 0;
     border-radius: 12px;
     background: transparent;
@@ -5038,8 +5284,38 @@ body:has(.preview-note) [data-status-workspace-panel="status"] .status-atelier-w
 }
 
 @media (max-width: 700px) {
+    .status-atelier-workbench,
+    .status-atelier-workspace,
+    .status-atelier-workspace-grid,
+    .status-atelier-workspace-grid > main,
+    .status-atelier-ai-simple-flow,
+    .status-atelier-expert-workshop,
+    .status-atelier-preview-shell {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .status-atelier-ai-simple-copy,
+    .status-atelier-ai-simple-copy p,
+    .status-atelier-ai-source-summary,
+    .status-atelier-data-flow span {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .status-atelier-preview-heading span {
+        display: none;
+    }
+
+    .status-atelier-preview-shell[data-preview-structure="profile"] {
+        order: 1;
+        margin-top: 12px;
+    }
+
     .status-atelier-beauty-preview-frame {
-        min-height: 220px;
+        min-height: 365px;
     }
 
     .status-atelier-beauty-preview-actions {
