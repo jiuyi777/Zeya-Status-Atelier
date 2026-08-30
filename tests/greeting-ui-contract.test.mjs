@@ -204,6 +204,7 @@ test('mobile greeting modal offers a stateless copy-only overview and directly i
     assert.doesNotMatch(statusBlock, /title: style\.title|subtitle: style\.subtitle/);
     assert.doesNotMatch(source, /logoId: stored\.logoId/);
     assert.doesNotMatch(source, /id="status-atelier-modal-download-regex"/);
+    assert.match(styleSource, /#status-atelier-modal\s*\{[\s\S]*?width:\s*100vw;[\s\S]*?height:\s*100dvh;/);
 });
 
 test('wand exposes a simple AI status flow while the plugin settings keep the full workbench', () => {
@@ -217,23 +218,29 @@ test('wand exposes a simple AI status flow while the plugin settings keep the fu
     assert.match(source, /id="status-atelier-modal-test-ai"[^>]*>AI 分析并生成美化</);
     assert.match(source, /id="status-atelier-modal-ai-idea"[^>]*maxlength="240"/);
     assert.match(settingsMarkup, /id="status-atelier-ai-idea"[^>]*maxlength="240"/);
+    assert.match(source, /id="status-atelier-modal-ai-remix"[^>]*type="radio"/);
+    assert.match(settingsMarkup, /id="status-atelier-ai-remix"[^>]*type="radio"/);
     assert.match(source, /id="status-atelier-modal-apply-status"[^>]*disabled[^>]*>确认安装到当前角色</);
     assert.match(source, /id="status-atelier-modal-ai-recommendation"[^>]*hidden/);
     assert.match(source, /class="status-atelier-modal-status-preview-wrap" hidden/);
     assert.doesNotMatch(source, /id="status-atelier-open-full-status-workbench"/);
     assert.match(source, /testStatusAiGeneration\(event\.currentTarget, 'modal'\)/);
     assert.match(settingsMarkup, /id="status-atelier-settings"[^>]*data-entry-mode="expert"/);
+    assert.match(settingsMarkup, /data-status-entry-mode="simple"[^>]*>\s*<strong>简单模式/);
+    assert.match(settingsMarkup, /data-status-entry-mode="expert"[^>]*aria-pressed="true"[^>]*>\s*<strong>复杂模式/);
     assert.match(settingsMarkup, /<details id="status-atelier-expert-workshop" class="status-atelier-expert-workshop" open>/);
     assert.match(styleSource, /data-entry-mode="expert"[^\n]*status-atelier-quick-apply-section/);
+    assert.match(styleSource, /data-status-entry-mode="expert"[^\n]*status-atelier-modal-ai-simple-flow/);
     assert.doesNotMatch(source, /data-greeting-workspace=/);
     const openBlock = source.match(/function openGreetingModal\(target = 'opening'\) \{([\s\S]*?)\n\}/)?.[1] || '';
     const statusFastPath = openBlock.match(/if \(target === 'status'\) \{([\s\S]*?)\n    \}/)?.[1] || '';
     assert.match(statusFastPath, /setGreetingModalWorkspace\('status'\)/);
+    assert.match(statusFastPath, /setStatusEntryMode\('modal', 'simple'\)/);
     assert.match(statusFastPath, /return;/);
     assert.doesNotMatch(statusFastPath, /ensureLocalGreetingDrafts|renderGreetingList|renderGreetingThemeChooser|updateOpeningHomePreview/);
     const aiGenerationBlock = source.match(/async function testStatusAiGeneration\(button, viewName = 'settings'\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(aiGenerationBlock, /compactStatusAiText\(idea\?\.value, 240\)/);
-    assert.match(aiGenerationBlock, /用户简要想法/);
+    assert.match(aiGenerationBlock, /用户提示词/);
     const simpleFlowStyle = styleSource.match(/\.status-atelier-ai-simple-flow \{([\s\S]*?)\n\}/)?.[1] || '';
     const aiActionStyle = styleSource.match(/\.status-atelier-workbench \.status-atelier-ai-generate,([\s\S]*?)\n\}/)?.[1] || '';
     const emptyPreviewStyle = styleSource.match(/\.status-atelier-ai-preview-empty \{([\s\S]*?)\n\}/)?.[1] || '';
@@ -297,6 +304,13 @@ test('one-click homepage updates the local regex and character greeting without 
 
 test('status AI generation stays preview-only until either entry explicitly installs', () => {
     assert.match(settingsMarkup, /id="status-atelier-test-ai"[^>]*>AI 分析并生成美化</);
+    assert.match(settingsMarkup, /id="status-atelier-ai-method-quick"[^>]*type="radio"[^>]*checked/);
+    assert.match(settingsMarkup, /id="status-atelier-ai-remix"[^>]*type="radio"/);
+    assert.match(settingsMarkup, /快速按模板生成/);
+    assert.match(settingsMarkup, /按提示词大幅改造/);
+    assert.match(settingsMarkup, /id="status-atelier-ai-regenerate"[^>]*>\s*<span[^>]*>↻<\/span> 不满意，重新生成/);
+    assert.match(settingsMarkup, /id="status-atelier-ai-save-template"[^>]*>☆ 保存为我的模板/);
+    assert.match(settingsMarkup, /id="status-atelier-ai-saved-templates"/);
     assert.match(settingsMarkup, /id="status-atelier-install-scoped"[^>]*disabled[^>]*>确认安装到当前角色</);
     assert.match(settingsMarkup, /id="status-atelier-ai-recommendation"[^>]*hidden/);
     assert.match(source, /async function currentStatusAiContext\(\)/);
@@ -305,14 +319,25 @@ test('status AI generation stays preview-only until either entry explicitly inst
     assert.match(source, /\.slice\(-12\)/);
     const generateBlock = source.match(/async function testStatusAiGeneration\(button, viewName = 'settings'\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(generateBlock, /currentStatusAiContext\(\)/);
+    assert.match(generateBlock, /【改造幅度：大幅改造】/);
+    assert.match(generateBlock, /recommendation\.profileAppearance === currentDesign\.profileAppearance/);
+    assert.match(generateBlock, /用户提示词/);
     assert.match(generateBlock, /applyStatusAiRecommendation\(recommendation\)/);
     assert.match(generateBlock, /showStatusAiRecommendation\(recommendation, contextSnapshot, viewName\)/);
+    assert.match(generateBlock, /【格式纠正】/);
     assert.doesNotMatch(generateBlock, /installRegex\(/);
     assert.doesNotMatch(settingsMarkup, /status-atelier-shuffle-recipe|完整 40 套|20 套自由面板/);
     assert.doesNotMatch(source, /status-atelier-modal-shuffle-recipe|applyStatusRecipe|shuffleStatusRecipe/);
+    assert.match(source, /id="status-atelier-modal-ai-method-quick"[^>]*type="radio"[^>]*checked/);
+    assert.match(source, /id="status-atelier-modal-ai-regenerate"/);
+    assert.match(source, /id="status-atelier-modal-ai-save-template"/);
+    assert.match(source, /function saveCurrentStatusTemplate\(\)/);
+    assert.match(source, /savedStatusTemplates/);
+    assert.match(source, /SAVED_STATUS_TEMPLATE_KEYS/);
+    assert.doesNotMatch(source.match(/function currentSavedStatusTemplate\(\) \{([\s\S]*?)\n\}/)?.[1] || '', /statusAiTestRecords|chatContext|characterContext/);
     assert.doesNotMatch(settingsMarkup, /id="status-atelier-fill-mode"/);
     assert.doesNotMatch(source, /id="status-atelier-modal-status-fill-mode"/);
-    assert.match(source, /class="status-atelier-modal-status-advanced" hidden>/);
+    assert.match(source, /class="status-atelier-modal-status-advanced">/);
     assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?APP 页面数据/);
     assert.match(settingsMarkup, /<details id="status-atelier-appearance-section" class="status-atelier-setting-section status-atelier-collapsible" open>[\s\S]*?外观与配色/);
     assert.match(settingsMarkup, /id="status-atelier-template-media"[\s\S]*?当前模板角色字段设置/);
@@ -488,6 +513,8 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /moveFieldDefinition/);
     assert.match(source, /avatar:\s*'头像'/);
     assert.match(source, /status-atelier-preview-field-avatar zrs-field-avatar/);
+    assert.match(source, /status-atelier-avatar-edit-button', '修改头像'/);
+    assert.match(styleSource, /status-atelier-avatar-edit-button[\s\S]*?writing-mode: horizontal-tb;[\s\S]*?white-space: nowrap;/);
     for (const removedSlider of ['wallpaper-x', 'wallpaper-y', 'widget-x', 'widget-y', 'avatar-x', 'avatar-y']) {
         assert.doesNotMatch(settingsMarkup, new RegExp(`id="status-atelier-phone-${removedSlider}"`));
     }
@@ -539,6 +566,7 @@ test('one-click scoped status installs and verifies a character-bound worldbook 
     assert.match(scopedInstall, /installStatusWorldbookRule\(\)/);
     assert.match(scopedInstall, /installGeneratedRegex/);
     assert.ok(scopedInstall.indexOf('installStatusWorldbookRule()') < scopedInstall.indexOf('installGeneratedRegex'));
+    assert.doesNotMatch(source, /statusRecipe\(\)/);
 });
 
 test('personal feed clearly separates DIY media from story data and previews a two-sided paper dossier', () => {

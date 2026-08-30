@@ -149,6 +149,10 @@
         <section class="status-atelier-workspace" data-status-workspace-panel="status">
             <div class="status-atelier-workspace-grid">
                 <main>
+                    <nav class="status-atelier-entry-mode-switch" aria-label="状态栏操作模式">
+                        <button type="button" class="menu_button" data-status-entry-mode="simple" aria-pressed="false"><strong>简单模式</strong><small>AI 读取角色并直接生成</small></button>
+                        <button type="button" class="menu_button" data-status-entry-mode="expert" aria-pressed="true"><strong>复杂模式</strong><small>模板、字段与安装设置</small></button>
+                    </nav>
                     <section id="status-atelier-quick-apply-section" class="status-atelier-setting-section status-atelier-quick-apply status-atelier-ai-simple-flow">
                         <span class="status-atelier-ai-simple-badge">简单模式</span>
                         <div class="status-atelier-ai-simple-copy">
@@ -158,10 +162,25 @@
                         <div class="status-atelier-ai-source-list" aria-label="AI 读取范围">
                             <span>角色卡设定</span><span>当前选中剧情</span><span>启用世界书</span>
                         </div>
+                        <fieldset class="status-atelier-ai-methods" aria-label="选择生成方式">
+                            <legend>选择生成方式</legend>
+                            <label class="status-atelier-ai-method" for="status-atelier-ai-method-quick">
+                                <input id="status-atelier-ai-method-quick" name="status-atelier-ai-method" type="radio" value="quick" checked>
+                                <span><strong>快速按模板生成</strong><small>AI 自动挑选合适模板，简单快速。</small></span>
+                            </label>
+                            <label class="status-atelier-ai-method" for="status-atelier-ai-remix">
+                                <input id="status-atelier-ai-remix" name="status-atelier-ai-method" type="radio" value="remix">
+                                <span><strong>按提示词大幅改造</strong><small>保留动态数据，换构图、栏目与关注重点。</small></span>
+                            </label>
+                        </fieldset>
+                        <section id="status-atelier-ai-saved-template-section" class="status-atelier-ai-saved-template-section" hidden>
+                            <strong>我的模板</strong>
+                            <div id="status-atelier-ai-saved-templates" class="status-atelier-ai-saved-templates"></div>
+                        </section>
                         <label class="status-atelier-ai-idea-field" for="status-atelier-ai-idea">
-                            <span>简要想法 <small>可留空</small></span>
-                            <textarea id="status-atelier-ai-idea" class="text_pole" rows="2" maxlength="240" placeholder="例如：冷淡黑金，突出好感度和任务进度"></textarea>
-                            <small>点击 AI 后才会读取这段想法。</small>
+                            <span>你的提示词 <small>可留空</small></span>
+                            <textarea id="status-atelier-ai-idea" class="text_pole" rows="2" maxlength="240" placeholder="例如：像旧档案袋，重点关注苏槿的伤势、呼吸和行动能力"></textarea>
+                            <small>写你想要的风格和关注内容；点击 AI 后才会读取。</small>
                         </label>
                         <p id="status-atelier-ai-source-summary" class="status-atelier-ai-source-summary">打开一个单人角色聊天后即可开始。</p>
                         <button id="status-atelier-test-ai" type="button" class="menu_button status-atelier-primary-action status-atelier-ai-generate">AI 分析并生成美化</button>
@@ -170,7 +189,11 @@
                             <small>AI 推荐方案</small>
                             <strong id="status-atelier-ai-template"></strong>
                             <p id="status-atelier-ai-reason"></p>
-                            <button id="status-atelier-install-scoped" type="button" class="menu_button status-atelier-primary-action" disabled>确认安装到当前角色</button>
+                            <div class="status-atelier-ai-result-actions">
+                                <button id="status-atelier-ai-regenerate" type="button" class="menu_button status-atelier-ai-regenerate"><span aria-hidden="true">↻</span> 不满意，重新生成</button>
+                                <button id="status-atelier-ai-save-template" type="button" class="menu_button">☆ 保存为我的模板</button>
+                                <button id="status-atelier-install-scoped" type="button" class="menu_button status-atelier-primary-action" disabled>确认安装到当前角色</button>
+                            </div>
                             <small>安装会写入当前角色的世界书与局部正则，不会影响其他角色。</small>
                         </section>
                     </section>

@@ -114,6 +114,12 @@ const BUNDLED_DEFAULT_FIELDS = new Map([
     ['moon-collage', MOON_COLLAGE_FIELDS],
 ]);
 
+const BUNDLED_DEFAULT_TITLES = new Map([
+    ...STATUS_BEAUTY_01_04_10_15_PRESETS.map(item => [item.id, item.title]),
+    ...STATUS_BEAUTY_05_09_PRESETS.map(item => [item.id, item.title]),
+    ['moon-collage', '月下蝶影'],
+]);
+
 export function isStatusBeauty01To15(structure) {
     return Object.hasOwn(BUNDLED, structure);
 }
@@ -221,10 +227,11 @@ export function parseStatusBeautyBundledOutput(rule, rawOutput) {
     return { rule, shared: [], pages: [{ page: rule.pages[0], values }], raw: source };
 }
 
-export function buildStatusBeautyBundledPreviewDocument(regexScript) {
+export function buildStatusBeautyBundledPreviewDocument(regexScript, generatedValues = []) {
     let html = String(applyStatusBeautyControlChrome(regexScript)?.replaceString || '').trim();
     html = html.replace(/^```html\s*/i, '').replace(/\s*```$/, '');
-    const previewPatch = `<script>(function(){var root=document.body;if(!root)return;var pending=[];var walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);while(walker.nextNode()){var node=walker.currentNode;var parent=node.parentElement;if(!parent||parent.closest('script,style,[data-capture]'))continue;if(/\\$\\d{1,2}/.test(node.nodeValue||''))pending.push(node);}pending.forEach(function(node){var parts=(node.nodeValue||'').split(/(\\$\\d{1,2})/g);var fragment=document.createDocumentFragment();parts.forEach(function(part){var match=part.match(/^\\$(\\d{1,2})$/);if(match){var span=document.createElement('span');span.dataset.capture=match[1];span.textContent='X';fragment.appendChild(span);}else if(part){fragment.appendChild(document.createTextNode(part));}});node.replaceWith(fragment);});root.querySelectorAll('[data-capture]').forEach(function(node){node.textContent='X';});root.querySelectorAll('*').forEach(function(node){Array.from(node.attributes||[]).forEach(function(attribute){if(/\\$\\d{1,2}/.test(attribute.value))node.setAttribute(attribute.name,attribute.value.replace(/\\$\\d{1,2}/g,'X'));});});})();</script>`;
+    const values = JSON.stringify(generatedValues.map(value => String(value || ''))).replace(/</g, '\\u003c');
+    const previewPatch = `<script>(function(){var values=${values};var root=document.body;if(!root)return;var valueFor=function(index){return values[index-1]||'X';};var pending=[];var walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);while(walker.nextNode()){var node=walker.currentNode;var parent=node.parentElement;if(!parent||parent.closest('script,style,[data-capture]'))continue;if(/\\$\\d{1,2}/.test(node.nodeValue||''))pending.push(node);}pending.forEach(function(node){var parts=(node.nodeValue||'').split(/(\\$\\d{1,2})/g);var fragment=document.createDocumentFragment();parts.forEach(function(part){var match=part.match(/^\\$(\\d{1,2})$/);if(match){var span=document.createElement('span');span.dataset.capture=match[1];span.textContent=valueFor(Number(match[1]));fragment.appendChild(span);}else if(part){fragment.appendChild(document.createTextNode(part));}});node.replaceWith(fragment);});root.querySelectorAll('[data-capture]').forEach(function(node){node.textContent=valueFor(Number(node.dataset.capture));});root.querySelectorAll('*').forEach(function(node){Array.from(node.attributes||[]).forEach(function(attribute){if(/\\$\\d{1,2}/.test(attribute.value))node.setAttribute(attribute.name,attribute.value.replace(/\\$(\\d{1,2})/g,function(_,index){return valueFor(Number(index));}));});});})();</script>`;
     return /<\/body>/i.test(html)
         ? html.replace(/<\/body>/i, `${previewPatch}</body>`)
         : `${html}${previewPatch}`;
@@ -260,6 +267,21 @@ export function applyStatusBeautyFieldLayout(regexScript, rule) {
     const payload = JSON.stringify(slots).replace(/</g, '\\u003c');
     const patch = `<style>.sta-layout-capture{display:contents}</style><script>(function(){var slots=${payload};var root=document.querySelector('.status-card')||Array.from(document.body.children).find(function(node){return node.matches&&node.matches('details,section,article,main,div');})||document.body;if(!root)return;var captures=Array.from(root.querySelectorAll('.sta-layout-capture'));captures.forEach(function(node){var slot=slots[Number(node.dataset.capture)-1];if(!slot)return;node.dataset.staFieldId=slot.id;node.dataset.staFieldSlot=String(slot.slot);node.setAttribute('aria-label',slot.label);if(node.closest('.compact-summary'))return;var branch=node.parentElement;for(var depth=0;branch&&branch!==root&&depth<4;depth+=1,branch=branch.parentElement){var peers=Array.from(branch.querySelectorAll('.sta-layout-capture'));if(!peers.length||peers[0]!==node)continue;var labels=Array.from(branch.querySelectorAll('[data-label],label,.label,.field-label,.status-label,h2,h3,h4,span')).filter(function(candidate){var text=(candidate.textContent||'').trim();return text&&text.length<=24&&!candidate.closest('button')&&!candidate.matches('.sta-layout-capture,[data-capture]')&&!candidate.querySelector('.sta-layout-capture,[data-capture]');});if(labels.length){labels[0].textContent=slot.label;branch.dataset.staFieldId=slot.id;branch.dataset.staFieldSlot=String(slot.slot);break;}}});})();</script>`;
     const replacement = annotateLayoutCaptures(regexScript?.replaceString);
+    return {
+        ...regexScript,
+        replaceString: /<\/body>/i.test(replacement)
+            ? replacement.replace(/<\/body>/i, `${patch}</body>`)
+            : `${replacement}${patch}`,
+    };
+}
+
+export function applyStatusBeautyTitle(regexScript, rule) {
+    const defaultTitle = String(BUNDLED_DEFAULT_TITLES.get(rule?.structure) || '').trim();
+    const title = String(rule?.title || '').trim().slice(0, 40);
+    if (!defaultTitle || !title || title === defaultTitle) return regexScript;
+    const payload = JSON.stringify({ defaultTitle, title }).replace(/</g, '\\u003c');
+    const patch = `<script>(function(){var heading=${payload};document.title=heading.title;var nodes=Array.from(document.querySelectorAll('[data-design-title],h1,h2,h3,h4,h5,h6,.compact>strong,.compact-summary>strong'));var target=nodes.find(function(node){return (node.textContent||'').trim()===heading.defaultTitle;});if(target)target.textContent=heading.title;})();</script>`;
+    const replacement = String(regexScript?.replaceString || '');
     return {
         ...regexScript,
         replaceString: /<\/body>/i.test(replacement)

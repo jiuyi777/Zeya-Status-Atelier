@@ -25,35 +25,36 @@ import {
     parseChatConversationLog,
     parseStatusOutput,
     parseFields,
-} from './rule-generator.js?v=0.11.2';
-import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.2';
+} from './rule-generator.js?v=0.11.3';
+import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.3';
 import {
     STATUS_BEAUTY_01_15_IDS,
     applyStatusBeautyControlChrome,
     applyStatusBeautyFieldLayout,
     applyStatusBeautyMediaSettings,
     applyStatusBeautyTextOverrides,
+    applyStatusBeautyTitle,
     buildStatusBeautyBundledPreviewDocument,
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.2';
+} from './status-beauty-01-15-bundle.js?v=0.11.3';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
-} from './status-beauty-05-09.js?v=0.11.2';
+} from './status-beauty-05-09.js?v=0.11.3';
 import {
     STATUS_BEAUTY_16_20_IDS,
     buildStatusBeauty16To20Preview,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.2';
+} from './status-beauty-16-20.js?v=0.11.3';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.2';
+} from './opening-home-generator.js?v=0.11.3';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -61,24 +62,28 @@ import {
     SINGLE_SUMMARY_JSON_SCHEMA,
     generationErrorMessage,
     greetingPreview,
-    lastMatchingJson,
     parseBatchSummaryResponse,
     parseSummaryResponse,
     responseText,
+    applyStatusIdeaFocus,
+    buildLocalStatusRecords,
+    resolveStatusRecommendation,
+    resolveStatusIdeaIntent,
     usableGreetingRecords,
-} from './response-parser.js?v=0.11.2';
+} from './response-parser.js?v=0.11.3';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.11.2';
+} from './worldbook-routes.js?v=0.11.3';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.11.2';
+} from './entry-dialog.js?v=0.11.3';
+import { getContext as getSillyTavernContext } from '../../../extensions.js';
 import {
     greetingBindingSummary,
     keepOnlyOpenGreetingCard,
@@ -87,14 +92,14 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.11.2';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.2';
-import { buildCharacterHomepageContext } from './opening-context.js?v=0.11.2';
+} from './greeting-workflow.js?v=0.11.3';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.3';
+import { buildCharacterHomepageContext } from './opening-context.js?v=0.11.3';
 import {
     STATUS_WORLDBOOK_ENTRY_ID,
     buildStatusWorldbookName,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.11.2';
+} from './status-worldbook.js?v=0.11.3';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -115,7 +120,7 @@ import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.2';
+const VERSION = '0.11.3';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -271,6 +276,7 @@ const DEFAULT_SETTINGS = Object.freeze({
     activeWorkspace: 'status',
     favoriteHomeTemplates: ['classical', 'newspaper', 'timeline'],
     favoriteStatusTemplates: ['relationship', 'worldNpc'],
+    savedStatusTemplates: [],
     structure: 'phone',
     profileAppearance: PROFILE_APPEARANCE_DEFAULT.id,
     profileTemplateSchemaVersion: 1,
@@ -301,19 +307,6 @@ const DEFAULT_SETTINGS = Object.freeze({
 });
 
 const STATUS_AI_STRUCTURE_IDS = Object.freeze(['phone', 'profile', 'social', 'chat', 'forum']);
-const STATUS_AI_RECOMMENDATION_SCHEMA = Object.freeze({
-    name: 'status_atelier_recommendation',
-    strict: true,
-    value: {
-        type: 'object',
-        properties: {
-            structure: { type: 'string', enum: STATUS_AI_STRUCTURE_IDS },
-            profileAppearance: { type: 'string', enum: ['', ...PROFILE_APPEARANCE_IDS] },
-            reason: { type: 'string' },
-        },
-        required: ['structure', 'profileAppearance', 'reason'],
-    },
-});
 
 const OPENING_HOME_FIELDS = Object.freeze({
     'status-atelier-opening-home-title': 'title',
@@ -402,7 +395,7 @@ let questMapEditorOverlay = null;
 let questMapEditorTrigger = null;
 
 function context() {
-    return globalThis.SillyTavern?.getContext?.();
+    return globalThis.SillyTavern?.getContext?.() ?? getSillyTavernContext?.();
 }
 
 function clone(value) {
@@ -587,6 +580,10 @@ function settings() {
     if (!['opening', 'status'].includes(stored.activeWorkspace)) stored.activeWorkspace = 'status';
     if (!Array.isArray(stored.favoriteHomeTemplates)) stored.favoriteHomeTemplates = clone(DEFAULT_SETTINGS.favoriteHomeTemplates);
     if (!Array.isArray(stored.favoriteStatusTemplates)) stored.favoriteStatusTemplates = clone(DEFAULT_SETTINGS.favoriteStatusTemplates);
+    if (!Array.isArray(stored.savedStatusTemplates)) stored.savedStatusTemplates = [];
+    stored.savedStatusTemplates = stored.savedStatusTemplates
+        .filter(item => item && typeof item === 'object' && item.id && item.name && item.settings && typeof item.settings === 'object')
+        .slice(-12);
     if (!CHAT_APPEARANCE_PRESETS.some(item => item.id === stored.chatAppearance)) stored.chatAppearance = DEFAULT_SETTINGS.chatAppearance;
     if (stored.structure === 'chat' && stored.chatConversationSchemaVersion !== 3) {
         stored.title = CHAT_STRUCTURE_DEFAULT.title;
@@ -1088,6 +1085,98 @@ function currentProfileTemplateDraft(stored = settings()) {
     };
 }
 
+const SAVED_STATUS_TEMPLATE_KEYS = Object.freeze([
+    'structure', 'profileAppearance', 'title', 'subtitle', 'theme', 'paletteId', 'layout',
+    'pagesText', 'sharedFieldsText', 'pageFieldsText', 'forumSkin', 'chatAppearance', 'variant',
+]);
+
+function currentSavedStatusTemplate() {
+    const stored = settings();
+    const appearance = stored.structure === 'profile'
+        ? PROFILE_APPEARANCE_PRESETS.find(item => item.id === stored.profileAppearance)
+        : STATUS_STRUCTURE_PRESETS.find(item => item.id === stored.structure);
+    const templateSettings = Object.fromEntries(SAVED_STATUS_TEMPLATE_KEYS.map(key => [key, clone(stored[key])]));
+    if (stored.structure === 'profile') {
+        templateSettings.profileTextOverrides = clone(stored.profileTextOverrides?.[stored.profileAppearance] || {});
+    }
+    return {
+        id: `mine-${Date.now().toString(36)}`,
+        name: compactStatusAiText(`${appearance?.name || '自定义状态栏'} · ${stored.title || '我的模板'}`, 32),
+        settings: templateSettings,
+    };
+}
+
+function applySavedStatusTemplate(template, viewName = 'settings') {
+    if (!template?.settings || !STATUS_AI_STRUCTURE_IDS.includes(template.settings.structure)) return;
+    const stored = settings();
+    SAVED_STATUS_TEMPLATE_KEYS.forEach(key => {
+        if (Object.hasOwn(template.settings, key)) stored[key] = clone(template.settings[key]);
+    });
+    if (stored.structure === 'profile' && PROFILE_APPEARANCE_IDS.includes(stored.profileAppearance)) {
+        stored.profileTextOverrides ??= {};
+        stored.profileTextOverrides[stored.profileAppearance] = clone(template.settings.profileTextOverrides || {});
+    }
+    stored.preset = 'custom';
+    stored.statusTemplate = 'custom';
+    statusAiTestRecords = null;
+    loadSettingsUI();
+    renderGreetingStatusChooser();
+    updatePrompt();
+    updatePreview();
+    if (viewName === 'modal') {
+        const view = statusAiView('modal');
+        if (view.previewWrap) view.previewWrap.hidden = false;
+        if (view.preview) renderStatusPreview(view.preview);
+        if (view.status) {
+            view.status.textContent = `已套用“${template.name}”；点击 AI 后才会读取当前角色并生成内容。`;
+            view.status.dataset.state = 'success';
+        }
+    }
+    saveSettingsSoon({ snapshotOpening: false });
+}
+
+function renderSavedStatusTemplates() {
+    const templates = settings().savedStatusTemplates || [];
+    const renderHost = (host, section, viewName) => {
+        if (!host || !section) return;
+        section.hidden = templates.length === 0;
+        host.replaceChildren();
+        templates.forEach(template => {
+            const item = makeElement('span', 'status-atelier-ai-saved-template');
+            const apply = makeElement('button', 'menu_button', template.name);
+            apply.type = 'button';
+            apply.title = `套用模板：${template.name}`;
+            apply.addEventListener('click', () => applySavedStatusTemplate(template, viewName));
+            const remove = makeElement('button', 'menu_button status-atelier-ai-saved-template-remove', '×');
+            remove.type = 'button';
+            remove.title = `删除模板：${template.name}`;
+            remove.setAttribute('aria-label', `删除模板：${template.name}`);
+            remove.addEventListener('click', () => {
+                settings().savedStatusTemplates = settings().savedStatusTemplates.filter(item => item.id !== template.id);
+                renderSavedStatusTemplates();
+                saveSettingsSoon({ snapshotOpening: false });
+            });
+            item.append(apply, remove);
+            host.append(item);
+        });
+    };
+    renderHost(field('status-atelier-ai-saved-templates'), field('status-atelier-ai-saved-template-section'), 'settings');
+    renderHost(
+        greetingModal?.querySelector('#status-atelier-modal-ai-saved-templates'),
+        greetingModal?.querySelector('#status-atelier-modal-ai-saved-template-section'),
+        'modal',
+    );
+}
+
+function saveCurrentStatusTemplate() {
+    const template = currentSavedStatusTemplate();
+    const stored = settings();
+    stored.savedStatusTemplates = [...(stored.savedStatusTemplates || []), template].slice(-12);
+    renderSavedStatusTemplates();
+    saveSettingsSoon({ snapshotOpening: false });
+    notify('success', `已保存到“我的模板”：${template.name}`);
+}
+
 function saveCurrentProfileTemplateDraft(stored = settings()) {
     const draft = currentProfileTemplateDraft(stored);
     if (!draft) return;
@@ -1430,6 +1519,7 @@ function loadSettingsUI() {
     }
     setWorkspace(stored.activeWorkspace, { persist: false });
     renderTemplateLibraries();
+    renderSavedStatusTemplates();
     renderPaletteButtons();
     renderStatusDesignControls();
     renderStatusSchema();
@@ -3448,7 +3538,7 @@ function mountStatusBeautyPreview(host, frame, rule, options = {}) {
     const editor = createStatusBeautyDirectEditor(rule);
     const stack = makeElement('div', 'status-atelier-beauty-preview-stack');
     const actions = makeElement('div', 'status-atelier-beauty-preview-actions');
-    const avatarButton = makeElement('button', 'menu_button', '修改角色头像');
+    const avatarButton = makeElement('button', 'menu_button status-atelier-avatar-edit-button', '修改头像');
     avatarButton.type = 'button';
     avatarButton.addEventListener('click', editor.openMedia);
     actions.append(
@@ -3646,7 +3736,7 @@ function bindStatusBeautyPreviewEditing(frame, rule, { labeled = false, captureM
 }
 
 const statusBeautyBundlePreviewRequests = new WeakMap();
-function renderStatusBeautyBundledPreview(host, rule) {
+function renderStatusBeautyBundledPreview(host, rule, generatedValues = []) {
     const request = (statusBeautyBundlePreviewRequests.get(host) || 0) + 1;
     statusBeautyBundlePreviewRequests.set(host, request);
     const frame = makeElement('iframe', 'status-atelier-rule-preview status-atelier-beauty-preview-frame');
@@ -3657,7 +3747,8 @@ function renderStatusBeautyBundledPreview(host, rule) {
     mountStatusBeautyPreview(host, frame, rule, { captureMap, labeled: rule.structure === 'moon-collage' });
     loadStatusBeautyBundledRegex(rule.structure).then(script => {
         if (request !== statusBeautyBundlePreviewRequests.get(host) || !frame.isConnected) return;
-        frame.srcdoc = buildStatusBeautyBundledPreviewDocument(applyStatusBeautyFieldLayout(script, rule));
+        const positioned = applyStatusBeautyFieldLayout(script, rule);
+        frame.srcdoc = buildStatusBeautyBundledPreviewDocument(applyStatusBeautyTitle(positioned, rule), generatedValues);
     }).catch(error => {
         if (request !== statusBeautyBundlePreviewRequests.get(host) || !frame.isConnected) return;
         host.replaceChildren(makeElement('div', 'status-atelier-empty', error.message || '原始正则预览读取失败'));
@@ -3687,12 +3778,10 @@ function renderStatusPreview(host) {
         && previewInput.media.avatarSource !== 'none' && !previewInput.media.avatarUrl) {
         previewInput.media.avatarUrl = DEFAULT_CHARACTER_PORTRAIT_URL;
     }
-    const previewRecords = settings().structure === 'profile'
-        ? makePreviewRecords(previewInput)
-        : statusAiTestRecords || makePreviewRecords(previewInput);
+    const previewRecords = statusAiTestRecords || makePreviewRecords(previewInput);
     const { rule, shared, pages } = previewRecords;
     if (isStatusBeauty01To15(rule.structure)) {
-        renderStatusBeautyBundledPreview(host, rule);
+        renderStatusBeautyBundledPreview(host, rule, pages[0]?.values || []);
         return;
     }
     if (isStatusBeauty05To09(rule.structure)) {
@@ -4984,7 +5073,8 @@ async function resolveStatusRegexScript(input = resolvedStatusExportInput()) {
     if (isStatusBeauty01To15(rule.structure)) {
         const script = applyStatusBeautyControlChrome(await loadStatusBeautyBundledRegex(rule.structure));
         const positioned = applyStatusBeautyFieldLayout(script, rule);
-        const edited = applyStatusBeautyTextOverrides(positioned, settings().profileTextOverrides?.[rule.structure]);
+        const titled = applyStatusBeautyTitle(positioned, rule);
+        const edited = applyStatusBeautyTextOverrides(titled, settings().profileTextOverrides?.[rule.structure]);
         return {
             ...applyStatusBeautyMediaSettings(edited, rule.media),
             markdownOnly: rule.displayOnlyRegex,
@@ -5382,23 +5472,52 @@ function statusAiCandidateCatalog() {
     return `【主模板】\n${structures}\n\n【人物状态栏外观；仅 structure=profile 时选择】\n${appearances}`;
 }
 
-function parseStatusAiRecommendation(value) {
-    const parsed = lastMatchingJson(value, item => item && STATUS_AI_STRUCTURE_IDS.includes(item.structure));
-    if (!parsed) throw new Error('AI 没有返回可识别的模板推荐，请重试');
-    const structure = STATUS_AI_STRUCTURE_IDS.includes(parsed.structure) ? parsed.structure : 'profile';
-    const profileAppearance = structure === 'profile' && PROFILE_APPEARANCE_IDS.includes(parsed.profileAppearance)
-        ? parsed.profileAppearance
-        : PROFILE_APPEARANCE_DEFAULT.id;
-    return {
-        structure,
-        profileAppearance,
-        reason: compactStatusAiText(parsed.reason, 180) || '这套布局最适合当前角色与最近剧情。',
-    };
+function parseStatusAiRecommendation(value, fallbackText = '') {
+    return resolveStatusRecommendation(value, {
+        structures: STATUS_AI_STRUCTURE_IDS.map(id => STATUS_STRUCTURE_PRESETS.find(item => item.id === id)).filter(Boolean),
+        appearances: PROFILE_APPEARANCE_PRESETS,
+        fallbackText,
+        defaultStructure: 'profile',
+        defaultAppearance: PROFILE_APPEARANCE_DEFAULT.id,
+    });
+}
+
+function setStatusEntryMode(viewName, mode) {
+    const normalized = mode === 'expert' ? 'expert' : 'simple';
+    const root = viewName === 'modal' ? greetingModal : settingsRoot;
+    if (!root) return;
+    if (viewName === 'modal') root.dataset.statusEntryMode = normalized;
+    else root.dataset.entryMode = normalized;
+    root.querySelectorAll('[data-status-entry-mode]').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.statusEntryMode === normalized));
+    });
+    const advanced = viewName === 'modal'
+        ? root.querySelector('.status-atelier-modal-status-advanced')
+        : root.querySelector('#status-atelier-expert-workshop');
+    if (advanced) advanced.open = normalized === 'expert';
 }
 
 function applyStatusAiRecommendation(recommendation) {
     applyStatusStructure(recommendation.structure);
     if (recommendation.structure === 'profile') applyProfileAppearance(recommendation.profileAppearance);
+}
+
+function applyStatusIdeaPlan(ideaText, recommendation) {
+    const intent = resolveStatusIdeaIntent(ideaText);
+    if (!intent.focus || settings().structure !== 'profile') return { intent, changedFields: [] };
+    const focusedDefinitions = applyStatusIdeaFocus(fieldDefinitions(), intent);
+    serializeFieldDefinitions(focusedDefinitions);
+    settings().title = intent.title || settings().title;
+    settings().subtitle = intent.subtitle || settings().subtitle;
+    const titleControl = field('status-atelier-title');
+    const subtitleControl = field('status-atelier-subtitle');
+    if (titleControl) titleControl.value = settings().title;
+    if (subtitleControl) subtitleControl.value = settings().subtitle;
+    renderStatusSchema();
+    renderModalStatusSchema();
+    scheduleStatusPreviewUpdate();
+    recommendation.reason = `${recommendation.reason} 已按“${intent.label}”自动调整模板标题、字段名称和 AI 填写要求。`;
+    return { intent, changedFields: focusedDefinitions.map(item => item.label) };
 }
 
 function statusAiRecommendationLabel(recommendation) {
@@ -5419,6 +5538,7 @@ function statusAiView(viewName = 'settings') {
             source: query('ai-source-summary'),
             status: query('ai-test-status'),
             idea: query('ai-idea'),
+            remix: query('ai-remix'),
             preview: greetingModal?.querySelector('#status-atelier-modal-status-preview'),
             previewWrap: greetingModal?.querySelector('.status-atelier-modal-status-preview-wrap'),
         };
@@ -5431,6 +5551,7 @@ function statusAiView(viewName = 'settings') {
         source: field('status-atelier-ai-source-summary'),
         status: field('status-atelier-ai-test-status'),
         idea: field('status-atelier-ai-idea'),
+        remix: field('status-atelier-ai-remix'),
         preview: field('status-atelier-preview'),
     };
 }
@@ -5513,10 +5634,23 @@ async function generateWithCurrentPreset(prompt, jsonSchema = null) {
 }
 
 async function testStatusAiGeneration(button, viewName = 'settings') {
-    const { status, result, install, source, idea, preview, previewWrap } = statusAiView(viewName);
+    const { status, result, install, source, idea, remix, preview, previewWrap } = statusAiView(viewName);
     const original = button.textContent;
     const ideaText = compactStatusAiText(idea?.value, 240);
-    const ideaContext = `【用户简要想法（只作为外观与字段偏好）】\n${ideaText || '没有额外想法，请以角色卡与当前剧情为准。'}`;
+    const remixRequested = Boolean(remix?.checked);
+    const currentDesign = {
+        structure: settings().structure,
+        profileAppearance: settings().profileAppearance,
+    };
+    const ideaContext = `【用户提示词（只作为外观与字段偏好）】\n${ideaText || '没有额外提示词，请以角色卡与当前剧情为准。'}`;
+    const remixContext = remixRequested
+        ? [
+            '【改造幅度：大幅改造】',
+            '保留状态栏的动态数据用途、字段可解析性与安装契约，但不要原样复用当前构图。',
+            `当前主模板：${currentDesign.structure}；当前人物状态栏外观：${currentDesign.profileAppearance || '无'}。`,
+            '优先选择不同的主模板或人物状态栏外观，并结合用户提示词重写标题、栏目名称和 AI 填写要求。',
+        ].join('\n')
+        : '【改造幅度：自然适配】\n选择最适合当前角色与剧情的方案，可以沿用当前构图。';
     button.disabled = true;
     button.textContent = 'AI 正在分析角色与剧情…';
     if (result) result.hidden = true;
@@ -5540,11 +5674,33 @@ async function testStatusAiGeneration(button, viewName = 'settings') {
             statusAiCandidateCatalog(),
             `【当前角色卡与启用世界书】\n${contextSnapshot.characterContext || '没有可用角色设定。'}`,
             `【当前选中剧情】\n${contextSnapshot.chatContext}`,
+            remixContext,
             ideaContext,
         ].join('\n\n');
-        const recommendationResponse = await generateWithCurrentPreset(recommendationPrompt, STATUS_AI_RECOMMENDATION_SCHEMA);
-        const recommendation = parseStatusAiRecommendation(recommendationResponse);
+        let recommendationResponse = '';
+        let localFallbackReason = '';
+        try {
+            recommendationResponse = await generateWithCurrentPreset(recommendationPrompt);
+        } catch (error) {
+            console.warn(`[${MODULE_NAME}] AI 模板推荐不可用，改用本地候选库匹配`, error);
+            localFallbackReason = generationErrorMessage(error) || error?.message || '当前模型暂不可用';
+        }
+        const recommendation = parseStatusAiRecommendation(recommendationResponse, [
+            contextSnapshot.characterContext,
+            contextSnapshot.chatContext,
+            ideaText,
+        ].join('\n'));
+        const ideaIntent = resolveStatusIdeaIntent(ideaText);
+        if (ideaIntent.structureHint) recommendation.structure = ideaIntent.structureHint;
+        else if (ideaIntent.focus) recommendation.structure = 'profile';
+        if (recommendation.structure === 'profile') recommendation.profileAppearance ||= PROFILE_APPEARANCE_DEFAULT.id;
+        if (remixRequested && recommendation.structure === 'profile' && recommendation.profileAppearance === currentDesign.profileAppearance) {
+            recommendation.profileAppearance = PROFILE_APPEARANCE_PRESETS.find(item => item.id !== currentDesign.profileAppearance)?.id
+                || PROFILE_APPEARANCE_DEFAULT.id;
+            recommendation.reason = `${recommendation.reason} 已按“大幅改造”切换为与当前不同的构图。`;
+        }
         applyStatusAiRecommendation(recommendation);
+        const ideaPlan = applyStatusIdeaPlan(ideaText, recommendation);
 
         const input = resolvedStatusInput();
         const rule = normalizeRule(input);
@@ -5554,19 +5710,51 @@ async function testStatusAiGeneration(button, viewName = 'settings') {
             '只输出一份完整状态区块，不要解释，不要代码块。',
             `【当前角色卡与启用世界书】\n${contextSnapshot.characterContext || '没有可用角色设定。'}`,
             `【当前选中剧情】\n${contextSnapshot.chatContext}`,
+            remixContext,
             ideaContext,
             buildAiInstruction(input),
         ].join('\n\n');
-        const response = await generateWithCurrentPreset(prompt);
-        statusAiTestRecords = parseStatusOutput(input, response);
+        let usedLocalFallback = Boolean(localFallbackReason);
+        if (!usedLocalFallback) {
+            try {
+                const response = await generateWithCurrentPreset(prompt);
+                try {
+                    statusAiTestRecords = parseStatusOutput(input, response);
+                } catch (formatError) {
+                    const repairPrompt = [
+                        prompt,
+                        `【格式纠正】上次输出无法读取：${formatError?.message || '状态记录不完整'}。`,
+                        '请严格按上面的“严格输出模板”重新输出一份完整状态区块；补齐每个 Shared 和 View 记录，不要解释。',
+                        `【上次输出，仅供纠正】\n${String(response || '').slice(-1800)}`,
+                    ].join('\n\n');
+                    const repairedResponse = await generateWithCurrentPreset(repairPrompt);
+                    statusAiTestRecords = parseStatusOutput(input, repairedResponse);
+                }
+            } catch (error) {
+                localFallbackReason = generationErrorMessage(error) || error?.message || '当前模型暂不可用';
+                usedLocalFallback = true;
+            }
+        }
+        if (usedLocalFallback) {
+            statusAiTestRecords = buildLocalStatusRecords(rule, contextSnapshot);
+            recommendation.reason = `${recommendation.reason} 当前酒馆模型暂不可用，预览内容已在本机按角色卡与剧情生成；安装后的字段仍会由角色世界书规则随剧情动态填写。`;
+        }
         updatePreview();
-        if (viewName === 'modal' && preview) renderStatusPreview(preview);
+        if (viewName === 'modal') {
+            renderGreetingStatusChooser();
+            if (preview) renderStatusPreview(preview);
+        }
         showStatusAiRecommendation(recommendation, contextSnapshot, viewName);
         if (status) {
-            status.textContent = `AI 已生成“${statusAiRecommendationLabel(recommendation)}”预览。先看右侧效果，满意后再确认安装。`;
-            status.dataset.state = 'success';
+            const focusNotice = ideaPlan.changedFields.length
+                ? ` 已自动改为“${ideaPlan.intent.label}”字段：${ideaPlan.changedFields.slice(0, 4).join('、')}等。`
+                : '';
+            status.textContent = usedLocalFallback
+                ? `已生成“${statusAiRecommendationLabel(recommendation)}”本地预览。${focusNotice}酒馆模型暂不可用（${localFallbackReason}）；预览已按当前角色卡与剧情填写，确认后可以正常安装。`
+                : `AI 已生成“${statusAiRecommendationLabel(recommendation)}”预览。${focusNotice}先看右侧效果，满意后再确认安装。`;
+            status.dataset.state = usedLocalFallback ? 'warning' : 'success';
         }
-        notify('success', `AI 已推荐并生成：${rule.structureName}`);
+        notify(usedLocalFallback ? 'warning' : 'success', `${usedLocalFallback ? '本地已生成' : 'AI 已推荐并生成'}：${rule.structureName}`);
     } catch (error) {
         statusAiTestRecords = null;
         updatePreview();
@@ -6001,9 +6189,9 @@ async function applyModalStatus(button) {
         loadSettingsUI();
         renderGreetingStatusChooser();
         const state = greetingModal?.querySelector('#status-atelier-modal-ai-test-status');
-        const recipe = statusRecipe();
-        if (state) state.textContent = `已完成：世界书“${worldbook.bookName}”已写入 AI 输出规则，局部正则已更新为“${recipe.name}”。`;
-        notify('success', `已完整启用当前角色状态栏：世界书输出规则 + ${recipe.name} 局部正则`);
+        const recipeName = normalizeRule(resolvedStatusInput()).structureName;
+        if (state) state.textContent = `已完成：世界书“${worldbook.bookName}”已写入 AI 输出规则，局部正则已更新为“${recipeName}”。`;
+        notify('success', `已完整启用当前角色状态栏：世界书输出规则 + ${recipeName} 局部正则`);
     } catch (error) {
         notify('error', error?.message || '状态栏写入失败');
     } finally {
@@ -6089,6 +6277,10 @@ function buildGreetingModal() {
                     </details>
                 </details>
                 <section class="status-atelier-greeting-status-step">
+                    <nav class="status-atelier-entry-mode-switch status-atelier-modal-entry-mode-switch" aria-label="状态栏操作模式">
+                        <button type="button" class="menu_button" data-status-entry-mode="simple" aria-pressed="true"><strong>简单模式</strong><small>AI 自动推荐并生成</small></button>
+                        <button type="button" class="menu_button" data-status-entry-mode="expert" aria-pressed="false"><strong>复杂模式</strong><small>手动换模板和字段</small></button>
+                    </nav>
                     <section class="status-atelier-ai-simple-flow status-atelier-modal-ai-simple-flow">
                         <span class="status-atelier-ai-simple-badge">当前角色 · 简单模式</span>
                         <div class="status-atelier-ai-simple-copy">
@@ -6098,10 +6290,25 @@ function buildGreetingModal() {
                         <div class="status-atelier-ai-source-list" aria-label="AI 读取范围">
                             <span>角色卡设定</span><span>当前选中剧情</span><span>启用世界书</span>
                         </div>
+                        <fieldset class="status-atelier-ai-methods" aria-label="选择生成方式">
+                            <legend>选择生成方式</legend>
+                            <label class="status-atelier-ai-method" for="status-atelier-modal-ai-method-quick">
+                                <input id="status-atelier-modal-ai-method-quick" name="status-atelier-modal-ai-method" type="radio" value="quick" checked>
+                                <span><strong>快速按模板生成</strong><small>AI 自动挑选合适模板，简单快速。</small></span>
+                            </label>
+                            <label class="status-atelier-ai-method" for="status-atelier-modal-ai-remix">
+                                <input id="status-atelier-modal-ai-remix" name="status-atelier-modal-ai-method" type="radio" value="remix">
+                                <span><strong>按提示词大幅改造</strong><small>保留动态数据，换构图、栏目与关注重点。</small></span>
+                            </label>
+                        </fieldset>
+                        <section id="status-atelier-modal-ai-saved-template-section" class="status-atelier-ai-saved-template-section" hidden>
+                            <strong>我的模板</strong>
+                            <div id="status-atelier-modal-ai-saved-templates" class="status-atelier-ai-saved-templates"></div>
+                        </section>
                         <label class="status-atelier-ai-idea-field" for="status-atelier-modal-ai-idea">
-                            <span>简要想法 <small>可留空</small></span>
-                            <textarea id="status-atelier-modal-ai-idea" class="text_pole" rows="2" maxlength="240" placeholder="例如：冷淡黑金，突出好感度和任务进度"></textarea>
-                            <small>点击 AI 后才会读取这段想法。</small>
+                            <span>你的提示词 <small>可留空</small></span>
+                            <textarea id="status-atelier-modal-ai-idea" class="text_pole" rows="2" maxlength="240" placeholder="例如：像旧档案袋，重点关注苏槿的伤势、呼吸和行动能力"></textarea>
+                            <small>写你想要的风格和关注内容；点击 AI 后才会读取。</small>
                         </label>
                         <p id="status-atelier-modal-ai-source-summary" class="status-atelier-ai-source-summary">打开一个单人角色聊天后即可开始。</p>
                         <button id="status-atelier-modal-test-ai" type="button" class="menu_button status-atelier-primary-action status-atelier-ai-generate">AI 分析并生成美化</button>
@@ -6110,11 +6317,15 @@ function buildGreetingModal() {
                             <small>AI 推荐方案</small>
                             <strong id="status-atelier-modal-ai-template"></strong>
                             <p id="status-atelier-modal-ai-reason"></p>
-                            <button type="button" class="menu_button status-atelier-primary-action" id="status-atelier-modal-apply-status" disabled>确认安装到当前角色</button>
+                            <div class="status-atelier-ai-result-actions">
+                                <button type="button" class="menu_button status-atelier-ai-regenerate" id="status-atelier-modal-ai-regenerate"><span aria-hidden="true">↻</span> 不满意，重新生成</button>
+                                <button type="button" class="menu_button" id="status-atelier-modal-ai-save-template">☆ 保存为我的模板</button>
+                                <button type="button" class="menu_button status-atelier-primary-action" id="status-atelier-modal-apply-status" disabled>确认安装到当前角色</button>
+                            </div>
                             <small>安装会写入当前角色的世界书与局部正则，不会影响其他角色。</small>
                         </section>
                     </section>
-                    <details class="status-atelier-modal-status-advanced" hidden>
+                    <details class="status-atelier-modal-status-advanced">
                         <summary><strong>调整状态栏</strong><small>结构、字段与色卡</small></summary>
                         <div class="status-atelier-modal-status-controls">
                             <label>状态栏模板<select id="status-atelier-modal-status-structure" class="text_pole"></select></label>
@@ -6166,6 +6377,11 @@ function buildGreetingModal() {
     });
     greetingModal.querySelector('#status-atelier-open-full-workbench').addEventListener('click', () => openFullWorkbench('opening'));
     greetingModal.querySelector('#status-atelier-modal-test-ai').addEventListener('click', event => testStatusAiGeneration(event.currentTarget, 'modal'));
+    greetingModal.querySelector('#status-atelier-modal-ai-regenerate').addEventListener('click', event => testStatusAiGeneration(event.currentTarget, 'modal'));
+    greetingModal.querySelector('#status-atelier-modal-ai-save-template').addEventListener('click', saveCurrentStatusTemplate);
+    greetingModal.querySelectorAll('[data-status-entry-mode]').forEach(button => {
+        button.addEventListener('click', () => setStatusEntryMode('modal', button.dataset.statusEntryMode));
+    });
     greetingModal.querySelector('#status-atelier-modal-status-structure').addEventListener('change', event => {
         applyStatusStructure(event.currentTarget.value);
         renderGreetingStatusChooser();
@@ -6452,6 +6668,8 @@ function openGreetingModal(target = 'opening') {
         statusAiTestRecords = null;
         setGreetingModalWorkspace('status');
         resetStatusAiView('modal');
+        setStatusEntryMode('modal', 'simple');
+        renderSavedStatusTemplates();
         greetingModal.classList.add('status-atelier-modal-open');
         greetingModal.setAttribute('aria-hidden', 'false');
         requestAnimationFrame(() => {
@@ -6563,8 +6781,12 @@ async function addSettingsPanel() {
     template.innerHTML = await response.text();
     settingsRoot = template.content.firstElementChild;
     host.append(settingsRoot);
+    setStatusEntryMode('settings', 'expert');
 
     settingsRoot.querySelectorAll('[data-status-workspace]').forEach(button => button.addEventListener('click', () => setWorkspace(button.dataset.statusWorkspace)));
+    settingsRoot.querySelectorAll('[data-status-entry-mode]').forEach(button => {
+        button.addEventListener('click', () => setStatusEntryMode('settings', button.dataset.statusEntryMode));
+    });
     field('status-atelier-phone-wallpaper-file')?.addEventListener('change', event => previewLocalPhoneWallpaper(event.currentTarget));
     field('status-atelier-phone-auto-align')?.addEventListener('click', () => arrangePhoneDesktopLayout(false));
     field('status-atelier-phone-reset-layout')?.addEventListener('click', () => arrangePhoneDesktopLayout(true));
@@ -6669,6 +6891,8 @@ async function addSettingsPanel() {
         }
     });
     field('status-atelier-test-ai').addEventListener('click', event => testStatusAiGeneration(event.currentTarget));
+    field('status-atelier-ai-regenerate').addEventListener('click', event => testStatusAiGeneration(event.currentTarget));
+    field('status-atelier-ai-save-template').addEventListener('click', saveCurrentStatusTemplate);
     field('status-atelier-open-map-editor').addEventListener('click', event => openQuestMapEditor(event.currentTarget));
     field('status-atelier-copy-prompt').addEventListener('click', async () => {
         await copyText(buildAiInstruction(settings()));
@@ -6788,11 +7012,11 @@ async function initialize() {
     settings();
     switchOpeningProfileForCurrentCharacter();
     updatePrompt();
-    for (let attempt = 0; attempt < 20; attempt += 1) {
+    for (let attempt = 0; attempt < 120; attempt += 1) {
         if (await addSettingsPanel()) break;
         await new Promise(resolve => setTimeout(resolve, 250));
     }
-    for (let attempt = 0; attempt < 20; attempt += 1) {
+    for (let attempt = 0; attempt < 120; attempt += 1) {
         addExtensionsMenuItem();
         if (document.querySelector('#status-atelier-opening-menu-item') && document.querySelector('#status-atelier-status-menu-item')) break;
         await new Promise(resolve => setTimeout(resolve, 250));

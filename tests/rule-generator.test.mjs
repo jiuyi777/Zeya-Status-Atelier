@@ -36,6 +36,7 @@ import {
     applyStatusBeautyFieldLayout,
     applyStatusBeautyMediaSettings,
     applyStatusBeautyTextOverrides,
+    applyStatusBeautyTitle,
     buildStatusBeautyBundledPreviewDocument,
     statusBeautyBundleMeta,
 } from '../status-beauty-01-15-bundle.js';
@@ -297,9 +298,10 @@ test('status beauty 01 to 15 map every bundled original regex to its exact AI ou
         const parsed = parseStatusOutput(input, `<${meta.tag}>\n${body}\n</${meta.tag}>`);
         assert.deepEqual(parsed.pages[0].values, values);
     }
-    const previewDocument = buildStatusBeautyBundledPreviewDocument({ replaceString: '```html\n<body>$1 / $12</body>\n```' });
+    const previewDocument = buildStatusBeautyBundledPreviewDocument({ replaceString: '```html\n<body>$1 / $12</body>\n```' }, ['生成值一']);
     assert.match(previewDocument, /span\.dataset\.capture=match\[1\]/);
-    assert.match(previewDocument, /span\.textContent='X'/);
+    assert.match(previewDocument, /span\.textContent=valueFor/);
+    assert.match(previewDocument, /生成值一/);
     assert.match(previewDocument, /root\.querySelectorAll\('\[data-capture\]'\)/);
 });
 
@@ -314,6 +316,25 @@ test('status beauty visible copy edits are injected into the exported regex', ()
     assert.match(edited.replaceString, /document\.querySelector\('\.status-card'\)\|\|Array\.from\(document\.body\.children\)/);
     assert.match(edited.replaceString, /root\.querySelectorAll\('h1,h2,h3,h4,h5,h6,span,strong,small,em,b,p,label,figcaption,dt,dd,li'\)/);
     assert.match(edited.replaceString, /<\/script><\/body>/);
+});
+
+test('status beauty bundled title follows the idea-adjusted title without rewriting unrelated copy', () => {
+    const script = {
+        scriptName: '九一 · 状态栏05 · 角色当前状态',
+        replaceString: '```html\n<html><head><title>05 · 角色当前状态</title></head><body><header><h1>角色当前状态</h1><p>角色当前状态只是正文说明</p></header></body></html>\n```',
+    };
+    const rule = { structure: 'beauty-current-status-05', title: '人物身体情况' };
+    const titled = applyStatusBeautyTitle(script, rule);
+    assert.notEqual(titled, script);
+    assert.equal(titled.scriptName, script.scriptName);
+    assert.match(titled.replaceString, /var heading=\{"defaultTitle":"角色当前状态","title":"人物身体情况"\}/);
+    assert.match(titled.replaceString, /document\.title=heading\.title/);
+    assert.match(titled.replaceString, /\.trim\(\)===heading\.defaultTitle/);
+    assert.match(titled.replaceString, /角色当前状态只是正文说明/);
+    const titlePatch = [...titled.replaceString.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1);
+    assert.ok(titlePatch);
+    assert.doesNotThrow(() => new Function(titlePatch[1]));
+    assert.equal(applyStatusBeautyTitle(script, { structure: rule.structure, title: '角色当前状态' }), script);
 });
 
 test('status beauty bundled collapse control stays inside the artwork layer', () => {

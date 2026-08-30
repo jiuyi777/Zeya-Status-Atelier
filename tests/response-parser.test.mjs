@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+    applyStatusIdeaFocus,
+    buildLocalStatusRecords,
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
     SUMMARY_RESPONSE_LENGTH,
@@ -12,9 +14,96 @@ import {
     parseBatchSummaryResponse,
     parseSummaryResponse,
     responseText,
+    resolveStatusIdeaIntent,
+    resolveStatusRecommendation,
     stripReasoningBlocks,
     usableGreetingRecords,
 } from '../response-parser.js';
+
+const statusStructures = [
+    { id: 'phone', name: '手机桌面' },
+    { id: 'profile', name: '人物状态栏' },
+    { id: 'social', name: '个人动态' },
+    { id: 'chat', name: '聊天会话' },
+    { id: 'forum', name: '论坛主题' },
+];
+const statusAppearances = [
+    { id: 'obsidian', name: '黑银档案' },
+    { id: 'classical', name: '古典对称' },
+];
+
+test('resolves status recommendations from ids, Chinese template names and local fallback text', () => {
+    const options = { structures: statusStructures, appearances: statusAppearances, defaultAppearance: 'classical' };
+    assert.deepEqual(resolveStatusRecommendation('{"structure":"chat","profileAppearance":"","reason":"适合对话"}', options), {
+        structure: 'chat', profileAppearance: '', reason: '适合对话', usedFallback: false,
+    });
+    assert.equal(resolveStatusRecommendation('{"template":"人物状态栏","style":"黑银档案"}', options).profileAppearance, 'obsidian');
+    const fallback = resolveStatusRecommendation('我推荐做成论坛帖子', { ...options, fallbackText: '当前剧情有楼层讨论' });
+    assert.equal(fallback.structure, 'forum');
+    assert.equal(fallback.usedFallback, true);
+    for (const structure of statusStructures) {
+        const resolved = resolveStatusRecommendation(`建议使用${structure.name}`, options);
+        assert.equal(resolved.structure, structure.id);
+    }
+});
+
+test('simple ideas select a focus and rewrite visible field labels and AI instructions', () => {
+    const story = resolveStatusIdeaIntent('这次注重剧情和关键线索');
+    assert.equal(story.focus, 'story');
+    assert.equal(story.structureHint, '');
+    const storyFields = applyStatusIdeaFocus([
+        { id: 'time', label: '时间', instruction: '填写时间', kind: 'text' },
+        { id: 'location', label: '位置', instruction: '填写位置', kind: 'text' },
+        { id: 'body', label: '身体情况', instruction: '填写身体', kind: 'long' },
+    ], story);
+    assert.deepEqual(storyFields.map(item => item.label), ['当前章节', '剧情进展', '任务进度']);
+    assert.equal(storyFields[2].kind, 'progress');
+    assert.match(storyFields[1].instruction, /本轮实际推进/);
+    assert.deepEqual(storyFields.map(item => item.id), ['time', 'location', 'body']);
+
+    const body = resolveStatusIdeaIntent('我想关注其他人的身体情况和伤势');
+    assert.equal(body.focus, 'other_body');
+    const bodyFields = applyStatusIdeaFocus(storyFields, body);
+    assert.deepEqual(bodyFields.map(item => item.label), ['目标人物', '身体情况', '伤势程度']);
+    assert.equal(bodyFields[2].kind, 'progress');
+    assert.match(bodyFields[2].instruction, /未知则写0/);
+});
+
+test('an explicit simple-mode template hint is preserved alongside the content focus', () => {
+    const intent = resolveStatusIdeaIntent('做成论坛主题帖，注重剧情推进');
+    assert.equal(intent.structureHint, 'forum');
+    assert.equal(intent.focus, 'story');
+});
+
+test('local status fallback derives different complete records from different cards', () => {
+    const rule = {
+        structure: 'profile',
+        sharedFields: [{ id: 'name', label: '角色名', kind: 'text' }],
+        pageFields: [],
+        pages: [{ id: 'View1', label: '剧情', fields: [
+            { id: 'plot', label: '剧情进展', kind: 'long' },
+            { id: 'health', label: '身体情况', kind: 'long' },
+            { id: 'risk', label: '风险程度', kind: 'progress' },
+        ] }],
+    };
+    const mystery = buildLocalStatusRecords(rule, {
+        characterName: '林雾',
+        characterContext: '雾港调查员，正在追查失踪的守夜人。',
+        chatContext: '角色：她在灯塔找到一把铜钥匙和缺页航海日志。',
+    });
+    const medic = buildLocalStatusRecords(rule, {
+        characterName: '沈岚',
+        characterContext: '战地医生，负责观察队友伤势。',
+        chatContext: '角色：队友呼吸急促，左臂流血，暂时无法站立。',
+    });
+    assert.equal(mystery.shared[0], '林雾');
+    assert.equal(medic.shared[0], '沈岚');
+    assert.notDeepEqual(mystery.pages[0].values, medic.pages[0].values);
+    assert.match(medic.pages[0].values[1], /呼吸|流血|伤势/);
+    assert.match(mystery.pages[0].values[2], /^\d+$/);
+    assert.ok([...mystery.shared, ...mystery.pages[0].values, ...medic.shared, ...medic.pages[0].values]
+        .every(value => !/[|\[\]<>]/.test(value)));
+});
 
 test('provides SillyTavern-compatible JSON schemas for single and batch summaries', () => {
     assert.deepEqual(SINGLE_SUMMARY_JSON_SCHEMA.value.required, ['title', 'route', 'summary']);
