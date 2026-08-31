@@ -1,4 +1,4 @@
-const STATUS_BEAUTY_STYLESHEET_URL = new URL('./status-beauty-16-20.css', import.meta.url).href;
+const STATUS_BEAUTY_STYLESHEET_URL = new URL('./status-beauty-16-20.css?v=0.11.6', import.meta.url).href;
 const STATUS_BEAUTY_ENVELOPE_URL = new URL('./assets/status-beauty/images/envelope-pink-single-v2.png', import.meta.url).href;
 const STATUS_BEAUTY_HEART_FRAME_URL = new URL('./assets/status-beauty/images/double-heart-frame-pink-v1.png', import.meta.url).href;
 
