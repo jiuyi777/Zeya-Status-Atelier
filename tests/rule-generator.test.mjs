@@ -1315,6 +1315,8 @@ test('builds an importable constant worldbook entry containing the dynamic outpu
     const entry = worldbook.entries[0];
     assert.equal(entry.uid, 0);
     assert.equal(entry.constant, true);
+    assert.equal(entry.position, 4);
+    assert.equal(entry.depth, 1);
     assert.deepEqual(entry.key, []);
     assert.match(entry.content, /<zeya_status_classical_rules>/);
     assert.match(entry.content, /所有值都必须根据当前剧情动态生成/);

@@ -327,6 +327,9 @@ test('status AI generation stays preview-only until either entry explicitly inst
     assert.match(generateBlock, /applyStatusAiRecommendation\(recommendation\)/);
     assert.match(generateBlock, /showStatusAiRecommendation\(recommendation, contextSnapshot, viewName\)/);
     assert.match(generateBlock, /【格式纠正】/);
+    assert.doesNotMatch(generateBlock, /buildLocalStatusRecords|本地已生成|usedLocalFallback/);
+    assert.match(source, /STATUS_CONTEXT_CONTROL_TITLE/);
+    assert.match(source, /includeCreatorNotes: false/);
     assert.doesNotMatch(generateBlock, /installRegex\(/);
     assert.doesNotMatch(settingsMarkup, /status-atelier-shuffle-recipe|完整 40 套|20 套自由面板/);
     assert.doesNotMatch(source, /status-atelier-modal-shuffle-recipe|applyStatusRecipe|shuffleStatusRecipe/);
@@ -340,6 +343,17 @@ test('status AI generation stays preview-only until either entry explicitly inst
     assert.doesNotMatch(settingsMarkup, /id="status-atelier-fill-mode"/);
     assert.doesNotMatch(source, /id="status-atelier-modal-status-fill-mode"/);
     assert.match(source, /class="status-atelier-modal-status-advanced">/);
+    assert.match(source, /id="status-atelier-modal-structure-controls"/);
+    assert.match(source, /function renderModalStructureControls\(\)/);
+    assert.match(source, /小手机完整调控/);
+    assert.match(source, /status-atelier-modal-phone-app-row/);
+    assert.match(source, /status-atelier-phone-wallpaper-edit/);
+    assert.match(styleSource, /\.status-atelier-modal-phone-grid\s*\{/);
+    assert.match(styleSource, /\.status-atelier-modal-phone-app-row\s*\{/);
+    assert.match(styleSource, /\.status-atelier-modal-structure-controls > \.status-atelier-setting-actions\s*\{[\s\S]*?grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/);
+    assert.match(styleSource, /\.status-atelier-modal-structure-controls > \.status-atelier-setting-actions \.menu_button\s*\{[\s\S]*?width:\s*100%[\s\S]*?white-space:\s*normal/);
+    assert.match(styleSource, /@media \(max-width:\s*700px\)[\s\S]*?\.status-atelier-modal-structure-controls > \.status-atelier-setting-actions\s*\{[\s\S]*?grid-template-columns:\s*1fr/);
+    assert.match(styleSource, /\.status-atelier-phone-wallpaper-edit\s*\{/);
     assert.match(settingsMarkup, /<details class="status-atelier-setting-section status-atelier-collapsible">[\s\S]*?APP 页面数据/);
     assert.match(settingsMarkup, /<details id="status-atelier-appearance-section" class="status-atelier-setting-section status-atelier-collapsible" open>[\s\S]*?外观与配色/);
     assert.match(settingsMarkup, /id="status-atelier-template-media"[\s\S]*?当前模板角色字段设置/);
@@ -557,12 +571,14 @@ test('status prompt only runs where the generated status regex is installed', ()
     assert.match(prompt, /stored\.promptEnabled && statusRegexAppliesToCurrentContext\(\)/);
 });
 
-test('one-click scoped status installs and verifies a character-bound worldbook rule before the regex', () => {
+test('one-click scoped status reuses and verifies an existing character-bound worldbook before the regex', () => {
     assert.match(source, /async function installStatusWorldbookRule\(\)/);
-    assert.match(source, /createNewWorldInfo\(bookName, \{ interactive: false \}\)/);
+    const scopedWorldbook = source.match(/async function installStatusWorldbookRule\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    assert.match(scopedWorldbook, /currentLinkedWorldbooks\(ctx\)/);
+    assert.match(scopedWorldbook, /!\/\^九一-状态栏-\/u\.test\(name\)/);
+    assert.match(scopedWorldbook, /当前角色卡没有已绑定的可写世界书/);
     assert.match(source, /saveWorldInfo\(bookName, result\.data, true\)/);
-    assert.match(source, /charUpdateAddAuxWorld\(character\.avatar, bookName\)/);
-    assert.match(source, /世界书输出规则已保存，但没有绑定到当前角色/);
+    assert.doesNotMatch(scopedWorldbook, /createNewWorldInfo|charUpdateAddAuxWorld/);
     assert.match(source, /世界书没有确认状态栏输出规则已保存/);
     const scopedInstall = source.match(/async function installRegex\(scope\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(scopedInstall, /installStatusWorldbookRule\(\)/);

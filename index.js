@@ -66,7 +66,6 @@ import {
     parseSummaryResponse,
     responseText,
     applyStatusIdeaFocus,
-    buildLocalStatusRecords,
     resolveStatusRecommendation,
     resolveStatusIdeaIntent,
     usableGreetingRecords,
@@ -102,7 +101,6 @@ import {
 } from './opening-context.js?v=0.11.4';
 import {
     STATUS_WORLDBOOK_ENTRY_ID,
-    buildStatusWorldbookName,
     upsertStatusWorldbookData,
 } from './status-worldbook.js?v=0.11.4';
 import {
@@ -112,7 +110,6 @@ import {
     saveScriptsByType,
 } from '../../regex/engine.js';
 import {
-    charUpdateAddAuxWorld,
     createNewWorldInfo,
     loadWorldInfo,
     saveWorldInfo,
@@ -1757,8 +1754,8 @@ async function loadEntryOptions(bookName, select) {
     });
 }
 
-function currentLinkedWorldbooks() {
-    const ctx = context();
+function currentLinkedWorldbooks(sourceContext = context()) {
+    const ctx = resolveCurrentCharacterContext(sourceContext).context;
     const character = ctx?.characters?.[ctx.characterId];
     const data = character?.data || character || {};
     const fileName = character?.avatar ? getCharaFilename(null, { manualAvatarKey: character.avatar }) : '';
@@ -1767,8 +1764,8 @@ function currentLinkedWorldbooks() {
     return [...new Set(candidates.map(value => String(value || '').trim()).filter(value => value && (world_names || []).includes(value)))];
 }
 
-function currentEmbeddedWorldbooks() {
-    const ctx = context();
+function currentEmbeddedWorldbooks(sourceContext = context()) {
+    const ctx = resolveCurrentCharacterContext(sourceContext).context;
     const character = ctx?.characters?.[ctx?.characterId];
     const data = character?.data || character || {};
     const candidates = [data?.character_book, data?.data?.character_book, character?.character_book, ctx?.character?.data?.character_book];
@@ -2163,7 +2160,7 @@ function moveFieldDefinition(definitions, index, direction) {
 function readPhoneDesktopControl(control) {
     const stored = settings();
     stored.phoneDesktop ??= clone(DEFAULT_SETTINGS.phoneDesktop);
-    const key = PHONE_DESKTOP_FIELDS[control.id];
+    const key = PHONE_DESKTOP_FIELDS[control.id] || control.dataset?.phoneDesktopKey;
     if (key) {
         stored.phoneDesktop[key] = control.type === 'checkbox' ? control.checked : control.type === 'range' ? Number(control.value) : control.value;
         if (key === 'shellStyle') {
@@ -4091,6 +4088,45 @@ function renderStatusPreview(host) {
         avatarUrl.focus();
         directEditor.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
     };
+    const openPhoneWallpaperEditor = () => {
+        const phone = settings().phoneDesktop;
+        const heading = makeElement('div', 'status-atelier-preview-direct-heading');
+        const close = makeElement('button', 'menu_button', '关闭');
+        close.type = 'button';
+        close.addEventListener('click', closeDirectEditor);
+        heading.append(makeElement('strong', '', '编辑：手机桌面壁纸'), close);
+        const wallpaperUrl = makeElement('input', 'text_pole');
+        wallpaperUrl.type = 'url';
+        wallpaperUrl.value = phone.wallpaperUrl || '';
+        wallpaperUrl.placeholder = 'https://example.com/wallpaper.jpg';
+        const localFile = makeElement('input');
+        localFile.type = 'file';
+        localFile.accept = 'image/*';
+        localFile.addEventListener('change', () => previewLocalPhoneWallpaper(localFile));
+        const save = makeElement('button', 'menu_button status-atelier-primary-action', '保存 URL 并更新预览');
+        save.type = 'button';
+        save.addEventListener('click', () => {
+            phone.wallpaperUrl = wallpaperUrl.value.trim();
+            if (phone.wallpaperUrl && phoneWallpaperPreviewUrl) {
+                URL.revokeObjectURL(phoneWallpaperPreviewUrl);
+                phoneWallpaperPreviewUrl = '';
+            }
+            statusAiTestRecords = null;
+            renderPhoneDesktopControls();
+            scheduleStatusPreviewUpdate();
+            saveSettingsSoon({ snapshotOpening: false });
+        });
+        directEditor.replaceChildren(
+            heading,
+            makeElement('p', 'status-atelier-beauty-editor-note', '可以直接填图片 URL，也可以选本地图片立即预览；本地图片不会写进导出成品。'),
+            directEditorField('壁纸 URL', wallpaperUrl),
+            directEditorField('本地图片（仅预览）', localFile),
+            save,
+        );
+        directEditor.hidden = false;
+        wallpaperUrl.focus();
+        directEditor.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+    };
     const openPhoneAvatarEditor = () => {
         const phone = settings().phoneDesktop;
         const heading = makeElement('div', 'status-atelier-preview-direct-heading');
@@ -4366,6 +4402,14 @@ function renderStatusPreview(host) {
             wallpaper.append(phoneWallpaperImage);
         }
         body.append(wallpaper);
+        const editWallpaper = makeElement('button', 'status-atelier-phone-wallpaper-edit', '更换壁纸');
+        editWallpaper.type = 'button';
+        editWallpaper.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            openPhoneWallpaperEditor();
+        });
+        body.append(editWallpaper);
         if (rule.phoneDesktop.decorationStyle !== 'none' && rule.phoneDesktop.petalsEnabled !== false) {
             const petals = makeElement('div', 'zrs-phone-petals');
             petals.setAttribute('aria-hidden', 'true');
@@ -5147,35 +5191,35 @@ async function installGeneratedRegex(script, requestedScope = settings().install
 }
 
 async function installStatusWorldbookRule() {
-    const { context: ctx, characterId, character } = requireCurrentCharacterContext();
-    if (!character.avatar) throw new Error('当前角色缺少可绑定世界书的角色标识');
-
+    const { context: ctx } = requireCurrentCharacterContext();
     const stored = settings();
     const storageKey = characterStorageKey(ctx);
     const bindings = stored.statusWorldbookBindings;
-    const bookName = String(bindings[storageKey] || buildStatusWorldbookName(character, storageKey));
-    if (!(world_names || []).includes(bookName)) {
-        const created = await createNewWorldInfo(bookName, { interactive: false });
-        if (!created) throw new Error('无法创建当前角色的状态栏世界书');
+    const linkedBooks = currentLinkedWorldbooks(ctx).filter(name => !/^九一-状态栏-/u.test(name));
+    let bookName = linkedBooks.includes(bindings[storageKey]) ? String(bindings[storageKey]) : '';
+    if (!bookName) {
+        for (const candidate of linkedBooks) {
+            const data = await loadWorldInfo(candidate);
+            if (Object.values(data?.entries || {}).some(entry => entry?.automationId === STATUS_WORLDBOOK_ENTRY_ID)) {
+                bookName = candidate;
+                break;
+            }
+        }
     }
+    bookName ||= linkedBooks[0] || '';
+    if (!bookName) throw new Error('当前角色卡没有已绑定的可写世界书；请先在角色卡中选择一本世界书，再安装状态栏');
 
     const current = await loadWorldInfo(bookName);
     const generatedEntry = buildWorldbookJson(resolvedStatusInput()).entries[0];
     const result = upsertStatusWorldbookData(current, generatedEntry);
     await saveWorldInfo(bookName, result.data, true);
-    await charUpdateAddAuxWorld(character.avatar, bookName);
-
-    const fileName = getCharaFilename(null, { manualAvatarKey: character.avatar });
-    const linked = world_info?.charLore?.find(item => item?.name === fileName)?.extraBooks || [];
-    if (!linked.includes(bookName)) throw new Error('世界书输出规则已保存，但没有绑定到当前角色');
-
     const confirmed = await loadWorldInfo(bookName);
     const entry = Object.values(confirmed?.entries || {}).find(item => item?.automationId === STATUS_WORLDBOOK_ENTRY_ID);
     if (!entry || entry.disable || !entry.constant || entry.content !== generatedEntry.content) {
         throw new Error('世界书没有确认状态栏输出规则已保存');
     }
     bindings[storageKey] = bookName;
-    return { bookName, uid: Number(entry.uid), created: result.created };
+    return { bookName, uid: Number(entry.uid), created: result.created, target: 'existing-character-worldbook' };
 }
 
 async function installGlobalStatusWorldbookRule() {
@@ -5431,10 +5475,20 @@ function compactStatusAiText(value, limit) {
     return [...text].slice(0, limit).join('');
 }
 
+const STATUS_CONTEXT_CONTROL_TITLE = /(?:创作|写作|文体|文风|禁止|禁词|规则|指令|提示词|prompt|system|输出格式|正则|状态栏|作者注)/iu;
+
+function isNarrativeWorldbookEntry(entry) {
+    if (!entry || entry.automationId === STATUS_WORLDBOOK_ENTRY_ID) return false;
+    const title = compactStatusAiText(entry.comment || entry.name || '', 120);
+    if (STATUS_CONTEXT_CONTROL_TITLE.test(title)) return false;
+    const content = compactStatusAiText(entry.content || '', 240);
+    return !/^(?:#+\s*)?(?:创作|写作|文体|文风|禁止|规则|指令|提示词|输出格式)\b/iu.test(content);
+}
+
 function enabledWorldbookSnapshot(book) {
     const source = book?.data?.entries ?? book?.entries ?? [];
     const entries = (Array.isArray(source) ? source : Object.values(source || {}))
-        .filter(entry => entry && entry.disable !== true && entry.enabled !== false)
+        .filter(entry => entry && entry.disable !== true && entry.enabled !== false && isNarrativeWorldbookEntry(entry))
         .map(entry => ({
             comment: entry.comment || entry.name || '',
             content: entry.content || '',
@@ -5445,11 +5499,11 @@ function enabledWorldbookSnapshot(book) {
 async function currentStatusAiContext() {
     const { context: ctx, character } = requireCurrentCharacterContext();
 
-    const worldbooks = currentEmbeddedWorldbooks().map(book => enabledWorldbookSnapshot({
+    const worldbooks = currentEmbeddedWorldbooks(ctx).map(book => enabledWorldbookSnapshot({
         name: book.name || '当前角色卡内嵌世界书',
         data: book,
     }));
-    for (const bookName of currentLinkedWorldbooks()) {
+    for (const bookName of currentLinkedWorldbooks(ctx)) {
         try {
             worldbooks.push(enabledWorldbookSnapshot({ name: bookName, data: await loadWorldInfo(bookName) }));
         } catch (error) {
@@ -5461,7 +5515,7 @@ async function currentStatusAiContext() {
         .filter(message => message && !message.is_system && message.extra?.type !== 'system' && String(message.mes || '').trim())
         .slice(-12)
         .map(message => `${message.is_user ? '玩家' : '角色'}：${compactStatusAiText(message.mes, 700)}`);
-    const characterContext = buildCharacterHomepageContext(character, worldbooks);
+    const characterContext = buildCharacterHomepageContext(character, worldbooks, { includeCreatorNotes: false });
     const chatContext = messages.join('\n');
     return {
         characterName: compactStatusAiText(character.name || character.data?.name || '当前角色', 80),
@@ -5688,14 +5742,7 @@ async function testStatusAiGeneration(button, viewName = 'settings') {
             remixContext,
             ideaContext,
         ].join('\n\n');
-        let recommendationResponse = '';
-        let localFallbackReason = '';
-        try {
-            recommendationResponse = await generateWithCurrentPreset(recommendationPrompt);
-        } catch (error) {
-            console.warn(`[${MODULE_NAME}] AI 模板推荐不可用，改用本地候选库匹配`, error);
-            localFallbackReason = generationErrorMessage(error) || error?.message || '当前模型暂不可用';
-        }
+        const recommendationResponse = await generateWithCurrentPreset(recommendationPrompt);
         const recommendation = parseStatusAiRecommendation(recommendationResponse, [
             contextSnapshot.characterContext,
             contextSnapshot.chatContext,
@@ -5725,30 +5772,18 @@ async function testStatusAiGeneration(button, viewName = 'settings') {
             ideaContext,
             buildAiInstruction(input),
         ].join('\n\n');
-        let usedLocalFallback = Boolean(localFallbackReason);
-        if (!usedLocalFallback) {
-            try {
-                const response = await generateWithCurrentPreset(prompt);
-                try {
-                    statusAiTestRecords = parseStatusOutput(input, response);
-                } catch (formatError) {
-                    const repairPrompt = [
-                        prompt,
-                        `【格式纠正】上次输出无法读取：${formatError?.message || '状态记录不完整'}。`,
-                        '请严格按上面的“严格输出模板”重新输出一份完整状态区块；补齐每个 Shared 和 View 记录，不要解释。',
-                        `【上次输出，仅供纠正】\n${String(response || '').slice(-1800)}`,
-                    ].join('\n\n');
-                    const repairedResponse = await generateWithCurrentPreset(repairPrompt);
-                    statusAiTestRecords = parseStatusOutput(input, repairedResponse);
-                }
-            } catch (error) {
-                localFallbackReason = generationErrorMessage(error) || error?.message || '当前模型暂不可用';
-                usedLocalFallback = true;
-            }
-        }
-        if (usedLocalFallback) {
-            statusAiTestRecords = buildLocalStatusRecords(rule, contextSnapshot);
-            recommendation.reason = `${recommendation.reason} 当前酒馆模型暂不可用，预览内容已在本机按角色卡与剧情生成；安装后的字段仍会由角色世界书规则随剧情动态填写。`;
+        const response = await generateWithCurrentPreset(prompt);
+        try {
+            statusAiTestRecords = parseStatusOutput(input, response);
+        } catch (formatError) {
+            const repairPrompt = [
+                prompt,
+                `【格式纠正】上次输出无法读取：${formatError?.message || '状态记录不完整'}。`,
+                '请严格按上面的“严格输出模板”重新输出一份完整状态区块；补齐每个 Shared 和 View 记录，不要解释。',
+                `【上次输出，仅供纠正】\n${String(response || '').slice(-1800)}`,
+            ].join('\n\n');
+            const repairedResponse = await generateWithCurrentPreset(repairPrompt);
+            statusAiTestRecords = parseStatusOutput(input, repairedResponse);
         }
         updatePreview();
         if (viewName === 'modal') {
@@ -5760,12 +5795,10 @@ async function testStatusAiGeneration(button, viewName = 'settings') {
             const focusNotice = ideaPlan.changedFields.length
                 ? ` 已自动改为“${ideaPlan.intent.label}”字段：${ideaPlan.changedFields.slice(0, 4).join('、')}等。`
                 : '';
-            status.textContent = usedLocalFallback
-                ? `已生成“${statusAiRecommendationLabel(recommendation)}”本地预览。${focusNotice}酒馆模型暂不可用（${localFallbackReason}）；预览已按当前角色卡与剧情填写，确认后可以正常安装。`
-                : `AI 已生成“${statusAiRecommendationLabel(recommendation)}”预览。${focusNotice}先看右侧效果，满意后再确认安装。`;
-            status.dataset.state = usedLocalFallback ? 'warning' : 'success';
+            status.textContent = `AI 已生成“${statusAiRecommendationLabel(recommendation)}”预览。${focusNotice}先看右侧效果，满意后再确认安装。`;
+            status.dataset.state = 'success';
         }
-        notify(usedLocalFallback ? 'warning' : 'success', `${usedLocalFallback ? '本地已生成' : 'AI 已推荐并生成'}：${rule.structureName}`);
+        notify('success', `AI 已推荐并生成：${rule.structureName}`);
     } catch (error) {
         statusAiTestRecords = null;
         updatePreview();
@@ -6086,7 +6119,8 @@ function renderGreetingStatusChooser() {
     if (profileAppearanceMode && select.options.length !== PROFILE_APPEARANCE_PRESETS.length) {
         select.replaceChildren();
         PROFILE_APPEARANCE_PRESETS.forEach(style => {
-            const option = makeElement('option', '', `${style.code} · ${style.name}`);
+            const cleanName = String(style.name || '').replace(/^\d{2}\s*[·.、-]\s*/, '');
+            const option = makeElement('option', '', `${style.code} · ${cleanName}`);
             option.value = style.id;
             select.append(option);
         });
@@ -6094,6 +6128,7 @@ function renderGreetingStatusChooser() {
     if (profileAppearanceMode) select.value = settings().profileAppearance || PROFILE_APPEARANCE_DEFAULT.id;
     populateStatusStructureSelect(structureSelect);
     if (structureSelect) structureSelect.value = settings().structure || 'custom';
+    renderModalStructureControls();
     if (paletteHost && paletteHost.children.length !== STATUS_PALETTE_PRESETS.length) {
         paletteHost.replaceChildren();
         STATUS_PALETTE_PRESETS.forEach(palette => {
@@ -6123,6 +6158,148 @@ function renderGreetingStatusChooser() {
     renderModalStatusSchema();
     const previewHost = greetingModal?.querySelector('#status-atelier-modal-status-preview');
     if (previewHost && !previewHost.firstElementChild) renderStatusPreview(previewHost);
+}
+
+function modalControlField(labelText, control, helpText = '') {
+    const label = makeElement('label', 'status-atelier-modal-advanced-field');
+    label.append(makeElement('span', '', labelText), control);
+    if (helpText) label.append(makeElement('small', '', helpText));
+    return label;
+}
+
+function modalSelect(value, options) {
+    const select = makeElement('select', 'text_pole');
+    options.forEach(([optionValue, label]) => {
+        const option = makeElement('option', '', label);
+        option.value = optionValue;
+        select.append(option);
+    });
+    select.value = value;
+    return select;
+}
+
+function modalPhoneControl(key, control) {
+    control.dataset.phoneDesktopKey = key;
+    const eventName = control.type === 'range' || control.type === 'color' ? 'input' : 'change';
+    control.addEventListener(eventName, () => {
+        readPhoneDesktopControl(control);
+        if (key === 'shellStyle') renderModalStructureControls();
+        saveSettingsSoon({ snapshotOpening: false });
+    });
+    return control;
+}
+
+function renderModalStructureControls() {
+    const host = greetingModal?.querySelector('#status-atelier-modal-structure-controls');
+    if (!host) return;
+    host.replaceChildren();
+    host.hidden = settings().structure !== 'phone';
+    if (host.hidden) return;
+
+    const phone = settings().phoneDesktop;
+    const grid = makeElement('div', 'status-atelier-modal-phone-grid');
+    const shell = modalPhoneControl('shellStyle', modalSelect(phone.shellStyle, [
+        ['classic', '原始手机'], ['handheld', '横向掌机'], ['handheld-pink', '02 粉色心形掌机'],
+        ['handheld-white', '03 白色竖键掌机'], ['bandage-pop', '04 黑粉贴纸小手机'],
+        ['mint-archive', '05 薄荷格纹小手机'], ['blackberry', '06 黑莓键盘手机'],
+    ]));
+    const shellColor = makeElement('input');
+    shellColor.type = 'color';
+    shellColor.value = phone.shellColor;
+    modalPhoneControl('shellColor', shellColor);
+    const charm = makeElement('input', 'text_pole');
+    charm.type = 'url';
+    charm.value = phone.charmUrl || '';
+    charm.placeholder = '透明背景图片 URL，可留空';
+    modalPhoneControl('charmUrl', charm);
+    const wallpaper = makeElement('input', 'text_pole');
+    wallpaper.type = 'url';
+    wallpaper.value = phone.wallpaperUrl || '';
+    wallpaper.placeholder = '桌面壁纸 URL';
+    modalPhoneControl('wallpaperUrl', wallpaper);
+    const wallpaperFile = makeElement('input');
+    wallpaperFile.type = 'file';
+    wallpaperFile.accept = 'image/*';
+    wallpaperFile.addEventListener('change', () => previewLocalPhoneWallpaper(wallpaperFile));
+    const decoration = modalPhoneControl('decorationStyle', modalSelect(phone.decorationStyle, [
+        ['none', '关闭'], ['snow', '雪花'], ['sakura', '樱花'], ['petals', '花瓣'], ['stars', '星星'],
+    ]));
+    const iconScale = makeElement('input');
+    iconScale.type = 'range';
+    iconScale.min = '0.75';
+    iconScale.max = '1.7';
+    iconScale.step = '0.05';
+    iconScale.value = String(phone.iconScale);
+    modalPhoneControl('iconScale', iconScale);
+    const avatarSource = modalPhoneControl('personalAvatarSource', modalSelect(phone.personalAvatarSource, [
+        ['character', '当前角色头像'], ['user', '当前 User 头像'], ['url', '图片 URL'], ['none', '不显示头像'],
+    ]));
+    const avatarUrl = makeElement('input', 'text_pole');
+    avatarUrl.type = 'url';
+    avatarUrl.value = phone.personalAvatarUrl || '';
+    avatarUrl.placeholder = '个人页头像 URL';
+    modalPhoneControl('personalAvatarUrl', avatarUrl);
+
+    grid.append(
+        modalControlField('手机款式', shell),
+        modalControlField('外壳颜色', shellColor),
+        modalControlField('手机挂饰', charm),
+        modalControlField('桌面壁纸 URL', wallpaper),
+        modalControlField('本地壁纸（仅预览）', wallpaperFile, '也可以直接点击下方手机画面中的“更换壁纸”。'),
+        modalControlField('飘落素材', decoration),
+        modalControlField('APP 图标大小', iconScale),
+        modalControlField('个人页头像来源', avatarSource),
+        modalControlField('个人页头像 URL', avatarUrl),
+    );
+
+    if (phone.shellStyle === 'bandage-pop') {
+        for (const [key, label] of [['stickerPhotoOneUrl', '贴纸照片一'], ['stickerPhotoTwoUrl', '贴纸照片二']]) {
+            const input = makeElement('input', 'text_pole');
+            input.type = 'url';
+            input.value = phone[key] || '';
+            input.placeholder = '图片 URL';
+            modalPhoneControl(key, input);
+            grid.append(modalControlField(label, input));
+        }
+    }
+
+    const apps = makeElement('section', 'status-atelier-modal-phone-apps');
+    apps.append(makeElement('h5', '', '桌面 APP'));
+    phone.apps.forEach(app => {
+        const row = makeElement('div', 'status-atelier-modal-phone-app-row');
+        const enabled = makeElement('input');
+        enabled.type = 'checkbox';
+        enabled.checked = app.enabled !== false;
+        enabled.dataset.phoneAppId = app.id;
+        enabled.dataset.phoneAppKey = 'enabled';
+        const name = makeElement('input', 'text_pole');
+        name.value = app.name;
+        name.maxLength = 12;
+        name.dataset.phoneAppId = app.id;
+        name.dataset.phoneAppKey = 'name';
+        const icon = makeElement('input', 'text_pole');
+        icon.type = 'url';
+        icon.value = app.iconUrl || '';
+        icon.placeholder = '图标 URL（可留空）';
+        icon.dataset.phoneAppId = app.id;
+        icon.dataset.phoneAppKey = 'iconUrl';
+        [enabled, name, icon].forEach(control => control.addEventListener('change', () => {
+            readPhoneDesktopControl(control);
+            saveSettingsSoon({ snapshotOpening: false });
+        }));
+        row.append(enabled, name, icon);
+        apps.append(row);
+    });
+
+    const layoutActions = makeElement('div', 'status-atelier-setting-actions');
+    const align = makeElement('button', 'menu_button', '自动对齐桌面');
+    align.type = 'button';
+    align.addEventListener('click', () => arrangePhoneDesktopLayout(false));
+    const reset = makeElement('button', 'menu_button', '重置桌面布局');
+    reset.type = 'button';
+    reset.addEventListener('click', () => arrangePhoneDesktopLayout(true));
+    layoutActions.append(align, reset);
+    host.append(makeElement('h4', '', '小手机完整调控'), grid, apps, layoutActions);
 }
 
 function renderModalStatusSchema() {
@@ -6339,9 +6516,10 @@ function buildGreetingModal() {
                     <details class="status-atelier-modal-status-advanced">
                         <summary><strong>调整状态栏</strong><small>结构、字段与色卡</small></summary>
                         <div class="status-atelier-modal-status-controls">
-                            <label>状态栏模板<select id="status-atelier-modal-status-structure" class="text_pole"></select></label>
+                            <label>作品类型<select id="status-atelier-modal-status-structure" class="text_pole"></select></label>
                             <label>人物状态栏外观<select id="status-atelier-modal-status-style" class="text_pole"></select></label>
                         </div>
+                        <section id="status-atelier-modal-structure-controls" class="status-atelier-modal-structure-controls"></section>
                         <details class="status-atelier-modal-schema-editor">
                             <summary><strong>字段与 AI 动态数值</strong><small>增加、改名、改类型或删除</small></summary>
                             <button type="button" class="menu_button" id="status-atelier-modal-add-field">＋ 新增字段</button>

@@ -72,14 +72,14 @@ export function selectCurrentSillyTavernContext(candidates = []) {
         || null;
 }
 
-export function buildCharacterHomepageContext(character, worldbooks = []) {
+export function buildCharacterHomepageContext(character, worldbooks = [], { includeCreatorNotes = true } = {}) {
     const data = character?.data || character || {};
     const sections = [
         ['角色名称', data.name || character?.name, 120],
         ['角色设定', data.description, 1800],
         ['性格', data.personality, 900],
         ['故事场景', data.scenario, 1400],
-        ['创作者说明', data.creator_notes || data.creatorcomment, 900],
+        ['创作者说明', includeCreatorNotes ? data.creator_notes || data.creatorcomment : '', 900],
         ['主开场白', data.first_mes || character?.first_mes, 1400],
     ].map(([label, value, limit]) => {
         const text = compact(value, limit);

@@ -163,6 +163,30 @@ function adaptBundledRegex(structure, script) {
     return script;
 }
 
+function addBundledMobileRuntime(structure, script) {
+    const source = String(script?.replaceString || '');
+    const overflowStyles = structure === 'beauty-burgundy-album-02' ? `<style>
+.burgundy-album :is(.sheet p,.plans li,.route-cards h3,.route-cards p){overflow:hidden;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical}
+.burgundy-album .secret p{-webkit-line-clamp:3}
+.burgundy-album .plans ol{gap:5px;margin-top:0}
+.burgundy-album .plans li{padding-top:0!important;font-size:11px;line-height:1.35;-webkit-line-clamp:3}
+.burgundy-album .route-cards h3{font-size:15px;line-height:1.25;-webkit-line-clamp:2}
+.burgundy-album .route-cards p{font-size:10px;line-height:1.3;-webkit-line-clamp:2}
+.burgundy-album .mood p{font-size:14px;line-height:1.35;-webkit-line-clamp:3}
+</style>` : '';
+    const fitRuntime = `<script>(function(){
+var card=Array.from(document.body.children).find(function(node){return /^(DETAILS|ARTICLE|SECTION|MAIN)$/.test(node.tagName)});if(!card)return;
+var baseWidth=card.offsetWidth||900;
+function fit(){var available=Math.max(240,document.documentElement.clientWidth-20);var scale=Math.min(1,available/baseWidth);var baseHeight=card.offsetHeight||560;card.style.setProperty('transform','scale('+scale+')','important');card.style.setProperty('transform-origin','top left','important');card.style.margin='0';document.documentElement.style.height='auto';document.documentElement.style.overflow='hidden';document.body.style.setProperty('display','block','important');document.body.style.setProperty('place-items','initial','important');document.body.style.width='100%';document.body.style.minHeight='0';document.body.style.height=Math.ceil(baseHeight*scale+20)+'px';document.body.style.padding='10px';document.body.style.overflow='hidden'}
+requestAnimationFrame(fit);window.addEventListener('resize',fit);card.addEventListener('toggle',function(){requestAnimationFrame(fit)});if(window.ResizeObserver)new ResizeObserver(function(){requestAnimationFrame(fit)}).observe(card);
+})();</script>`;
+    const additions = `${overflowStyles}${fitRuntime}`;
+    return {
+        ...script,
+        replaceString: source.includes('</body>') ? source.replace('</body>', `${additions}</body>`) : `${source}${additions}`,
+    };
+}
+
 export async function loadStatusBeautyBundledRegex(structure) {
     const meta = statusBeautyBundleMeta(structure);
     if (!meta) throw new Error('当前模板没有对应的原始正则成品');
@@ -170,7 +194,7 @@ export async function loadStatusBeautyBundledRegex(structure) {
         cache.set(structure, fetch(new URL(meta.file, BUNDLE_ROOT)).then(response => {
             if (!response.ok) throw new Error(`无法读取原始正则成品：${response.status}`);
             return response.json();
-        }).then(script => adaptBundledRegex(structure, script)));
+        }).then(script => addBundledMobileRuntime(structure, adaptBundledRegex(structure, script))));
     }
     return cache.get(structure);
 }

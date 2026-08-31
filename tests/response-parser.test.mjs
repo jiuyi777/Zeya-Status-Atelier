@@ -189,6 +189,9 @@ test('batch parser accepts tagged and numbered non-JSON model replies', () => {
 
 test('distinguishes a generic 502 from an actual 524 timeout', () => {
     assert.equal(SUMMARY_RESPONSE_LENGTH, 4096);
+    assert.match(generationErrorMessage(new Error('401 Unauthorized: Authentication failed')), /鉴权失败/);
+    assert.match(generationErrorMessage(new Error('401 Unauthorized: Authentication failed')), /API 连接页/);
+    assert.match(generationErrorMessage({ error: { message: 'Unauthorized' } }), /鉴权失败/);
     assert.match(generationErrorMessage(new Error('Gateway 524 timed out')), /超时或 524/);
     assert.match(generationErrorMessage(new Error('Gateway 524 timed out')), /4096/);
     assert.match(generationErrorMessage(new Error('Got response status 502')), /502 不一定是超时/);

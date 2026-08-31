@@ -1995,6 +1995,102 @@ summary.status-atelier-section-heading {
     gap: 8px;
 }
 
+.status-atelier-modal-status-controls > label[hidden] {
+    display: none !important;
+}
+
+.status-atelier-modal-structure-controls {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid color-mix(in srgb, var(--status-atelier-ui-accent) 30%, var(--SmartThemeBorderColor));
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--status-atelier-ui-accent) 5%, transparent);
+}
+
+.status-atelier-modal-structure-controls[hidden] {
+    display: none;
+}
+
+.status-atelier-modal-structure-controls > h4,
+.status-atelier-modal-phone-apps > h5 {
+    margin: 0;
+}
+
+.status-atelier-modal-phone-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+}
+
+.status-atelier-modal-advanced-field {
+    display: grid;
+    align-content: start;
+    gap: 5px;
+    min-width: 0;
+}
+
+.status-atelier-modal-advanced-field > span {
+    font-size: .86em;
+    font-weight: 700;
+}
+
+.status-atelier-modal-advanced-field > small {
+    opacity: .68;
+    line-height: 1.45;
+}
+
+.status-atelier-modal-advanced-field :is(input, select) {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+}
+
+.status-atelier-modal-advanced-field input[type="color"] {
+    padding: 4px;
+}
+
+.status-atelier-modal-phone-apps {
+    display: grid;
+    gap: 7px;
+    padding-top: 11px;
+    border-top: 1px solid var(--SmartThemeBorderColor);
+}
+
+.status-atelier-modal-structure-controls > .status-atelier-setting-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    margin: 4px 0 0;
+}
+
+.status-atelier-modal-structure-controls > .status-atelier-setting-actions .menu_button {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding-inline: 12px;
+    white-space: normal;
+}
+
+.status-atelier-modal-phone-app-row {
+    display: grid;
+    grid-template-columns: 44px minmax(90px, .75fr) minmax(150px, 1.25fr);
+    align-items: center;
+    gap: 7px;
+}
+
+.status-atelier-modal-phone-app-row > input {
+    min-width: 0;
+    min-height: 42px;
+}
+
+.status-atelier-modal-phone-app-row > input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    justify-self: center;
+}
+
 .status-atelier-modal-schema-editor {
     margin: 11px 0;
     padding: 10px;
@@ -2709,6 +2805,25 @@ summary.status-atelier-section-heading {
 
     .status-atelier-modal-status-controls {
         grid-template-columns: 1fr;
+    }
+
+    .status-atelier-modal-phone-grid,
+    .status-atelier-modal-phone-app-row {
+        grid-template-columns: 1fr;
+    }
+
+    .status-atelier-modal-phone-app-row {
+        padding: 9px;
+        border: 1px solid var(--SmartThemeBorderColor);
+        border-radius: 9px;
+    }
+
+    .status-atelier-modal-structure-controls > .status-atelier-setting-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .status-atelier-modal-phone-app-row > input[type="checkbox"] {
+        justify-self: start;
     }
 
     .status-atelier-modal-schema-main {
@@ -5312,6 +5427,35 @@ body:has(.preview-note) [data-status-workspace-panel="status"] .status-atelier-w
 }
 +        grid-template-columns: 18px minmax(0, 1fr) 104px 30px;
     }
+}
+
+.status-atelier-rule-preview[data-structure="phone"] {
+    position: relative;
+}
+
+.status-atelier-phone-wallpaper-edit {
+    position: absolute;
+    z-index: 80;
+    top: 38px;
+    right: 12px;
+    min-height: 36px;
+    padding: 7px 10px;
+    border: 1px solid rgba(255, 255, 255, .78);
+    border-radius: 999px;
+    color: #17344c;
+    background: rgba(255, 255, 255, .88);
+    box-shadow: 0 5px 14px rgba(28, 58, 83, .2);
+    font: 700 11px/1.2 "Microsoft YaHei UI", sans-serif;
+    cursor: pointer;
+    pointer-events: auto;
+    touch-action: manipulation;
+}
+
+.status-atelier-phone-wallpaper-edit:hover,
+.status-atelier-phone-wallpaper-edit:focus-visible {
+    background: #fff;
+    outline: 2px solid #5f84b0;
+    outline-offset: 2px;
 }
 
 .status-atelier-moon-preview {

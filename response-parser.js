@@ -459,7 +459,10 @@ export function parseBatchSummaryResponse(value, requestedEntries) {
 }
 
 export function generationErrorMessage(error) {
-    const message = String(error?.message || error || '');
+    const message = String(error?.message || error?.error?.message || error || '');
+    if (/(?:unauthorized|authentication failed|invalid api key|incorrect api key|\b401\b)/i.test(message)) {
+        return '酒馆当前模型连接鉴权失败；请先在 API 连接页确认接口地址、密钥和模型可用，再重新生成';
+    }
     if (/(?:524|timeout|timed out|超时)/i.test(message)) {
         return `接口生成目录时发生超时或 524；插件已保留当前模型与预设，并把本次后台回复限制为 ${SUMMARY_RESPONSE_LENGTH}`;
     }
