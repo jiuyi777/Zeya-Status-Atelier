@@ -25,8 +25,8 @@ import {
     parseChatConversationLog,
     parseStatusOutput,
     parseFields,
-} from './rule-generator.js?v=0.11.3';
-import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.3';
+} from './rule-generator.js?v=0.11.4';
+import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.4';
 import {
     STATUS_BEAUTY_01_15_IDS,
     applyStatusBeautyControlChrome,
@@ -38,23 +38,23 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.3';
+} from './status-beauty-01-15-bundle.js?v=0.11.4';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
-} from './status-beauty-05-09.js?v=0.11.3';
+} from './status-beauty-05-09.js?v=0.11.4';
 import {
     STATUS_BEAUTY_16_20_IDS,
     buildStatusBeauty16To20Preview,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.3';
+} from './status-beauty-16-20.js?v=0.11.4';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.3';
+} from './opening-home-generator.js?v=0.11.4';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -70,19 +70,19 @@ import {
     resolveStatusRecommendation,
     resolveStatusIdeaIntent,
     usableGreetingRecords,
-} from './response-parser.js?v=0.11.3';
+} from './response-parser.js?v=0.11.4';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.11.3';
+} from './worldbook-routes.js?v=0.11.4';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.11.3';
+} from './entry-dialog.js?v=0.11.4';
 import { getContext as getSillyTavernContext } from '../../../extensions.js';
 import {
     greetingBindingSummary,
@@ -92,14 +92,19 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.11.3';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.3';
-import { buildCharacterHomepageContext } from './opening-context.js?v=0.11.3';
+} from './greeting-workflow.js?v=0.11.4';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.4';
+import {
+    buildCharacterHomepageContext,
+    describeCurrentCharacterContext,
+    resolveCurrentCharacterContext,
+    selectCurrentSillyTavernContext,
+} from './opening-context.js?v=0.11.4';
 import {
     STATUS_WORLDBOOK_ENTRY_ID,
     buildStatusWorldbookName,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.11.3';
+} from './status-worldbook.js?v=0.11.4';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -120,7 +125,7 @@ import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.3';
+const VERSION = '0.11.4';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -395,7 +400,21 @@ let questMapEditorOverlay = null;
 let questMapEditorTrigger = null;
 
 function context() {
-    return globalThis.SillyTavern?.getContext?.() ?? getSillyTavernContext?.();
+    const candidates = [];
+    try {
+        candidates.push(getSillyTavernContext?.());
+    } catch {}
+    try {
+        candidates.push(globalThis.SillyTavern?.getContext?.());
+    } catch {}
+    return selectCurrentSillyTavernContext(candidates);
+}
+
+function requireCurrentCharacterContext() {
+    const resolved = resolveCurrentCharacterContext(context());
+    if (resolved.state === 'character') return resolved;
+    if (resolved.state === 'unavailable') throw new Error('酒馆上下文尚未准备好，请等待当前聊天载入后再试');
+    throw new Error('已读取当前聊天，但没有定位到对应角色卡；请切换一次角色聊天后再试');
 }
 
 function clone(value) {
@@ -1523,6 +1542,10 @@ function loadSettingsUI() {
     renderPaletteButtons();
     renderStatusDesignControls();
     renderStatusSchema();
+    const statusAiSource = field('status-atelier-ai-source-summary');
+    if (statusAiSource && !statusAiTestRecords) {
+        statusAiSource.textContent = describeCurrentCharacterContext(context());
+    }
     updateSummarySourceVisibility();
     renderOpeningWorldlines();
     const readStatus = field('status-atelier-opening-read-status');
@@ -5105,10 +5128,8 @@ function downloadWorldbook() {
 
 async function installGeneratedRegex(script, requestedScope = settings().installScope) {
     const type = requestedScope === 'global' ? SCRIPT_TYPES.GLOBAL : SCRIPT_TYPES.SCOPED;
-    const ctx = context();
-    if (type === SCRIPT_TYPES.SCOPED && (ctx?.characterId === undefined || ctx?.characterId === null || ctx?.groupId)) {
-        throw new Error('请先打开一个单人角色聊天，再安装到当前角色');
-    }
+    const selection = type === SCRIPT_TYPES.SCOPED ? requireCurrentCharacterContext() : null;
+    const ctx = selection?.context || context();
 
     const bundledScript = /^九一 · 状态栏(?:0[1-9]|1[0-5])(?: ·|$)/.test(String(script?.scriptName || ''));
     const scripts = [...getScriptsByType(type)].filter(item => !bundledScript
@@ -5120,18 +5141,13 @@ async function installGeneratedRegex(script, requestedScope = settings().install
     await saveScriptsByType(scripts, type);
 
     if (type === SCRIPT_TYPES.SCOPED) {
-        allowScopedScripts(ctx?.characters?.[ctx.characterId]);
+        allowScopedScripts(selection.character);
     }
     notify('success', `${existingIndex >= 0 ? '已更新' : '已安装'}正则：${script.scriptName}`);
 }
 
 async function installStatusWorldbookRule() {
-    const ctx = context();
-    const characterId = ctx?.characterId;
-    const character = ctx?.characters?.[characterId];
-    if (!ctx || ctx.groupId || characterId === undefined || characterId === null || !character) {
-        throw new Error('请先打开一个单人角色聊天，再写入状态栏世界书');
-    }
+    const { context: ctx, characterId, character } = requireCurrentCharacterContext();
     if (!character.avatar) throw new Error('当前角色缺少可绑定世界书的角色标识');
 
     const stored = settings();
@@ -5427,12 +5443,7 @@ function enabledWorldbookSnapshot(book) {
 }
 
 async function currentStatusAiContext() {
-    const ctx = context();
-    const characterId = ctx?.characterId;
-    const character = ctx?.characters?.[characterId];
-    if (!ctx || ctx.groupId || characterId === undefined || characterId === null || !character) {
-        throw new Error('请先打开一个单人角色聊天，再让 AI 分析美化方案');
-    }
+    const { context: ctx, character } = requireCurrentCharacterContext();
 
     const worldbooks = currentEmbeddedWorldbooks().map(book => enabledWorldbookSnapshot({
         name: book.name || '当前角色卡内嵌世界书',
@@ -5570,7 +5581,7 @@ function resetStatusAiView(viewName = 'settings') {
     const { result, install, source, status, idea, preview, previewWrap } = statusAiView(viewName);
     if (result) result.hidden = true;
     if (install) install.disabled = true;
-    if (source) source.textContent = '打开一个单人角色聊天后即可开始。';
+    if (source) source.textContent = describeCurrentCharacterContext(context());
     if (status) {
         status.textContent = '';
         status.dataset.state = 'idle';

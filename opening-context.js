@@ -8,6 +8,70 @@ function bookEntries(book) {
     return Array.isArray(source) ? source : Object.values(source || {});
 }
 
+function currentChatId(context) {
+    if (context?.chatId !== undefined && context?.chatId !== null && context.chatId !== '') {
+        return String(context.chatId);
+    }
+    try {
+        const value = context?.getCurrentChatId?.();
+        return value === undefined || value === null ? '' : String(value);
+    } catch {
+        return '';
+    }
+}
+
+export function resolveCurrentCharacterContext(context) {
+    if (!context) return { context: null, characterId: null, character: null, state: 'unavailable' };
+
+    const characters = Array.isArray(context.characters) ? context.characters : [];
+    let characterId = context.characterId;
+    let character = characterId !== undefined && characterId !== null ? characters[characterId] : null;
+
+    if (!character) {
+        const chatId = currentChatId(context);
+        if (chatId) {
+            const matchedId = characters.findIndex(item => String(item?.chat ?? '') === chatId);
+            if (matchedId >= 0) {
+                characterId = matchedId;
+                character = characters[matchedId];
+            }
+        }
+    }
+
+    if (!character) {
+        const currentName = String(context.name2 ?? '').trim();
+        const matches = currentName
+            ? characters.map((item, index) => ({ item, index })).filter(({ item }) => String(item?.name ?? '').trim() === currentName)
+            : [];
+        if (matches.length === 1) {
+            characterId = matches[0].index;
+            character = matches[0].item;
+        }
+    }
+
+    if (!character) return { context, characterId: null, character: null, state: 'character-missing' };
+    const normalizedContext = String(context.characterId) === String(characterId)
+        ? context
+        : { ...context, characterId };
+    return { context: normalizedContext, characterId, character, state: 'character' };
+}
+
+export function describeCurrentCharacterContext(context) {
+    const resolved = resolveCurrentCharacterContext(context);
+    if (resolved.state === 'unavailable') return '酒馆聊天尚未载入完成，请稍候。';
+    if (resolved.state !== 'character') return '当前没有定位到单人角色聊天，请先打开一个角色。';
+    const rawName = resolved.character?.name || resolved.character?.data?.name || '当前角色';
+    const characterName = [...String(rawName).trim()].slice(0, 80).join('') || '当前角色';
+    return `已定位当前角色“${characterName}”。点击按钮后将读取角色卡、当前剧情与启用世界书。`;
+}
+
+export function selectCurrentSillyTavernContext(candidates = []) {
+    const resolved = candidates.filter(Boolean).map(resolveCurrentCharacterContext);
+    return resolved.find(item => item.state === 'character')?.context
+        || resolved[0]?.context
+        || null;
+}
+
 export function buildCharacterHomepageContext(character, worldbooks = []) {
     const data = character?.data || character || {};
     const sections = [

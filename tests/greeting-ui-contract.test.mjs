@@ -235,6 +235,8 @@ test('wand exposes a simple AI status flow while the plugin settings keep the fu
     const openBlock = source.match(/function openGreetingModal\(target = 'opening'\) \{([\s\S]*?)\n\}/)?.[1] || '';
     const statusFastPath = openBlock.match(/if \(target === 'status'\) \{([\s\S]*?)\n    \}/)?.[1] || '';
     assert.match(statusFastPath, /setGreetingModalWorkspace\('status'\)/);
+    assert.match(source, /source\.textContent = describeCurrentCharacterContext\(context\(\)\)/);
+    assert.match(source, /statusAiSource\.textContent = describeCurrentCharacterContext\(context\(\)\)/);
     assert.match(statusFastPath, /setStatusEntryMode\('modal', 'simple'\)/);
     assert.match(statusFastPath, /return;/);
     assert.doesNotMatch(statusFastPath, /ensureLocalGreetingDrafts|renderGreetingList|renderGreetingThemeChooser|updateOpeningHomePreview/);
