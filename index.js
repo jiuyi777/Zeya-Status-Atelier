@@ -6359,19 +6359,30 @@ function setGreetingModalWorkspace(target = 'opening') {
 
 async function applyModalStatus(button) {
     const originalLabel = button.textContent;
+    const states = [...(greetingModal?.querySelectorAll('.status-atelier-modal-install-status') || [])];
     button.disabled = true;
     button.textContent = '正在写入当前角色…';
+    states.forEach(state => {
+        state.textContent = '正在把当前预览写入当前角色的世界书与局部正则…';
+        state.dataset.state = 'loading';
+    });
     try {
         Object.assign(settings(), { preset: 'custom', statusTemplate: 'custom' });
         const worldbook = await installRegex('scoped');
         await saveSettingsNow();
         loadSettingsUI();
         renderGreetingStatusChooser();
-        const state = greetingModal?.querySelector('#status-atelier-modal-ai-test-status');
         const recipeName = normalizeRule(resolvedStatusInput()).structureName;
-        if (state) state.textContent = `已完成：世界书“${worldbook.bookName}”已写入 AI 输出规则，局部正则已更新为“${recipeName}”。`;
+        states.forEach(state => {
+            state.textContent = `已完成：世界书“${worldbook.bookName}”已写入 AI 输出规则，局部正则已更新为“${recipeName}”。`;
+            state.dataset.state = 'success';
+        });
         notify('success', `已完整启用当前角色状态栏：世界书输出规则 + ${recipeName} 局部正则`);
     } catch (error) {
+        states.forEach(state => {
+            state.textContent = `安装失败：${error?.message || '状态栏写入失败'}`;
+            state.dataset.state = 'error';
+        });
         notify('error', error?.message || '状态栏写入失败');
     } finally {
         button.disabled = false;
@@ -6491,7 +6502,7 @@ function buildGreetingModal() {
                         </label>
                         <p id="status-atelier-modal-ai-source-summary" class="status-atelier-ai-source-summary">打开一个单人角色聊天后即可开始。</p>
                         <button id="status-atelier-modal-test-ai" type="button" class="menu_button status-atelier-primary-action status-atelier-ai-generate">AI 分析并生成美化</button>
-                        <p id="status-atelier-modal-ai-test-status" class="status-atelier-ai-test-status" role="status" aria-live="polite"></p>
+                        <p id="status-atelier-modal-ai-test-status" class="status-atelier-ai-test-status status-atelier-modal-install-status" role="status" aria-live="polite"></p>
                         <section id="status-atelier-modal-ai-recommendation" class="status-atelier-ai-recommendation" hidden>
                             <small>AI 推荐方案</small>
                             <strong id="status-atelier-modal-ai-template"></strong>
@@ -6520,6 +6531,11 @@ function buildGreetingModal() {
                             <summary><strong>色卡</strong><small>只改变颜色</small></summary>
                             <div id="status-atelier-modal-status-palettes" class="status-atelier-status-palettes"></div>
                         </details>
+                        <div class="status-atelier-expert-install">
+                            <button type="button" class="menu_button status-atelier-primary-action" id="status-atelier-modal-apply-status-expert">一键安装到当前角色</button>
+                            <small>按当前复杂模式的模板、字段、图片和配色直接写入当前角色。</small>
+                            <p class="status-atelier-modal-install-status" role="status" aria-live="polite"></p>
+                        </div>
                     </details>
                     <div class="status-atelier-modal-status-preview-wrap">
                         <small>实时预览</small>
@@ -6584,6 +6600,7 @@ function buildGreetingModal() {
     });
     greetingModal.querySelector('#status-atelier-modal-add-field').addEventListener('click', addStatusField);
     greetingModal.querySelector('#status-atelier-modal-apply-status').addEventListener('click', event => applyModalStatus(event.currentTarget));
+    greetingModal.querySelector('#status-atelier-modal-apply-status-expert').addEventListener('click', event => applyModalStatus(event.currentTarget));
     greetingModal.querySelector('#status-atelier-modal-apply').addEventListener('click', event => applyGreetingModal(event.currentTarget));
     document.body.append(greetingModal);
     setGreetingModalWorkspace('opening');

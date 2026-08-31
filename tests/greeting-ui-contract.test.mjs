@@ -256,6 +256,21 @@ test('wand exposes a simple AI status flow while the plugin settings keep the fu
     assert.doesNotMatch(emptyPreviewStyle, /gradient/i);
 });
 
+test('complex status mode keeps readable controls and exposes its own one-click install', () => {
+    const advancedMarkup = source.match(/<details class="status-atelier-modal-status-advanced">([\s\S]*?)<\/details>\s*<div class="status-atelier-modal-status-preview-wrap">/)?.[1] || '';
+    assert.match(advancedMarkup, /id="status-atelier-modal-apply-status-expert"[^>]*>一键安装到当前角色</);
+    assert.match(advancedMarkup, /class="status-atelier-modal-install-status"/);
+    assert.match(source, /querySelector\('#status-atelier-modal-apply-status-expert'\)\.addEventListener\('click', event => applyModalStatus\(event\.currentTarget\)\)/);
+    const installBlock = source.match(/async function applyModalStatus\(button\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    assert.match(installBlock, /querySelectorAll\('\.status-atelier-modal-install-status'\)/);
+    assert.match(installBlock, /state\.dataset\.state = 'success'/);
+    assert.match(installBlock, /state\.dataset\.state = 'error'/);
+    assert.match(styleSource, /#status-atelier-modal \.status-atelier-entry-mode-switch \.menu_button\[aria-pressed="true"\][\s\S]*?color:\s*#fff\s*!important;[\s\S]*?background:\s*#7f2e2b\s*!important;/);
+    assert.match(styleSource, /#status-atelier-modal \.status-atelier-entry-mode-switch \.menu_button\[aria-pressed="true"\] :is\(strong, small\)[\s\S]*?color:\s*inherit\s*!important;/);
+    assert.match(styleSource, /#status-atelier-modal \.status-atelier-modal-status-controls select\.text_pole[\s\S]*?color:\s*#2d2925\s*!important;[\s\S]*?background:\s*#fffaf3\s*!important;/);
+    assert.match(styleSource, /#status-atelier-modal \.status-atelier-expert-install \.menu_button[\s\S]*?width:\s*100%;[\s\S]*?background:\s*#8f3531\s*!important;/);
+});
+
 test('status quick editor updates fields without reloading the whole opening-home workbench', () => {
     const structureBlock = source.match(/function applyStatusStructure\(structureId\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.doesNotMatch(structureBlock, /loadSettingsUI/);

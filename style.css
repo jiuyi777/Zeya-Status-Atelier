@@ -3218,6 +3218,35 @@ summary.status-atelier-section-heading {
     background: #37322e;
 }
 
+#status-atelier-modal .status-atelier-entry-mode-switch .menu_button {
+    border-color: #cfc4b6 !important;
+    color: #5f5750 !important;
+    background: #fffaf3 !important;
+}
+
+#status-atelier-modal .status-atelier-entry-mode-switch .menu_button[aria-pressed="true"] {
+    border-color: #7f2e2b !important;
+    color: #fff !important;
+    background: #7f2e2b !important;
+}
+
+#status-atelier-modal .status-atelier-entry-mode-switch .menu_button[aria-pressed="true"] :is(strong, small) {
+    color: inherit !important;
+}
+
+#status-atelier-modal .status-atelier-modal-status-controls select.text_pole {
+    border: 1px solid #cfc4b6 !important;
+    color: #2d2925 !important;
+    background: #fffaf3 !important;
+    opacity: 1 !important;
+    -webkit-text-fill-color: #2d2925;
+}
+
+#status-atelier-modal .status-atelier-modal-status-controls select.text_pole option {
+    color: #2d2925;
+    background: #fffaf3;
+}
+
 #status-atelier-modal[data-status-entry-mode="simple"] .status-atelier-modal-status-advanced,
 #status-atelier-modal[data-status-entry-mode="expert"] .status-atelier-modal-ai-simple-flow {
     display: none;
@@ -3225,6 +3254,39 @@ summary.status-atelier-section-heading {
 
 #status-atelier-modal[data-status-entry-mode="expert"] .status-atelier-modal-status-advanced {
     display: block;
+}
+
+.status-atelier-expert-install {
+    display: grid;
+    gap: 7px;
+    margin-top: 12px;
+}
+
+#status-atelier-modal .status-atelier-expert-install .menu_button {
+    width: 100%;
+    min-height: 48px;
+    border: 0 !important;
+    color: #fff !important;
+    background: #8f3531 !important;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.status-atelier-expert-install > small,
+.status-atelier-expert-install > p {
+    margin: 0;
+    color: #6b625a;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+.status-atelier-modal-install-status[data-state="success"] {
+    color: #37634a;
+}
+
+.status-atelier-modal-install-status[data-state="error"] {
+    color: #9b2f2f;
 }
 
 .status-atelier-ai-simple-flow {
