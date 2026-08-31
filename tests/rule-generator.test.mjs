@@ -42,6 +42,7 @@ import {
 } from '../status-beauty-01-15-bundle.js';
 
 const statusBeauty16To20Css = readFileSync(new URL('../status-beauty-16-20.css', import.meta.url), 'utf8');
+const statusBeautyBundleSource = readFileSync(new URL('../status-beauty-01-15-bundle.js', import.meta.url), 'utf8');
 
 test('parses any number of switch pages without storing story values', () => {
     const pages = parsePages('喻生|谨慎克制\n喻黎|老城区生活\n旁观者|第三视角');
@@ -303,6 +304,15 @@ test('status beauty 01 to 15 map every bundled original regex to its exact AI ou
     assert.match(previewDocument, /span\.textContent=valueFor/);
     assert.match(previewDocument, /生成值一/);
     assert.match(previewDocument, /root\.querySelectorAll\('\[data-capture\]'\)/);
+});
+
+test('bundled status regexes fit the current viewport without a dark padded stage', () => {
+    const runtime = statusBeautyBundleSource.match(/const fitRuntime = `([\s\S]*?)`;/)?.[1] || '';
+    assert.match(runtime, /document\.documentElement\.clientWidth/);
+    assert.match(runtime, /background','transparent','important'/);
+    assert.match(runtime, /padding','0','important'/);
+    assert.match(runtime, /Math\.ceil\(baseHeight\*scale\)\+'px'/);
+    assert.doesNotMatch(runtime, /Math\.max\(240|clientWidth-20|\+20\)+'px'/);
 });
 
 test('status beauty visible copy edits are injected into the exported regex', () => {

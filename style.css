@@ -2156,9 +2156,9 @@ summary.status-atelier-section-heading {
 
 .status-atelier-modal-status-preview-wrap {
     margin: 12px 0;
-    padding: 9px;
-    border: 1px solid var(--SmartThemeBorderColor);
-    background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 80%, transparent);
+    padding: 0;
+    border: 0;
+    background: transparent;
 }
 
 .status-atelier-modal-status-preview-wrap > small {
@@ -3191,6 +3191,8 @@ summary.status-atelier-section-heading {
     color: #5f5750;
     background: #f7f2ea;
     box-shadow: none;
+    font-size: 13px;
+    font-weight: 400;
     text-align: left;
 }
 
@@ -3202,7 +3204,12 @@ summary.status-atelier-section-heading {
 .status-atelier-entry-mode-switch .menu_button small {
     color: inherit;
     opacity: .72;
-    font-size: 11px;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.status-atelier-entry-mode-switch .menu_button strong {
+    font-weight: 600;
 }
 
 .status-atelier-entry-mode-switch .menu_button[aria-pressed="true"] {
@@ -3243,7 +3250,7 @@ summary.status-atelier-section-heading {
     color: #7f2e2b;
     background: #f2d9d3;
     font-size: 12px;
-    font-weight: 800;
+    font-weight: 600;
 }
 
 .status-atelier-ai-simple-copy {
@@ -3278,14 +3285,14 @@ summary.status-atelier-section-heading {
     color: #514943;
     background: #fffaf3;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 500;
 }
 
 .status-atelier-ai-idea-field {
     display: grid;
     gap: 7px;
     color: #514943;
-    font-weight: 750;
+    font-weight: 500;
 }
 
 .status-atelier-ai-methods {
@@ -3302,7 +3309,7 @@ summary.status-atelier-section-heading {
     grid-column: 1 / -1;
     margin-bottom: 1px;
     color: #514943;
-    font-weight: 750;
+    font-weight: 500;
 }
 
 .status-atelier-ai-method {
@@ -3354,8 +3361,15 @@ summary.status-atelier-section-heading {
 }
 
 .status-atelier-ai-result-actions .menu_button {
-    min-height: 44px;
+    min-height: 40px;
+    font-size: 13px;
+    font-weight: 400;
     white-space: normal;
+}
+
+.status-atelier-ai-result-actions .status-atelier-primary-action {
+    font-size: 14px;
+    font-weight: 700;
 }
 
 .status-atelier-ai-regenerate span[aria-hidden="true"] {
@@ -3462,7 +3476,7 @@ summary.status-atelier-section-heading {
     background: #8f3531;
     box-shadow: 0 8px 18px rgba(113, 49, 46, .22);
     font-size: 15px;
-    font-weight: 850;
+    font-weight: 700;
 }
 
 .status-atelier-workbench .status-atelier-ai-generate:is(:hover, :focus-visible),
@@ -3496,7 +3510,8 @@ summary.status-atelier-section-heading {
 
 .status-atelier-ai-recommendation > strong {
     color: #7f2e2b;
-    font-size: 18px;
+    font-size: 16px;
+    font-weight: 650;
 }
 
 #status-atelier-modal[data-workspace="status"] .status-atelier-greeting-status-step {
@@ -5534,10 +5549,9 @@ body:has(.preview-note) [data-status-workspace-panel="status"] .status-atelier-w
 .status-atelier-beauty-preview-frame {
     display: block;
     width: 100%;
-    min-height: 220px;
     overscroll-behavior-x: contain;
     border: 0;
-    border-radius: 12px;
+    border-radius: 0;
     background: transparent;
 }
 
@@ -5651,10 +5665,6 @@ body:has(.preview-note) [data-status-workspace-panel="status"] .status-atelier-w
     .status-atelier-preview-shell[data-preview-structure="profile"] {
         order: 1;
         margin-top: 12px;
-    }
-
-    .status-atelier-beauty-preview-frame {
-        min-height: 365px;
     }
 
     .status-atelier-beauty-preview-actions {

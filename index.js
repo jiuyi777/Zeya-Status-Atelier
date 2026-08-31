@@ -3634,18 +3634,17 @@ function resizeStatusBeautyPreviewFrame(frame) {
         card.style.setProperty('transform', 'none', 'important');
         const naturalWidth = Math.max(card.offsetWidth || 0, Number.parseFloat(doc.defaultView?.getComputedStyle(card).width) || 0, 1);
         const naturalHeight = Math.max(card.offsetHeight || 0, 1);
-        const availableWidth = Math.max(1, (frame.clientWidth || doc.documentElement.clientWidth || naturalWidth) - 20);
-        const minimumTouchScale = frame.clientWidth <= 700 ? 0.62 : 0;
-        const scale = Math.min(1, Math.max(minimumTouchScale, availableWidth / naturalWidth));
-        const scaledWidth = Math.ceil(naturalWidth * scale + 20);
+        const availableWidth = Math.max(1, frame.clientWidth || doc.documentElement.clientWidth || naturalWidth);
+        const scale = Math.min(1, availableWidth / naturalWidth);
         card.style.zoom = String(scale);
         card.style.setProperty('transform', 'none', 'important');
         card.style.transformOrigin = 'top center';
-        doc.body.style.minWidth = `${scaledWidth}px`;
-        doc.body.style.minHeight = `${Math.ceil(naturalHeight * scale + 20)}px`;
-        doc.documentElement.style.overflowX = scaledWidth > frame.clientWidth ? 'auto' : 'hidden';
-        const contentHeight = naturalHeight * scale + 20;
-        frame.style.height = `${Math.max(220, Math.ceil(contentHeight + 20))}px`;
+        doc.body.style.minWidth = '0';
+        doc.body.style.minHeight = '0';
+        doc.documentElement.style.overflow = 'hidden';
+        const contentHeight = Math.max(1, naturalHeight * scale);
+        doc.body.style.height = `${Math.ceil(contentHeight)}px`;
+        frame.style.height = `${Math.ceil(contentHeight)}px`;
     };
     resize();
     if (typeof MutationObserver === 'function') {
@@ -3706,7 +3705,7 @@ function bindStatusBeautyPreviewEditing(frame, rule, { labeled = false, captureM
         const doc = frame.contentDocument;
         if (!doc || !editor) return;
         const interactionStyle = doc.createElement('style');
-        interactionStyle.textContent = 'html{width:100%!important;max-width:100%!important}body{display:flex!important;justify-content:center!important;align-items:flex-start!important;width:100%!important;max-width:none!important;padding:10px!important}.status-atelier-beauty-edit-target{cursor:pointer;pointer-events:auto!important;touch-action:manipulation}.status-atelier-beauty-edit-target:is(:hover,:focus-visible){outline:3px solid #d45f75!important;outline-offset:3px!important}';
+        interactionStyle.textContent = 'html,body{width:100%!important;max-width:100%!important;background:transparent!important}body{display:flex!important;justify-content:center!important;align-items:flex-start!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}.status-atelier-beauty-edit-target{cursor:pointer;pointer-events:auto!important;touch-action:manipulation}.status-atelier-beauty-edit-target:is(:hover,:focus-visible){outline:3px solid #d45f75!important;outline-offset:3px!important}';
         doc.head?.append(interactionStyle);
         resizeStatusBeautyPreviewFrame(frame);
         doc.querySelectorAll('img[data-st-avatar],img[alt*="角色头像"],img.avatar,img.art-photo').forEach(image => {
@@ -5560,6 +5559,11 @@ function setStatusEntryMode(viewName, mode) {
         ? root.querySelector('.status-atelier-modal-status-advanced')
         : root.querySelector('#status-atelier-expert-workshop');
     if (advanced) advanced.open = normalized === 'expert';
+    if (viewName === 'modal' && normalized === 'expert') {
+        const { preview, previewWrap } = statusAiView('modal');
+        if (previewWrap) previewWrap.hidden = false;
+        if (preview) renderStatusPreview(preview);
+    }
 }
 
 function applyStatusAiRecommendation(recommendation) {
@@ -5621,16 +5625,6 @@ function statusAiView(viewName = 'settings') {
     };
 }
 
-function renderStatusAiPlaceholder(host) {
-    if (!host) return;
-    const empty = makeElement('section', 'status-atelier-ai-preview-empty');
-    empty.append(
-        makeElement('strong', '', 'AI 生成后在这里预览'),
-        makeElement('p', '', '先查看效果，再决定是否安装到当前角色。'),
-    );
-    host.replaceChildren(empty);
-}
-
 function resetStatusAiView(viewName = 'settings') {
     const { result, install, source, status, idea, preview, previewWrap } = statusAiView(viewName);
     if (result) result.hidden = true;
@@ -5642,8 +5636,8 @@ function resetStatusAiView(viewName = 'settings') {
     }
     if (viewName === 'modal') {
         if (idea) idea.value = '';
-        if (previewWrap) previewWrap.hidden = true;
-        renderStatusAiPlaceholder(preview);
+        if (previewWrap) previewWrap.hidden = false;
+        if (preview) renderStatusPreview(preview);
     }
 }
 
@@ -5698,11 +5692,11 @@ async function generateWithCurrentPreset(prompt, jsonSchema = null) {
     throw new Error('酒馆已经发出请求，但模型没有给出可用正文；请检查当前预设的最大回复长度与推理设置');
 }
 
-async function testStatusAiGeneration(button, viewName = 'settings') {
+async function testStatusAiGeneration(button, viewName = 'settings', forceDifferent = false) {
     const { status, result, install, source, idea, remix, preview, previewWrap } = statusAiView(viewName);
     const original = button.textContent;
     const ideaText = compactStatusAiText(idea?.value, 240);
-    const remixRequested = Boolean(remix?.checked);
+    const remixRequested = forceDifferent || Boolean(remix?.checked);
     const currentDesign = {
         structure: settings().structure,
         profileAppearance: settings().profileAppearance,
@@ -5720,10 +5714,6 @@ async function testStatusAiGeneration(button, viewName = 'settings') {
     button.textContent = 'AI 正在分析角色与剧情…';
     if (result) result.hidden = true;
     if (install) install.disabled = true;
-    if (viewName === 'modal') {
-        if (previewWrap) previewWrap.hidden = true;
-        renderStatusAiPlaceholder(preview);
-    }
     if (source) source.textContent = '正在读取当前角色卡、当前选中剧情与启用世界书…';
     if (status) {
         status.textContent = '正在使用酒馆当前模型与预设挑选模板；不会读取或显示 Key，也不会自动安装。';
@@ -5756,6 +5746,11 @@ async function testStatusAiGeneration(button, viewName = 'settings') {
             recommendation.profileAppearance = PROFILE_APPEARANCE_PRESETS.find(item => item.id !== currentDesign.profileAppearance)?.id
                 || PROFILE_APPEARANCE_DEFAULT.id;
             recommendation.reason = `${recommendation.reason} 已按“大幅改造”切换为与当前不同的构图。`;
+        }
+        if (forceDifferent && recommendation.structure === currentDesign.structure && recommendation.structure !== 'profile') {
+            recommendation.structure = STATUS_AI_STRUCTURE_IDS.find(id => id !== currentDesign.structure) || 'profile';
+            if (recommendation.structure === 'profile') recommendation.profileAppearance = PROFILE_APPEARANCE_DEFAULT.id;
+            recommendation.reason = `${recommendation.reason} 已切换为与当前不同的主构图。`;
         }
         applyStatusAiRecommendation(recommendation);
         const ideaPlan = applyStatusIdeaPlan(ideaText, recommendation);
@@ -5802,10 +5797,6 @@ async function testStatusAiGeneration(button, viewName = 'settings') {
     } catch (error) {
         statusAiTestRecords = null;
         updatePreview();
-        if (viewName === 'modal') {
-            if (previewWrap) previewWrap.hidden = true;
-            renderStatusAiPlaceholder(preview);
-        }
         if (result) result.hidden = true;
         if (install) install.disabled = true;
         if (status) {
@@ -6530,8 +6521,8 @@ function buildGreetingModal() {
                             <div id="status-atelier-modal-status-palettes" class="status-atelier-status-palettes"></div>
                         </details>
                     </details>
-                    <div class="status-atelier-modal-status-preview-wrap" hidden>
-                        <small>AI 生成预览</small>
+                    <div class="status-atelier-modal-status-preview-wrap">
+                        <small>实时预览</small>
                         <div id="status-atelier-modal-status-preview"></div>
                     </div>
                 </section>
@@ -6566,7 +6557,7 @@ function buildGreetingModal() {
     });
     greetingModal.querySelector('#status-atelier-open-full-workbench').addEventListener('click', () => openFullWorkbench('opening'));
     greetingModal.querySelector('#status-atelier-modal-test-ai').addEventListener('click', event => testStatusAiGeneration(event.currentTarget, 'modal'));
-    greetingModal.querySelector('#status-atelier-modal-ai-regenerate').addEventListener('click', event => testStatusAiGeneration(event.currentTarget, 'modal'));
+    greetingModal.querySelector('#status-atelier-modal-ai-regenerate').addEventListener('click', event => testStatusAiGeneration(event.currentTarget, 'modal', true));
     greetingModal.querySelector('#status-atelier-modal-ai-save-template').addEventListener('click', saveCurrentStatusTemplate);
     greetingModal.querySelectorAll('[data-status-entry-mode]').forEach(button => {
         button.addEventListener('click', () => setStatusEntryMode('modal', button.dataset.statusEntryMode));
@@ -7080,7 +7071,7 @@ async function addSettingsPanel() {
         }
     });
     field('status-atelier-test-ai').addEventListener('click', event => testStatusAiGeneration(event.currentTarget));
-    field('status-atelier-ai-regenerate').addEventListener('click', event => testStatusAiGeneration(event.currentTarget));
+    field('status-atelier-ai-regenerate').addEventListener('click', event => testStatusAiGeneration(event.currentTarget, 'settings', true));
     field('status-atelier-ai-save-template').addEventListener('click', saveCurrentStatusTemplate);
     field('status-atelier-open-map-editor').addEventListener('click', event => openQuestMapEditor(event.currentTarget));
     field('status-atelier-copy-prompt').addEventListener('click', async () => {
