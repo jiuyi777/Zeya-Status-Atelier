@@ -607,7 +607,7 @@ test('dynamic numbers keep one solid progress treatment without object controls'
 
 test('status prompt only runs where the generated status regex is installed', () => {
     const gate = source.match(/function statusRegexAppliesToCurrentContext\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
-    assert.match(gate, /getScriptsByType\(SCRIPT_TYPES\.SCOPED\)/);
+    assert.match(gate, /getScriptsByType\(SCRIPT_TYPES\.SCOPED, \{ allowedOnly: true \}\)/);
     assert.match(gate, /getScriptsByType\(SCRIPT_TYPES\.GLOBAL\)/);
     const prompt = source.match(/function updatePrompt\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(prompt, /stored\.promptEnabled && statusRegexAppliesToCurrentContext\(\)/);
@@ -626,6 +626,14 @@ test('one-click scoped status reuses and verifies an existing character-bound wo
     assert.match(scopedInstall, /installStatusWorldbookRule\(\)/);
     assert.match(scopedInstall, /installGeneratedRegex/);
     assert.ok(scopedInstall.indexOf('installStatusWorldbookRule()') < scopedInstall.indexOf('installGeneratedRegex'));
+    const regexInstall = source.match(/async function installGeneratedRegex\(script, requestedScope = settings\(\)\.installScope\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    assert.match(regexInstall, /fetch\('\/api\/characters\/merge-attributes'/);
+    assert.match(regexInstall, /if \(!response\.ok\)/);
+    assert.match(regexInstall, /局部正则未保存到角色卡/);
+    assert.match(regexInstall, /isScopedScriptsAllowed\(selection\.character\)/);
+    assert.match(regexInstall, /confirmedScripts\.some/);
+    assert.match(scopedInstall, /世界书“\$\{worldbook\.bookName\}”已写入，但/);
+    assert.doesNotMatch(regexInstall, /notify\('success'/);
     assert.doesNotMatch(source, /statusRecipe\(\)/);
 });
 

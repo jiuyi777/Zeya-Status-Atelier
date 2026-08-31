@@ -109,6 +109,7 @@ import {
     SCRIPT_TYPES,
     allowScopedScripts,
     getScriptsByType,
+    isScopedScriptsAllowed,
     saveScriptsByType,
 } from '../../regex/engine.js';
 import {
@@ -1466,7 +1467,7 @@ function statusRegexAppliesToCurrentContext() {
     const targetName = `九一 · ${String(stored.ruleName || '双页剧情状态').trim() || '双页剧情状态'}`;
     const matches = script => script?.id === targetId || script?.scriptName === targetName;
     try {
-        return getScriptsByType(SCRIPT_TYPES.SCOPED).some(matches)
+        return getScriptsByType(SCRIPT_TYPES.SCOPED, { allowedOnly: true }).some(matches)
             || getScriptsByType(SCRIPT_TYPES.GLOBAL).some(matches);
     } catch (error) {
         console.warn(`[${MODULE_NAME}] 无法确认当前角色的状态栏正则`, error);
@@ -5187,12 +5188,64 @@ async function installGeneratedRegex(script, requestedScope = settings().install
     const existingIndex = scripts.findIndex(item => item.id === script.id || item.scriptName === script.scriptName);
     if (existingIndex >= 0) scripts[existingIndex] = script;
     else scripts.push(script);
-    await saveScriptsByType(scripts, type);
 
     if (type === SCRIPT_TYPES.SCOPED) {
+        const character = selection.character;
+        const avatar = String(character?.avatar || '').trim();
+        const getRequestHeaders = ctx?.getRequestHeaders;
+        if (!avatar || typeof getRequestHeaders !== 'function') {
+            throw new Error('当前酒馆没有提供可确认的角色卡保存接口');
+        }
+
+        const response = await fetch('/api/characters/merge-attributes', {
+            method: 'POST',
+            headers: getRequestHeaders(),
+            body: JSON.stringify({
+                avatar,
+                data: { extensions: { regex_scripts: scripts } },
+            }),
+        });
+        if (!response.ok) {
+            const detail = String(await response.text().catch(() => '')).trim().slice(0, 240);
+            throw new Error(`局部正则未保存到角色卡（${response.status}${response.statusText ? ` ${response.statusText}` : ''}）${detail ? `：${detail}` : ''}`);
+        }
+
+        character.data ??= {};
+        character.data.extensions ??= {};
+        character.data.extensions.regex_scripts = scripts;
+        if (character.json_data) {
+            const jsonData = JSON.parse(character.json_data);
+            jsonData.data ??= {};
+            jsonData.data.extensions ??= {};
+            jsonData.data.extensions.regex_scripts = scripts;
+            character.json_data = JSON.stringify(jsonData);
+            const jsonDataField = document.querySelector('#character_json_data');
+            if (jsonDataField) jsonDataField.value = character.json_data;
+        }
         allowScopedScripts(selection.character);
+        if (!isScopedScriptsAllowed(selection.character)) {
+            throw new Error('局部正则已写入角色卡，但没有成功启用');
+        }
+        await saveSettings();
+    } else {
+        await saveScriptsByType(scripts, type);
+        await saveSettings();
     }
-    notify('success', `${existingIndex >= 0 ? '已更新' : '已安装'}正则：${script.scriptName}`);
+
+    const confirmedScripts = type === SCRIPT_TYPES.SCOPED
+        ? selection.character?.data?.extensions?.regex_scripts
+        : getScriptsByType(type);
+    const confirmed = Array.isArray(confirmedScripts)
+        && confirmedScripts.some(item => item?.id === script.id
+            && item?.scriptName === script.scriptName
+            && item?.findRegex === script.findRegex
+            && item?.replaceString === script.replaceString
+            && item?.disabled !== true);
+    if (!confirmed) {
+        throw new Error(`${type === SCRIPT_TYPES.SCOPED ? '局部' : '全局'}正则没有确认保存并启用`);
+    }
+
+    return { action: existingIndex >= 0 ? 'updated' : 'installed', scriptName: script.scriptName };
 }
 
 async function installStatusWorldbookRule() {
@@ -5254,11 +5307,16 @@ async function installRegex(scope) {
     const worldbook = scope === 'scoped'
         ? await installStatusWorldbookRule()
         : await installGlobalStatusWorldbookRule();
-    await installGeneratedRegex(await resolveStatusRegexScript(), scope);
+    try {
+        await installGeneratedRegex(await resolveStatusRegexScript(), scope);
+    } catch (error) {
+        throw new Error(`世界书“${worldbook.bookName}”已写入，但${scope === 'scoped' ? '局部' : '全局'}正则没有保存：${error?.message || '未知错误'}`);
+    }
     settings().promptEnabled = false;
     const promptToggle = field('status-atelier-prompt-enabled');
     if (promptToggle) promptToggle.checked = settings().promptEnabled;
     updatePrompt();
+    await saveSettings();
     notify('success', scope === 'scoped'
         ? `当前角色状态栏已完整启用：世界书“${worldbook.bookName}”与局部正则均已更新`
         : `全局状态栏已完整启用：世界书“${worldbook.bookName}”与全局正则均已更新`);
@@ -6388,7 +6446,6 @@ async function applyModalStatus(button) {
             state.textContent = `已完成：世界书“${worldbook.bookName}”已写入 AI 输出规则，局部正则已更新为“${recipeName}”。`;
             state.dataset.state = 'success';
         });
-        notify('success', `已完整启用当前角色状态栏：世界书输出规则 + ${recipeName} 局部正则`);
     } catch (error) {
         states.forEach(state => {
             state.textContent = `安装失败：${error?.message || '状态栏写入失败'}`;
