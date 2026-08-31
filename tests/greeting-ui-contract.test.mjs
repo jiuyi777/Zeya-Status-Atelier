@@ -437,7 +437,7 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.doesNotMatch(source, /naturalWidth = Math\.max\(card\.scrollWidth/);
     assert.match(source, /naturalWidth = Math\.max\(card\.offsetWidth/);
     assert.match(source, /const scale = Math\.min\(1, availableWidth \/ naturalWidth\)/);
-    assert.match(source, /card\.style\.zoom = String\(scale\)/);
+    assert.match(source, /card\.style\.setProperty\('zoom', String\(scale\), 'important'\)/);
     assert.match(source, /card\.style\.setProperty\('transform', 'none', 'important'\)/);
     assert.match(source, /new MutationObserver\(\(\) => frame\.contentWindow\?\.requestAnimationFrame\(resize\)\)/);
     assert.match(source, /settings\(\)\.structure === 'profile'[\s\S]*?makePreviewRecords\(previewInput\)/);
@@ -532,6 +532,10 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /scheduleStatusPreviewUpdate\(\);[\s\S]*?heading\(`正在编辑：\$\{definition\.label\}`\)/);
     const resizeBlock = source.match(/function resizeStatusBeautyPreviewFrame\(frame\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(resizeBlock, /availableWidth \/ naturalWidth/);
+    assert.match(resizeBlock, /syncScaledTextReadability\(card, scale\)/);
+    assert.match(resizeBlock, /state\.fontSize \* scale < 8/);
+    assert.match(resizeBlock, /Math\.min\(8 \/ scale, state\.fontSize \* 1\.6\)/);
+    assert.match(resizeBlock, /getPropertyPriority\('font-size'\)/);
     assert.doesNotMatch(resizeBlock, /minimumTouchScale|Math\.max\(220/);
     assert.match(resizeBlock, /frame\.style\.height = `\$\{Math\.ceil\(contentHeight\)\}px`/);
     const previewBindingBlock = source.match(/function bindStatusBeautyPreviewEditing\(frame, rule[\s\S]*?interactionStyle\.textContent = '([^']+)'/)?.[1] || '';

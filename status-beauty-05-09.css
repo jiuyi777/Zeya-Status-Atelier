@@ -81,10 +81,6 @@ img[data-st-avatar]:not([src]) {
 }
 
 @media (max-width: 560px) {
-  .status-card :is(p, span, strong, small, em, b, li, dt, dd, label, figcaption, [data-value], [data-label]) {
-    font-size: max(var(--sta-readable-font, 12px), .8rem) !important;
-  }
-
   .status-card .compact-summary {
     min-height: 108px;
     line-height: 1.35;

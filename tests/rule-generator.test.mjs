@@ -42,6 +42,7 @@ import {
 } from '../status-beauty-01-15-bundle.js';
 
 const statusBeauty16To20Css = readFileSync(new URL('../status-beauty-16-20.css', import.meta.url), 'utf8');
+const statusBeauty05To09Css = readFileSync(new URL('../status-beauty-05-09.css', import.meta.url), 'utf8');
 const statusBeautyBundleSource = readFileSync(new URL('../status-beauty-01-15-bundle.js', import.meta.url), 'utf8');
 
 test('parses any number of switch pages without storing story values', () => {
@@ -314,6 +315,13 @@ test('bundled status regexes fit the current viewport without a dark padded stag
     assert.match(runtime, /var targetHeight=Math\.ceil\(baseHeight\*scale\)/);
     assert.match(runtime, /window\.frameElement/);
     assert.match(runtime, /frame\.style\.height=targetHeight\+'px'/);
+    assert.match(runtime, /syncScaledTextReadability\(scale\)/);
+    assert.match(runtime, /state\.fontSize\*scale<8/);
+    assert.match(runtime, /Math\.min\(8\/scale,state\.fontSize\*1\.6\)/);
+    assert.match(runtime, /setProperty\('zoom','1','important'\)/);
+    assert.doesNotMatch(statusBeautyBundleSource, /font-size:max\(var\(--sta-readable-font/);
+    assert.doesNotMatch(statusBeauty05To09Css, /font-size:\s*max\(var\(--sta-readable-font/);
+    assert.doesNotMatch(statusBeauty16To20Css, /font-size:\s*max\(var\(--sta-readable-font/);
     assert.doesNotMatch(runtime, /Math\.max\(240|clientWidth-20|\+20\)+'px'/);
 });
 
