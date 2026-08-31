@@ -165,6 +165,7 @@ function adaptBundledRegex(structure, script) {
 
 function addBundledMobileRuntime(structure, script) {
     const source = String(script?.replaceString || '');
+    const sizingStyles = `<style>html,body{height:auto!important;min-height:0!important;overflow:hidden!important}</style>`;
     const overflowStyles = structure === 'beauty-burgundy-album-02' ? `<style>
 .burgundy-album :is(.sheet p,.plans li,.route-cards h3,.route-cards p){overflow:hidden;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical}
 .burgundy-album .secret p{-webkit-line-clamp:3}
@@ -177,10 +178,10 @@ function addBundledMobileRuntime(structure, script) {
     const fitRuntime = `<script>(function(){
 var card=Array.from(document.body.children).find(function(node){return /^(DETAILS|ARTICLE|SECTION|MAIN)$/.test(node.tagName)});if(!card)return;
 var baseWidth=card.offsetWidth||900;
-function fit(){var available=Math.max(1,document.documentElement.clientWidth||window.innerWidth||baseWidth);var scale=Math.min(1,available/baseWidth);var baseHeight=card.offsetHeight||1;card.style.setProperty('transform','scale('+scale+')','important');card.style.setProperty('transform-origin','top left','important');card.style.margin='0';document.documentElement.style.setProperty('background','transparent','important');document.documentElement.style.height='auto';document.documentElement.style.overflow='hidden';document.body.style.setProperty('display','block','important');document.body.style.setProperty('place-items','initial','important');document.body.style.setProperty('background','transparent','important');document.body.style.setProperty('margin','0','important');document.body.style.setProperty('padding','0','important');document.body.style.width='100%';document.body.style.minHeight='0';document.body.style.height=Math.ceil(baseHeight*scale)+'px';document.body.style.overflow='hidden'}
+function fit(){var available=Math.max(1,document.documentElement.clientWidth||window.innerWidth||baseWidth);var scale=Math.min(1,available/baseWidth);var baseHeight=card.offsetHeight||1;var targetHeight=Math.ceil(baseHeight*scale);card.style.setProperty('position','absolute','important');card.style.setProperty('left','0','important');card.style.setProperty('top','0','important');card.style.setProperty('transform','scale('+scale+')','important');card.style.setProperty('transform-origin','top left','important');card.style.margin='0';document.documentElement.style.setProperty('background','transparent','important');document.documentElement.style.height=targetHeight+'px';document.documentElement.style.minHeight='0';document.documentElement.style.overflow='hidden';document.body.style.setProperty('display','block','important');document.body.style.setProperty('place-items','initial','important');document.body.style.setProperty('background','transparent','important');document.body.style.setProperty('margin','0','important');document.body.style.setProperty('padding','0','important');document.body.style.width='100%';document.body.style.minHeight='0';document.body.style.height=targetHeight+'px';document.body.style.overflow='hidden';var frame=window.frameElement;if(frame){frame.style.height=targetHeight+'px';frame.style.minHeight='0';frame.style.maxHeight='none'}}
 requestAnimationFrame(fit);window.addEventListener('resize',fit);card.addEventListener('toggle',function(){requestAnimationFrame(fit)});if(window.ResizeObserver)new ResizeObserver(function(){requestAnimationFrame(fit)}).observe(card);
 })();</script>`;
-    const additions = `${overflowStyles}${fitRuntime}`;
+    const additions = `${sizingStyles}${overflowStyles}${fitRuntime}`;
     return {
         ...script,
         replaceString: source.includes('</body>') ? source.replace('</body>', `${additions}</body>`) : `${source}${additions}`,

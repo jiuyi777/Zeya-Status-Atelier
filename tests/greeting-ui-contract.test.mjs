@@ -342,8 +342,10 @@ test('status AI generation stays preview-only until either entry explicitly inst
     const generateBlock = source.match(/async function testStatusAiGeneration\(button, viewName = 'settings', forceDifferent = false\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(generateBlock, /currentStatusAiContext\(\)/);
     assert.match(generateBlock, /【改造幅度：大幅改造】/);
-    assert.match(generateBlock, /recommendation\.profileAppearance === currentDesign\.profileAppearance/);
-    assert.match(generateBlock, /STATUS_AI_STRUCTURE_IDS\.find\(id => id !== currentDesign\.structure\)/);
+    assert.match(generateBlock, /diversifyStatusRecommendation\(recommendation/);
+    assert.match(generateBlock, /recentKeys: settings\(\)\.statusRecentRecommendations/);
+    assert.match(generateBlock, /statusRecommendationKey\(recommendation\)/);
+    assert.match(generateBlock, /slice\(-5\)/);
     assert.match(generateBlock, /用户提示词/);
     assert.match(generateBlock, /applyStatusAiRecommendation\(recommendation\)/);
     assert.match(generateBlock, /showStatusAiRecommendation\(recommendation, contextSnapshot, viewName\)/);

@@ -238,6 +238,50 @@ export function resolveStatusRecommendation(value, {
     return { structure, profileAppearance, reason, usedFallback: !recognizedStructure };
 }
 
+export function statusRecommendationKey(value) {
+    const structure = String(value?.structure || '').trim();
+    if (!structure) return '';
+    return structure === 'profile'
+        ? `profile:${String(value?.profileAppearance || '').trim()}`
+        : structure;
+}
+
+export function diversifyStatusRecommendation(recommendation, {
+    structures = [],
+    appearances = [],
+    recentKeys = [],
+    currentDesign = null,
+    preferredStructure = '',
+    random = Math.random,
+} = {}) {
+    const blocked = new Set((Array.isArray(recentKeys) ? recentKeys : []).slice(-5).filter(Boolean));
+    const currentKey = statusRecommendationKey(currentDesign);
+    if (currentKey) blocked.add(currentKey);
+    const recommendationKey = statusRecommendationKey(recommendation);
+    if (recommendationKey && !blocked.has(recommendationKey)) return { ...recommendation, diversified: false };
+
+    const structureIds = structures.map(item => item?.id).filter(Boolean);
+    const allowedStructures = preferredStructure && structureIds.includes(preferredStructure)
+        ? [preferredStructure]
+        : structureIds;
+    const candidates = allowedStructures.flatMap(structure => structure === 'profile'
+        ? appearances.map(appearance => ({ structure, profileAppearance: appearance.id }))
+        : [{ structure, profileAppearance: '' }]);
+    const available = candidates.filter(candidate => !blocked.has(statusRecommendationKey(candidate)));
+    if (!available.length) return { ...recommendation, diversified: false };
+    const randomValue = Number(random());
+    const randomIndex = Number.isFinite(randomValue)
+        ? Math.min(available.length - 1, Math.max(0, Math.floor(randomValue * available.length)))
+        : 0;
+    const selected = available[randomIndex];
+    return {
+        ...recommendation,
+        ...selected,
+        reason: `${recommendation.reason || '已根据当前角色与剧情匹配模板。'} 已避开最近使用过的构图。`,
+        diversified: true,
+    };
+}
+
 const STATUS_IDEA_FOCUS_PLANS = Object.freeze({
     story: {
         label: '剧情追踪', title: '当前剧情追踪', subtitle: 'STORY PROGRESS',

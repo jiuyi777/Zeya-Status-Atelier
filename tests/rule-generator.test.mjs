@@ -311,7 +311,9 @@ test('bundled status regexes fit the current viewport without a dark padded stag
     assert.match(runtime, /document\.documentElement\.clientWidth/);
     assert.match(runtime, /background','transparent','important'/);
     assert.match(runtime, /padding','0','important'/);
-    assert.match(runtime, /Math\.ceil\(baseHeight\*scale\)\+'px'/);
+    assert.match(runtime, /var targetHeight=Math\.ceil\(baseHeight\*scale\)/);
+    assert.match(runtime, /window\.frameElement/);
+    assert.match(runtime, /frame\.style\.height=targetHeight\+'px'/);
     assert.doesNotMatch(runtime, /Math\.max\(240|clientWidth-20|\+20\)+'px'/);
 });
 

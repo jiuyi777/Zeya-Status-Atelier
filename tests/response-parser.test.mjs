@@ -47,6 +47,30 @@ test('resolves status recommendations from ids, Chinese template names and local
     }
 });
 
+test('repeated AI recommendations rotate through five distinct built-in designs', async () => {
+    const { diversifyStatusRecommendation, statusRecommendationKey } = await import('../response-parser.js');
+    assert.equal(typeof diversifyStatusRecommendation, 'function');
+    assert.equal(typeof statusRecommendationKey, 'function');
+    const recentKeys = [];
+    const results = [];
+    for (let index = 0; index < 5; index += 1) {
+        const recommendation = diversifyStatusRecommendation({
+            structure: 'profile',
+            profileAppearance: 'obsidian',
+            reason: '适合人物档案',
+        }, {
+            structures: statusStructures,
+            appearances: statusAppearances,
+            recentKeys,
+            currentDesign: results.at(-1) || { structure: 'phone', profileAppearance: '' },
+            random: () => 0,
+        });
+        results.push(recommendation);
+        recentKeys.push(statusRecommendationKey(recommendation));
+    }
+    assert.equal(new Set(results.map(statusRecommendationKey)).size, 5);
+});
+
 test('simple ideas select a focus and rewrite visible field labels and AI instructions', () => {
     const story = resolveStatusIdeaIntent('这次注重剧情和关键线索');
     assert.equal(story.focus, 'story');
