@@ -361,6 +361,13 @@ test('status beauty bundled collapse control stays inside the artwork layer', ()
     assert.equal(applyStatusBeautyControlChrome(edited), edited);
 });
 
+test('all bundled status previews avoid double mobile scaling and keep a readable collapsed bar', () => {
+    assert.match(statusBeautyBundleSource, /status-atelier-beauty-preview-frame/);
+    assert.match(statusBeautyBundleSource, /--sta-readable-font/);
+    assert.match(statusBeautyBundleSource, /data-collapsed-label/);
+    assert.match(statusBeautyBundleSource, /已收起 · 点击展开/);
+});
+
 test('status beauty 01 to 15 export the edited field order into their bundled layouts', () => {
     const script = {
         scriptName: 'position-preview',
@@ -469,6 +476,8 @@ test('status beauty 05 to 09 keep the approved field contracts and export their 
         assert.match(replacement, /https:\/\/example\.com\/character\.png/);
         assert.match(replacement, /\$1/);
         assert.match(replacement, /classList\.toggle\('is-collapsed'\)/);
+        assert.match(replacement, /--sta-readable-font/);
+        assert.match(replacement, /syncMobileReadability/);
         assert.match(replacement, /<\/body><\/html>\n```$/);
         const browserScript = replacement.match(/<script>\n([\s\S]*?)\n<\/script>/);
         assert.ok(browserScript, `${id} includes browser script`);
@@ -526,11 +535,25 @@ test('status beauty 16 to 20 keep their own field contracts and export complete 
         assert.match(replacement, /https:\/\/example\.com\/character\.png/);
         assert.match(replacement, /\$1/);
         assert.match(replacement, /classList\.toggle\('is-collapsed'\)/);
+        assert.match(replacement, /--sta-readable-font/);
+        assert.match(replacement, /syncMobileReadability/);
         assert.match(replacement, /<\/body><\/html>\n```$/);
         const browserScript = replacement.match(/<script>\n([\s\S]*?)\n<\/script>/);
         assert.ok(browserScript, `${id} includes browser script`);
         assert.doesNotThrow(() => new Function(browserScript[1]), `${id} browser script parses`);
     }
+});
+
+test('generic status generator keeps mobile text at a readable floor', () => {
+    const preset = STATUS_STRUCTURE_PRESETS.find(item => item.id === 'profile');
+    const replacement = buildRegexScript({
+        ...RULE_PRESETS.custom,
+        structure: preset.id,
+        pagesText: preset.pagesText,
+        pageFieldsText: preset.fields.map(field => field.join('|')).join('\n'),
+    }).replaceString;
+    assert.match(replacement, /--sta-mobile-text-floor/);
+    assert.match(replacement, /--sta-mobile-text-floor:12px/);
 });
 
 test('three original role-card regex layouts keep separate fields, interactions and dynamic X preview', () => {

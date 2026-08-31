@@ -230,6 +230,12 @@ try {
 } catch (error) {
     if (error?.code !== 'ENOENT') errors.push(`无法确认旧状态栏配方目录已删除：${error.message}`);
 }
+try {
+    await readdir(join(root, 'starter-packs', '通用状态栏'));
+    errors.push('已删除的50套旧通用状态栏不应继续保留');
+} catch (error) {
+    if (error?.code !== 'ENOENT') errors.push(`无法确认旧通用状态栏目录已删除：${error.message}`);
+}
 
 if (errors.length) {
     console.error('STATIC_CHECK_FAILED');

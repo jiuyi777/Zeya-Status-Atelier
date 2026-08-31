@@ -2,13 +2,6 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildOpeningHomeBlock, buildOpeningHomeRegex } from '../opening-home-generator.js';
-import {
-    RULE_PRESETS,
-    STATUS_STRUCTURE_PRESETS,
-    buildAiInstruction,
-    buildRegexScript,
-    buildWorldbookJson,
-} from '../rule-generator.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const outputRoot = join(root, 'starter-packs');
@@ -28,18 +21,12 @@ const openingPacks = [
     { code: '05', slug: 'minimal', name: '极简留白', theme: 'minimal', font: 'sans', accent: '#677f72', background: '#f6f4ee', text: '#2c322f', secondary: '#a98763' },
 ];
 
-const selectableStatusIds = ['phone', 'profile', 'social', 'forum', 'chat', 'music', 'quest', 'casefile'];
-const statusPacks = STATUS_STRUCTURE_PRESETS
-    .filter(item => selectableStatusIds.includes(item.id))
-    .map((item, index) => ({ ...item, code: String(index + 1).padStart(2, '0') }));
-
 async function writeJson(filePath, value) {
     await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
 }
 
 await rm(outputRoot, { recursive: true, force: true });
 await mkdir(join(outputRoot, '开场白主页'), { recursive: true });
-await mkdir(join(outputRoot, '通用状态栏'), { recursive: true });
 
 for (const pack of openingPacks) {
     const folder = join(outputRoot, '开场白主页', `${pack.code}-${pack.name}`);
@@ -65,31 +52,6 @@ for (const pack of openingPacks) {
     regex.scriptName = `九一 · 开场白主页${pack.code}·${pack.name}`;
     await writeJson(join(folder, `regex-开场白主页${pack.code}-${pack.name}.json`), regex);
     await writeFile(join(folder, `开场白主页${pack.code}-可编辑模板.txt`), `${template}\n`, 'utf8');
-}
-
-for (const pack of statusPacks) {
-    const folder = join(outputRoot, '通用状态栏', `${pack.code}-${pack.name}`);
-    await mkdir(folder, { recursive: true });
-    const tagName = `zeya_status_${pack.id}`;
-    const settings = {
-        ...RULE_PRESETS.universalClassical,
-        ruleId: `zeya-status-${pack.id}-v1`,
-        tagName,
-        ruleName: `状态栏模板${pack.code}·${pack.name}`,
-        structure: pack.id,
-        title: pack.title,
-        subtitle: pack.subtitle,
-        layout: pack.layout,
-        pagesText: pack.pagesText,
-        sharedFieldsText: (pack.shared || []).map(field => field.join('|')).join('\n'),
-        pageFieldsText: pack.fields.map(field => field.join('|')).join('\n'),
-        themeAssetUrl: '',
-    };
-    const instruction = buildAiInstruction(settings);
-    const regex = buildRegexScript(settings);
-    await writeJson(join(folder, `regex-通用状态栏${pack.code}-${pack.name}.json`), regex);
-    await writeJson(join(folder, `世界书-通用状态栏${pack.code}-${pack.name}.json`), buildWorldbookJson(settings));
-    await writeFile(join(folder, `世界书正文-通用状态栏${pack.code}-${pack.name}.txt`), `${instruction}\n`, 'utf8');
 }
 
 console.log(`STARTER_PACKS_BUILT ${outputRoot}`);

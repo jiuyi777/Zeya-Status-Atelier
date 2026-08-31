@@ -2030,6 +2030,7 @@ ${CHAT_REFERENCE_CSS}
 ${STATUS_PHONE_CSS}
 .zeya-regex-status[data-structure="quest"] .zrs-map-node{position:absolute;z-index:3;min-width:74px;min-height:44px;padding:7px 10px;border:2px solid #49301c;border-radius:999px;color:#49301c;background:#ead9b5;font:700 10px/1.2 "Noto Sans SC",sans-serif;cursor:pointer}.zeya-regex-status[data-structure="quest"] .zrs-map-node:nth-of-type(1){left:7%;bottom:18px}.zeya-regex-status[data-structure="quest"] .zrs-map-node:nth-of-type(2){left:39%;top:15px}.zeya-regex-status[data-structure="quest"] .zrs-map-node:nth-of-type(3){right:5%;bottom:28px}.zeya-regex-status[data-structure="quest"] .zrs-map-node.is-active{color:#ead9b5;background:#7a3028;transform:translateY(-2px)}
 .zeya-regex-status .zrs-field[data-kind="progress"]{padding-bottom:14px}.zeya-regex-status .zrs-meter{height:8px!important;margin-top:10px;overflow:hidden;border-radius:999px;background:color-mix(in srgb,var(--z-accent) 16%,transparent)!important}.zeya-regex-status .zrs-meter>i{display:block;height:100%;border-radius:inherit;background:var(--z-accent);transition:width .2s ease}
+.zeya-regex-status{--sta-mobile-text-floor:12px}@media(max-width:520px){.zeya-regex-status :is(.zrs-chrome,.zrs-subtitle,.zrs-label,.zrs-value,.zrs-tab,.zrs-media-copy small,.zrs-style-name){font-size:max(var(--sta-mobile-text-floor,12px),.8rem)!important;line-height:1.35}}
 </style>
 <script>
 (function(script){

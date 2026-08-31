@@ -199,6 +199,7 @@ function buildDocument(rule, source) {
 <body class="design-page ${rule.structure}">${template}<textarea class="status-beauty-source" hidden>${sourceMarkup(source)}</textarea><script>
 (function(){
   var root=document.querySelector('.status-card');if(!root)return;var config=${config};
+  function syncMobileReadability(){var available=Math.max(1,document.documentElement.clientWidth||window.innerWidth||900)-20;var scale=Math.min(1,available/900);root.style.setProperty('--sta-readable-font',(scale<1?Math.ceil(12/scale):12)+'px');}syncMobileReadability();window.addEventListener('resize',syncMobileReadability);
   var raw=document.querySelector('.status-beauty-source').value||'';var values=[];
   raw.split(/\\r?\\n/).forEach(function(line){var text=line.trim();if(text.charAt(0)!=='['||text.charAt(text.length-1)!==']')return;var parts=text.slice(1,-1).split('|').map(function(item){return item.trim();});var key=parts.shift();if(key===config.pageId)values=parts;});
   root.querySelectorAll('[data-design-title]').forEach(function(node){node.textContent=config.title;});

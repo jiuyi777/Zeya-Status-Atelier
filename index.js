@@ -3641,6 +3641,7 @@ function resizeStatusBeautyPreviewFrame(frame) {
         const naturalHeight = Math.max(card.offsetHeight || 0, 1);
         const availableWidth = Math.max(1, frame.clientWidth || doc.documentElement.clientWidth || naturalWidth);
         const scale = Math.min(1, availableWidth / naturalWidth);
+        card.style.setProperty('--sta-readable-font', `${scale < 1 ? Math.ceil(12 / scale) : 12}px`);
         card.style.zoom = String(scale);
         card.style.setProperty('transform', 'none', 'important');
         card.style.transformOrigin = 'top center';
