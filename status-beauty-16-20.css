@@ -71,12 +71,83 @@ img[data-st-avatar]:not([src]){background:linear-gradient(145deg,#eee4e1,#c9aeb5
 .design-20 .compact-summary{position:absolute;inset:0;z-index:5;display:grid;grid-template-columns:auto auto auto 1fr;align-items:center;gap:18px;padding:0 124px 0 38px;opacity:0;visibility:hidden}.design-20 .compact-summary strong{font:800 21px "STKaiti","KaiTi",serif}.design-20 .compact-summary span,.design-20 .compact-summary em{font-size:11px}.design-20 .compact-summary b{padding:6px 10px;color:#fff;background:var(--charcoal);font:800 10px Arial,sans-serif}.design-20 .compact-summary em{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-style:normal}.design-20.is-collapsed{height:108px}.design-20.is-collapsed .expanded-content{opacity:0;visibility:hidden}.design-20.is-collapsed .compact-summary{opacity:1;visibility:visible}
 @media(max-width:920px){html,body{height:auto}.design-page{display:block;padding:10px;overflow:hidden}.design-20{margin:0 auto;zoom:calc((100vw - 20px)/900)}}
 
-@media(max-width:920px){
-  .design-18:not(.is-collapsed){height:clamp(594px,calc(760px - 18vw),700px)}
-  .design-18:not(.is-collapsed) .travel-mood{top:clamp(410px,calc(540px - 16vw),470px)}
-  .design-20:not(.is-collapsed){height:clamp(594px,calc(760px - 18vw),700px)}
-}
-
 @media(max-width:560px){
-  .status-card .compact-summary{min-height:108px;line-height:1.35}
+  html,body{height:auto;min-height:0;overflow:hidden}
+  .design-page{display:block;padding:0;overflow:hidden}
+  .status-card{width:100%;max-width:100%;height:auto!important;min-height:0;zoom:1!important;margin:0;border-width:6px;overflow:hidden}
+  .status-card::before{inset:10px}
+  .status-card::after{display:none}
+  .status-card:not(.is-collapsed) .expanded-content{position:relative;inset:auto;display:block;min-height:0;padding:72px 14px 24px}
+  .status-card .fold{top:16px;right:14px;width:84px;height:36px;box-shadow:none}
+  .status-card .compact-summary{min-height:96px;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;gap:4px 10px;padding:14px 54px 14px 14px;line-height:1.35}
+  .status-card .compact-summary strong{font-size:18px}
+  .status-card .compact-summary span,.status-card .compact-summary b,.status-card .compact-summary em{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .status-card .compact-summary em{grid-column:1/-1}
+  .status-card.is-collapsed{height:96px!important}
+
+  .design-16 .mail-heading,.design-17 .window-heading,.design-20 .ticket-heading{padding-right:0}
+  .design-16 .mail-heading h1,.design-17 .window-heading h1,.design-18 .wish-heading h1,.design-19 .broadcast-heading h1,.design-20 .ticket-heading h1{font-size:clamp(26px,9vw,34px)}
+
+  .design-16 .mail-layout{display:block;margin-top:20px}
+  .design-16 .mail-object{grid-template-rows:210px 92px}
+  .design-16 .envelope-art{height:194px}
+  .design-16 .mail-status{display:block;margin-top:14px}
+  .design-16 .mail-address,.design-16 .mail-feelings{grid-template-columns:1fr 1fr;margin-top:12px}
+  .design-16 .mail-notes{grid-template-columns:1fr;margin-top:12px}
+  .design-16 .letter-sheet,.design-16 .inner-note{min-height:142px;padding-bottom:22px}
+  .design-16 .letter-sheet p,.design-16 .inner-note p{font-size:clamp(19px,6vw,25px);line-height:1.35}
+  .design-16 .letter-sheet small,.design-16 .inner-note small{position:static;display:block;margin-top:18px}
+
+  .design-17 .window-layout{display:block;margin-top:18px}
+  .design-17 .heart-column{display:block}
+  .design-17 .heart-stage{width:100%;height:auto;aspect-ratio:454/303}
+  .design-17 .heart-frame{width:100%;height:100%}
+  .design-17 .heart-pane{top:24.75%;width:38.8%;height:59.4%}
+  .design-17 .portrait-pane{left:9.9%}
+  .design-17 .thought-pane{left:51.5%;padding:10% 6% 7%}
+  .design-17 .thought-pane p{font-size:clamp(14px,5vw,22px);line-height:1.25}
+  .design-17 .heart-readings{margin-top:8px;padding:0}
+  .design-17 .window-status{display:block;padding-top:14px}
+  .design-17 .window-letter{min-height:190px;margin-top:12px;padding:22px 20px 42px}
+  .design-17 .window-letter p{font-size:clamp(20px,7vw,28px);line-height:1.35}
+
+  .design-18 .wish-heading{position:relative;top:auto;left:auto;padding-right:86px}
+  .design-18 .traveler-note{position:relative;left:auto;top:auto;width:100%;height:auto;margin-top:20px;padding:16px}
+  .design-18 .traveler-id .avatar{width:72px;height:86px}
+  .design-18 .wish-list{position:relative;left:auto;top:auto;width:100%;margin-top:14px;padding:16px}
+  .design-18 .wish-list article{grid-template-columns:24px minmax(0,1fr);gap:10px}
+  .design-18 .wish-list em{display:none}
+  .design-18 .travel-mood{position:relative;left:auto;top:auto;width:100%;margin-top:14px}
+  .design-18 .travel-mood p{font-size:clamp(16px,5vw,21px);line-height:1.45}
+  .design-18 .wish-meta{position:relative;right:auto;bottom:auto;grid-template-columns:1fr 1fr;width:100%;margin-top:12px}
+
+  .design-19 .expanded-content::before{display:none}
+  .design-19 .broadcast-heading{position:relative;top:auto;left:auto;padding-right:86px}
+  .design-19 .on-air{position:relative;right:auto;top:auto;width:100%;margin-top:18px;clip-path:none}
+  .design-19 .broadcast-main{position:relative;left:auto;top:auto;grid-template-columns:104px minmax(0,1fr);gap:14px;width:100%;height:auto;min-height:190px;margin-top:14px;padding:14px;clip-path:none}
+  .design-19 .host{width:104px;height:158px}
+  .design-19 .host .avatar{width:90px;height:144px}
+  .design-19 .weather>strong{font-size:clamp(19px,6vw,27px)}
+  .design-19 .signal{gap:6px;height:46px;margin-top:12px}
+  .design-19 .today-advice{position:relative;right:auto;top:auto;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-top:12px}
+  .design-19 .today-advice article{min-height:92px;padding:16px;clip-path:none;transform:none!important}
+  .design-19 .today-advice strong{font-size:clamp(18px,6vw,24px)}
+  .design-19 .broadcast-footer{position:relative;left:auto;right:auto;bottom:auto;grid-template-columns:1fr;gap:10px;margin-top:12px}
+  .design-19 .broadcast-footer article,.design-19 .broadcast-footer .voice{min-height:96px;clip-path:none}
+  .design-19 .broadcast-footer .fortune{width:100%;height:auto;min-height:118px;border-radius:18px}
+
+  .design-20 .status-wallet-layout{display:block;margin-top:20px}
+  .design-20 .wallet-profile{grid-template-rows:auto auto;padding:16px}
+  .design-20 .profile-identity{grid-template-columns:90px minmax(0,1fr)}
+  .design-20 .profile-photo{width:90px;height:126px}
+  .design-20 .profile-photo .avatar{width:76px;height:112px}
+  .design-20 .profile-facts{grid-template-columns:1fr 1fr;grid-template-rows:auto;margin-top:4px}
+  .design-20 .status-ticket-panel{display:block;margin-top:14px}
+  .design-20 .ticket-stack{display:block}
+  .design-20 .ticket-stack article{grid-template-columns:90px minmax(0,1fr);margin-top:10px;padding:15px;border-left-width:7px;clip-path:none}
+  .design-20 .ticket-stack span{padding-right:10px}
+  .design-20 .ticket-stack strong{font-size:clamp(16px,5vw,20px);line-height:1.35}
+  .design-20 .ticket-outlook{grid-template-columns:1fr;margin-top:12px}
+  .design-20 .ticket-mood p{font-size:clamp(18px,6vw,22px);line-height:1.35}
+  .design-20 .ticket-meta{grid-template-columns:1fr 1fr;grid-template-rows:auto}
 }

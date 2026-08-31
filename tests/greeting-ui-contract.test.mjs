@@ -346,6 +346,7 @@ test('status AI generation stays preview-only until either entry explicitly inst
     assert.match(generateBlock, /recentKeys: settings\(\)\.statusRecentRecommendations/);
     assert.match(generateBlock, /statusRecommendationKey\(recommendation\)/);
     assert.match(generateBlock, /slice\(-5\)/);
+    assert.match(generateBlock, /rememberGeneratedStatusTemplate\(\)/);
     assert.match(generateBlock, /用户提示词/);
     assert.match(generateBlock, /applyStatusAiRecommendation\(recommendation\)/);
     assert.match(generateBlock, /showStatusAiRecommendation\(recommendation, contextSnapshot, viewName\)/);
@@ -354,6 +355,8 @@ test('status AI generation stays preview-only until either entry explicitly inst
     assert.match(source, /STATUS_CONTEXT_CONTROL_TITLE/);
     assert.match(source, /includeCreatorNotes: false/);
     assert.doesNotMatch(generateBlock, /installRegex\(/);
+    assert.match(source, /继续生成不会覆盖，只有点击安装才会替换为当前方案/);
+    assert.match(source, /'phoneDesktop', 'media'/);
     assert.doesNotMatch(settingsMarkup, /status-atelier-shuffle-recipe|完整 40 套|20 套自由面板/);
     assert.doesNotMatch(source, /status-atelier-modal-shuffle-recipe|applyStatusRecipe|shuffleStatusRecipe/);
     assert.match(source, /id="status-atelier-modal-ai-method-quick"[^>]*type="radio"[^>]*checked/);

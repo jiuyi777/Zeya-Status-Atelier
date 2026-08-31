@@ -99,6 +99,12 @@ test('an explicit simple-mode template hint is preserved alongside the content f
     assert.equal(intent.focus, 'story');
 });
 
+test('device adaptation wording is not mistaken for the small-phone desktop template', () => {
+    assert.equal(resolveStatusIdeaIntent('适配手机，不是要小手机').structureHint, '');
+    assert.equal(resolveStatusIdeaIntent('手机版和电脑版都要自动适配布局').structureHint, '');
+    assert.equal(resolveStatusIdeaIntent('做成小手机桌面，有 APP 图标').structureHint, 'phone');
+});
+
 test('local status fallback derives different complete records from different cards', () => {
     const rule = {
         structure: 'profile',

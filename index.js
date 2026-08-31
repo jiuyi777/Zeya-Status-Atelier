@@ -25,8 +25,8 @@ import {
     parseChatConversationLog,
     parseStatusOutput,
     parseFields,
-} from './rule-generator.js?v=0.11.8';
-import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.8';
+} from './rule-generator.js?v=0.11.9';
+import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.9';
 import {
     STATUS_BEAUTY_01_15_IDS,
     applyStatusBeautyControlChrome,
@@ -38,23 +38,23 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.8';
+} from './status-beauty-01-15-bundle.js?v=0.11.9';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
-} from './status-beauty-05-09.js?v=0.11.8';
+} from './status-beauty-05-09.js?v=0.11.9';
 import {
     STATUS_BEAUTY_16_20_IDS,
     buildStatusBeauty16To20Preview,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.8';
+} from './status-beauty-16-20.js?v=0.11.9';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.8';
+} from './opening-home-generator.js?v=0.11.9';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -71,19 +71,19 @@ import {
     resolveStatusIdeaIntent,
     statusRecommendationKey,
     usableGreetingRecords,
-} from './response-parser.js?v=0.11.8';
+} from './response-parser.js?v=0.11.9';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.11.8';
+} from './worldbook-routes.js?v=0.11.9';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.11.8';
+} from './entry-dialog.js?v=0.11.9';
 import { getContext as getSillyTavernContext } from '../../../extensions.js';
 import {
     greetingBindingSummary,
@@ -93,18 +93,18 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.11.8';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.8';
+} from './greeting-workflow.js?v=0.11.9';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.9';
 import {
     buildCharacterHomepageContext,
     describeCurrentCharacterContext,
     resolveCurrentCharacterContext,
     selectCurrentSillyTavernContext,
-} from './opening-context.js?v=0.11.8';
+} from './opening-context.js?v=0.11.9';
 import {
     STATUS_WORLDBOOK_ENTRY_ID,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.11.8';
+} from './status-worldbook.js?v=0.11.9';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -125,7 +125,7 @@ import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.8';
+const VERSION = '0.11.9';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -1110,6 +1110,7 @@ function currentProfileTemplateDraft(stored = settings()) {
 const SAVED_STATUS_TEMPLATE_KEYS = Object.freeze([
     'structure', 'profileAppearance', 'title', 'subtitle', 'theme', 'paletteId', 'layout',
     'pagesText', 'sharedFieldsText', 'pageFieldsText', 'forumSkin', 'chatAppearance', 'variant',
+    'phoneDesktop', 'media',
 ]);
 
 function currentSavedStatusTemplate() {
@@ -1197,6 +1198,17 @@ function saveCurrentStatusTemplate() {
     renderSavedStatusTemplates();
     saveSettingsSoon({ snapshotOpening: false });
     notify('success', `已保存到“我的模板”：${template.name}`);
+}
+
+function rememberGeneratedStatusTemplate() {
+    const template = currentSavedStatusTemplate();
+    const stored = settings();
+    const signature = JSON.stringify(template.settings);
+    const previous = (stored.savedStatusTemplates || []).filter(item => JSON.stringify(item?.settings || {}) !== signature);
+    template.id = `ai-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+    template.name = compactStatusAiText(`AI 方案 · ${template.name}`, 36);
+    stored.savedStatusTemplates = [...previous, template].slice(-12);
+    renderSavedStatusTemplates();
 }
 
 function saveCurrentProfileTemplateDraft(stored = settings()) {
@@ -5895,6 +5907,7 @@ async function testStatusAiGeneration(button, viewName = 'settings', forceDiffer
             ...stored.statusRecentRecommendations.filter(key => key !== recommendationKey),
             recommendationKey,
         ].filter(Boolean).slice(-5);
+        rememberGeneratedStatusTemplate();
         saveSettingsSoon({ snapshotOpening: false });
         updatePreview();
         if (viewName === 'modal') {
@@ -5906,7 +5919,7 @@ async function testStatusAiGeneration(button, viewName = 'settings', forceDiffer
             const focusNotice = ideaPlan.changedFields.length
                 ? ` 已自动改为“${ideaPlan.intent.label}”字段：${ideaPlan.changedFields.slice(0, 4).join('、')}等。`
                 : '';
-            status.textContent = `AI 已生成“${statusAiRecommendationLabel(recommendation)}”预览。${focusNotice}先看右侧效果，满意后再确认安装。`;
+            status.textContent = `AI 已生成“${statusAiRecommendationLabel(recommendation)}”预览，并保存在最近方案中。${focusNotice}可以继续生成更多方案；只有点击安装才会替换当前正在使用的状态栏。`;
             status.dataset.state = 'success';
         }
         notify('success', `AI 已推荐并生成：${rule.structureName}`);
@@ -6258,7 +6271,7 @@ function renderGreetingStatusChooser() {
     if (state) {
         const installed = statusRegexAppliesToCurrentContext();
         state.textContent = installed
-            ? '当前角色已启用状态栏；再次点击会直接覆盖为当前编辑结果。'
+            ? '当前角色已有一套正在使用的状态栏；继续生成不会覆盖，只有点击安装才会替换为当前方案。'
             : `当前角色尚未安装状态栏；点击后直接写入局部正则，不需要下载。`;
         state.dataset.state = installed ? 'success' : 'idle';
     }

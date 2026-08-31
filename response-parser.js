@@ -344,14 +344,17 @@ const STATUS_IDEA_FOCUS_PLANS = Object.freeze({
 
 export function resolveStatusIdeaIntent(value) {
     const text = compactText(value, 500).toLocaleLowerCase();
+    const requestsResponsiveLayout = /(?:适配|自适应|响应式|兼容|手机版|移动端|电脑(?:版|端)?|桌面端).{0,8}(?:手机|电脑|设备|屏幕|布局)|(?:手机|电脑|移动端|桌面端).{0,8}(?:适配|自适应|响应式|兼容|布局)/u.test(text);
     const structureGroups = [
-        ['phone', ['手机', '桌面', 'app', '应用', '掌机']],
+        ['phone', ['小手机', '手机桌面', '手机界面', '手机壳', 'app', '应用图标', '掌机']],
         ['social', ['个人动态', '朋友圈', '社交', '动态墙', 'feed']],
         ['chat', ['聊天会话', '聊天', '微信', '消息记录', '对话框']],
         ['forum', ['论坛', '帖子', '主题帖', '回帖', '楼层', 'bbs']],
         ['profile', ['人物状态栏', '状态栏', '人物档案']],
     ];
-    const structureHint = structureGroups.find(([, keywords]) => keywords.some(keyword => text.includes(keyword)))?.[0] || '';
+    const structureHint = requestsResponsiveLayout
+        ? ''
+        : structureGroups.find(([, keywords]) => keywords.some(keyword => text.includes(keyword)))?.[0] || '';
     const bodyWords = ['身体', '伤势', '受伤', '疼痛', '健康', '体力', '呼吸', '流血'];
     const otherWords = ['其他人', '他人', '别人', '队友', '同伴', 'npc', '对方', '目标人物'];
     let focus = '';

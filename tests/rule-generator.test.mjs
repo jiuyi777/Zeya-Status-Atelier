@@ -325,6 +325,10 @@ test('bundled status regexes fit the current viewport without a dark padded stag
     assert.doesNotMatch(statusBeauty05To09Css, /font-size:\s*max\(var\(--sta-readable-font/);
     assert.doesNotMatch(statusBeauty16To20Css, /font-size:\s*max\(var\(--sta-readable-font/);
     assert.doesNotMatch(runtime, /Math\.max\(240|clientWidth-20|\+20\)+'px'/);
+    assert.match(statusBeautyBundleSource, /data-status-atelier-responsive-layout/);
+    for (const id of ['beauty-crimson-letter-01', 'beauty-burgundy-album-02', 'beauty-current-status-05', 'beauty-card-status-06', 'beauty-letter-status-07', 'beauty-record-status-08', 'beauty-archive-status-09']) {
+        assert.match(statusBeautyBundleSource, new RegExp(`'${id}'`));
+    }
 });
 
 test('status beauty visible copy edits are injected into the exported regex', () => {
@@ -518,9 +522,12 @@ test('status beauty 05 to 09 keep the approved field contracts and export their 
 
 test('status beauty 16 to 20 keep their own field contracts and export complete interactive documents', () => {
     assert.match(statusBeauty16To20Css, /header\{position:absolute;z-index:3\}/);
-    assert.match(statusBeauty16To20Css, /\.design-18:not\(\.is-collapsed\)\{height:clamp\(594px,calc\(760px - 18vw\),700px\)\}/);
-    assert.match(statusBeauty16To20Css, /\.design-18:not\(\.is-collapsed\) \.travel-mood\{top:clamp\(410px,calc\(540px - 16vw\),470px\)\}/);
-    assert.match(statusBeauty16To20Css, /\.design-20:not\(\.is-collapsed\)\{height:clamp\(594px,calc\(760px - 18vw\),700px\)\}/);
+    assert.match(statusBeauty16To20Css, /@media\(max-width:560px\)/);
+    assert.match(statusBeauty16To20Css, /\.status-card\{width:100%;max-width:100%;height:auto!important/);
+    assert.match(statusBeauty16To20Css, /\.design-17 \.window-layout\{display:block/);
+    assert.match(statusBeauty16To20Css, /\.design-18 \.traveler-note\{position:relative/);
+    assert.match(statusBeauty16To20Css, /\.design-19 \.broadcast-main\{position:relative/);
+    assert.match(statusBeauty16To20Css, /\.design-20 \.status-wallet-layout\{display:block/);
     const expected = new Map([
         ['beauty-mailbox-16', ['时间', '位置', '衣冠', '情愫', '欲念', '来信', '心声']],
         ['beauty-double-heart-17', ['时间', '位置', '衣冠', '情愫', '欲念', '内心状态', '来信']],
@@ -550,7 +557,7 @@ test('status beauty 16 to 20 keep their own field contracts and export complete 
         assert.match(replacement, /^```html\n<!doctype html>/);
         assert.match(replacement, /<body class="design-page beauty-/);
         assert.match(replacement, /status-beauty-16-20\.css/);
-        assert.match(replacement, /status-beauty-16-20\.css\?v=0\.11\.8/);
+        assert.match(replacement, /status-beauty-16-20\.css\?v=0\.11\.9/);
         assert.match(replacement, /https:\/\/example\.com\/character\.png/);
         assert.match(replacement, /\$1/);
         assert.match(replacement, /classList\.toggle\('is-collapsed'\)/);

@@ -163,6 +163,76 @@ function adaptBundledRegex(structure, script) {
     return script;
 }
 
+const REFLOWING_BUNDLED_MOBILE_CSS = Object.freeze({
+    'beauty-crimson-letter-01': `
+@media(max-width:560px){
+  .status-card{width:100%!important;height:auto!important;display:block!important;overflow:hidden}
+  .portrait-wing{height:245px;border-right:0;border-bottom:6px double #a46e55}
+  .portrait-mat{height:176px!important}.portrait-caption{bottom:18px!important}
+  .record-wing{min-height:0;padding:30px 16px 24px;background:#f3e9df}
+  .record-wing:before,.clock{display:none}
+  .title-block{width:auto;padding-right:42px}.title-block h1{font-size:clamp(30px,10vw,40px)}
+  .fields{grid-template-columns:1fr 1fr;grid-template-rows:auto;gap:10px;margin-top:20px}
+  .fields :is(.meter,.ribbon,.paper,.note){position:relative;grid-column:auto;grid-row:auto;min-height:82px}
+  .fields :is(.paper,.note){grid-column:1/-1}.note{display:block}.note strong{margin-top:6px}
+  .fold{right:14px;top:16px;bottom:auto}
+  .status-card.is-collapsed{height:96px!important;display:block!important}.status-card.is-collapsed .portrait-wing{display:none}.status-card.is-collapsed .record-wing{height:96px;padding:18px 56px 14px 16px}.status-card.is-collapsed .title-block{display:none}.status-card.is-collapsed .compact-summary{display:grid;position:static;gap:5px}.status-card.is-collapsed .fold{top:28px;bottom:auto}
+}`,
+    'beauty-burgundy-album-02': `
+@media(max-width:560px){
+  .burgundy-album{width:100%!important;height:auto!important;min-height:0}
+  .album-shell{display:block;height:auto;border-width:6px}
+  .album-spine{height:260px;padding:16px;border-right:0;border-bottom:6px double #2c0d12}
+  .album-brand{padding-right:48px}.portrait-card{left:18px;top:88px;width:124px;padding:7px 7px 15px}.portrait-card img{height:132px}.classified-side{left:158px;right:18px;bottom:55px}.wax{left:auto;right:38px;bottom:5px;width:50px;height:50px;border-width:6px}
+  .album-paper{display:block;padding:30px 14px 20px}
+  .album-paper :is(.sheet,.itinerary,.mini-card){margin-top:12px;transform:none}
+  .sheet{min-height:126px;padding:44px 16px 16px}.itinerary{padding:48px 0 0}.route-cards{grid-template-columns:1fr;height:auto}.route-cards article{min-height:112px;transform:none!important}.mini-card{min-height:94px}.paper-flower{display:none}
+  .burgundy-album:not([open]){height:80px!important}.burgundy-album:not([open]) .album-shell{height:80px}.burgundy-album:not([open]) .album-spine{height:80px;border-bottom:0}.burgundy-album:not([open]) .album-brand{width:auto;padding:10px 54px 10px 10px}.burgundy-album:not([open]) .album-brand h1{font-size:20px}
+}`,
+    'beauty-current-status-05': `
+@media(max-width:560px){
+  .design-05{width:100%!important;height:auto!important;min-height:0}
+  .design-05 .expanded-content{position:relative;inset:auto;padding:72px 14px 24px}
+  .design-05 .status-heading{position:relative;top:auto;left:auto;width:auto}.design-05 .status-heading h1{font-size:clamp(28px,9vw,36px)}
+  .design-05 .identity-card{position:relative;left:auto;top:auto;width:176px;margin:22px auto 14px;transform:none}
+  .design-05 .status-board{position:relative;top:auto;right:auto;width:auto}.design-05 .affection{grid-template-columns:1fr}.design-05 .condition-grid,.design-05 .small-moments{grid-template-columns:1fr}.design-05 .single-collage{display:none}
+}`,
+    'beauty-card-status-06': `
+@media(max-width:560px){
+  .design-06{width:100%!important;height:auto!important;min-height:0}
+  .design-06 .expanded-content{position:relative;inset:auto;padding:72px 14px 24px}
+  .design-06 .table-heading{position:relative;top:auto;left:auto;width:auto}.design-06 .table-heading h1{font-size:clamp(28px,9vw,35px)}
+  .design-06 .portrait-card{position:relative;left:auto;top:auto;width:184px;margin:22px auto 16px;transform:none}.design-06 .portrait-card .avatar,.design-06 .avatar-placeholder{width:158px;height:210px}
+  .design-06 .card-table{position:relative;top:auto;left:auto;width:auto}.design-06 .table-moment{grid-template-columns:1fr 1fr}.design-06 .status-hand{height:auto;min-height:150px}.design-06 .attire{grid-template-columns:1fr}.design-06 .attire b{justify-self:start}
+}`,
+    'beauty-letter-status-07': `
+@media(max-width:560px){
+  .design-07{width:100%!important;height:auto!important;min-height:0}
+  .design-07 .expanded-content{position:relative;inset:auto;padding:72px 14px 24px}
+  .design-07 .post-heading{position:relative;top:auto;left:auto;width:auto}.design-07 .post-heading h1{font-size:clamp(28px,9vw,36px)}
+  .design-07 .mail-scene{position:relative;left:auto;top:auto;width:auto;height:auto;margin-top:20px}.design-07 .envelope-back,.design-07 .postmark,.design-07 .postal-note{display:none}
+  .design-07 .letter-sheet{position:relative;left:auto;top:auto;width:auto;height:auto;min-height:0;padding:18px;transform:none}.design-07 .route-strip{grid-template-columns:1fr;width:auto;border-radius:12px}.design-07 .letter-copy{width:auto;padding-top:210px}.design-07 .sender-stamp{right:50%;top:110px;width:124px;transform:translateX(50%) rotate(2deg)}.design-07 .sender-stamp .avatar{width:106px;height:148px}.design-07 .affection-seal{right:14px;top:18px;bottom:auto;width:70px;height:70px}
+}`,
+    'beauty-record-status-08': `
+@media(max-width:560px){
+  .design-08{width:100%!important;height:auto!important;min-height:0}
+  .design-08 .expanded-content{position:relative;inset:auto;padding:72px 14px 24px}.design-08 .expanded-content:after{display:none}.design-08 .generated-backdrop{position:absolute;height:260px;opacity:.38}
+  .design-08 .record-heading{position:relative;top:auto;left:auto;width:auto}.design-08 .record-heading h1{font-size:clamp(27px,8vw,35px)}
+  .design-08 .generated-record-avatar{position:relative;left:auto;top:auto;width:118px;margin:22px auto}.design-08 .track-panel{position:relative;top:auto;right:auto;width:auto}.design-08 .track-meta{grid-template-columns:1fr 1fr}.design-08 .affection-player{grid-template-columns:1fr}.design-08 .track-list article{grid-template-columns:26px 76px minmax(0,1fr)}
+}`,
+    'beauty-archive-status-09': `
+@media(max-width:560px){
+  .design-09{width:100%!important;height:auto!important;min-height:0}
+  .design-09 .expanded-content{position:relative;inset:auto;padding:72px 14px 24px}.design-09 .mirror-heading{position:relative;top:auto;left:auto;width:auto}.design-09 .mirror-heading h1{font-size:clamp(28px,9vw,35px)}
+  .design-09 .portrait-side{position:relative;left:auto;top:auto;width:260px;height:360px;margin:16px auto}.design-09 .mirror-frame{width:244px;height:352px}.design-09 .archive-stage{position:relative;right:auto;top:auto;width:auto;height:auto}.design-09 .archive-stack{height:auto;min-height:328px;perspective:none}.design-09 .archive-card{display:none;position:relative;left:auto;top:auto;width:100%;height:auto;min-height:305px;margin:0;transform:none!important}.design-09 .archive-card[data-position="active"]{display:block}.design-09 .card-controls{grid-template-columns:76px minmax(0,1fr) 76px}.design-09 .card-tabs{min-width:0}
+}`,
+});
+
+function bundledResponsiveLayoutStyles(structure) {
+    const css = REFLOWING_BUNDLED_MOBILE_CSS[structure];
+    return css ? `<style data-status-atelier-responsive-layout>${css}</style>` : '';
+}
+
 function addBundledMobileRuntime(structure, script) {
     const source = String(script?.replaceString || '');
     const sizingStyles = `<style>html,body{height:auto!important;min-height:0!important;overflow:hidden!important}</style>`;
@@ -185,7 +255,7 @@ function syncAdaptiveText(){var nodes=Array.from(card.querySelectorAll(dynamicTe
 function fit(){card.style.setProperty('zoom','1','important');card.style.setProperty('transform','none','important');var available=Math.max(1,document.documentElement.clientWidth||window.innerWidth||baseWidth);var scale=Math.min(1,available/baseWidth);card.style.setProperty('--sta-readable-font',(scale<1?Math.ceil(8/scale):8)+'px');syncAdaptiveText();var baseHeight=Math.max(card.offsetHeight||0,card.scrollHeight||0,1);var targetHeight=Math.ceil(baseHeight*scale);card.style.setProperty('position','absolute','important');card.style.setProperty('left','0','important');card.style.setProperty('top','0','important');card.style.setProperty('transform','scale('+scale+')','important');card.style.setProperty('transform-origin','top left','important');card.style.margin='0';document.documentElement.style.setProperty('background','transparent','important');document.documentElement.style.height=targetHeight+'px';document.documentElement.style.minHeight='0';document.documentElement.style.overflow='hidden';document.body.style.setProperty('display','block','important');document.body.style.setProperty('place-items','initial','important');document.body.style.setProperty('background','transparent','important');document.body.style.setProperty('margin','0','important');document.body.style.setProperty('padding','0','important');document.body.style.width='100%';document.body.style.minHeight='0';document.body.style.height=targetHeight+'px';document.body.style.overflow='hidden';var frame=window.frameElement;if(frame){frame.style.height=targetHeight+'px';frame.style.minHeight='0';frame.style.maxHeight='none'}}
 requestAnimationFrame(fit);window.addEventListener('resize',fit);card.addEventListener('toggle',function(){requestAnimationFrame(fit)});if(window.ResizeObserver)new ResizeObserver(function(){requestAnimationFrame(fit)}).observe(card);
 })();</script>`;
-    const additions = `${sizingStyles}${overflowStyles}${fitRuntime}`;
+    const additions = `${sizingStyles}${bundledResponsiveLayoutStyles(structure)}${overflowStyles}${fitRuntime}`;
     return {
         ...script,
         replaceString: source.includes('</body>') ? source.replace('</body>', `${additions}</body>`) : `${source}${additions}`,
