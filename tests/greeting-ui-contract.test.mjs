@@ -532,10 +532,11 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /scheduleStatusPreviewUpdate\(\);[\s\S]*?heading\(`正在编辑：\$\{definition\.label\}`\)/);
     const resizeBlock = source.match(/function resizeStatusBeautyPreviewFrame\(frame\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(resizeBlock, /availableWidth \/ naturalWidth/);
-    assert.match(resizeBlock, /syncScaledTextReadability\(card, scale\)/);
-    assert.match(resizeBlock, /state\.fontSize \* scale < 8/);
-    assert.match(resizeBlock, /state\.fontSize <= 9 \? 1\.4 : state\.fontSize <= 12 \? 1\.25 : 1\.12/);
-    assert.match(resizeBlock, /state\.fontSize \* maxBoost/);
+    assert.match(resizeBlock, /syncAdaptiveText\(card\)/);
+    assert.match(resizeBlock, /textLength > 48 \? 0\.56/);
+    assert.match(resizeBlock, /overflowsContainer\(node\)/);
+    assert.match(resizeBlock, /target \* 0\.92/);
+    assert.doesNotMatch(resizeBlock, /maxBoost|state\.fontSize \* scale < 8/);
     assert.match(resizeBlock, /card\.scrollHeight/);
     assert.match(resizeBlock, /getPropertyPriority\('font-size'\)/);
     assert.doesNotMatch(resizeBlock, /minimumTouchScale|Math\.max\(220/);

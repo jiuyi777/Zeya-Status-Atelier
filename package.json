@@ -1,6 +1,6 @@
 {
   "name": "status-atelier",
-  "version": "0.11.7",
+  "version": "0.11.8",
   "private": true,
   "type": "module",
   "description": "A configurable SillyTavern generator for dynamic status panels, lorebook formats, and greeting navigation homepages.",

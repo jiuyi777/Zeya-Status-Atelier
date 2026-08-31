@@ -25,8 +25,8 @@ import {
     parseChatConversationLog,
     parseStatusOutput,
     parseFields,
-} from './rule-generator.js?v=0.11.7';
-import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.7';
+} from './rule-generator.js?v=0.11.8';
+import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.8';
 import {
     STATUS_BEAUTY_01_15_IDS,
     applyStatusBeautyControlChrome,
@@ -38,23 +38,23 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.7';
+} from './status-beauty-01-15-bundle.js?v=0.11.8';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
-} from './status-beauty-05-09.js?v=0.11.7';
+} from './status-beauty-05-09.js?v=0.11.8';
 import {
     STATUS_BEAUTY_16_20_IDS,
     buildStatusBeauty16To20Preview,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.7';
+} from './status-beauty-16-20.js?v=0.11.8';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.7';
+} from './opening-home-generator.js?v=0.11.8';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -71,19 +71,19 @@ import {
     resolveStatusIdeaIntent,
     statusRecommendationKey,
     usableGreetingRecords,
-} from './response-parser.js?v=0.11.7';
+} from './response-parser.js?v=0.11.8';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.11.7';
+} from './worldbook-routes.js?v=0.11.8';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.11.7';
+} from './entry-dialog.js?v=0.11.8';
 import { getContext as getSillyTavernContext } from '../../../extensions.js';
 import {
     greetingBindingSummary,
@@ -93,18 +93,18 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.11.7';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.7';
+} from './greeting-workflow.js?v=0.11.8';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.8';
 import {
     buildCharacterHomepageContext,
     describeCurrentCharacterContext,
     resolveCurrentCharacterContext,
     selectCurrentSillyTavernContext,
-} from './opening-context.js?v=0.11.7';
+} from './opening-context.js?v=0.11.8';
 import {
     STATUS_WORLDBOOK_ENTRY_ID,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.11.7';
+} from './status-worldbook.js?v=0.11.8';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -125,7 +125,7 @@ import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.7';
+const VERSION = '0.11.8';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -3632,10 +3632,11 @@ function statusBeautyPreviewRoot(doc) {
 function resizeStatusBeautyPreviewFrame(frame) {
     const doc = frame.contentDocument;
     if (!doc?.body) return;
-    const textSelector = 'p,span,strong,small,em,b,li,dt,dd,label,figcaption,h1,h2,h3,h4,h5,h6,button,summary,th,td,[data-capture],[data-value],[data-label]';
+    const dynamicTextSelector = '[data-capture],[data-value]';
     const originalTextStyles = new WeakMap();
-    const syncScaledTextReadability = (card, scale) => {
-        card.querySelectorAll(textSelector).forEach(node => {
+    const syncAdaptiveText = card => {
+        const nodes = [...card.querySelectorAll(dynamicTextSelector)];
+        nodes.forEach(node => {
             let state = originalTextStyles.get(node);
             if (!state) {
                 state = {
@@ -3645,13 +3646,35 @@ function resizeStatusBeautyPreviewFrame(frame) {
                 };
                 originalTextStyles.set(node, state);
             }
-            if (state.fontSize > 0 && state.fontSize * scale < 8) {
-                const maxBoost = state.fontSize <= 9 ? 1.4 : state.fontSize <= 12 ? 1.25 : 1.12;
-                node.style.setProperty('font-size', `${Math.min(8 / scale, state.fontSize * maxBoost)}px`, 'important');
-            } else if (state.value) {
+            if (state.value) {
                 node.style.setProperty('font-size', state.value, state.priority);
             } else {
                 node.style.removeProperty('font-size');
+            }
+        });
+        const overflowsContainer = node => {
+            const rect = node.getBoundingClientRect();
+            if (node.scrollWidth > node.clientWidth + 1 || node.scrollHeight > node.clientHeight + 1) return true;
+            for (let parent = node.parentElement; parent && parent !== card.parentElement; parent = parent.parentElement) {
+                const style = doc.defaultView?.getComputedStyle(parent);
+                const parentRect = parent.getBoundingClientRect();
+                const clips = parent === card || /hidden|clip/.test(`${style?.overflowX || ''} ${style?.overflowY || ''}`) || style?.position === 'absolute';
+                if (clips && (rect.right > parentRect.right - 1 || rect.bottom > parentRect.bottom - 1)) return true;
+                if (parent === card) break;
+            }
+            return false;
+        };
+        nodes.forEach(node => {
+            const state = originalTextStyles.get(node);
+            const textLength = [...String(node.textContent || '').replace(/\s+/g, '')].length;
+            if (!state?.fontSize || !textLength) return;
+            const factor = textLength > 48 ? 0.56 : textLength > 32 ? 0.64 : textLength > 20 ? 0.74 : textLength > 12 ? 0.86 : 1;
+            const minimum = Math.min(state.fontSize, 8);
+            let target = Math.max(minimum, state.fontSize * factor);
+            if (target < state.fontSize) node.style.setProperty('font-size', `${target}px`, 'important');
+            for (let attempts = 0; attempts < 8 && target > minimum && overflowsContainer(node); attempts += 1) {
+                target = Math.max(minimum, target * 0.92);
+                node.style.setProperty('font-size', `${target}px`, 'important');
             }
         });
     };
@@ -3665,7 +3688,7 @@ function resizeStatusBeautyPreviewFrame(frame) {
         const availableWidth = Math.max(1, frame.clientWidth || doc.documentElement.clientWidth || naturalWidth);
         const scale = Math.min(1, availableWidth / naturalWidth);
         card.style.setProperty('--sta-readable-font', `${scale < 1 ? Math.ceil(8 / scale) : 8}px`);
-        syncScaledTextReadability(card, scale);
+        syncAdaptiveText(card);
         const naturalHeight = Math.max(card.offsetHeight || 0, card.scrollHeight || 0, 1);
         card.style.setProperty('zoom', String(scale), 'important');
         card.style.setProperty('transform', 'none', 'important');
