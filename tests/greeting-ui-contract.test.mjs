@@ -534,7 +534,9 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(resizeBlock, /availableWidth \/ naturalWidth/);
     assert.match(resizeBlock, /syncScaledTextReadability\(card, scale\)/);
     assert.match(resizeBlock, /state\.fontSize \* scale < 8/);
-    assert.match(resizeBlock, /Math\.min\(8 \/ scale, state\.fontSize \* 1\.6\)/);
+    assert.match(resizeBlock, /state\.fontSize <= 9 \? 1\.4 : state\.fontSize <= 12 \? 1\.25 : 1\.12/);
+    assert.match(resizeBlock, /state\.fontSize \* maxBoost/);
+    assert.match(resizeBlock, /card\.scrollHeight/);
     assert.match(resizeBlock, /getPropertyPriority\('font-size'\)/);
     assert.doesNotMatch(resizeBlock, /minimumTouchScale|Math\.max\(220/);
     assert.match(resizeBlock, /frame\.style\.height = `\$\{Math\.ceil\(contentHeight\)\}px`/);

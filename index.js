@@ -25,8 +25,8 @@ import {
     parseChatConversationLog,
     parseStatusOutput,
     parseFields,
-} from './rule-generator.js?v=0.11.6';
-import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.6';
+} from './rule-generator.js?v=0.11.7';
+import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.7';
 import {
     STATUS_BEAUTY_01_15_IDS,
     applyStatusBeautyControlChrome,
@@ -38,23 +38,23 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.6';
+} from './status-beauty-01-15-bundle.js?v=0.11.7';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
-} from './status-beauty-05-09.js?v=0.11.6';
+} from './status-beauty-05-09.js?v=0.11.7';
 import {
     STATUS_BEAUTY_16_20_IDS,
     buildStatusBeauty16To20Preview,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.6';
+} from './status-beauty-16-20.js?v=0.11.7';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.6';
+} from './opening-home-generator.js?v=0.11.7';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -71,19 +71,19 @@ import {
     resolveStatusIdeaIntent,
     statusRecommendationKey,
     usableGreetingRecords,
-} from './response-parser.js?v=0.11.6';
+} from './response-parser.js?v=0.11.7';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.11.6';
+} from './worldbook-routes.js?v=0.11.7';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.11.6';
+} from './entry-dialog.js?v=0.11.7';
 import { getContext as getSillyTavernContext } from '../../../extensions.js';
 import {
     greetingBindingSummary,
@@ -93,18 +93,18 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.11.6';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.6';
+} from './greeting-workflow.js?v=0.11.7';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.7';
 import {
     buildCharacterHomepageContext,
     describeCurrentCharacterContext,
     resolveCurrentCharacterContext,
     selectCurrentSillyTavernContext,
-} from './opening-context.js?v=0.11.6';
+} from './opening-context.js?v=0.11.7';
 import {
     STATUS_WORLDBOOK_ENTRY_ID,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.11.6';
+} from './status-worldbook.js?v=0.11.7';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -125,7 +125,7 @@ import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.6';
+const VERSION = '0.11.7';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -3646,7 +3646,8 @@ function resizeStatusBeautyPreviewFrame(frame) {
                 originalTextStyles.set(node, state);
             }
             if (state.fontSize > 0 && state.fontSize * scale < 8) {
-                node.style.setProperty('font-size', `${Math.min(8 / scale, state.fontSize * 1.6)}px`, 'important');
+                const maxBoost = state.fontSize <= 9 ? 1.4 : state.fontSize <= 12 ? 1.25 : 1.12;
+                node.style.setProperty('font-size', `${Math.min(8 / scale, state.fontSize * maxBoost)}px`, 'important');
             } else if (state.value) {
                 node.style.setProperty('font-size', state.value, state.priority);
             } else {
@@ -3665,7 +3666,7 @@ function resizeStatusBeautyPreviewFrame(frame) {
         const scale = Math.min(1, availableWidth / naturalWidth);
         card.style.setProperty('--sta-readable-font', `${scale < 1 ? Math.ceil(8 / scale) : 8}px`);
         syncScaledTextReadability(card, scale);
-        const naturalHeight = Math.max(card.offsetHeight || 0, 1);
+        const naturalHeight = Math.max(card.offsetHeight || 0, card.scrollHeight || 0, 1);
         card.style.setProperty('zoom', String(scale), 'important');
         card.style.setProperty('transform', 'none', 'important');
         card.style.transformOrigin = 'top center';

@@ -317,7 +317,9 @@ test('bundled status regexes fit the current viewport without a dark padded stag
     assert.match(runtime, /frame\.style\.height=targetHeight\+'px'/);
     assert.match(runtime, /syncScaledTextReadability\(scale\)/);
     assert.match(runtime, /state\.fontSize\*scale<8/);
-    assert.match(runtime, /Math\.min\(8\/scale,state\.fontSize\*1\.6\)/);
+    assert.match(runtime, /state\.fontSize<=9\?1\.4:state\.fontSize<=12\?1\.25:1\.12/);
+    assert.match(runtime, /state\.fontSize\*maxBoost/);
+    assert.match(runtime, /Math\.max\(card\.offsetHeight\|\|0,card\.scrollHeight\|\|0,1\)/);
     assert.match(runtime, /setProperty\('zoom','1','important'\)/);
     assert.doesNotMatch(statusBeautyBundleSource, /font-size:max\(var\(--sta-readable-font/);
     assert.doesNotMatch(statusBeauty05To09Css, /font-size:\s*max\(var\(--sta-readable-font/);
@@ -486,6 +488,9 @@ test('status beauty 05 to 09 keep the approved field contracts and export their 
         assert.match(replacement, /classList\.toggle\('is-collapsed'\)/);
         assert.match(replacement, /--sta-readable-font/);
         assert.match(replacement, /syncMobileReadability/);
+        assert.match(replacement, /Math\.max\(root\.offsetHeight\|\|0,root\.scrollHeight\|\|0,1\)/);
+        assert.match(replacement, /status-atelier-beauty-preview-frame/);
+        assert.match(replacement, /requestAnimationFrame\(syncHostFrameHeight\)/);
         assert.match(replacement, /<\/body><\/html>\n```$/);
         const browserScript = replacement.match(/<script>\n([\s\S]*?)\n<\/script>/);
         assert.ok(browserScript, `${id} includes browser script`);
@@ -543,12 +548,15 @@ test('status beauty 16 to 20 keep their own field contracts and export complete 
         assert.match(replacement, /^```html\n<!doctype html>/);
         assert.match(replacement, /<body class="design-page beauty-/);
         assert.match(replacement, /status-beauty-16-20\.css/);
-        assert.match(replacement, /status-beauty-16-20\.css\?v=0\.11\.6/);
+        assert.match(replacement, /status-beauty-16-20\.css\?v=0\.11\.7/);
         assert.match(replacement, /https:\/\/example\.com\/character\.png/);
         assert.match(replacement, /\$1/);
         assert.match(replacement, /classList\.toggle\('is-collapsed'\)/);
         assert.match(replacement, /--sta-readable-font/);
         assert.match(replacement, /syncMobileReadability/);
+        assert.match(replacement, /Math\.max\(root\.offsetHeight\|\|0,root\.scrollHeight\|\|0,1\)/);
+        assert.match(replacement, /status-atelier-beauty-preview-frame/);
+        assert.match(replacement, /requestAnimationFrame\(syncHostFrameHeight\)/);
         assert.match(replacement, /<\/body><\/html>\n```$/);
         const browserScript = replacement.match(/<script>\n([\s\S]*?)\n<\/script>/);
         assert.ok(browserScript, `${id} includes browser script`);
