@@ -25,8 +25,8 @@ import {
     parseChatConversationLog,
     parseStatusOutput,
     parseFields,
-} from './rule-generator.js?v=0.11.9';
-import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.9';
+} from './rule-generator.js?v=0.11.10';
+import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.10';
 import {
     STATUS_BEAUTY_01_15_IDS,
     applyStatusBeautyControlChrome,
@@ -38,23 +38,23 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.9';
+} from './status-beauty-01-15-bundle.js?v=0.11.10';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
-} from './status-beauty-05-09.js?v=0.11.9';
+} from './status-beauty-05-09.js?v=0.11.10';
 import {
     STATUS_BEAUTY_16_20_IDS,
     buildStatusBeauty16To20Preview,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.9';
+} from './status-beauty-16-20.js?v=0.11.10';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.9';
+} from './opening-home-generator.js?v=0.11.10';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -71,19 +71,19 @@ import {
     resolveStatusIdeaIntent,
     statusRecommendationKey,
     usableGreetingRecords,
-} from './response-parser.js?v=0.11.9';
+} from './response-parser.js?v=0.11.10';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.11.9';
+} from './worldbook-routes.js?v=0.11.10';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.11.9';
+} from './entry-dialog.js?v=0.11.10';
 import { getContext as getSillyTavernContext } from '../../../extensions.js';
 import {
     greetingBindingSummary,
@@ -93,18 +93,18 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.11.9';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.9';
+} from './greeting-workflow.js?v=0.11.10';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.10';
 import {
     buildCharacterHomepageContext,
     describeCurrentCharacterContext,
     resolveCurrentCharacterContext,
     selectCurrentSillyTavernContext,
-} from './opening-context.js?v=0.11.9';
+} from './opening-context.js?v=0.11.10';
 import {
     STATUS_WORLDBOOK_ENTRY_ID,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.11.9';
+} from './status-worldbook.js?v=0.11.10';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -125,7 +125,7 @@ import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.9';
+const VERSION = '0.11.10';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -216,7 +216,7 @@ const PHONE_DESKTOP_DEFAULTS = Object.freeze({
         current_time: { x: 0, y: 0 },
         current_weather: { x: 0, y: 0 },
     },
-    personalAvatarSource: 'character', personalAvatarUrl: '', personalAvatarPositionX: 50, personalAvatarPositionY: 50, personalAvatarScale: 1,
+    personalAvatarSource: 'character', personalAvatarUrl: '', personalAvatarFallbackUrl: '', personalAvatarPositionX: 50, personalAvatarPositionY: 50, personalAvatarScale: 1,
     personalFields: [
         { id: 'favor', label: '好感度', instruction: '填写0到100之间的整数，只写数字', kind: 'progress' },
         { id: 'desire', label: '欲望度', instruction: '填写0到100之间的整数，只写数字', kind: 'progress' },
@@ -2272,6 +2272,17 @@ function previewLocalPhoneWallpaper(control) {
     scheduleStatusPreviewUpdate();
 }
 
+function resolveHostAvatarUrls(type, file, thumbnail) {
+    const fileName = String(file || '').trim();
+    if (!fileName || fileName === 'none') return { url: '', fallbackUrl: '' };
+    const encodedName = fileName.split('/').map(part => encodeURIComponent(part)).join('/');
+    const folder = type === 'persona' ? '/User%20Avatars/' : '/characters/';
+    return {
+        url: `${folder}${encodedName}`,
+        fallbackUrl: thumbnail(type, fileName),
+    };
+}
+
 function resolvedStatusInput(source = settings()) {
     const socialThemeAssetUrl = source.structure === 'social'
         ? String(source.media?.themeAssetUrl || '').trim() || SOCIAL_THEME_ART_URLS[source.theme] || ''
@@ -2305,9 +2316,9 @@ function resolvedStatusInput(source = settings()) {
     try {
         if (output.media.avatarSource === 'character') {
             const avatar = ctx?.characters?.[ctx?.characterId]?.avatar;
-            output.media.avatarUrl = avatar && avatar !== 'none' ? thumbnail('avatar', avatar) : '';
+            output.media.avatarUrl = resolveHostAvatarUrls('avatar', avatar, thumbnail).url;
         } else if (output.media.avatarSource === 'user') {
-            output.media.avatarUrl = user_avatar ? thumbnail('persona', user_avatar) : '';
+            output.media.avatarUrl = resolveHostAvatarUrls('persona', user_avatar, thumbnail).url;
         } else if (output.media.avatarSource === 'none') {
             output.media.avatarUrl = '';
         }
@@ -2315,21 +2326,27 @@ function resolvedStatusInput(source = settings()) {
         output.media.avatarUrl = output.media.avatarSource === 'url' ? output.media.avatarUrl : '';
     }
     try {
-        output.media.userAvatarUrl = user_avatar ? thumbnail('persona', user_avatar) : '';
+        output.media.userAvatarUrl = resolveHostAvatarUrls('persona', user_avatar, thumbnail).url;
     } catch {
         output.media.userAvatarUrl = '';
     }
     try {
         if (output.phoneDesktop.personalAvatarSource === 'character') {
             const avatar = ctx?.characters?.[ctx?.characterId]?.avatar;
-            output.phoneDesktop.personalAvatarUrl = avatar && avatar !== 'none' ? thumbnail('avatar', avatar) : '';
+            const urls = resolveHostAvatarUrls('avatar', avatar, thumbnail);
+            output.phoneDesktop.personalAvatarUrl = urls.url;
+            output.phoneDesktop.personalAvatarFallbackUrl = urls.fallbackUrl;
         } else if (output.phoneDesktop.personalAvatarSource === 'user') {
-            output.phoneDesktop.personalAvatarUrl = user_avatar ? thumbnail('persona', user_avatar) : '';
+            const urls = resolveHostAvatarUrls('persona', user_avatar, thumbnail);
+            output.phoneDesktop.personalAvatarUrl = urls.url;
+            output.phoneDesktop.personalAvatarFallbackUrl = urls.fallbackUrl;
         } else if (output.phoneDesktop.personalAvatarSource === 'none') {
             output.phoneDesktop.personalAvatarUrl = '';
+            output.phoneDesktop.personalAvatarFallbackUrl = '';
         }
     } catch {
         output.phoneDesktop.personalAvatarUrl = output.phoneDesktop.personalAvatarSource === 'url' ? output.phoneDesktop.personalAvatarUrl : '';
+        output.phoneDesktop.personalAvatarFallbackUrl = '';
     }
     return output;
 }
@@ -4153,45 +4170,6 @@ function renderStatusPreview(host) {
         avatarUrl.focus();
         directEditor.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
     };
-    const openPhoneWallpaperEditor = () => {
-        const phone = settings().phoneDesktop;
-        const heading = makeElement('div', 'status-atelier-preview-direct-heading');
-        const close = makeElement('button', 'menu_button', '关闭');
-        close.type = 'button';
-        close.addEventListener('click', closeDirectEditor);
-        heading.append(makeElement('strong', '', '编辑：手机桌面壁纸'), close);
-        const wallpaperUrl = makeElement('input', 'text_pole');
-        wallpaperUrl.type = 'url';
-        wallpaperUrl.value = phone.wallpaperUrl || '';
-        wallpaperUrl.placeholder = 'https://example.com/wallpaper.jpg';
-        const localFile = makeElement('input');
-        localFile.type = 'file';
-        localFile.accept = 'image/*';
-        localFile.addEventListener('change', () => previewLocalPhoneWallpaper(localFile));
-        const save = makeElement('button', 'menu_button status-atelier-primary-action', '保存 URL 并更新预览');
-        save.type = 'button';
-        save.addEventListener('click', () => {
-            phone.wallpaperUrl = wallpaperUrl.value.trim();
-            if (phone.wallpaperUrl && phoneWallpaperPreviewUrl) {
-                URL.revokeObjectURL(phoneWallpaperPreviewUrl);
-                phoneWallpaperPreviewUrl = '';
-            }
-            statusAiTestRecords = null;
-            renderPhoneDesktopControls();
-            scheduleStatusPreviewUpdate();
-            saveSettingsSoon({ snapshotOpening: false });
-        });
-        directEditor.replaceChildren(
-            heading,
-            makeElement('p', 'status-atelier-beauty-editor-note', '可以直接填图片 URL，也可以选本地图片立即预览；本地图片不会写进导出成品。'),
-            directEditorField('壁纸 URL', wallpaperUrl),
-            directEditorField('本地图片（仅预览）', localFile),
-            save,
-        );
-        directEditor.hidden = false;
-        wallpaperUrl.focus();
-        directEditor.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
-    };
     const openPhoneAvatarEditor = () => {
         const phone = settings().phoneDesktop;
         const heading = makeElement('div', 'status-atelier-preview-direct-heading');
@@ -4467,14 +4445,22 @@ function renderStatusPreview(host) {
             wallpaper.append(phoneWallpaperImage);
         }
         body.append(wallpaper);
+        const wallpaperFilePicker = makeElement('input', 'status-atelier-phone-wallpaper-picker');
+        wallpaperFilePicker.type = 'file';
+        wallpaperFilePicker.accept = 'image/*';
+        wallpaperFilePicker.hidden = true;
+        wallpaperFilePicker.tabIndex = -1;
+        wallpaperFilePicker.addEventListener('change', () => previewLocalPhoneWallpaper(wallpaperFilePicker));
         const editWallpaper = makeElement('button', 'status-atelier-phone-wallpaper-edit', '更换壁纸');
         editWallpaper.type = 'button';
         editWallpaper.addEventListener('click', event => {
             event.preventDefault();
             event.stopPropagation();
-            openPhoneWallpaperEditor();
+            wallpaperFilePicker.value = '';
+            if (typeof wallpaperFilePicker.showPicker === 'function') wallpaperFilePicker.showPicker();
+            else wallpaperFilePicker.click();
         });
-        body.append(editWallpaper);
+        body.append(wallpaperFilePicker, editWallpaper);
         if (rule.phoneDesktop.decorationStyle !== 'none' && rule.phoneDesktop.petalsEnabled !== false) {
             const petals = makeElement('div', 'zrs-phone-petals');
             petals.setAttribute('aria-hidden', 'true');
@@ -4591,6 +4577,7 @@ function renderStatusPreview(host) {
             const personalFields = page.fields || rule.phoneDesktop.personalFields || [];
             const hero = makeElement('div', 'zrs-phone-personal-hero');
             const avatarUrl = rule.phoneDesktop.personalAvatarUrl || rule.media.avatarUrl;
+            const avatarFallbackUrl = rule.phoneDesktop.personalAvatarFallbackUrl || '';
             const avatar = makeElement('div', `zrs-phone-avatar${avatarUrl ? '' : ' is-placeholder'}`);
             if (avatarUrl) {
                 const avatarImage = makeElement('img');
@@ -4599,6 +4586,11 @@ function renderStatusPreview(host) {
                 avatarImage.style.objectPosition = `${rule.phoneDesktop.personalAvatarPositionX}% ${rule.phoneDesktop.personalAvatarPositionY}%`;
                 avatarImage.style.transform = `scale(${rule.phoneDesktop.personalAvatarScale})`;
                 avatarImage.addEventListener('error', () => {
+                    if (avatarFallbackUrl && avatarImage.dataset.fallbackAttempted !== 'true') {
+                        avatarImage.dataset.fallbackAttempted = 'true';
+                        avatarImage.src = avatarFallbackUrl;
+                        return;
+                    }
                     avatarImage.remove();
                     avatar.classList.add('is-placeholder');
                 });

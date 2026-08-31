@@ -95,8 +95,8 @@ test('status workspace exposes component, palette, real avatar and audio control
     assert.match(source, /'status-atelier-archive-image-urls': 'archiveImageUrls'/);
     assert.match(settingsMarkup, /<strong>人物状态栏<\/strong>/);
     assert.match(settingsMarkup, /26 套配色/);
-    assert.match(source, /thumbnail\('avatar', avatar\)/);
-    assert.match(source, /thumbnail\('persona', user_avatar\)/);
+    assert.match(source, /resolveHostAvatarUrls\('avatar', avatar, thumbnail\)/);
+    assert.match(source, /resolveHostAvatarUrls\('persona', user_avatar, thumbnail\)/);
     assert.match(source, /parseStatusOutput\(input, response\)/);
     assert.match(source, /details\.append\(instruction\)/);
     assert.doesNotMatch(source, /instructionWrap\.append\(instruction\)/);
@@ -597,6 +597,12 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /addEventListener\('wheel'/);
     assert.match(source, /phoneDesktopSchemaVersion !== 7/);
     assert.match(source, /function previewLocalPhoneWallpaper/);
+    assert.match(source, /status-atelier-phone-wallpaper-picker/);
+    assert.match(source, /wallpaperFilePicker\.showPicker/);
+    assert.doesNotMatch(source, /openPhoneWallpaperEditor/);
+    assert.match(source, /\/characters\//);
+    assert.match(source, /\/User%20Avatars\//);
+    assert.match(source, /personalAvatarFallbackUrl/);
     assert.match(source, /PHONE_PAGE_SCHEMAS\.forEach/);
     assert.match(source, /wallpaperScale/);
 });

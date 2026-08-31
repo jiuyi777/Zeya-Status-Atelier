@@ -1,4 +1,4 @@
-const STATUS_BEAUTY_05_09_STYLESHEET_URL = new URL('./status-beauty-05-09.css?v=0.11.9', import.meta.url).href;
+const STATUS_BEAUTY_05_09_STYLESHEET_URL = new URL('./status-beauty-05-09.css?v=0.11.10', import.meta.url).href;
 const STATUS_BEAUTY_05_CLOUDS_URL = new URL('./assets/status-beauty/images/cutout-clouds.png', import.meta.url).href;
 const STATUS_BEAUTY_06_CARD_ART_URL = new URL('./assets/status-beauty/images/cutout-botanical-cards-butterfly.png', import.meta.url).href;
 const STATUS_BEAUTY_08_BACKDROP_URL = new URL('./assets/status-beauty/images/generated-design-08-vinyl-backdrop.png', import.meta.url).href;

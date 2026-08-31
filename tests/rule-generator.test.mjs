@@ -557,7 +557,7 @@ test('status beauty 16 to 20 keep their own field contracts and export complete 
         assert.match(replacement, /^```html\n<!doctype html>/);
         assert.match(replacement, /<body class="design-page beauty-/);
         assert.match(replacement, /status-beauty-16-20\.css/);
-        assert.match(replacement, /status-beauty-16-20\.css\?v=0\.11\.9/);
+        assert.match(replacement, /status-beauty-16-20\.css\?v=0\.11\.10/);
         assert.match(replacement, /https:\/\/example\.com\/character\.png/);
         assert.match(replacement, /\$1/);
         assert.match(replacement, /classList\.toggle\('is-collapsed'\)/);
@@ -833,6 +833,7 @@ test('phone DIY settings are normalized separately from AI story values', () => 
             },
             personalAvatarSource: 'url',
             personalAvatarUrl: 'https://example.com/avatar.png',
+            personalAvatarFallbackUrl: '/thumbnail?type=avatar&file=avatar.png',
             personalAvatarPositionX: 22,
             personalAvatarPositionY: 74,
             personalAvatarScale: 9,
@@ -860,6 +861,7 @@ test('phone DIY settings are normalized separately from AI story values', () => 
     assert.equal(phone.stickerPhotoTwoUrl, '');
     assert.equal(phone.petalsEnabled, true);
     assert.equal(phone.personalAvatarScale, 3);
+    assert.equal(phone.personalAvatarFallbackUrl, '/thumbnail?type=avatar&file=avatar.png');
     assert.deepEqual(phone.widgetOrder, ['current_weather', 'current_location', 'current_time']);
     assert.deepEqual(phone.widgetOffsets.current_location, { x: 24, y: -18 });
     assert.deepEqual(phone.widgetOffsets.current_time, { x: 180, y: -300 });
@@ -894,6 +896,7 @@ test('phone DIY settings are normalized separately from AI story values', () => 
     assert.match(generated, /https:\/\/example\.com\/me\.png/);
     assert.match(generated, /widgetOrder/);
     assert.match(generated, /style\.transform='scale\('\+config\.phoneDesktop\.personalAvatarScale\+'\)'/);
+    assert.match(generated, /fallbackAttempted/);
     assert.match(STATUS_PHONE_CSS, /data-phone-page="Personal"\] \.zrs-phone-pagebar\{[^}]*pointer-events:none/);
     assert.match(STATUS_PHONE_CSS, /data-phone-page="Personal"\] \.zrs-phone-back\{pointer-events:auto/);
     assert.match(generated, /style\.transform='scale\('\+config\.phoneDesktop\.wallpaperScale\+'\)'/);
