@@ -71,6 +71,12 @@ img[data-st-avatar]:not([src]){background:linear-gradient(145deg,#eee4e1,#c9aeb5
 .design-20 .compact-summary{position:absolute;inset:0;z-index:5;display:grid;grid-template-columns:auto auto auto 1fr;align-items:center;gap:18px;padding:0 124px 0 38px;opacity:0;visibility:hidden}.design-20 .compact-summary strong{font:800 21px "STKaiti","KaiTi",serif}.design-20 .compact-summary span,.design-20 .compact-summary em{font-size:11px}.design-20 .compact-summary b{padding:6px 10px;color:#fff;background:var(--charcoal);font:800 10px Arial,sans-serif}.design-20 .compact-summary em{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-style:normal}.design-20.is-collapsed{height:108px}.design-20.is-collapsed .expanded-content{opacity:0;visibility:hidden}.design-20.is-collapsed .compact-summary{opacity:1;visibility:visible}
 @media(max-width:920px){html,body{height:auto}.design-page{display:block;padding:10px;overflow:hidden}.design-20{margin:0 auto;zoom:calc((100vw - 20px)/900)}}
 
+@media(max-width:920px){
+  .design-18:not(.is-collapsed){height:clamp(594px,calc(760px - 18vw),700px)}
+  .design-18:not(.is-collapsed) .travel-mood{top:clamp(410px,calc(540px - 16vw),470px)}
+  .design-20:not(.is-collapsed){height:clamp(594px,calc(760px - 18vw),700px)}
+}
+
 @media(max-width:560px){
   .status-card .compact-summary{min-height:108px;line-height:1.35}
 }

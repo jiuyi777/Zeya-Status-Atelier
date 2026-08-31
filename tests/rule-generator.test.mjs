@@ -511,6 +511,9 @@ test('status beauty 05 to 09 keep the approved field contracts and export their 
 
 test('status beauty 16 to 20 keep their own field contracts and export complete interactive documents', () => {
     assert.match(statusBeauty16To20Css, /header\{position:absolute;z-index:3\}/);
+    assert.match(statusBeauty16To20Css, /\.design-18:not\(\.is-collapsed\)\{height:clamp\(594px,calc\(760px - 18vw\),700px\)\}/);
+    assert.match(statusBeauty16To20Css, /\.design-18:not\(\.is-collapsed\) \.travel-mood\{top:clamp\(410px,calc\(540px - 16vw\),470px\)\}/);
+    assert.match(statusBeauty16To20Css, /\.design-20:not\(\.is-collapsed\)\{height:clamp\(594px,calc\(760px - 18vw\),700px\)\}/);
     const expected = new Map([
         ['beauty-mailbox-16', ['时间', '位置', '衣冠', '情愫', '欲念', '来信', '心声']],
         ['beauty-double-heart-17', ['时间', '位置', '衣冠', '情愫', '欲念', '内心状态', '来信']],
