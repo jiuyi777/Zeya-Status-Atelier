@@ -29,6 +29,8 @@ import {
     parseStatusOutput,
     parseFields,
     parsePages,
+    mergeStatusRegexScripts,
+    statusRegexInstallId,
 } from '../rule-generator.js';
 import {
     STATUS_BEAUTY_01_15_IDS,
@@ -306,6 +308,26 @@ test('status beauty 01 to 15 map every bundled original regex to its exact AI ou
     assert.match(previewDocument, /span\.textContent=valueFor/);
     assert.match(previewDocument, /生成值一/);
     assert.match(previewDocument, /root\.querySelectorAll\('\[data-capture\]'\)/);
+});
+
+test('status regex installation preserves different structures and only updates the same identity', () => {
+    const baseId = 'zeya-status-rule-v2';
+    const dossierRule = { structure: 'beauty-dossier-04', tagName: 'dossier_status' };
+    const flowerRule = { structure: 'beauty-flower-echo-10', tagName: 'flower_echo_status' };
+    const dossierScript = { id: 'source-04', scriptName: '九一 · 状态栏04 · 人物剪报卷宗', findRegex: '/<dossier_status>/' };
+    const flowerScript = { id: 'source-10', scriptName: '九一 · 状态栏10 · 花冠回声簿', findRegex: '/<flower_echo_status>/' };
+
+    const first = mergeStatusRegexScripts([], dossierScript, dossierRule, baseId);
+    const second = mergeStatusRegexScripts(first.scripts, flowerScript, flowerRule, baseId);
+    assert.equal(second.scripts.length, 2);
+    assert.equal(second.replaced.length, 0);
+    assert.notEqual(statusRegexInstallId(dossierRule, baseId), statusRegexInstallId(flowerRule, baseId));
+
+    const updated = mergeStatusRegexScripts(second.scripts, { ...dossierScript, replaceString: 'new' }, dossierRule, baseId);
+    assert.equal(updated.scripts.length, 2);
+    assert.equal(updated.replaced.length, 1);
+    assert.equal(updated.scripts.find(item => item.id === statusRegexInstallId(dossierRule, baseId))?.replaceString, 'new');
+    assert.ok(updated.scripts.some(item => item.id === statusRegexInstallId(flowerRule, baseId)));
 });
 
 test('bundled status regexes fit the current viewport without a dark padded stage', () => {
@@ -625,6 +647,9 @@ test('all bundled status regexes receive the same readable mobile title and body
         assert.match(readable.replaceString, /data-status-atelier-mobile-typography/, `${id} has the shared mobile typography`);
         assert.match(readable.replaceString, /data-capture="\d+"/, `${id} exposes dynamic values to the typography layer`);
         assert.match(readable.replaceString, /font-weight:400!important/, `${id} uses regular mobile body text`);
+        if (id === 'beauty-dossier-04') {
+            assert.doesNotMatch(readable.replaceString, /data-status-atelier-mobile-typography[^<]*\.design-04-page/);
+        }
     }
 });
 

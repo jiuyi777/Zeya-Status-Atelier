@@ -643,11 +643,13 @@ test('status prompt only runs where the generated status regex is installed', ()
     const gate = source.match(/function statusRegexAppliesToCurrentContext\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(gate, /getScriptsByType\(SCRIPT_TYPES\.SCOPED, \{ allowedOnly: true \}\)/);
     assert.match(gate, /getScriptsByType\(SCRIPT_TYPES\.GLOBAL\)/);
+    assert.match(gate, /hasStructuredInstallId/);
+    assert.match(gate, /!hasStructuredInstallId && scripts\.some\(script => script\?\.id === targetId\)/);
     const prompt = source.match(/function updatePrompt\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(prompt, /stored\.promptEnabled && statusRegexAppliesToCurrentContext\(\)/);
 });
 
-test('one-click scoped status reuses or creates and binds a character worldbook before replacing the regex', () => {
+test('one-click scoped status reuses or creates a worldbook and merges the installed regex by stable identity', () => {
     assert.match(source, /async function installStatusWorldbookRule\(\)/);
     const scopedWorldbook = source.match(/async function installStatusWorldbookRule\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(scopedWorldbook, /currentLinkedWorldbooks\(ctx\)/);
@@ -664,8 +666,8 @@ test('one-click scoped status reuses or creates and binds a character worldbook 
     const regexInstall = source.match(/async function installGeneratedRegex\(script, requestedScope = settings\(\)\.installScope\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(regexInstall, /fetch\('\/api\/characters\/merge-attributes'/);
     assert.match(regexInstall, /fetch\('\/api\/characters\/get'/);
-    assert.match(regexInstall, /const installedScript = \{ \.\.\.script, id: targetId, disabled: false \}/);
-    assert.match(regexInstall, /scripts\.push\(installedScript\)/);
+    assert.match(regexInstall, /mergeStatusRegexScripts\(/);
+    assert.match(regexInstall, /resolvedStatusInput\(\)/);
     assert.match(regexInstall, /接口返回成功，但重新读取角色卡后没有找到本次安装结果/);
     assert.match(regexInstall, /if \(!response\.ok\)/);
     assert.match(regexInstall, /局部正则未保存到角色卡/);

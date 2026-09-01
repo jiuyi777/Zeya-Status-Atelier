@@ -25,8 +25,10 @@ import {
     parseChatConversationLog,
     parseStatusOutput,
     parseFields,
-} from './rule-generator.js?v=0.11.14';
-import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.14';
+    mergeStatusRegexScripts,
+    statusRegexInstallId,
+} from './rule-generator.js?v=0.11.15';
+import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.15';
 import {
     STATUS_BEAUTY_01_15_IDS,
     applyStatusBeautyControlChrome,
@@ -40,23 +42,23 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.14';
+} from './status-beauty-01-15-bundle.js?v=0.11.15';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
-} from './status-beauty-05-09.js?v=0.11.14';
+} from './status-beauty-05-09.js?v=0.11.15';
 import {
     STATUS_BEAUTY_16_20_IDS,
     buildStatusBeauty16To20Preview,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.14';
+} from './status-beauty-16-20.js?v=0.11.15';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.14';
+} from './opening-home-generator.js?v=0.11.15';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -73,19 +75,19 @@ import {
     resolveStatusIdeaIntent,
     statusRecommendationKey,
     usableGreetingRecords,
-} from './response-parser.js?v=0.11.14';
+} from './response-parser.js?v=0.11.15';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.11.14';
+} from './worldbook-routes.js?v=0.11.15';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.11.14';
+} from './entry-dialog.js?v=0.11.15';
 import { getContext as getSillyTavernContext } from '../../../extensions.js';
 import {
     greetingBindingSummary,
@@ -95,19 +97,19 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.11.14';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.14';
+} from './greeting-workflow.js?v=0.11.15';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.15';
 import {
     buildCharacterHomepageContext,
     describeCurrentCharacterContext,
     resolveCurrentCharacterContext,
     selectCurrentSillyTavernContext,
-} from './opening-context.js?v=0.11.14';
+} from './opening-context.js?v=0.11.15';
 import {
     buildStatusWorldbookName,
     STATUS_WORLDBOOK_ENTRY_ID,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.11.14';
+} from './status-worldbook.js?v=0.11.15';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -129,7 +131,7 @@ import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.14';
+const VERSION = '0.11.15';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -1588,11 +1590,17 @@ function updateSummarySourceVisibility() {
 function statusRegexAppliesToCurrentContext() {
     const stored = settings();
     const targetId = String(stored.ruleId || 'zeya-status-rule');
+    const installedId = statusRegexInstallId(stored, targetId);
     const targetName = `九一 · ${String(stored.ruleName || '双页剧情状态').trim() || '双页剧情状态'}`;
-    const matches = script => script?.id === targetId || script?.scriptName === targetName;
+    const matches = script => script?.id === installedId || script?.scriptName === targetName;
     try {
-        return getScriptsByType(SCRIPT_TYPES.SCOPED, { allowedOnly: true }).some(matches)
-            || getScriptsByType(SCRIPT_TYPES.GLOBAL).some(matches);
+        const scripts = [
+            ...getScriptsByType(SCRIPT_TYPES.SCOPED, { allowedOnly: true }),
+            ...getScriptsByType(SCRIPT_TYPES.GLOBAL),
+        ];
+        const hasStructuredInstallId = scripts.some(script => String(script?.id || '').startsWith(`${targetId}-`));
+        return scripts.some(matches)
+            || (!hasStructuredInstallId && scripts.some(script => script?.id === targetId));
     } catch (error) {
         console.warn(`[${MODULE_NAME}] 无法确认当前角色的状态栏正则`, error);
         return false;
@@ -5360,16 +5368,15 @@ async function installGeneratedRegex(script, requestedScope = settings().install
     const selection = type === SCRIPT_TYPES.SCOPED ? requireCurrentCharacterContext() : null;
     const ctx = selection?.context || context();
     const targetId = String(settings().ruleId || 'zeya-status-rule-v2');
-    const installedScript = { ...script, id: targetId, disabled: false };
-    const isManagedStatusScript = item => item?.id === targetId
-        || /^九一 · 状态栏(?:0[1-9]|[12]\d)?(?: ·|$)/u.test(String(item?.scriptName || ''));
     const currentScripts = type === SCRIPT_TYPES.SCOPED
         ? selection.character?.data?.extensions?.regex_scripts
         : getScriptsByType(type);
-    const existingScripts = Array.isArray(currentScripts) ? currentScripts : [];
-    const replaced = existingScripts.filter(isManagedStatusScript);
-    const scripts = existingScripts.filter(item => !isManagedStatusScript(item));
-    scripts.push(installedScript);
+    const { installedScript, replaced, scripts } = mergeStatusRegexScripts(
+        currentScripts,
+        script,
+        resolvedStatusInput(),
+        targetId,
+    );
 
     if (type === SCRIPT_TYPES.SCOPED) {
         const character = selection.character;

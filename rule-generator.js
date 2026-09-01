@@ -2260,6 +2260,42 @@ export function buildRegexScript(input) {
     };
 }
 
+function stableStatusRegexHash(value) {
+    let hash = 2166136261;
+    for (let index = 0; index < value.length; index += 1) {
+        hash ^= value.charCodeAt(index);
+        hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0).toString(36);
+}
+
+export function statusRegexInstallId(input, baseId = 'zeya-status-rule-v2') {
+    const rule = normalizeRule(input);
+    const identity = `${rule.structure}\u0000${rule.tagName}`;
+    return `${String(baseId || 'zeya-status-rule-v2')}-${stableStatusRegexHash(identity)}`;
+}
+
+export function mergeStatusRegexScripts(currentScripts, script, input, baseId = 'zeya-status-rule-v2') {
+    const installedScript = {
+        ...script,
+        id: statusRegexInstallId(input, baseId),
+        disabled: false,
+    };
+    const incomingName = String(installedScript.scriptName || '');
+    const incomingFind = String(installedScript.findRegex || '');
+    const isSameStatusRegex = item => item?.id === installedScript.id
+        || (String(item?.scriptName || '').startsWith('九一 · ')
+            && ((incomingName && item?.scriptName === incomingName)
+                || (incomingFind && item?.findRegex === incomingFind)));
+    const existing = Array.isArray(currentScripts) ? currentScripts : [];
+    const replaced = existing.filter(isSameStatusRegex);
+    return {
+        installedScript,
+        replaced,
+        scripts: [...existing.filter(item => !isSameStatusRegex(item)), installedScript],
+    };
+}
+
 export function makePreviewRecords(input) {
     const rule = normalizeRule(input);
     const forumSample = FORUM_PREVIEW_SAMPLES[rule.forumSkin] || FORUM_PREVIEW_SAMPLES['mist-bbs'];
