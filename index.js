@@ -25,8 +25,8 @@ import {
     parseChatConversationLog,
     parseStatusOutput,
     parseFields,
-} from './rule-generator.js?v=0.11.13';
-import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.13';
+} from './rule-generator.js?v=0.11.14';
+import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.14';
 import {
     STATUS_BEAUTY_01_15_IDS,
     applyStatusBeautyControlChrome,
@@ -40,23 +40,23 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.13';
+} from './status-beauty-01-15-bundle.js?v=0.11.14';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
-} from './status-beauty-05-09.js?v=0.11.13';
+} from './status-beauty-05-09.js?v=0.11.14';
 import {
     STATUS_BEAUTY_16_20_IDS,
     buildStatusBeauty16To20Preview,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.13';
+} from './status-beauty-16-20.js?v=0.11.14';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.13';
+} from './opening-home-generator.js?v=0.11.14';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -73,19 +73,19 @@ import {
     resolveStatusIdeaIntent,
     statusRecommendationKey,
     usableGreetingRecords,
-} from './response-parser.js?v=0.11.13';
+} from './response-parser.js?v=0.11.14';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.11.13';
+} from './worldbook-routes.js?v=0.11.14';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.11.13';
+} from './entry-dialog.js?v=0.11.14';
 import { getContext as getSillyTavernContext } from '../../../extensions.js';
 import {
     greetingBindingSummary,
@@ -95,19 +95,19 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.11.13';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.13';
+} from './greeting-workflow.js?v=0.11.14';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.14';
 import {
     buildCharacterHomepageContext,
     describeCurrentCharacterContext,
     resolveCurrentCharacterContext,
     selectCurrentSillyTavernContext,
-} from './opening-context.js?v=0.11.13';
+} from './opening-context.js?v=0.11.14';
 import {
     buildStatusWorldbookName,
     STATUS_WORLDBOOK_ENTRY_ID,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.11.13';
+} from './status-worldbook.js?v=0.11.14';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -129,7 +129,7 @@ import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.13';
+const VERSION = '0.11.14';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -5928,16 +5928,36 @@ function showStatusAiRecommendation(recommendation, contextSnapshot, viewName = 
     if (previewWrap) previewWrap.hidden = false;
 }
 
-async function generateWithCurrentPreset(prompt, jsonSchema = null) {
+function isEmptyGenerationFailure(error) {
+    return /no message generated|empty (?:message|response)|空正文|没有给出可用正文|模型没有返回可用正文/i
+        .test(String(error?.message || error?.error?.message || error || ''));
+}
+
+async function generateWithCurrentPreset(prompt, jsonSchema = null, options = {}) {
     const ctx = context();
     const rawGenerator = ctx?.generateRaw;
     const quietGenerator = ctx?.generateQuietPrompt;
     if (typeof rawGenerator !== 'function' && typeof quietGenerator !== 'function') {
         throw new Error('当前酒馆版本没有提供携带当前模型与预设的后台生成接口');
     }
+    const emptyMessage = String(options.emptyMessage || '').trim();
+    const throwFriendly = error => {
+        if (emptyMessage && isEmptyGenerationFailure(error)) throw new Error(emptyMessage);
+        const friendlyMessage = generationErrorMessage(error);
+        if (friendlyMessage) throw new Error(friendlyMessage);
+        throw error;
+    };
+    const runQuietGeneration = () => quietGenerator({
+        quietPrompt: prompt,
+        quietToLoud: false,
+        skipWIAN: true,
+        responseLength: SUMMARY_RESPONSE_LENGTH,
+        removeReasoning: true,
+        jsonSchema,
+    });
     let response;
-    try {
-        if (typeof rawGenerator === 'function') {
+    if (typeof rawGenerator === 'function') {
+        try {
             // Keep the active model, provider, proxy and generation preset, but
             // send only the directory task. A quiet generation also injects the
             // full character, chat, World Info and Author's Note; large cards can
@@ -5948,25 +5968,23 @@ async function generateWithCurrentPreset(prompt, jsonSchema = null) {
                 trimNames: false,
                 jsonSchema,
             });
-        } else {
-            // Compatibility fallback for older SillyTavern builds.
-            response = await quietGenerator({
-                quietPrompt: prompt,
-                quietToLoud: false,
-                skipWIAN: true,
-                responseLength: SUMMARY_RESPONSE_LENGTH,
-                removeReasoning: true,
-                jsonSchema,
-            });
+        } catch (error) {
+            if (typeof quietGenerator !== 'function' || !isEmptyGenerationFailure(error)) throwFriendly(error);
         }
-    } catch (error) {
-        const friendlyMessage = generationErrorMessage(error);
-        if (friendlyMessage) throw new Error(friendlyMessage);
-        throw error;
+    }
+    if (typeof quietGenerator === 'function' && !responseText(response).trim()) {
+        try {
+            // Some providers expose generateRaw but return no visible message for
+            // it. Retry once through the compatible quiet API with the same
+            // active model and preset before reporting a real failure.
+            response = await runQuietGeneration();
+        } catch (error) {
+            throwFriendly(error);
+        }
     }
     const unwrapped = responseText(response).trim();
     if (unwrapped) return unwrapped;
-    throw new Error('酒馆已经发出请求，但模型没有给出可用正文；请检查当前预设的最大回复长度与推理设置');
+    throw new Error(emptyMessage || '酒馆已经发出请求，但模型没有给出可用正文；请检查当前预设的最大回复长度与推理设置');
 }
 
 async function testStatusAiGeneration(button, viewName = 'settings', forceDifferent = false) {
@@ -5978,6 +5996,7 @@ async function testStatusAiGeneration(button, viewName = 'settings', forceDiffer
         structure: settings().structure,
         profileAppearance: settings().profileAppearance,
     };
+    const emptyGenerationMessage = '当前模型没有返回状态栏内容；插件没有改动或安装任何内容。请重试，或检查当前预设的最大回复长度与推理设置';
     const ideaContext = `【用户提示词（只作为外观与字段偏好）】\n${ideaText || '没有额外提示词，请以角色卡与当前剧情为准。'}`;
     const remixContext = remixRequested
         ? [
@@ -6010,7 +6029,7 @@ async function testStatusAiGeneration(button, viewName = 'settings', forceDiffer
             remixContext,
             ideaContext,
         ].join('\n\n');
-        const recommendationResponse = await generateWithCurrentPreset(recommendationPrompt);
+        const recommendationResponse = await generateWithCurrentPreset(recommendationPrompt, null, { emptyMessage: emptyGenerationMessage });
         let recommendation = parseStatusAiRecommendation(recommendationResponse, [
             contextSnapshot.characterContext,
             contextSnapshot.chatContext,
@@ -6042,7 +6061,7 @@ async function testStatusAiGeneration(button, viewName = 'settings', forceDiffer
             ideaContext,
             buildAiInstruction(input),
         ].join('\n\n');
-        const response = await generateWithCurrentPreset(prompt);
+        const response = await generateWithCurrentPreset(prompt, null, { emptyMessage: emptyGenerationMessage });
         try {
             statusAiTestRecords = parseStatusOutput(input, response);
         } catch (formatError) {
@@ -6052,7 +6071,7 @@ async function testStatusAiGeneration(button, viewName = 'settings', forceDiffer
                 '请严格按上面的“严格输出模板”重新输出一份完整状态区块；补齐 PhoneApps、Shared 和每个 View 记录，不要解释。',
                 `【上次输出，仅供纠正】\n${String(response || '').slice(-1800)}`,
             ].join('\n\n');
-            const repairedResponse = await generateWithCurrentPreset(repairPrompt);
+            const repairedResponse = await generateWithCurrentPreset(repairPrompt, null, { emptyMessage: emptyGenerationMessage });
             statusAiTestRecords = parseStatusOutput(input, repairedResponse);
         }
         if (statusAiTestRecords.phoneApps?.length && settings().structure === 'phone') {
@@ -6098,7 +6117,7 @@ async function testStatusAiGeneration(button, viewName = 'settings', forceDiffer
             status.textContent = `生成失败：${error?.message || '模型没有返回可解析的完整状态区块'}`;
             status.dataset.state = 'error';
         }
-        notify('error', error?.message || '状态栏 AI 美化生成失败');
+        if (!status) notify('error', error?.message || '状态栏 AI 美化生成失败');
     } finally {
         button.disabled = false;
         button.textContent = original;

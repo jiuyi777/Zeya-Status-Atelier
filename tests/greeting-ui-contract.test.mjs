@@ -102,6 +102,11 @@ test('status workspace exposes component, palette, real avatar and audio control
     assert.match(source, /output\.media\.userAvatarFallbackUrl = urls\.fallbackUrl/);
     assert.match(source, /function bindImageFallback\(/);
     assert.match(source, /function setBackgroundImageWithFallback\(/);
+    assert.match(source, /function isEmptyGenerationFailure\(/);
+    assert.match(source, /typeof quietGenerator === 'function' && !responseText\(response\)\.trim\(\)/);
+    assert.match(source, /response = await runQuietGeneration\(\)/);
+    assert.match(source, /当前模型没有返回状态栏内容；插件没有改动或安装任何内容/);
+    assert.match(source, /if \(!status\) notify\('error', error\?\.message \|\| '状态栏 AI 美化生成失败'\)/);
     assert.match(source, /parseStatusOutput\(input, response\)/);
     assert.match(source, /details\.append\(instruction\)/);
     assert.doesNotMatch(source, /instructionWrap\.append\(instruction\)/);
