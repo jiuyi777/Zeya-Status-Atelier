@@ -37,6 +37,7 @@ import {
     applyStatusBeautyMediaSettings,
     applyStatusBeautyTextOverrides,
     applyStatusBeautyTitle,
+    applyStatusBeautyMobileTypography,
     buildStatusBeautyBundledPreviewDocument,
     statusBeautyBundleMeta,
 } from '../status-beauty-01-15-bundle.js';
@@ -317,6 +318,7 @@ test('bundled status regexes fit the current viewport without a dark padded stag
     assert.match(runtime, /frame\.style\.height=targetHeight\+'px'/);
     assert.match(runtime, /syncAdaptiveText\(\)/);
     assert.match(runtime, /textLength>48\?0\.56/);
+    assert.match(runtime, /minimum=Math\.min\(state\.fontSize,12\)/);
     assert.match(runtime, /target\*\.92/);
     assert.doesNotMatch(runtime, /maxBoost|state\.fontSize\*scale<8/);
     assert.match(runtime, /Math\.max\(card\.offsetHeight\|\|0,card\.scrollHeight\|\|0,1\)/);
@@ -487,6 +489,7 @@ test('status beauty 05 to 09 keep the approved field contracts and export their 
         assert.match(replacement, /^```html\n<!doctype html>/);
         assert.match(replacement, /<body class="design-page beauty-/);
         assert.match(replacement, /status-beauty-05-09\.css/);
+        assert.match(replacement, /status-beauty-05-09\.css\?v=0\.11\.11/);
         assert.match(replacement, /https:\/\/example\.com\/character\.png/);
         assert.match(replacement, /\$1/);
         assert.match(replacement, /classList\.toggle\('is-collapsed'\)/);
@@ -528,6 +531,8 @@ test('status beauty 16 to 20 keep their own field contracts and export complete 
     assert.match(statusBeauty16To20Css, /\.design-18 \.traveler-note\{position:relative/);
     assert.match(statusBeauty16To20Css, /\.design-19 \.broadcast-main\{position:relative/);
     assert.match(statusBeauty16To20Css, /\.design-20 \.status-wallet-layout\{display:block/);
+    assert.match(statusBeauty16To20Css, /\.status-card \[data-label\]\{font-size:clamp\(12px,3\.4vw,14px\)!important;font-weight:600!important/);
+    assert.match(statusBeauty16To20Css, /\[data-value\]\[data-sta-kind="long"\][^{]*\{font-family:[^}]*font-weight:400!important/);
     const expected = new Map([
         ['beauty-mailbox-16', ['时间', '位置', '衣冠', '情愫', '欲念', '来信', '心声']],
         ['beauty-double-heart-17', ['时间', '位置', '衣冠', '情愫', '欲念', '内心状态', '来信']],
@@ -557,13 +562,14 @@ test('status beauty 16 to 20 keep their own field contracts and export complete 
         assert.match(replacement, /^```html\n<!doctype html>/);
         assert.match(replacement, /<body class="design-page beauty-/);
         assert.match(replacement, /status-beauty-16-20\.css/);
-        assert.match(replacement, /status-beauty-16-20\.css\?v=0\.11\.10/);
+        assert.match(replacement, /status-beauty-16-20\.css\?v=0\.11\.11/);
         assert.match(replacement, /https:\/\/example\.com\/character\.png/);
         assert.match(replacement, /\$1/);
         assert.match(replacement, /classList\.toggle\('is-collapsed'\)/);
         assert.match(replacement, /--sta-readable-font/);
         assert.match(replacement, /syncAdaptiveText/);
         assert.match(replacement, /textLength>48\?0\.56/);
+        assert.match(replacement, /minimum=Math\.min\(state\.fontSize,12\)/);
         assert.match(replacement, /target\*\.92/);
         assert.match(replacement, /Math\.max\(root\.offsetHeight\|\|0,root\.scrollHeight\|\|0,1\)/);
         assert.match(replacement, /status-atelier-beauty-preview-frame/);
@@ -585,6 +591,38 @@ test('generic status generator keeps mobile text at a readable floor', () => {
     }).replaceString;
     assert.match(replacement, /--sta-mobile-text-floor/);
     assert.match(replacement, /--sta-mobile-text-floor:12px/);
+    assert.match(replacement, /\.zrs-label\{font-size:clamp\(12px,3\.4vw,14px\)!important;font-weight:600!important/);
+    assert.match(replacement, /\.zrs-value\{font-size:clamp\(15px,4\.5vw,18px\)!important;font-weight:400!important/);
+});
+
+test('all bundled status regexes receive the same readable mobile title and body hierarchy', () => {
+    const script = {
+        replaceString: '```html\n<html><head></head><body><article class="status-card"><section><span>身体状态</span><strong>$1</strong></section></article></body></html>\n```',
+    };
+    const rule = { pageFields: [{ kind: 'long' }] };
+    const result = applyStatusBeautyMobileTypography(script, rule);
+    assert.match(result.replaceString, /data-status-atelier-mobile-typography/);
+    assert.match(result.replaceString, /data-capture="1">\$1<\/span>/);
+    assert.match(result.replaceString, /data-sta-typography-label/);
+    assert.match(result.replaceString, /font-weight:400!important/);
+    assert.match(result.replaceString, /var kinds=\["long"\]/);
+    assert.equal(applyStatusBeautyMobileTypography(result, rule), result);
+
+    for (const id of STATUS_BEAUTY_01_15_IDS) {
+        const preset = STATUS_STRUCTURE_PRESETS.find(item => item.id === id);
+        const bundled = JSON.parse(readFileSync(new URL(`../assets/status-beauty/regexes/${statusBeautyBundleMeta(id).file}`, import.meta.url), 'utf8'));
+        const normalized = normalizeRule({
+            ...RULE_PRESETS.custom,
+            structure: id,
+            title: preset.title,
+            pagesText: preset.pagesText,
+            pageFieldsText: preset.fields.map(field => field.join('|')).join('\n'),
+        });
+        const readable = applyStatusBeautyMobileTypography(bundled, normalized);
+        assert.match(readable.replaceString, /data-status-atelier-mobile-typography/, `${id} has the shared mobile typography`);
+        assert.match(readable.replaceString, /data-capture="\d+"/, `${id} exposes dynamic values to the typography layer`);
+        assert.match(readable.replaceString, /font-weight:400!important/, `${id} uses regular mobile body text`);
+    }
 });
 
 test('three original role-card regex layouts keep separate fields, interactions and dynamic X preview', () => {

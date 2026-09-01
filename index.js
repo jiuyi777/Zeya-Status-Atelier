@@ -25,37 +25,38 @@ import {
     parseChatConversationLog,
     parseStatusOutput,
     parseFields,
-} from './rule-generator.js?v=0.11.10';
-import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.10';
+} from './rule-generator.js?v=0.11.11';
+import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.11';
 import {
     STATUS_BEAUTY_01_15_IDS,
     applyStatusBeautyControlChrome,
     applyStatusBeautyFieldLayout,
     applyStatusBeautyMediaSettings,
     applyStatusBeautyMobileLayout,
+    applyStatusBeautyMobileTypography,
     applyStatusBeautyTextOverrides,
     applyStatusBeautyTitle,
     buildStatusBeautyBundledPreviewDocument,
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.10';
+} from './status-beauty-01-15-bundle.js?v=0.11.11';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
-} from './status-beauty-05-09.js?v=0.11.10';
+} from './status-beauty-05-09.js?v=0.11.11';
 import {
     STATUS_BEAUTY_16_20_IDS,
     buildStatusBeauty16To20Preview,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.10';
+} from './status-beauty-16-20.js?v=0.11.11';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.10';
+} from './opening-home-generator.js?v=0.11.11';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -72,19 +73,19 @@ import {
     resolveStatusIdeaIntent,
     statusRecommendationKey,
     usableGreetingRecords,
-} from './response-parser.js?v=0.11.10';
+} from './response-parser.js?v=0.11.11';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.11.10';
+} from './worldbook-routes.js?v=0.11.11';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.11.10';
+} from './entry-dialog.js?v=0.11.11';
 import { getContext as getSillyTavernContext } from '../../../extensions.js';
 import {
     greetingBindingSummary,
@@ -94,19 +95,19 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.11.10';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.10';
+} from './greeting-workflow.js?v=0.11.11';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.11';
 import {
     buildCharacterHomepageContext,
     describeCurrentCharacterContext,
     resolveCurrentCharacterContext,
     selectCurrentSillyTavernContext,
-} from './opening-context.js?v=0.11.10';
+} from './opening-context.js?v=0.11.11';
 import {
     buildStatusWorldbookName,
     STATUS_WORLDBOOK_ENTRY_ID,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.11.10';
+} from './status-worldbook.js?v=0.11.11';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -128,7 +129,7 @@ import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.10';
+const VERSION = '0.11.11';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -3892,7 +3893,8 @@ function renderStatusBeautyBundledPreview(host, rule, generatedValues = []) {
         if (request !== statusBeautyBundlePreviewRequests.get(host) || !frame.isConnected) return;
         const positioned = applyStatusBeautyFieldLayout(script, rule);
         const titled = applyStatusBeautyTitle(positioned, rule);
-        frame.srcdoc = buildStatusBeautyBundledPreviewDocument(applyStatusBeautyMobileLayout(titled, rule), generatedValues);
+        const responsive = applyStatusBeautyMobileLayout(titled, rule);
+        frame.srcdoc = buildStatusBeautyBundledPreviewDocument(applyStatusBeautyMobileTypography(responsive, rule), generatedValues);
     }).catch(error => {
         if (request !== statusBeautyBundlePreviewRequests.get(host) || !frame.isConnected) return;
         host.replaceChildren(makeElement('div', 'status-atelier-empty', error.message || '原始正则预览读取失败'));
@@ -5241,7 +5243,8 @@ async function resolveStatusRegexScript(input = resolvedStatusExportInput()) {
         const positioned = applyStatusBeautyFieldLayout(script, rule);
         const titled = applyStatusBeautyTitle(positioned, rule);
         const responsive = applyStatusBeautyMobileLayout(titled, rule);
-        const edited = applyStatusBeautyTextOverrides(responsive, settings().profileTextOverrides?.[rule.structure]);
+        const readable = applyStatusBeautyMobileTypography(responsive, rule);
+        const edited = applyStatusBeautyTextOverrides(readable, settings().profileTextOverrides?.[rule.structure]);
         return {
             ...applyStatusBeautyMediaSettings(edited, rule.media),
             markdownOnly: rule.displayOnlyRegex,

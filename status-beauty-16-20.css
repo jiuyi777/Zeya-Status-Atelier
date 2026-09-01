@@ -85,6 +85,10 @@ img[data-st-avatar]:not([src]){background:linear-gradient(145deg,#eee4e1,#c9aeb5
   .status-card .compact-summary em{grid-column:1/-1}
   .status-card.is-collapsed{height:96px!important}
 
+  .status-card [data-label]{font-size:clamp(12px,3.4vw,14px)!important;font-weight:600!important;line-height:1.45!important;letter-spacing:.06em!important}
+  .status-card [data-value][data-sta-kind="text"],.status-card [data-value][data-sta-kind="long"]{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif!important;font-size:clamp(15px,4.5vw,18px)!important;font-weight:400!important;line-height:1.65!important;letter-spacing:0!important;white-space:normal!important;overflow-wrap:anywhere!important}
+  .status-card [data-value][data-sta-kind="progress"]{font-weight:600!important}
+
   .design-16 .mail-heading,.design-17 .window-heading,.design-20 .ticket-heading{padding-right:0}
   .design-16 .mail-heading h1,.design-17 .window-heading h1,.design-18 .wish-heading h1,.design-19 .broadcast-heading h1,.design-20 .ticket-heading h1{font-size:clamp(26px,9vw,34px)}
 
@@ -146,8 +150,6 @@ img[data-st-avatar]:not([src]){background:linear-gradient(145deg,#eee4e1,#c9aeb5
   .design-20 .ticket-stack{display:block}
   .design-20 .ticket-stack article{grid-template-columns:90px minmax(0,1fr);margin-top:10px;padding:15px;border-left-width:7px;clip-path:none}
   .design-20 .ticket-stack span{padding-right:10px}
-  .design-20 .ticket-stack strong{font-size:clamp(16px,5vw,20px);line-height:1.35}
   .design-20 .ticket-outlook{grid-template-columns:1fr;margin-top:12px}
-  .design-20 .ticket-mood p{font-size:clamp(18px,6vw,22px);line-height:1.35}
   .design-20 .ticket-meta{grid-template-columns:1fr 1fr;grid-template-rows:auto}
 }

@@ -81,6 +81,28 @@ img[data-st-avatar]:not([src]) {
 }
 
 @media (max-width: 560px) {
+  .status-card [data-label] {
+    font-size: clamp(12px, 3.4vw, 14px) !important;
+    font-weight: 600 !important;
+    line-height: 1.45 !important;
+    letter-spacing: .06em !important;
+  }
+
+  .status-card [data-value][data-sta-kind="text"],
+  .status-card [data-value][data-sta-kind="long"] {
+    font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif !important;
+    font-size: clamp(15px, 4.5vw, 18px) !important;
+    font-weight: 400 !important;
+    line-height: 1.65 !important;
+    letter-spacing: 0 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .status-card [data-value][data-sta-kind="progress"] {
+    font-weight: 600 !important;
+  }
+
   .status-card .compact-summary {
     min-height: 108px;
     line-height: 1.35;
