@@ -608,6 +608,10 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /\/User%20Avatars\//);
     assert.match(source, /personalAvatarFallbackUrl/);
     assert.match(source, /PHONE_PAGE_SCHEMAS\.forEach/);
+    assert.match(source, /function renderPhoneSchemaEditor/);
+    assert.match(source, /appName\.placeholder = 'APP 与页面名称'/);
+    assert.match(source, /renderPhoneSchemaEditor\(host, \{ modal: true \}\)/);
+    assert.match(source, /definition\.label = label\.value\.slice\(0, 30\)/);
     assert.match(source, /wallpaperScale/);
 });
 

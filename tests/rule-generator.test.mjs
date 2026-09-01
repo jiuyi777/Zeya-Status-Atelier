@@ -724,6 +724,7 @@ test('phone desktop is editable and exports real app navigation with a back acti
         sharedFieldsText: preset.shared.map(field => field.join('|')).join('\n'),
     };
     const parsed = parseStatusOutput(phoneInput, `<zeya_status>
+[PhoneApps|档案|航行日志|密谈|补给站]
 [Shared|旧港钟楼|22:10|细雨]
 [Personal|68|47|深色外套|我会等他回来]
 [Memo|取回钥匙|调查信封|赴约]
@@ -731,8 +732,19 @@ test('phone desktop is editable and exports real app navigation with a back acti
 [Shop|旧城通行证|进入封锁区|银柄折叠伞|藏有便笺|蓝花信纸|十二张]
 </zeya_status>`);
     assert.deepEqual(parsed.pages.map(page => page.values.length), [4, 3, 5, 6]);
+    assert.deepEqual(parsed.phoneApps, ['档案', '航行日志', '密谈', '补给站']);
+    assert.deepEqual(parsed.rule.pages.map(page => page.label), parsed.phoneApps);
     const phoneInstruction = buildAiInstruction(phoneInput);
+    assert.match(phoneInstruction, /\[PhoneApps\|/);
+    assert.match(phoneInstruction, /不要机械照抄“个人、备忘录、微信、购物”/);
     for (const page of PHONE_PAGE_SCHEMAS) assert.match(phoneInstruction, new RegExp(`\\[${page.id}\\|`));
+    assert.throws(() => parseStatusOutput(phoneInput, `<zeya_status>
+[Shared|旧港钟楼|22:10|细雨]
+[Personal|68|47|深色外套|我会等他回来]
+[Memo|取回钥匙|调查信封|赴约]
+[Wechat|温瑟|到家了吗|刚到|我等你|马上来]
+[Shop|旧城通行证|进入封锁区|银柄折叠伞|藏有便笺|蓝花信纸|十二张]
+</zeya_status>`), /PhoneApps/);
     const generated = buildRegexScript({
         ...RULE_PRESETS.custom,
         structure: 'phone',
@@ -747,6 +759,8 @@ test('phone desktop is editable and exports real app navigation with a back acti
     assert.match(generated, /zrs-app-icon/);
     assert.match(generated, /icon\.dataset\.appId=page\.id/);
     assert.match(generated, /phoneIconMarkup/);
+    assert.match(generated, /records\.PhoneApps/);
+    assert.match(generated, /page\.label=name/);
     assert.match(generated, /zrs-app-glyph/);
     assert.match(STATUS_PHONE_CSS, /data-app-id="Personal"/);
     assert.match(STATUS_PHONE_CSS, /data-app-id="Memo"/);
@@ -776,6 +790,8 @@ test('phone desktop is editable and exports real app navigation with a back acti
     assert.match(STATUS_PHONE_CSS, /--z-snow-duration/);
     assert.match(STATUS_PHONE_CSS, /focus-visible/);
     assert.match(STATUS_PHONE_CSS, /prefers-reduced-motion:reduce/);
+    assert.match(STATUS_PHONE_CSS, /data-phone-shell="classic"\]\{width:min\(94vw,360px\)/);
+    assert.match(STATUS_PHONE_CSS, /data-phone-shell="handheld-white"\]\)\{width:min\(96vw,430px\);height:480px/);
 });
 
 test('the original phone, three handheld shells, two touch phone styles, and blackberry are selectable', () => {

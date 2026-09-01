@@ -4481,6 +4481,28 @@ summary.status-atelier-section-heading {
     margin: 8px;
 }
 
+.status-atelier-phone-rule-row .status-atelier-phone-rule-help {
+    grid-column: 1 / -1;
+    color: var(--saw-ink-soft);
+    font-size: .78em;
+    line-height: 1.5;
+}
+
+.status-atelier-modal-schema-list .status-atelier-phone-page-rules {
+    margin-top: 0;
+}
+
+.status-atelier-modal-schema-list .status-atelier-phone-rule-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(110px, .7fr);
+    gap: 7px;
+}
+
+.status-atelier-modal-schema-list .status-atelier-phone-rule-row textarea,
+.status-atelier-modal-schema-list .status-atelier-phone-rule-row .status-atelier-phone-rule-help {
+    grid-column: 1 / -1;
+}
+
 .status-atelier-rule-preview[data-structure="phone"] .zrs-shared.is-diy-draggable,
 .status-atelier-rule-preview[data-structure="phone"] .zrs-phone-wallpaper img.is-diy-draggable,
 .status-atelier-rule-preview[data-structure="phone"] .zrs-phone-avatar.is-diy-draggable {

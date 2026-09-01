@@ -1165,6 +1165,15 @@ function placeholder(field, pageLabel = '') {
     return `{{${subject}${field.label}：${field.instruction}}}`;
 }
 
+function sanitizePhoneAppName(value, fallback = '') {
+    const cleaned = String(value || '')
+        .replace(/[|｜\[\]【】<>]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 12);
+    return cleaned || fallback;
+}
+
 export function buildAiInstruction(input) {
     const rule = normalizeRule(input);
     if (isStatusBeauty01To15(rule.structure)) return buildStatusBeautyBundledInstruction(rule);
@@ -1215,6 +1224,9 @@ export function buildAiInstruction(input) {
         ].filter(Boolean).join('\n');
     }
     const records = [];
+    if (rule.structure === 'phone') {
+        records.push('[PhoneApps|{{个人页名称}}|{{日记或记录类名称}}|{{聊天类名称}}|{{购物或物品类名称}}]');
+    }
     if (rule.sharedFields.length) {
         records.push(`[Shared|${rule.sharedFields.map(field => placeholder(field)).join('|')}]`);
     }
@@ -1228,10 +1240,14 @@ export function buildAiInstruction(input) {
         ? rule.pages.map(page => `${page.label}：${(page.fields || rule.pageFields).map((field, index) => `第${index + 1}项“${field.label}”=${field.instruction}`).join('；')}`).join('\n')
         : rule.pageFields.map((field, index) => `- 第${index + 1}项“${field.label}”：${field.instruction}`).join('\n');
     const valueRule = '方括号内严格使用英文竖线分隔。值中不得出现英文竖线、方括号、尖括号或 Markdown 加粗。';
+    const phoneNamingGuide = rule.structure === 'phone'
+        ? 'PhoneApps 四项是手机桌面与页面标题。必须结合角色身份、世界观和当前剧情重新命名，通常写 2–6 个字，例如“案卷”“航行日志”“密谈”“补给站”；不要机械照抄“个人、备忘录、微信、购物”等默认名称。'
+        : '';
     return [
         `<${rule.tagName}_rules>`,
         `每次正文结束后，必须追加一个 <${rule.tagName}> 状态区块。`,
         '区块中的所有值都必须根据当前剧情动态生成；模板中的双花括号只是填写说明，回复时不得原样保留。',
+        phoneNamingGuide,
         valueRule,
         '不要把状态区块放进 Markdown 代码块，不要输出 HTML，不要遗漏记录，也不要附加同类的第二套状态格式。',
         '',
@@ -1261,13 +1277,26 @@ export function parseStatusOutput(input, rawOutput) {
         if (key) records[key] = parts;
     }
     const missing = [];
+    if (rule.structure === 'phone' && (records.PhoneApps?.length || 0) < rule.pages.length) missing.push('PhoneApps');
     if (rule.sharedFields.length && (records.Shared?.length || 0) < rule.sharedFields.length) missing.push('Shared');
     for (const page of rule.pages) {
         if ((records[page.id]?.length || 0) < (page.fields || rule.pageFields).length) missing.push(page.id);
     }
     if (missing.length) throw new Error(`AI 状态区块缺少完整记录：${missing.join('、')}`);
+    const phoneApps = rule.structure === 'phone'
+        ? rule.pages.map((page, index) => sanitizePhoneAppName(records.PhoneApps[index], page.label))
+        : [];
+    if (phoneApps.length) {
+        rule.phoneDesktop.apps.forEach((app, index) => {
+            app.name = phoneApps[index] || app.name;
+        });
+        rule.pages.forEach((page, index) => {
+            page.label = phoneApps[index] || page.label;
+        });
+    }
     return {
         rule,
+        phoneApps,
         shared: rule.sharedFields.map((_, index) => records.Shared?.[index] || ''),
         pages: rule.pages.map(page => ({ page, values: (page.fields || rule.pageFields).map((_, index) => records[page.id]?.[index] || '') })),
         raw: source,
@@ -1803,6 +1832,25 @@ export const STATUS_PHONE_CSS = `
 .zeya-regex-status[data-structure="phone"][data-phone-layout="handheld"] :is(.zrs-tab,.zrs-app-label,.zrs-phone-back){text-decoration:none}
 .zeya-regex-status[data-structure="phone"][data-phone-shell="bandage-pop"].is-phone-home .zrs-content::after{content:"× ᴗ ×";position:absolute;z-index:3;right:11%;bottom:14.5%;display:grid;width:98px;height:58px;place-items:center;border:2px solid var(--z-phone-text);border-radius:48% 44% 42% 47%;color:var(--z-phone-text);background:var(--z-phone-card);box-shadow:-8px 8px 0 color-mix(in srgb,var(--z-phone-accent) 54%,transparent);font:900 18px/1 Arial,sans-serif;transform:rotate(3deg);pointer-events:none}
 .zeya-regex-status[data-structure="phone"][data-phone-shell="mint-archive"] .zrs-phone-home-guide::after{content:"good things\\A take time.\\A\\A 把今天喜欢的片段，安静地收藏起来。"}
+@media(max-width:520px){
+.zeya-regex-status[data-structure="phone"][data-phone-shell="classic"]{width:min(94vw,360px);height:clamp(600px,160vw,680px)}
+.zeya-regex-status[data-structure="phone"][data-phone-shell="classic"] .zrs-card{width:100%;height:100%}
+.zeya-regex-status[data-structure="phone"]:is([data-phone-shell="bandage-pop"],[data-phone-shell="mint-archive"],[data-phone-shell="blackberry"]){width:min(94vw,390px)}
+.zeya-regex-status[data-structure="phone"]:is([data-phone-shell="handheld"],[data-phone-shell="handheld-pink"],[data-phone-shell="handheld-white"]){width:min(96vw,430px);height:480px;aspect-ratio:auto;filter:drop-shadow(0 12px 18px color-mix(in srgb,var(--z-phone-text) 20%,transparent))}
+.zeya-regex-status[data-structure="phone"]:is([data-phone-shell="handheld"],[data-phone-shell="handheld-pink"],[data-phone-shell="handheld-white"]) .zrs-phone-frame,.zeya-regex-status[data-structure="phone"]:is([data-phone-shell="handheld"],[data-phone-shell="handheld-pink"],[data-phone-shell="handheld-white"]) .zrs-phone-controls{display:none}
+.zeya-regex-status[data-structure="phone"]:is([data-phone-shell="handheld"],[data-phone-shell="handheld-pink"],[data-phone-shell="handheld-white"]) .zrs-card{top:0;left:2%;width:96%;height:100%;border:3px solid color-mix(in srgb,var(--z-phone-shell) 78%,var(--z-phone-text));border-radius:30px;background:var(--z-phone-shell);box-shadow:inset 0 0 0 7px color-mix(in srgb,var(--z-phone-card) 30%,transparent)}
+.zeya-regex-status[data-structure="phone"]:is([data-phone-shell="handheld"],[data-phone-shell="handheld-pink"],[data-phone-shell="handheld-white"]) .zrs-content{inset:10px;padding:16px;border-radius:21px}
+.zeya-regex-status[data-structure="phone"]:is([data-phone-shell="handheld"],[data-phone-shell="handheld-pink"],[data-phone-shell="handheld-white"]).is-phone-home .zrs-phone-home-guide{inset:12px}
+.zeya-regex-status[data-structure="phone"]:is([data-phone-shell="handheld"],[data-phone-shell="handheld-pink"],[data-phone-shell="handheld-white"]) .zrs-phone-home-key{width:calc(54px * var(--z-phone-icon-scale,1));height:calc(54px * var(--z-phone-icon-scale,1));border-radius:calc(15px * var(--z-phone-icon-scale,1))}
+.zeya-regex-status[data-structure="phone"]:is([data-phone-shell="handheld"],[data-phone-shell="handheld-pink"],[data-phone-shell="handheld-white"]) .zrs-phone-home-key .zrs-app-icon{width:calc(48px * var(--z-phone-icon-scale,1));height:calc(48px * var(--z-phone-icon-scale,1));border-radius:calc(13px * var(--z-phone-icon-scale,1))}
+.zeya-regex-status[data-structure="phone"]:is([data-phone-shell="handheld"],[data-phone-shell="handheld-pink"],[data-phone-shell="handheld-white"]) .zrs-phone-pagebar{height:52px;padding:10px 12px 6px}
+.zeya-regex-status[data-structure="phone"]:is([data-phone-shell="handheld"],[data-phone-shell="handheld-pink"],[data-phone-shell="handheld-white"]) .zrs-phone-back{top:6px;left:7px;width:68px;min-width:68px;height:40px;min-height:40px;font-size:13px}
+.zeya-regex-status[data-structure="phone"]:is([data-phone-shell="handheld"],[data-phone-shell="handheld-pink"],[data-phone-shell="handheld-white"]) .zrs-phone-page-title{font-size:16px;line-height:32px}
+.zeya-regex-status[data-structure="phone"]:is([data-phone-shell="handheld"],[data-phone-shell="handheld-pink"],[data-phone-shell="handheld-white"]) .zrs-fields{top:52px;padding:14px 15px}
+.zeya-regex-status[data-structure="phone"]:is([data-phone-shell="handheld"],[data-phone-shell="handheld-pink"],[data-phone-shell="handheld-white"]) .zrs-phone-diary-body{min-height:330px;font-size:15px;line-height:1.8}
+.zeya-regex-status[data-structure="phone"]:is([data-phone-shell="handheld"],[data-phone-shell="handheld-pink"],[data-phone-shell="handheld-white"]) .zrs-phone-chat{max-width:calc(84% - 38px);padding:10px 12px;font-size:14px;line-height:1.55}
+.zeya-regex-status[data-structure="phone"]:is([data-phone-shell="handheld"],[data-phone-shell="handheld-pink"],[data-phone-shell="handheld-white"]) .zrs-phone-chat-avatar{width:32px;height:32px;flex-basis:32px;font-size:11px}
+}
 @keyframes zrs-phone-snow-fall{0%{transform:translate3d(0,-18px,0) rotate(0);opacity:0}10%{opacity:.78}48%{transform:translate3d(var(--z-snow-x),145px,0) rotate(105deg);opacity:.68}90%{opacity:.56}100%{transform:translate3d(calc(var(--z-snow-x) * -.45),320px,0) rotate(240deg);opacity:0}}
 @keyframes zrs-phone-orbit-turn{to{transform:rotate(360deg)}}@keyframes zrs-phone-orbit-counter{to{transform:rotate(-360deg)}}
 @media(prefers-reduced-motion:reduce){.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i,.zeya-regex-status[data-structure="phone"][data-phone-shell="orbit"] .zrs-tabs,.zeya-regex-status[data-structure="phone"][data-phone-shell="orbit"] .zrs-tab{animation:none}.zeya-regex-status[data-structure="phone"] .zrs-tab{transition:none}}
@@ -2052,7 +2100,7 @@ ${STATUS_PHONE_CSS}
   title.textContent=config.title;subtitle.textContent=config.subtitle;
   root.querySelector('.zrs-glyph').textContent=config.glyph;root.querySelector('.zrs-style-name').textContent=config.styleName;
   function make(tag,className,text){var el=document.createElement(tag);if(className)el.className=className;if(text!==undefined)el.textContent=String(text);return el;}
-  var phoneMode=config.structure==='phone';var handheldMode=phoneMode&&config.phoneDesktop.shellStyle!=='classic';var forumMode=config.structure==='forum';if(forumMode){var forumArt=root.querySelector('.zrs-structure-art');if(forumArt)forumArt.remove();}
+  var phoneMode=config.structure==='phone';var handheldMode=phoneMode&&config.phoneDesktop.shellStyle!=='classic';var forumMode=config.structure==='forum';if(phoneMode&&records.PhoneApps){config.pages.forEach(function(page,index){var fallback=page.label;var name=String(records.PhoneApps[index]||'').replace(/[|\\[\\]<>]/g,'').replace(/\\s+/g,' ').trim().slice(0,12)||fallback;page.label=name;var app=config.phoneDesktop.apps.find(function(item){return item.id===page.id;});if(app)app.name=name;});}if(forumMode){var forumArt=root.querySelector('.zrs-structure-art');if(forumArt)forumArt.remove();}
   var decorationMarkup={snow:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M4.8 6.2l14.4 11.6M19.2 6.2 4.8 17.8M12 2l-2 2.7M12 2l2 2.7M12 22l-2-2.7M12 22l2-2.7M4.8 6.2l3.3.3M4.8 6.2l.7 3.2M19.2 17.8l-3.3-.3M19.2 17.8l-.7-3.2M19.2 6.2l-3.3.3M19.2 6.2l-.7 3.2M4.8 17.8l3.3-.3M4.8 17.8l.7-3.2"></path></svg>',sakura:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 11.5C8.2 9.2 7.5 5.5 10.8 3c2.2 1.6 2.7 4 1.2 6.4 1.5-2.4 4-3.1 6.2-1.4-.5 3.7-3.7 5.5-6.2 4.4 2.5 1.1 3.5 3.6 2.1 6-3.6.6-6-2.1-5.7-4.8-.3 2.7-2.5 4.1-5 2.9-.1-3.7 2.8-6 5.4-5.4-2.6-.6-3.8-2.9-2.6-5.3 3.6-.7 6.2 1.8 5.8 5.7Z"></path></svg>',petals:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18C4 11 8 5 16 4c1 7-3 13-11 14Zm4-3c3-1 6-4 8-8M14 19c-1-4 1-7 5-8 1 4-1 7-5 8Z"></path></svg>',stars:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 2.6 6.6L22 11l-6 4.2.2 7.3L12 18.3l-4.2 4.2.2-7.3L2 11l7.4-2.4L12 2Z"></path></svg>'};
   var decorationStyle=config.phoneDesktop.decorationStyle||'snow';
   if(phoneMode)root.querySelectorAll('.zrs-phone-petals i').forEach(function(item){item.classList.add('has-custom-decoration');item.innerHTML=decorationMarkup[decorationStyle]||decorationMarkup.snow;});
@@ -2078,7 +2126,7 @@ ${STATUS_PHONE_CSS}
   function phoneText(value,fallback){var text=String(value||'').trim();return !text||text==='无'?fallback:text;}
   function phoneAvatar(){var holder=make('div','zrs-phone-avatar');var url=config.phoneDesktop.personalAvatarUrl||config.media.avatarUrl;var fallbackUrl=config.phoneDesktop.personalAvatarFallbackUrl||'';if(url){var img=make('img');img.src=url;img.alt=config.media.imageAlt||'当前角色头像';img.loading='lazy';img.referrerPolicy='no-referrer';img.style.objectPosition=config.phoneDesktop.personalAvatarPositionX+'% '+config.phoneDesktop.personalAvatarPositionY+'%';img.style.transform='scale('+config.phoneDesktop.personalAvatarScale+')';img.addEventListener('error',function(){if(fallbackUrl&&img.dataset.fallbackAttempted!=='true'){img.dataset.fallbackAttempted='true';img.src=fallbackUrl;return;}img.remove();holder.classList.add('is-placeholder');});holder.append(img);}else holder.classList.add('is-placeholder');return holder;}
   function phoneDataCard(field,value,extraClass){var progress=field&&field.kind==='progress';var card=make('div','zrs-phone-data-card'+(extraClass?' '+extraClass:''));var head=make('div','zrs-phone-data-head');head.append(make('span','',field&&field.label||'未命名字段'));if(progress)head.append(make('span','',phoneText(value,'0')+'/100'));card.append(head);if(progress){var bar=make('div','zrs-phone-bar');var fill=make('i');var amount=Number(String(value||'').match(/-?\\d+(?:\\.\\d+)?/)?.[0]);if(!Number.isFinite(amount))amount=0;fill.style.width=Math.max(0,Math.min(100,amount))+'%';bar.append(fill);card.append(bar);}else card.append(make('div','zrs-phone-copy',phoneText(value,'暂无记录')));return card;}
-  function renderPhonePage(page,values){fields.replaceChildren();root.dataset.phonePage=page.id;phoneTitle.textContent=page.label;if(page.id==='Personal'){var personalFields=page.fields||config.phoneDesktop.personalFields||[];var hero=make('div','zrs-phone-personal-hero');hero.append(phoneAvatar());fields.append(hero,phoneDataCard(personalFields[0],values[0]),phoneDataCard(personalFields[1],values[1],'is-desire'),phoneDataCard(personalFields[2],values[2],'is-wide'),phoneDataCard(personalFields[3],values[3],'is-wide is-thought'));return;}if(page.id==='Memo'){if(handheldMode){phoneTitle.textContent='日记';var diary=make('article','zrs-phone-diary');var diaryHead=make('header','zrs-phone-diary-head');diaryHead.append(make('small','','PRIVATE DIARY · '+phoneText(sharedValues[1],'此刻')));var diaryText=values.map(function(value){return phoneText(value,'');}).filter(Boolean).join('\\n\\n');var diaryBody=make('p','zrs-phone-diary-body',diaryText);diaryBody.contentEditable='true';diaryBody.spellcheck=true;diaryBody.setAttribute('role','textbox');diaryBody.setAttribute('aria-label','编辑日记正文');diaryBody.dataset.placeholder='在这里写下今天的日记……';diary.append(diaryHead,diaryBody);fields.append(diary);}else{values.forEach(function(value){if(phoneText(value,'')!=='')fields.append(make('div','zrs-phone-list-card',value));});if(!fields.children.length)fields.append(make('div','zrs-phone-empty','暂无备忘事项'));}return;}if(page.id==='Wechat'){phoneTitle.textContent=phoneText(values[0],'未知');for(var i=1;i<values.length;i++){var message=phoneText(values[i],'');if(!message)continue;if(handheldMode){var side=i%2===1?'is-left':'is-right';var row=make('div','zrs-phone-chat-row '+side);var avatar=make('span','zrs-phone-chat-avatar',side==='is-left'?phoneTitle.textContent.slice(0,1):'我');var bubble=make('div','zrs-phone-chat '+side,message);if(side==='is-left')row.append(avatar,bubble);else row.append(bubble,avatar);fields.append(row);}else fields.append(make('div','zrs-phone-chat '+(i%2===1?'is-left':'is-right'),message));}if(!fields.children.length)fields.append(make('div','zrs-phone-empty','暂无聊天记录'));return;}for(var itemIndex=0;itemIndex<values.length;itemIndex+=2){var itemName=phoneText(values[itemIndex],'');if(!itemName)continue;var detail=make('details','zrs-phone-shop');var summary=make('summary','',itemName);detail.append(summary,make('div','zrs-phone-shop-desc',phoneText(values[itemIndex+1],'暂无说明')));fields.append(detail);}if(!fields.children.length)fields.append(make('div','zrs-phone-empty','购物车空空如也'));}
+  function renderPhonePage(page,values){fields.replaceChildren();root.dataset.phonePage=page.id;phoneTitle.textContent=page.label;if(page.id==='Personal'){var personalFields=page.fields||config.phoneDesktop.personalFields||[];var hero=make('div','zrs-phone-personal-hero');hero.append(phoneAvatar());fields.append(hero,phoneDataCard(personalFields[0],values[0]),phoneDataCard(personalFields[1],values[1],'is-desire'),phoneDataCard(personalFields[2],values[2],'is-wide'),phoneDataCard(personalFields[3],values[3],'is-wide is-thought'));return;}if(page.id==='Memo'){if(handheldMode){phoneTitle.textContent=page.label;var diary=make('article','zrs-phone-diary');var diaryHead=make('header','zrs-phone-diary-head');diaryHead.append(make('small','','PRIVATE DIARY · '+phoneText(sharedValues[1],'此刻')));var diaryText=values.map(function(value){return phoneText(value,'');}).filter(Boolean).join('\\n\\n');var diaryBody=make('p','zrs-phone-diary-body',diaryText);diaryBody.contentEditable='true';diaryBody.spellcheck=true;diaryBody.setAttribute('role','textbox');diaryBody.setAttribute('aria-label','编辑日记正文');diaryBody.dataset.placeholder='在这里写下今天的日记……';diary.append(diaryHead,diaryBody);fields.append(diary);}else{values.forEach(function(value){if(phoneText(value,'')!=='')fields.append(make('div','zrs-phone-list-card',value));});if(!fields.children.length)fields.append(make('div','zrs-phone-empty','暂无备忘事项'));}return;}if(page.id==='Wechat'){phoneTitle.textContent=phoneText(values[0],'未知');for(var i=1;i<values.length;i++){var message=phoneText(values[i],'');if(!message)continue;if(handheldMode){var side=i%2===1?'is-left':'is-right';var row=make('div','zrs-phone-chat-row '+side);var avatar=make('span','zrs-phone-chat-avatar',side==='is-left'?phoneTitle.textContent.slice(0,1):'我');var bubble=make('div','zrs-phone-chat '+side,message);if(side==='is-left')row.append(avatar,bubble);else row.append(bubble,avatar);fields.append(row);}else fields.append(make('div','zrs-phone-chat '+(i%2===1?'is-left':'is-right'),message));}if(!fields.children.length)fields.append(make('div','zrs-phone-empty','暂无聊天记录'));return;}for(var itemIndex=0;itemIndex<values.length;itemIndex+=2){var itemName=phoneText(values[itemIndex],'');if(!itemName)continue;var detail=make('details','zrs-phone-shop');var summary=make('summary','',itemName);detail.append(summary,make('div','zrs-phone-shop-desc',phoneText(values[itemIndex+1],'暂无说明')));fields.append(detail);}if(!fields.children.length)fields.append(make('div','zrs-phone-empty','购物车空空如也'));}
   function socialValue(page,values,id,fallback){var definitions=page.fields||config.pageFields;var index=definitions.findIndex(function(field){return field.id===id;});return index>=0?phoneText(values[index],fallback):fallback;}
   function renderSocialPage(page,values){
     var article=make('article','zrs-social-file');

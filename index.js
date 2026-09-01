@@ -25,8 +25,8 @@ import {
     parseChatConversationLog,
     parseStatusOutput,
     parseFields,
-} from './rule-generator.js?v=0.11.11';
-import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.11';
+} from './rule-generator.js?v=0.11.12';
+import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.12';
 import {
     STATUS_BEAUTY_01_15_IDS,
     applyStatusBeautyControlChrome,
@@ -40,23 +40,23 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.11';
+} from './status-beauty-01-15-bundle.js?v=0.11.12';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
-} from './status-beauty-05-09.js?v=0.11.11';
+} from './status-beauty-05-09.js?v=0.11.12';
 import {
     STATUS_BEAUTY_16_20_IDS,
     buildStatusBeauty16To20Preview,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.11';
+} from './status-beauty-16-20.js?v=0.11.12';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.11';
+} from './opening-home-generator.js?v=0.11.12';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -73,19 +73,19 @@ import {
     resolveStatusIdeaIntent,
     statusRecommendationKey,
     usableGreetingRecords,
-} from './response-parser.js?v=0.11.11';
+} from './response-parser.js?v=0.11.12';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.11.11';
+} from './worldbook-routes.js?v=0.11.12';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.11.11';
+} from './entry-dialog.js?v=0.11.12';
 import { getContext as getSillyTavernContext } from '../../../extensions.js';
 import {
     greetingBindingSummary,
@@ -95,19 +95,19 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.11.11';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.11';
+} from './greeting-workflow.js?v=0.11.12';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.12';
 import {
     buildCharacterHomepageContext,
     describeCurrentCharacterContext,
     resolveCurrentCharacterContext,
     selectCurrentSillyTavernContext,
-} from './opening-context.js?v=0.11.11';
+} from './opening-context.js?v=0.11.12';
 import {
     buildStatusWorldbookName,
     STATUS_WORLDBOOK_ENTRY_ID,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.11.11';
+} from './status-worldbook.js?v=0.11.12';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -129,7 +129,7 @@ import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.11';
+const VERSION = '0.11.12';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -1325,6 +1325,89 @@ function serializeFieldDefinitions(definitions) {
     scheduleStatusPreviewUpdate();
 }
 
+function phoneSchemaEdited() {
+    statusAiTestRecords = null;
+    settings().preset = 'custom';
+    saveCurrentProfileTemplateDraft();
+    scheduleStatusPreviewUpdate();
+}
+
+function renderPhoneSchemaEditor(host, { modal = false } = {}) {
+    if (!host) return;
+    const stored = settings();
+    stored.phoneDesktop = normalizePhoneDesktop({ phoneDesktop: stored.phoneDesktop, media: stored.media });
+    const phone = stored.phoneDesktop;
+    host.replaceChildren();
+    PHONE_PAGE_SCHEMAS.forEach((page, pageIndex) => {
+        const app = phone.apps.find(item => item.id === page.id);
+        const group = makeElement('details', 'status-atelier-phone-page-rules');
+        group.open = pageIndex === 0;
+        const summary = makeElement('summary', '', `${app?.name || page.label} · APP 与世界书数据`);
+        group.append(summary);
+
+        const appRow = makeElement('article', `status-atelier-schema-row status-atelier-phone-rule-row${modal ? ' status-atelier-modal-schema-row' : ''}`);
+        const appName = makeElement('input', 'text_pole');
+        appName.value = app?.name || page.label;
+        appName.maxLength = 12;
+        appName.placeholder = 'APP 与页面名称';
+        appName.setAttribute('aria-label', `${page.label} APP 与页面名称`);
+        const appHelp = makeElement('small', 'status-atelier-phone-rule-help', '桌面图标和打开后的页面标题都会使用这个名称');
+        appName.addEventListener('input', () => {
+            app.name = appName.value.slice(0, 12);
+            summary.textContent = `${app.name || page.label} · APP 与世界书数据`;
+            phoneSchemaEdited();
+        });
+        appName.addEventListener('change', () => {
+            app.name = appName.value.trim().slice(0, 12) || page.label;
+            appName.value = app.name;
+            saveSettingsSoon({ snapshotOpening: false });
+            renderPhoneDesktopControls();
+        });
+        appRow.append(appName, appHelp);
+        group.append(appRow);
+
+        const definitions = page.id === 'Personal' ? phone.personalFields : phone.pageFields[page.id];
+        definitions.forEach(definition => {
+            const row = makeElement('article', `status-atelier-schema-row status-atelier-phone-rule-row${modal ? ' status-atelier-modal-schema-row' : ''}`);
+            const label = makeElement('input', 'text_pole');
+            label.value = definition.label;
+            label.maxLength = 30;
+            label.title = '可修改：世界书字段显示名称';
+            label.setAttribute('aria-label', `${definition.label}的显示名称`);
+            const kind = makeElement('select', 'text_pole');
+            Object.entries(KIND_LABELS).forEach(([value, text]) => {
+                const option = makeElement('option', '', text);
+                option.value = value;
+                kind.append(option);
+            });
+            kind.value = definition.kind;
+            kind.setAttribute('aria-label', `${definition.label}显示类型`);
+            const instruction = makeElement('textarea', 'text_pole');
+            instruction.value = definition.instruction;
+            instruction.rows = 2;
+            instruction.maxLength = 300;
+            instruction.setAttribute('aria-label', `${definition.label}的 AI 填写要求`);
+            label.addEventListener('input', () => {
+                definition.label = label.value.slice(0, 30);
+                phoneSchemaEdited();
+            });
+            kind.addEventListener('change', () => {
+                definition.kind = kind.value;
+                phoneSchemaEdited();
+                saveSettingsSoon({ snapshotOpening: false });
+            });
+            instruction.addEventListener('input', () => {
+                definition.instruction = instruction.value.slice(0, 300);
+                phoneSchemaEdited();
+            });
+            [label, instruction].forEach(control => control.addEventListener('change', () => saveSettingsSoon({ snapshotOpening: false })));
+            row.append(label, kind, instruction);
+            group.append(row);
+        });
+        host.append(group);
+    });
+}
+
 function renderStatusSchema() {
     const host = field('status-atelier-status-schema');
     if (!host) return;
@@ -1354,52 +1437,12 @@ function renderStatusSchema() {
     if (previewHelp) previewHelp.textContent = forumMode
         ? '主楼 4–6 句 · 其余 1–3 句 · 昵称与内容由 AI 动态生成'
         : phoneMode
-            ? '双击个人页字段名修改 · 桌面文字与图标可拖动'
+            ? 'APP 名称、字段名、类型和 AI 填写要求都可直接修改 · 桌面文字与图标可拖动'
             : chatMode
                 ? '长聊天可上下滑动 · 外观与头像由用户设置 · 会话内容由 AI 填写'
                 : '双击字段名修改 · 拖动字段排序 · 数值由 AI 填写';
     if (phoneMode) {
-        const phone = settings().phoneDesktop;
-        phone.personalFields ??= clone(PHONE_DESKTOP_DEFAULTS.personalFields);
-        phone.pageFields ??= clone(PHONE_DESKTOP_DEFAULTS.pageFields);
-        host.replaceChildren();
-        PHONE_PAGE_SCHEMAS.forEach((page, pageIndex) => {
-            const group = makeElement('details', 'status-atelier-phone-page-rules');
-            group.open = pageIndex === 0;
-            group.append(makeElement('summary', '', `${phone.apps.find(app => app.id === page.id)?.name || page.label} · 世界书数据`));
-            const definitions = page.id === 'Personal' ? phone.personalFields : phone.pageFields[page.id];
-            definitions.forEach(definition => {
-                const row = makeElement('article', 'status-atelier-schema-row status-atelier-phone-rule-row');
-                const label = makeElement('strong', 'status-atelier-phone-rule-label', definition.label);
-                const kind = makeElement('select', 'text_pole');
-                Object.entries(KIND_LABELS).forEach(([value, text]) => {
-                    const option = makeElement('option', '', text);
-                    option.value = value;
-                    kind.append(option);
-                });
-                kind.value = definition.kind;
-                kind.setAttribute('aria-label', `${definition.label}显示类型`);
-                const instruction = makeElement('textarea', 'text_pole');
-                instruction.value = definition.instruction;
-                instruction.rows = 2;
-                instruction.setAttribute('aria-label', `${definition.label}的 AI 填写要求`);
-                kind.addEventListener('change', () => {
-                    definition.kind = kind.value;
-                    statusAiTestRecords = null;
-                    scheduleStatusPreviewUpdate();
-                    saveSettingsSoon({ snapshotOpening: false });
-                });
-                instruction.addEventListener('input', () => {
-                    definition.instruction = instruction.value.slice(0, 300);
-                    statusAiTestRecords = null;
-                    scheduleStatusPreviewUpdate();
-                });
-                instruction.addEventListener('change', () => saveSettingsSoon({ snapshotOpening: false }));
-                row.append(label, kind, instruction);
-                group.append(row);
-            });
-            host.append(group);
-        });
+        renderPhoneSchemaEditor(host);
         return;
     }
     const definitions = fieldDefinitions();
@@ -4667,7 +4710,7 @@ function renderStatusPreview(host) {
         }
         if (page.id === 'Memo') {
             if (handheldMode) {
-                phoneTitle.textContent = '日记';
+                phoneTitle.textContent = page.label;
                 const diary = makeElement('article', 'zrs-phone-diary');
                 const diaryHead = makeElement('header', 'zrs-phone-diary-head');
                 diaryHead.append(makeElement('small', '', `PRIVATE DIARY · ${phoneText(shared[1], '此刻')}`));
@@ -5967,11 +6010,20 @@ async function testStatusAiGeneration(button, viewName = 'settings', forceDiffer
             const repairPrompt = [
                 prompt,
                 `【格式纠正】上次输出无法读取：${formatError?.message || '状态记录不完整'}。`,
-                '请严格按上面的“严格输出模板”重新输出一份完整状态区块；补齐每个 Shared 和 View 记录，不要解释。',
+                '请严格按上面的“严格输出模板”重新输出一份完整状态区块；补齐 PhoneApps、Shared 和每个 View 记录，不要解释。',
                 `【上次输出，仅供纠正】\n${String(response || '').slice(-1800)}`,
             ].join('\n\n');
             const repairedResponse = await generateWithCurrentPreset(repairPrompt);
             statusAiTestRecords = parseStatusOutput(input, repairedResponse);
+        }
+        if (statusAiTestRecords.phoneApps?.length && settings().structure === 'phone') {
+            const phone = settings().phoneDesktop;
+            phone.apps.forEach((app, index) => {
+                app.name = statusAiTestRecords.phoneApps[index] || app.name;
+            });
+            renderPhoneDesktopControls();
+            renderStatusSchema();
+            renderModalStatusSchema();
         }
         const recommendationKey = statusRecommendationKey(recommendation);
         const stored = settings();
@@ -5991,7 +6043,10 @@ async function testStatusAiGeneration(button, viewName = 'settings', forceDiffer
             const focusNotice = ideaPlan.changedFields.length
                 ? ` 已自动改为“${ideaPlan.intent.label}”字段：${ideaPlan.changedFields.slice(0, 4).join('、')}等。`
                 : '';
-            status.textContent = `AI 已生成“${statusAiRecommendationLabel(recommendation)}”预览，并保存在最近方案中。${focusNotice}可以继续生成更多方案；只有点击安装才会替换当前正在使用的状态栏。`;
+            const phoneNotice = statusAiTestRecords.phoneApps?.length
+                ? ` 手机 APP 已按剧情改名为：${statusAiTestRecords.phoneApps.join('、')}。`
+                : '';
+            status.textContent = `AI 已生成“${statusAiRecommendationLabel(recommendation)}”预览，并保存在最近方案中。${focusNotice}${phoneNotice}可以继续生成更多方案；只有点击安装才会替换当前正在使用的状态栏。`;
             status.dataset.state = 'success';
         }
         notify('success', `AI 已推荐并生成：${rule.structureName}`);
@@ -6497,6 +6552,10 @@ function renderModalStructureControls() {
 function renderModalStatusSchema() {
     const host = greetingModal?.querySelector('#status-atelier-modal-status-schema');
     if (!host) return;
+    if (settings().structure === 'phone') {
+        renderPhoneSchemaEditor(host, { modal: true });
+        return;
+    }
     const definitions = fieldDefinitions();
     host.replaceChildren();
     definitions.forEach((definition, index) => {
