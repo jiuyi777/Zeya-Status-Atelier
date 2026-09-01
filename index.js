@@ -32,6 +32,7 @@ import {
     applyStatusBeautyControlChrome,
     applyStatusBeautyFieldLayout,
     applyStatusBeautyMediaSettings,
+    applyStatusBeautyMobileLayout,
     applyStatusBeautyTextOverrides,
     applyStatusBeautyTitle,
     buildStatusBeautyBundledPreviewDocument,
@@ -102,6 +103,7 @@ import {
     selectCurrentSillyTavernContext,
 } from './opening-context.js?v=0.11.10';
 import {
+    buildStatusWorldbookName,
     STATUS_WORLDBOOK_ENTRY_ID,
     upsertStatusWorldbookData,
 } from './status-worldbook.js?v=0.11.10';
@@ -113,6 +115,7 @@ import {
     saveScriptsByType,
 } from '../../regex/engine.js';
 import {
+    charUpdateAddAuxWorld,
     createNewWorldInfo,
     loadWorldInfo,
     saveWorldInfo,
@@ -282,6 +285,8 @@ const DEFAULT_SETTINGS = Object.freeze({
     favoriteHomeTemplates: ['classical', 'newspaper', 'timeline'],
     favoriteStatusTemplates: ['relationship', 'worldNpc'],
     savedStatusTemplates: [],
+    recentStatusTemplates: [],
+    statusTemplateHistorySchemaVersion: 1,
     statusRecentRecommendations: [],
     structure: 'phone',
     profileAppearance: PROFILE_APPEARANCE_DEFAULT.id,
@@ -507,6 +512,7 @@ function settings() {
     const legacyStructure = stored.structure;
     const legacyProfileAppearance = PROFILE_APPEARANCE_IDS.includes(stored.structure) ? stored.structure : '';
     const legacyProfileTemplateSchemaVersion = Number(stored.profileTemplateSchemaVersion || 0);
+    const legacyStatusTemplateHistorySchemaVersion = Number(stored.statusTemplateHistorySchemaVersion || 0);
     for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
         if (!Object.hasOwn(stored, key)) stored[key] = clone(value);
     }
@@ -603,7 +609,17 @@ function settings() {
     if (!Array.isArray(stored.favoriteHomeTemplates)) stored.favoriteHomeTemplates = clone(DEFAULT_SETTINGS.favoriteHomeTemplates);
     if (!Array.isArray(stored.favoriteStatusTemplates)) stored.favoriteStatusTemplates = clone(DEFAULT_SETTINGS.favoriteStatusTemplates);
     if (!Array.isArray(stored.savedStatusTemplates)) stored.savedStatusTemplates = [];
+    if (!Array.isArray(stored.recentStatusTemplates)) stored.recentStatusTemplates = [];
+    if (legacyStatusTemplateHistorySchemaVersion < 1) {
+        const generated = stored.savedStatusTemplates.filter(item => /^AI 方案\s*·/u.test(String(item?.name || '')));
+        stored.recentStatusTemplates = [...stored.recentStatusTemplates, ...generated].slice(-12);
+        stored.savedStatusTemplates = stored.savedStatusTemplates.filter(item => !/^AI 方案\s*·/u.test(String(item?.name || '')));
+        stored.statusTemplateHistorySchemaVersion = 1;
+    }
     stored.savedStatusTemplates = stored.savedStatusTemplates
+        .filter(item => item && typeof item === 'object' && item.id && item.name && item.settings && typeof item.settings === 'object')
+        .slice(-12);
+    stored.recentStatusTemplates = stored.recentStatusTemplates
         .filter(item => item && typeof item === 'object' && item.id && item.name && item.settings && typeof item.settings === 'object')
         .slice(-12);
     if (!CHAT_APPEARANCE_PRESETS.some(item => item.id === stored.chatAppearance)) stored.chatAppearance = DEFAULT_SETTINGS.chatAppearance;
@@ -1191,6 +1207,30 @@ function renderSavedStatusTemplates() {
     );
 }
 
+function renderRecentStatusTemplates() {
+    const templates = settings().recentStatusTemplates || [];
+    const renderHost = (host, section, viewName) => {
+        if (!host || !section) return;
+        section.hidden = templates.length === 0;
+        host.replaceChildren();
+        templates.slice().reverse().forEach(template => {
+            const item = makeElement('span', 'status-atelier-ai-saved-template');
+            const apply = makeElement('button', 'menu_button', template.name);
+            apply.type = 'button';
+            apply.title = `回到最近方案：${template.name}`;
+            apply.addEventListener('click', () => applySavedStatusTemplate(template, viewName));
+            item.append(apply);
+            host.append(item);
+        });
+    };
+    renderHost(field('status-atelier-ai-recent-templates'), field('status-atelier-ai-recent-template-section'), 'settings');
+    renderHost(
+        greetingModal?.querySelector('#status-atelier-modal-ai-recent-templates'),
+        greetingModal?.querySelector('#status-atelier-modal-ai-recent-template-section'),
+        'modal',
+    );
+}
+
 function saveCurrentStatusTemplate() {
     const template = currentSavedStatusTemplate();
     const stored = settings();
@@ -1204,11 +1244,11 @@ function rememberGeneratedStatusTemplate() {
     const template = currentSavedStatusTemplate();
     const stored = settings();
     const signature = JSON.stringify(template.settings);
-    const previous = (stored.savedStatusTemplates || []).filter(item => JSON.stringify(item?.settings || {}) !== signature);
+    const previous = (stored.recentStatusTemplates || []).filter(item => JSON.stringify(item?.settings || {}) !== signature);
     template.id = `ai-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
     template.name = compactStatusAiText(`AI 方案 · ${template.name}`, 36);
-    stored.savedStatusTemplates = [...previous, template].slice(-12);
-    renderSavedStatusTemplates();
+    stored.recentStatusTemplates = [...previous, template].slice(-12);
+    renderRecentStatusTemplates();
 }
 
 function saveCurrentProfileTemplateDraft(stored = settings()) {
@@ -1554,6 +1594,7 @@ function loadSettingsUI() {
     setWorkspace(stored.activeWorkspace, { persist: false });
     renderTemplateLibraries();
     renderSavedStatusTemplates();
+    renderRecentStatusTemplates();
     renderPaletteButtons();
     renderStatusDesignControls();
     renderStatusSchema();
@@ -3850,7 +3891,8 @@ function renderStatusBeautyBundledPreview(host, rule, generatedValues = []) {
     loadStatusBeautyBundledRegex(rule.structure).then(script => {
         if (request !== statusBeautyBundlePreviewRequests.get(host) || !frame.isConnected) return;
         const positioned = applyStatusBeautyFieldLayout(script, rule);
-        frame.srcdoc = buildStatusBeautyBundledPreviewDocument(applyStatusBeautyTitle(positioned, rule), generatedValues);
+        const titled = applyStatusBeautyTitle(positioned, rule);
+        frame.srcdoc = buildStatusBeautyBundledPreviewDocument(applyStatusBeautyMobileLayout(titled, rule), generatedValues);
     }).catch(error => {
         if (request !== statusBeautyBundlePreviewRequests.get(host) || !frame.isConnected) return;
         host.replaceChildren(makeElement('div', 'status-atelier-empty', error.message || '原始正则预览读取失败'));
@@ -5198,7 +5240,8 @@ async function resolveStatusRegexScript(input = resolvedStatusExportInput()) {
         const script = applyStatusBeautyControlChrome(await loadStatusBeautyBundledRegex(rule.structure));
         const positioned = applyStatusBeautyFieldLayout(script, rule);
         const titled = applyStatusBeautyTitle(positioned, rule);
-        const edited = applyStatusBeautyTextOverrides(titled, settings().profileTextOverrides?.[rule.structure]);
+        const responsive = applyStatusBeautyMobileLayout(titled, rule);
+        const edited = applyStatusBeautyTextOverrides(responsive, settings().profileTextOverrides?.[rule.structure]);
         return {
             ...applyStatusBeautyMediaSettings(edited, rule.media),
             markdownOnly: rule.displayOnlyRegex,
@@ -5231,14 +5274,17 @@ async function installGeneratedRegex(script, requestedScope = settings().install
     const type = requestedScope === 'global' ? SCRIPT_TYPES.GLOBAL : SCRIPT_TYPES.SCOPED;
     const selection = type === SCRIPT_TYPES.SCOPED ? requireCurrentCharacterContext() : null;
     const ctx = selection?.context || context();
-
-    const bundledScript = /^九一 · 状态栏(?:0[1-9]|1[0-5])(?: ·|$)/.test(String(script?.scriptName || ''));
-    const scripts = [...getScriptsByType(type)].filter(item => !bundledScript
-        || item.id === script.id
-        || (item.id !== settings().ruleId && !/^九一 · 状态栏(?:0[1-9]|1[0-5])(?: ·|$)/.test(String(item?.scriptName || ''))));
-    const existingIndex = scripts.findIndex(item => item.id === script.id || item.scriptName === script.scriptName);
-    if (existingIndex >= 0) scripts[existingIndex] = script;
-    else scripts.push(script);
+    const targetId = String(settings().ruleId || 'zeya-status-rule-v2');
+    const installedScript = { ...script, id: targetId, disabled: false };
+    const isManagedStatusScript = item => item?.id === targetId
+        || /^九一 · 状态栏(?:0[1-9]|[12]\d)?(?: ·|$)/u.test(String(item?.scriptName || ''));
+    const currentScripts = type === SCRIPT_TYPES.SCOPED
+        ? selection.character?.data?.extensions?.regex_scripts
+        : getScriptsByType(type);
+    const existingScripts = Array.isArray(currentScripts) ? currentScripts : [];
+    const replaced = existingScripts.filter(isManagedStatusScript);
+    const scripts = existingScripts.filter(item => !isManagedStatusScript(item));
+    scripts.push(installedScript);
 
     if (type === SCRIPT_TYPES.SCOPED) {
         const character = selection.character;
@@ -5261,18 +5307,29 @@ async function installGeneratedRegex(script, requestedScope = settings().install
             throw new Error(`局部正则未保存到角色卡（${response.status}${response.statusText ? ` ${response.statusText}` : ''}）${detail ? `：${detail}` : ''}`);
         }
 
-        character.data ??= {};
-        character.data.extensions ??= {};
-        character.data.extensions.regex_scripts = scripts;
-        if (character.json_data) {
-            const jsonData = JSON.parse(character.json_data);
-            jsonData.data ??= {};
-            jsonData.data.extensions ??= {};
-            jsonData.data.extensions.regex_scripts = scripts;
-            character.json_data = JSON.stringify(jsonData);
-            const jsonDataField = document.querySelector('#character_json_data');
-            if (jsonDataField) jsonDataField.value = character.json_data;
+        const verifyResponse = await fetch('/api/characters/get', {
+            method: 'POST',
+            headers: getRequestHeaders(),
+            body: JSON.stringify({ avatar_url: avatar }),
+        });
+        if (!verifyResponse.ok) {
+            throw new Error(`局部正则写入后无法重新读取角色卡确认（${verifyResponse.status}）`);
         }
+        const persistedCharacter = await verifyResponse.json();
+        const persistedScripts = persistedCharacter?.data?.extensions?.regex_scripts;
+        const persisted = Array.isArray(persistedScripts)
+            && persistedScripts.some(item => item?.id === installedScript.id
+                && item?.scriptName === installedScript.scriptName
+                && item?.findRegex === installedScript.findRegex
+                && item?.replaceString === installedScript.replaceString
+                && item?.disabled !== true);
+        if (!persisted) {
+            throw new Error('局部正则接口返回成功，但重新读取角色卡后没有找到本次安装结果');
+        }
+        character.data = persistedCharacter.data;
+        if (persistedCharacter.json_data) character.json_data = persistedCharacter.json_data;
+        const jsonDataField = document.querySelector('#character_json_data');
+        if (jsonDataField && character.json_data) jsonDataField.value = character.json_data;
         allowScopedScripts(selection.character);
         if (!isScopedScriptsAllowed(selection.character)) {
             throw new Error('局部正则已写入角色卡，但没有成功启用');
@@ -5287,25 +5344,28 @@ async function installGeneratedRegex(script, requestedScope = settings().install
         ? selection.character?.data?.extensions?.regex_scripts
         : getScriptsByType(type);
     const confirmed = Array.isArray(confirmedScripts)
-        && confirmedScripts.some(item => item?.id === script.id
-            && item?.scriptName === script.scriptName
-            && item?.findRegex === script.findRegex
-            && item?.replaceString === script.replaceString
+        && confirmedScripts.some(item => item?.id === installedScript.id
+            && item?.scriptName === installedScript.scriptName
+            && item?.findRegex === installedScript.findRegex
+            && item?.replaceString === installedScript.replaceString
             && item?.disabled !== true);
     if (!confirmed) {
         throw new Error(`${type === SCRIPT_TYPES.SCOPED ? '局部' : '全局'}正则没有确认保存并启用`);
     }
 
-    return { action: existingIndex >= 0 ? 'updated' : 'installed', scriptName: script.scriptName };
+    return { action: replaced.length ? 'updated' : 'installed', scriptName: installedScript.scriptName };
 }
 
 async function installStatusWorldbookRule() {
     const { context: ctx } = requireCurrentCharacterContext();
+    const character = ctx.characters?.[ctx.characterId];
+    if (!character?.avatar) throw new Error('当前角色缺少可绑定世界书的角色标识');
     const stored = settings();
     const storageKey = characterStorageKey(ctx);
     const bindings = stored.statusWorldbookBindings;
-    const linkedBooks = currentLinkedWorldbooks(ctx).filter(name => !/^九一-状态栏-/u.test(name));
-    let bookName = linkedBooks.includes(bindings[storageKey]) ? String(bindings[storageKey]) : '';
+    const linkedBooks = currentLinkedWorldbooks(ctx);
+    const boundBook = String(bindings[storageKey] || '');
+    let bookName = (world_names || []).includes(boundBook) ? boundBook : '';
     if (!bookName) {
         for (const candidate of linkedBooks) {
             const data = await loadWorldInfo(candidate);
@@ -5315,8 +5375,20 @@ async function installStatusWorldbookRule() {
             }
         }
     }
-    bookName ||= linkedBooks[0] || '';
-    if (!bookName) throw new Error('当前角色卡没有已绑定的可写世界书；请先在角色卡中选择一本世界书，再安装状态栏');
+    bookName ||= linkedBooks.find(name => !/^九一-状态栏-/u.test(name)) || linkedBooks[0] || '';
+    let createdBook = false;
+    if (!bookName) {
+        bookName = buildStatusWorldbookName(character, storageKey);
+        if (!(world_names || []).includes(bookName)) {
+            const created = await createNewWorldInfo(bookName, { interactive: false });
+            if (!created) throw new Error('无法创建当前角色的状态栏世界书');
+            createdBook = true;
+        }
+    }
+    await charUpdateAddAuxWorld(character.avatar, bookName);
+    const fileName = getCharaFilename(null, { manualAvatarKey: character.avatar });
+    const linked = world_info?.charLore?.find(item => item?.name === fileName)?.extraBooks || [];
+    if (!linked.includes(bookName)) throw new Error('世界书已准备好，但没有绑定到当前角色');
 
     const current = await loadWorldInfo(bookName);
     const generatedEntry = buildWorldbookJson(resolvedStatusInput()).entries[0];
@@ -5328,7 +5400,12 @@ async function installStatusWorldbookRule() {
         throw new Error('世界书没有确认状态栏输出规则已保存');
     }
     bindings[storageKey] = bookName;
-    return { bookName, uid: Number(entry.uid), created: result.created, target: 'existing-character-worldbook' };
+    return {
+        bookName,
+        uid: Number(entry.uid),
+        created: result.created,
+        target: createdBook ? 'new-character-worldbook' : 'existing-character-worldbook',
+    };
 }
 
 async function installGlobalStatusWorldbookRule() {
@@ -6611,6 +6688,10 @@ function buildGreetingModal() {
                                 <span><strong>按提示词大幅改造</strong><small>保留动态数据，换构图、栏目与关注重点。</small></span>
                             </label>
                         </fieldset>
+                        <section id="status-atelier-modal-ai-recent-template-section" class="status-atelier-ai-saved-template-section" hidden>
+                            <strong>最近方案</strong>
+                            <div id="status-atelier-modal-ai-recent-templates" class="status-atelier-ai-saved-templates"></div>
+                        </section>
                         <section id="status-atelier-modal-ai-saved-template-section" class="status-atelier-ai-saved-template-section" hidden>
                             <strong>我的模板</strong>
                             <div id="status-atelier-modal-ai-saved-templates" class="status-atelier-ai-saved-templates"></div>
@@ -6987,6 +7068,7 @@ function openGreetingModal(target = 'opening') {
         resetStatusAiView('modal');
         setStatusEntryMode('modal', 'simple');
         renderSavedStatusTemplates();
+        renderRecentStatusTemplates();
         greetingModal.classList.add('status-atelier-modal-open');
         greetingModal.setAttribute('aria-hidden', 'false');
         requestAnimationFrame(() => {

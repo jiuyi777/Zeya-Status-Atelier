@@ -333,6 +333,7 @@ test('status AI generation stays preview-only until either entry explicitly inst
     assert.match(settingsMarkup, /id="status-atelier-ai-regenerate"[^>]*>\s*<span[^>]*>↻<\/span> 不满意，重新生成/);
     assert.match(settingsMarkup, /id="status-atelier-ai-save-template"[^>]*>☆ 保存为我的模板/);
     assert.match(settingsMarkup, /id="status-atelier-ai-saved-templates"/);
+    assert.match(settingsMarkup, /id="status-atelier-ai-recent-templates"/);
     assert.match(settingsMarkup, /id="status-atelier-install-scoped"[^>]*disabled[^>]*>确认安装到当前角色</);
     assert.match(settingsMarkup, /id="status-atelier-ai-recommendation"[^>]*hidden/);
     assert.match(source, /async function currentStatusAiContext\(\)/);
@@ -365,6 +366,9 @@ test('status AI generation stays preview-only until either entry explicitly inst
     assert.match(source, /id="status-atelier-modal-ai-save-template"/);
     assert.match(source, /function saveCurrentStatusTemplate\(\)/);
     assert.match(source, /savedStatusTemplates/);
+    const rememberBlock = source.match(/function rememberGeneratedStatusTemplate\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    assert.match(rememberBlock, /recentStatusTemplates/);
+    assert.doesNotMatch(rememberBlock, /stored\.savedStatusTemplates/);
     assert.match(source, /SAVED_STATUS_TEMPLATE_KEYS/);
     assert.doesNotMatch(source.match(/function currentSavedStatusTemplate\(\) \{([\s\S]*?)\n\}/)?.[1] || '', /statusAiTestRecords|chatContext|characterContext/);
     assert.doesNotMatch(settingsMarkup, /id="status-atelier-fill-mode"/);
@@ -629,14 +633,15 @@ test('status prompt only runs where the generated status regex is installed', ()
     assert.match(prompt, /stored\.promptEnabled && statusRegexAppliesToCurrentContext\(\)/);
 });
 
-test('one-click scoped status reuses and verifies an existing character-bound worldbook before the regex', () => {
+test('one-click scoped status reuses or creates and binds a character worldbook before replacing the regex', () => {
     assert.match(source, /async function installStatusWorldbookRule\(\)/);
     const scopedWorldbook = source.match(/async function installStatusWorldbookRule\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(scopedWorldbook, /currentLinkedWorldbooks\(ctx\)/);
-    assert.match(scopedWorldbook, /!\/\^九一-状态栏-\/u\.test\(name\)/);
-    assert.match(scopedWorldbook, /当前角色卡没有已绑定的可写世界书/);
+    assert.match(scopedWorldbook, /buildStatusWorldbookName\(character, storageKey\)/);
+    assert.match(scopedWorldbook, /createNewWorldInfo\(bookName, \{ interactive: false \}\)/);
+    assert.match(scopedWorldbook, /charUpdateAddAuxWorld\(character\.avatar, bookName\)/);
     assert.match(source, /saveWorldInfo\(bookName, result\.data, true\)/);
-    assert.doesNotMatch(scopedWorldbook, /createNewWorldInfo|charUpdateAddAuxWorld/);
+    assert.match(scopedWorldbook, /世界书已准备好，但没有绑定到当前角色/);
     assert.match(source, /世界书没有确认状态栏输出规则已保存/);
     const scopedInstall = source.match(/async function installRegex\(scope\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(scopedInstall, /installStatusWorldbookRule\(\)/);
@@ -644,6 +649,10 @@ test('one-click scoped status reuses and verifies an existing character-bound wo
     assert.ok(scopedInstall.indexOf('installStatusWorldbookRule()') < scopedInstall.indexOf('installGeneratedRegex'));
     const regexInstall = source.match(/async function installGeneratedRegex\(script, requestedScope = settings\(\)\.installScope\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(regexInstall, /fetch\('\/api\/characters\/merge-attributes'/);
+    assert.match(regexInstall, /fetch\('\/api\/characters\/get'/);
+    assert.match(regexInstall, /const installedScript = \{ \.\.\.script, id: targetId, disabled: false \}/);
+    assert.match(regexInstall, /scripts\.push\(installedScript\)/);
+    assert.match(regexInstall, /接口返回成功，但重新读取角色卡后没有找到本次安装结果/);
     assert.match(regexInstall, /if \(!response\.ok\)/);
     assert.match(regexInstall, /局部正则未保存到角色卡/);
     assert.match(regexInstall, /isScopedScriptsAllowed\(selection\.character\)/);
