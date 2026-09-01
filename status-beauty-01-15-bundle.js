@@ -452,9 +452,10 @@ export function applyStatusBeautyMediaSettings(regexScript, media = {}) {
     const payload = JSON.stringify({
         avatarSource: ['none', 'character', 'user', 'url'].includes(media.avatarSource) ? media.avatarSource : 'character',
         avatarUrl: String(media.avatarUrl || ''),
+        avatarFallbackUrl: String(media.avatarFallbackUrl || ''),
         imageAlt: String(media.imageAlt || '当前角色头像').slice(0, 80),
     }).replace(/</g, '\\u003c');
-    const patch = `<script>(function(){var media=${payload};var root=document.querySelector('.status-card')||Array.from(document.body.children).find(function(node){return node.matches&&node.matches('details,section,article,main,div');})||document.body.firstElementChild;if(!root)return;var images=Array.from(root.querySelectorAll('img[data-st-avatar],img[alt*="角色头像"],img.avatar,img.art-photo'));images.forEach(function(image){image.setAttribute('data-st-avatar','');if(media.avatarSource==='none'||!media.avatarUrl){image.removeAttribute('src');image.hidden=true;return;}image.src=media.avatarUrl;image.alt=media.imageAlt;image.hidden=false;});})();</script>`;
+    const patch = `<script>(function(){var media=${payload};var root=document.querySelector('.status-card')||Array.from(document.body.children).find(function(node){return node.matches&&node.matches('details,section,article,main,div');})||document.body.firstElementChild;if(!root)return;var images=Array.from(root.querySelectorAll('img[data-st-avatar],img[alt*="角色头像"],img.avatar,img.art-photo'));images.forEach(function(image){image.setAttribute('data-st-avatar','');if(media.avatarSource==='none'||!media.avatarUrl){image.removeAttribute('src');image.hidden=true;return;}image.addEventListener('error',function(){if(media.avatarFallbackUrl&&media.avatarFallbackUrl!==media.avatarUrl&&image.dataset.fallbackAttempted!=='true'){image.dataset.fallbackAttempted='true';image.src=media.avatarFallbackUrl;return;}image.removeAttribute('src');image.hidden=true;});image.src=media.avatarUrl;image.alt=media.imageAlt;image.hidden=false;});})();</script>`;
     const replacement = String(regexScript?.replaceString || '');
     return {
         ...regexScript,

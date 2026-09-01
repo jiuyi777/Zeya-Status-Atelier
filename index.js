@@ -25,8 +25,8 @@ import {
     parseChatConversationLog,
     parseStatusOutput,
     parseFields,
-} from './rule-generator.js?v=0.11.12';
-import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.12';
+} from './rule-generator.js?v=0.11.13';
+import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.13';
 import {
     STATUS_BEAUTY_01_15_IDS,
     applyStatusBeautyControlChrome,
@@ -40,23 +40,23 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.12';
+} from './status-beauty-01-15-bundle.js?v=0.11.13';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
-} from './status-beauty-05-09.js?v=0.11.12';
+} from './status-beauty-05-09.js?v=0.11.13';
 import {
     STATUS_BEAUTY_16_20_IDS,
     buildStatusBeauty16To20Preview,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.12';
+} from './status-beauty-16-20.js?v=0.11.13';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.12';
+} from './opening-home-generator.js?v=0.11.13';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -73,19 +73,19 @@ import {
     resolveStatusIdeaIntent,
     statusRecommendationKey,
     usableGreetingRecords,
-} from './response-parser.js?v=0.11.12';
+} from './response-parser.js?v=0.11.13';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.11.12';
+} from './worldbook-routes.js?v=0.11.13';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.11.12';
+} from './entry-dialog.js?v=0.11.13';
 import { getContext as getSillyTavernContext } from '../../../extensions.js';
 import {
     greetingBindingSummary,
@@ -95,19 +95,19 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.11.12';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.12';
+} from './greeting-workflow.js?v=0.11.13';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.13';
 import {
     buildCharacterHomepageContext,
     describeCurrentCharacterContext,
     resolveCurrentCharacterContext,
     selectCurrentSillyTavernContext,
-} from './opening-context.js?v=0.11.12';
+} from './opening-context.js?v=0.11.13';
 import {
     buildStatusWorldbookName,
     STATUS_WORLDBOOK_ENTRY_ID,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.11.12';
+} from './status-worldbook.js?v=0.11.13';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -129,7 +129,7 @@ import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.12';
+const VERSION = '0.11.13';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -306,7 +306,7 @@ const DEFAULT_SETTINGS = Object.freeze({
     chatAppearance: 'kitty-pink',
     chatConversationSchemaVersion: 0,
     paletteId: 'ice-blue',
-    media: { avatarSource: 'character', avatarUrl: '', imageUrl: '', themeAssetUrl: '', archiveImageUrls: '', audioUrl: '', imageAlt: '状态栏配图' },
+    media: { avatarSource: 'character', avatarUrl: '', avatarFallbackUrl: '', userAvatarUrl: '', userAvatarFallbackUrl: '', imageUrl: '', themeAssetUrl: '', archiveImageUrls: '', audioUrl: '', imageAlt: '状态栏配图' },
     phoneDesktop: PHONE_DESKTOP_DEFAULTS,
     openingNotes: {},
     openingProfiles: {},
@@ -708,6 +708,34 @@ function makeElement(tagName, className, text) {
     if (className) element.className = className;
     if (text !== undefined) setText(element, text);
     return element;
+}
+
+function bindImageFallback(image, fallbackUrl, onFinalFailure) {
+    image.addEventListener('error', () => {
+        const fallback = String(fallbackUrl || '').trim();
+        if (fallback && fallback !== image.src && image.dataset.fallbackAttempted !== 'true') {
+            image.dataset.fallbackAttempted = 'true';
+            image.src = fallback;
+            return;
+        }
+        onFinalFailure?.();
+    });
+}
+
+function setBackgroundImageWithFallback(element, url, fallbackUrl) {
+    const primary = String(url || '').trim();
+    const fallback = String(fallbackUrl || '').trim();
+    if (!primary) return;
+    const probe = new Image();
+    const apply = value => { element.style.backgroundImage = `url("${value.replaceAll('"', '%22')}")`; };
+    probe.addEventListener('load', () => apply(probe.src), { once: true });
+    probe.addEventListener('error', () => {
+        if (!fallback || fallback === primary) return;
+        const fallbackProbe = new Image();
+        fallbackProbe.addEventListener('load', () => apply(fallbackProbe.src), { once: true });
+        fallbackProbe.src = fallback;
+    }, { once: true });
+    probe.src = primary;
 }
 
 function appendInlineMarkdown(host, value) {
@@ -2362,9 +2390,15 @@ function resolveHostAvatarUrls(type, file, thumbnail) {
     if (!fileName || fileName === 'none') return { url: '', fallbackUrl: '' };
     const encodedName = fileName.split('/').map(part => encodeURIComponent(part)).join('/');
     const folder = type === 'persona' ? '/User%20Avatars/' : '/characters/';
+    let fallbackUrl = '';
+    try {
+        fallbackUrl = typeof thumbnail === 'function' ? String(thumbnail(type, fileName) || '') : '';
+    } catch {
+        fallbackUrl = '';
+    }
     return {
         url: `${folder}${encodedName}`,
-        fallbackUrl: thumbnail(type, fileName),
+        fallbackUrl,
     };
 }
 
@@ -2401,19 +2435,28 @@ function resolvedStatusInput(source = settings()) {
     try {
         if (output.media.avatarSource === 'character') {
             const avatar = ctx?.characters?.[ctx?.characterId]?.avatar;
-            output.media.avatarUrl = resolveHostAvatarUrls('avatar', avatar, thumbnail).url;
+            const urls = resolveHostAvatarUrls('avatar', avatar, thumbnail);
+            output.media.avatarUrl = urls.url;
+            output.media.avatarFallbackUrl = urls.fallbackUrl;
         } else if (output.media.avatarSource === 'user') {
-            output.media.avatarUrl = resolveHostAvatarUrls('persona', user_avatar, thumbnail).url;
+            const urls = resolveHostAvatarUrls('persona', user_avatar, thumbnail);
+            output.media.avatarUrl = urls.url;
+            output.media.avatarFallbackUrl = urls.fallbackUrl;
         } else if (output.media.avatarSource === 'none') {
             output.media.avatarUrl = '';
+            output.media.avatarFallbackUrl = '';
         }
     } catch {
         output.media.avatarUrl = output.media.avatarSource === 'url' ? output.media.avatarUrl : '';
+        output.media.avatarFallbackUrl = '';
     }
     try {
-        output.media.userAvatarUrl = resolveHostAvatarUrls('persona', user_avatar, thumbnail).url;
+        const urls = resolveHostAvatarUrls('persona', user_avatar, thumbnail);
+        output.media.userAvatarUrl = urls.url;
+        output.media.userAvatarFallbackUrl = urls.fallbackUrl;
     } catch {
         output.media.userAvatarUrl = '';
+        output.media.userAvatarFallbackUrl = '';
     }
     try {
         if (output.phoneDesktop.personalAvatarSource === 'character') {
@@ -2754,7 +2797,7 @@ function appendPreviewField(host, definition, value, shared = false, glyph = '�
             avatar.src = rule.media.avatarUrl;
             avatar.alt = rule.media.imageAlt || String(value || definition.label);
             avatar.loading = 'lazy';
-            avatar.addEventListener('error', () => {
+            bindImageFallback(avatar, rule?.media?.avatarFallbackUrl, () => {
                 avatar.removeAttribute('src');
                 avatar.classList.add('is-placeholder');
                 avatar.textContent = glyph;
@@ -3463,7 +3506,7 @@ function renderForumPreview(host, previewRecords) {
         const photo = makeElement('img', 'status-atelier-moon-photo');
         photo.src = rule.media.avatarUrl;
         photo.alt = rule.media.imageAlt || '当前角色照片';
-        photo.addEventListener('error', () => photo.remove());
+        bindImageFallback(photo, rule.media.avatarFallbackUrl, () => photo.remove());
         stage.append(photo);
     }
     const foreground = makeElement('img', 'status-atelier-moon-foreground');
@@ -4564,17 +4607,17 @@ function renderStatusPreview(host) {
     const hasAvatarField = rule.sharedFields.some(item => item.kind === 'avatar')
         || rule.pageFields.some(item => item.kind === 'avatar')
         || rule.pages.some(page => page.fields?.some(item => item.kind === 'avatar'));
-    const addPreviewImage = (url, className, alt) => {
+    const addPreviewImage = (url, className, alt, fallbackUrl = '') => {
         if (!url) return;
         const image = makeElement('img', className);
         image.src = url;
         image.alt = alt || '';
         image.loading = 'lazy';
-        image.addEventListener('error', () => image.remove());
+        bindImageFallback(image, fallbackUrl, () => image.remove());
         bindDirectMediaTarget(image);
         mediaHost.append(image);
     };
-    if (!['forum', 'chat'].includes(rule.structure) && !hasAvatarField) addPreviewImage(rule.media.avatarUrl, 'status-atelier-preview-avatar zrs-avatar', rule.media.imageAlt);
+    if (!['forum', 'chat'].includes(rule.structure) && !hasAvatarField) addPreviewImage(rule.media.avatarUrl, 'status-atelier-preview-avatar zrs-avatar', rule.media.imageAlt, rule.media.avatarFallbackUrl);
     addPreviewImage(rule.media.imageUrl, 'status-atelier-preview-cover zrs-cover', rule.media.imageAlt);
     if (rule.media.audioUrl) {
         const audio = makeElement('audio', 'status-atelier-preview-audio zrs-audio');
@@ -4672,12 +4715,7 @@ function renderStatusPreview(host) {
                 avatarImage.alt = rule.media.imageAlt || '当前角色头像';
                 avatarImage.style.objectPosition = `${rule.phoneDesktop.personalAvatarPositionX}% ${rule.phoneDesktop.personalAvatarPositionY}%`;
                 avatarImage.style.transform = `scale(${rule.phoneDesktop.personalAvatarScale})`;
-                avatarImage.addEventListener('error', () => {
-                    if (avatarFallbackUrl && avatarImage.dataset.fallbackAttempted !== 'true') {
-                        avatarImage.dataset.fallbackAttempted = 'true';
-                        avatarImage.src = avatarFallbackUrl;
-                        return;
-                    }
+                bindImageFallback(avatarImage, avatarFallbackUrl, () => {
                     avatarImage.remove();
                     avatar.classList.add('is-placeholder');
                 });
@@ -4796,7 +4834,7 @@ function renderStatusPreview(host) {
             avatar.src = rule.media.avatarUrl;
             avatar.alt = rule.media.imageAlt || '聊天对象头像';
             avatar.loading = 'lazy';
-            avatar.addEventListener('error', () => avatar.remove());
+            bindImageFallback(avatar, rule.media.avatarFallbackUrl, () => avatar.remove());
             avatarButton.append(avatar);
         } else {
             avatarButton.append(makeElement('span', 'zrs-chat-avatar is-placeholder', 'TA'));
@@ -4849,7 +4887,8 @@ function renderStatusPreview(host) {
             const avatar = makeElement('span', `zrs-chat-mini-avatar is-${side === 'right' ? 'user' : 'character'}`);
             avatar.dataset.fallback = side === 'right' ? '我' : 'TA';
             const avatarUrl = side === 'right' ? rule.media.userAvatarUrl : rule.media.avatarUrl;
-            if (avatarUrl) avatar.style.backgroundImage = `url("${avatarUrl.replaceAll('"', '%22')}")`;
+            const avatarFallbackUrl = side === 'right' ? rule.media.userAvatarFallbackUrl : rule.media.avatarFallbackUrl;
+            setBackgroundImageWithFallback(avatar, avatarUrl, avatarFallbackUrl);
             return avatar;
         };
         const makeMessage = (side, message, time, state = '', type = 'text', duration = '') => {
@@ -4950,7 +4989,7 @@ function renderStatusPreview(host) {
             image.src = rule.media.avatarUrl;
             image.alt = rule.media.imageAlt || '人物证件照';
             image.loading = 'lazy';
-            image.addEventListener('error', () => {
+            bindImageFallback(image, rule.media.avatarFallbackUrl, () => {
                 image.remove();
                 portrait.classList.add('is-placeholder');
             });

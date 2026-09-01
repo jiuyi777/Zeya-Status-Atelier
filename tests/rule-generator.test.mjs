@@ -455,11 +455,14 @@ test('status beauty bundled portraits use the selected character, user or URL im
     };
     const edited = applyStatusBeautyMediaSettings(script, {
         avatarSource: 'user',
-        avatarUrl: '/thumbnail?type=persona&file=user.png',
+        avatarUrl: '/User%20Avatars/user.png',
+        avatarFallbackUrl: '/thumbnail?type=persona&file=user.png',
         imageAlt: '当前 User 头像',
     });
     assert.match(edited.replaceString, /img\[data-st-avatar\],img\[alt\*="角色头像"\],img\.avatar,img\.art-photo/);
     assert.match(edited.replaceString, /thumbnail\?type=persona&file=user\.png/);
+    assert.match(edited.replaceString, /avatarFallbackUrl/);
+    assert.match(edited.replaceString, /fallbackAttempted/);
     assert.match(edited.replaceString, /image\.setAttribute\('data-st-avatar',''\)/);
 });
 
@@ -790,7 +793,7 @@ test('phone desktop is editable and exports real app navigation with a back acti
     assert.match(STATUS_PHONE_CSS, /--z-snow-duration/);
     assert.match(STATUS_PHONE_CSS, /focus-visible/);
     assert.match(STATUS_PHONE_CSS, /prefers-reduced-motion:reduce/);
-    assert.match(STATUS_PHONE_CSS, /data-phone-shell="classic"\]\{width:min\(94vw,360px\)/);
+    assert.doesNotMatch(STATUS_PHONE_CSS, /data-phone-shell="classic"\]\{width:min\(94vw,360px\)/);
     assert.match(STATUS_PHONE_CSS, /data-phone-shell="handheld-white"\]\)\{width:min\(96vw,430px\);height:480px/);
 });
 
@@ -1003,6 +1006,8 @@ test('normalizes safe media and rejects executable URLs', () => {
         media: {
             avatarSource: 'url',
             avatarUrl: 'javascript:alert(1)',
+            avatarFallbackUrl: '/thumbnail?type=avatar&file=character.png',
+            userAvatarFallbackUrl: '/thumbnail?type=persona&file=user.png',
             imageUrl: 'https://example.com/cover.jpg',
             archiveImageUrls: 'https://example.com/photo-a.jpg\njavascript:alert(2)\nhttps://example.com/photo-a.jpg\n/player-photo-b.png',
             audioUrl: 'https://example.com/theme.mp3',
@@ -1011,6 +1016,8 @@ test('normalizes safe media and rejects executable URLs', () => {
     assert.equal(rule.structure, 'music');
     assert.equal(rule.palette.id, 'porcelain');
     assert.equal(rule.media.avatarUrl, '');
+    assert.equal(rule.media.avatarFallbackUrl, '/thumbnail?type=avatar&file=character.png');
+    assert.equal(rule.media.userAvatarFallbackUrl, '/thumbnail?type=persona&file=user.png');
     assert.equal(rule.media.imageUrl, 'https://example.com/cover.jpg');
     assert.deepEqual(rule.media.archiveImageUrls, ['https://example.com/photo-a.jpg', '/player-photo-b.png']);
     assert.equal(rule.media.audioUrl, 'https://example.com/theme.mp3');
@@ -1124,6 +1131,12 @@ test('forum keeps six purposeful boards, twelve replies per board and only confi
     assert.match(script, /function forumAvatar/);
     assert.match(script, /avatarNode\.dataset\.avatarTone/);
     assert.match(script, /function renderForumPage/);
+    assert.match(script, /function syncHostFrameHeight/);
+    assert.match(script, /Math\.max\(root\.offsetHeight\|\|0,root\.scrollHeight\|\|0,1\)/);
+    assert.match(script, /function queueHostFrameHeight/);
+    assert.match(script, /showPage\(index\).*queueHostFrameHeight\(\)/);
+    assert.match(script, /new ResizeObserver\(queueHostFrameHeight\)\.observe\(root\)/);
+    assert.match(script, /window\.addEventListener\('resize',queueHostFrameHeight\)/);
     assert.match(script, /forum-post/);
     assert.match(script, /forum-post-num/);
     assert.match(script, /forum-post-author/);
@@ -1142,6 +1155,12 @@ test('forum keeps six purposeful boards, twelve replies per board and only confi
     assert.match(FORUM_THEME_CSS, /forum-post/);
     assert.match(FORUM_THEME_CSS, /forum-quote-ref/);
     assert.match(FORUM_THEME_CSS, /forum-confirm-box/);
+    assert.match(FORUM_THEME_CSS, /forum-2ch\[data-forum-skin\] \.forum-post-list\{max-height:none;overflow-y:visible\}/);
+    assert.match(FORUM_THEME_CSS, /grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+    assert.match(FORUM_THEME_CSS, /\.forum-tab[^}]*min-width:0!important[^}]*white-space:normal/);
+    assert.match(FORUM_THEME_CSS, /\.forum-post[^}]*grid-template-columns:minmax\(0,1fr\)!important/);
+    assert.match(FORUM_THEME_CSS, /\.forum-post-body[^}]*font-size:clamp\(14px,4vw,15px\)/);
+    assert.match(FORUM_THEME_CSS, /\.forum-confirm\{position:absolute;inset:8px 6px auto/);
     assert.equal(normalizeRule(input).forumSkin, 'ao3-archive');
     assert.equal(normalizeRule({ ...input, forumSkin: 'unknown-forum' }).forumSkin, 'mist-bbs');
     for (const skin of FORUM_SKIN_PRESETS) {
@@ -1254,8 +1273,10 @@ test('chat session exports a scrollable variable-length phone-literature convers
         pageFieldsText: preset.fields.map(field => field.join('|')).join('\n'),
         media: {
             avatarSource: 'character',
-            avatarUrl: '/thumbnail?type=avatar&file=character.png',
-            userAvatarUrl: '/thumbnail?type=persona&file=user.png',
+            avatarUrl: '/characters/character.png',
+            avatarFallbackUrl: '/thumbnail?type=avatar&file=character.png',
+            userAvatarUrl: '/User%20Avatars/user.png',
+            userAvatarFallbackUrl: '/thumbnail?type=persona&file=user.png',
             imageAlt: '聊天对象头像',
         },
     };
@@ -1296,6 +1317,8 @@ test('chat session exports a scrollable variable-length phone-literature convers
     assert.match(script, /function parseChatMessages/);
     assert.match(script, /config\.media\.userAvatarUrl/);
     assert.match(script, /side==='right'\?config\.media\.userAvatarUrl:config\.media\.avatarUrl/);
+    assert.match(script, /side==='right'\?config\.media\.userAvatarFallbackUrl:config\.media\.avatarFallbackUrl/);
+    assert.match(script, /function setAvatarBackground/);
     assert.match(script, /DIY：六套外观、会话标题与左侧头像/);
     assert.match(script, /头像：左侧角色 · 右侧当前 User/);
     assert.match(script, /AI：对象、在线、消息、时间、语音与已读/);

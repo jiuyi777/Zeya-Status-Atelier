@@ -97,6 +97,11 @@ test('status workspace exposes component, palette, real avatar and audio control
     assert.match(settingsMarkup, /26 套配色/);
     assert.match(source, /resolveHostAvatarUrls\('avatar', avatar, thumbnail\)/);
     assert.match(source, /resolveHostAvatarUrls\('persona', user_avatar, thumbnail\)/);
+    assert.match(source, /typeof thumbnail === 'function'/);
+    assert.match(source, /output\.media\.avatarFallbackUrl = urls\.fallbackUrl/);
+    assert.match(source, /output\.media\.userAvatarFallbackUrl = urls\.fallbackUrl/);
+    assert.match(source, /function bindImageFallback\(/);
+    assert.match(source, /function setBackgroundImageWithFallback\(/);
     assert.match(source, /parseStatusOutput\(input, response\)/);
     assert.match(source, /details\.append\(instruction\)/);
     assert.doesNotMatch(source, /instructionWrap\.append\(instruction\)/);
