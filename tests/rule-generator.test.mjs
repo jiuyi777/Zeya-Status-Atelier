@@ -30,6 +30,7 @@ import {
     parseFields,
     parsePages,
     mergeStatusRegexScripts,
+    legacyStructuredStatusRegexInstallId,
     statusRegexInstallId,
 } from '../rule-generator.js';
 import {
@@ -328,6 +329,31 @@ test('status regex installation preserves different structures and only updates 
     assert.equal(updated.replaced.length, 1);
     assert.equal(updated.scripts.find(item => item.id === statusRegexInstallId(dossierRule, baseId))?.replaceString, 'new');
     assert.ok(updated.scripts.some(item => item.id === statusRegexInstallId(flowerRule, baseId)));
+});
+
+test('status regex installation migrates unsafe 0.11.15 child IDs so deleting a legacy parent cannot remove siblings', () => {
+    const baseId = 'zeya-status-rule-v2';
+    const dossierRule = { structure: 'beauty-dossier-04', tagName: 'dossier_status' };
+    const flowerRule = { structure: 'beauty-flower-echo-10', tagName: 'flower_echo_status' };
+    const dossierLegacyId = legacyStructuredStatusRegexInstallId(dossierRule, baseId);
+    const flowerLegacyId = legacyStructuredStatusRegexInstallId(flowerRule, baseId);
+    const scripts = [
+        { id: baseId, scriptName: '九一 · 旧状态栏', findRegex: '/<old_status>/' },
+        { id: dossierLegacyId, scriptName: '九一 · 状态栏04', findRegex: '/<dossier_status>/' },
+        { id: flowerLegacyId, scriptName: '九一 · 状态栏10', findRegex: '/<flower_echo_status>/' },
+    ];
+    const result = mergeStatusRegexScripts(
+        scripts,
+        { scriptName: '九一 · 状态栏04', findRegex: '/<dossier_status>/', replaceString: 'updated' },
+        dossierRule,
+        baseId,
+    );
+    assert.equal(result.scripts.length, 3);
+    assert.equal(result.idMigrations.length, 2);
+    assert.ok(result.scripts.some(item => item.id === baseId));
+    assert.ok(result.scripts.some(item => item.id === statusRegexInstallId(dossierRule, baseId)));
+    assert.ok(result.scripts.some(item => item.id === statusRegexInstallId(flowerRule, baseId)));
+    assert.ok(result.scripts.filter(item => item.id !== baseId).every(item => !item.id.startsWith(`${baseId}-`)));
 });
 
 test('bundled status regexes fit the current viewport without a dark padded stage', () => {

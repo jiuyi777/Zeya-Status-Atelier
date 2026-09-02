@@ -643,8 +643,11 @@ test('status prompt only runs where the generated status regex is installed', ()
     const gate = source.match(/function statusRegexAppliesToCurrentContext\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(gate, /getScriptsByType\(SCRIPT_TYPES\.SCOPED, \{ allowedOnly: true \}\)/);
     assert.match(gate, /getScriptsByType\(SCRIPT_TYPES\.GLOBAL\)/);
-    assert.match(gate, /hasStructuredInstallId/);
-    assert.match(gate, /!hasStructuredInstallId && scripts\.some\(script => script\?\.id === targetId\)/);
+    assert.match(gate, /legacyStructuredStatusRegexInstallId\(stored, targetId\)/);
+    assert.match(gate, /script\?\.id === installedId/);
+    assert.match(gate, /script\?\.id === legacyStructuredId/);
+    assert.match(gate, /script\?\.scriptName === targetName/);
+    assert.match(gate, /script\?\.id === targetId && script\?\.scriptName === targetName/);
     const prompt = source.match(/function updatePrompt\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(prompt, /stored\.promptEnabled && statusRegexAppliesToCurrentContext\(\)/);
 });

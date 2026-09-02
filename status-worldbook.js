@@ -1,4 +1,5 @@
 export const STATUS_WORLDBOOK_ENTRY_ID = 'jiuyi-status-output-rule-v1';
+export const STATUS_WORLDBOOK_ENTRY_PREFIX = 'jiuyi-wb-';
 
 function stableHash(value) {
     let hash = 2166136261;
@@ -23,12 +24,25 @@ export function buildStatusWorldbookName(character = {}, storageKey = '') {
     return `九一-状态栏-${safeBookPart(character.name || identity)}-${stableHash(identity)}`;
 }
 
+export function isStatusWorldbookEntry(entry) {
+    const automationId = String(entry?.automationId || '');
+    return automationId === STATUS_WORLDBOOK_ENTRY_ID
+        || automationId.startsWith(STATUS_WORLDBOOK_ENTRY_PREFIX);
+}
+
 export function upsertStatusWorldbookData(data, generatedEntry) {
     const next = data && typeof data === 'object' ? structuredClone(data) : { entries: {} };
     if (!next.entries || typeof next.entries !== 'object' || Array.isArray(next.entries)) next.entries = {};
     const entries = Object.values(next.entries);
-    const existing = entries.find(entry => entry?.automationId === STATUS_WORLDBOOK_ENTRY_ID)
-        || entries.find(entry => /^九一\s*·.*AI动态输出规则$/.test(String(entry?.comment || '')));
+    const targetAutomationId = String(generatedEntry?.automationId || STATUS_WORLDBOOK_ENTRY_ID);
+    const targetComment = String(generatedEntry?.comment || '');
+    const existing = entries.find(entry => entry?.automationId === targetAutomationId)
+        || entries.find(entry => entry?.automationId === STATUS_WORLDBOOK_ENTRY_ID
+            && targetComment
+            && String(entry?.comment || '') === targetComment)
+        || entries.find(entry => !entry?.automationId
+            && targetComment
+            && String(entry?.comment || '') === targetComment);
     const used = new Set(entries.map(entry => Number(entry?.uid)).filter(Number.isInteger));
     let uid = Number(existing?.uid);
     if (!Number.isInteger(uid)) {
@@ -39,7 +53,7 @@ export function upsertStatusWorldbookData(data, generatedEntry) {
         ...(existing || {}),
         ...structuredClone(generatedEntry || {}),
         uid,
-        automationId: STATUS_WORLDBOOK_ENTRY_ID,
+        automationId: targetAutomationId,
         constant: true,
         disable: false,
     };

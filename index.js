@@ -26,9 +26,10 @@ import {
     parseStatusOutput,
     parseFields,
     mergeStatusRegexScripts,
+    legacyStructuredStatusRegexInstallId,
     statusRegexInstallId,
-} from './rule-generator.js?v=0.11.15';
-import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.15';
+} from './rule-generator.js?v=0.11.16';
+import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.16';
 import {
     STATUS_BEAUTY_01_15_IDS,
     applyStatusBeautyControlChrome,
@@ -42,23 +43,23 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.15';
+} from './status-beauty-01-15-bundle.js?v=0.11.16';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
-} from './status-beauty-05-09.js?v=0.11.15';
+} from './status-beauty-05-09.js?v=0.11.16';
 import {
     STATUS_BEAUTY_16_20_IDS,
     buildStatusBeauty16To20Preview,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.15';
+} from './status-beauty-16-20.js?v=0.11.16';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.15';
+} from './opening-home-generator.js?v=0.11.16';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -75,19 +76,19 @@ import {
     resolveStatusIdeaIntent,
     statusRecommendationKey,
     usableGreetingRecords,
-} from './response-parser.js?v=0.11.15';
+} from './response-parser.js?v=0.11.16';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.11.15';
+} from './worldbook-routes.js?v=0.11.16';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
     paginateEntryDialogEntries,
-} from './entry-dialog.js?v=0.11.15';
+} from './entry-dialog.js?v=0.11.16';
 import { getContext as getSillyTavernContext } from '../../../extensions.js';
 import {
     greetingBindingSummary,
@@ -97,19 +98,19 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.11.15';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.15';
+} from './greeting-workflow.js?v=0.11.16';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.16';
 import {
     buildCharacterHomepageContext,
     describeCurrentCharacterContext,
     resolveCurrentCharacterContext,
     selectCurrentSillyTavernContext,
-} from './opening-context.js?v=0.11.15';
+} from './opening-context.js?v=0.11.16';
 import {
     buildStatusWorldbookName,
-    STATUS_WORLDBOOK_ENTRY_ID,
+    isStatusWorldbookEntry,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.11.15';
+} from './status-worldbook.js?v=0.11.16';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -131,7 +132,7 @@ import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.15';
+const VERSION = '0.11.16';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -1591,16 +1592,18 @@ function statusRegexAppliesToCurrentContext() {
     const stored = settings();
     const targetId = String(stored.ruleId || 'zeya-status-rule');
     const installedId = statusRegexInstallId(stored, targetId);
+    const legacyStructuredId = legacyStructuredStatusRegexInstallId(stored, targetId);
     const targetName = `九一 · ${String(stored.ruleName || '双页剧情状态').trim() || '双页剧情状态'}`;
-    const matches = script => script?.id === installedId || script?.scriptName === targetName;
+    const matches = script => script?.id === installedId
+        || script?.id === legacyStructuredId
+        || script?.scriptName === targetName;
     try {
         const scripts = [
             ...getScriptsByType(SCRIPT_TYPES.SCOPED, { allowedOnly: true }),
             ...getScriptsByType(SCRIPT_TYPES.GLOBAL),
         ];
-        const hasStructuredInstallId = scripts.some(script => String(script?.id || '').startsWith(`${targetId}-`));
         return scripts.some(matches)
-            || (!hasStructuredInstallId && scripts.some(script => script?.id === targetId));
+            || scripts.some(script => script?.id === targetId && script?.scriptName === targetName);
     } catch (error) {
         console.warn(`[${MODULE_NAME}] 无法确认当前角色的状态栏正则`, error);
         return false;
@@ -5461,7 +5464,7 @@ async function installStatusWorldbookRule() {
     if (!bookName) {
         for (const candidate of linkedBooks) {
             const data = await loadWorldInfo(candidate);
-            if (Object.values(data?.entries || {}).some(entry => entry?.automationId === STATUS_WORLDBOOK_ENTRY_ID)) {
+            if (Object.values(data?.entries || {}).some(isStatusWorldbookEntry)) {
                 bookName = candidate;
                 break;
             }
@@ -5487,7 +5490,7 @@ async function installStatusWorldbookRule() {
     const result = upsertStatusWorldbookData(current, generatedEntry);
     await saveWorldInfo(bookName, result.data, true);
     const confirmed = await loadWorldInfo(bookName);
-    const entry = Object.values(confirmed?.entries || {}).find(item => item?.automationId === STATUS_WORLDBOOK_ENTRY_ID);
+    const entry = Object.values(confirmed?.entries || {}).find(item => item?.automationId === generatedEntry.automationId);
     if (!entry || entry.disable || !entry.constant || entry.content !== generatedEntry.content) {
         throw new Error('世界书没有确认状态栏输出规则已保存');
     }
@@ -5516,7 +5519,7 @@ async function installGlobalStatusWorldbookRule() {
     await saveSettings();
 
     const confirmed = await loadWorldInfo(bookName);
-    const entry = Object.values(confirmed?.entries || {}).find(item => item?.automationId === STATUS_WORLDBOOK_ENTRY_ID);
+    const entry = Object.values(confirmed?.entries || {}).find(item => item?.automationId === generatedEntry.automationId);
     if (!selected_world_info.includes(bookName) || !entry || entry.disable || !entry.constant || entry.content !== generatedEntry.content) {
         throw new Error('全局世界书没有确认启用状态栏输出规则');
     }

@@ -1335,7 +1335,7 @@ export function buildWorldbookJson(input) {
                 delayUntilRecursion: 0,
                 probability: 100,
                 useProbability: true,
-                automationId: 'jiuyi-status-output-rule-v1',
+                automationId: statusWorldbookEntryId(input),
                 depth: 1,
                 outletName: '',
                 group: '',
@@ -2269,30 +2269,66 @@ function stableStatusRegexHash(value) {
     return (hash >>> 0).toString(36);
 }
 
-export function statusRegexInstallId(input, baseId = 'zeya-status-rule-v2') {
+function paddedStatusHash(value) {
+    return stableStatusRegexHash(String(value || '')).padStart(7, '0');
+}
+
+function statusRuleIdentity(input) {
     const rule = normalizeRule(input);
-    const identity = `${rule.structure}\u0000${rule.tagName}`;
-    return `${String(baseId || 'zeya-status-rule-v2')}-${stableStatusRegexHash(identity)}`;
+    return `${rule.structure}\u0000${rule.tagName}`;
+}
+
+function statusArtifactId(input, namespace, prefix) {
+    return `${prefix}-${paddedStatusHash(statusRuleIdentity(input))}-${paddedStatusHash(namespace)}`;
+}
+
+export function statusRegexInstallId(input, baseId = 'zeya-status-rule-v2') {
+    return statusArtifactId(input, String(baseId || 'zeya-status-rule-v2'), 'sta');
+}
+
+export function legacyStructuredStatusRegexInstallId(input, baseId = 'zeya-status-rule-v2') {
+    const namespace = String(baseId || 'zeya-status-rule-v2');
+    return `${namespace}-${stableStatusRegexHash(statusRuleIdentity(input))}`;
+}
+
+export function statusWorldbookEntryId(input) {
+    return statusArtifactId(input, 'jiuyi-status-output-rule-v2', 'jiuyi-wb');
 }
 
 export function mergeStatusRegexScripts(currentScripts, script, input, baseId = 'zeya-status-rule-v2') {
+    const namespace = String(baseId || 'zeya-status-rule-v2');
+    const legacyPrefix = `${namespace}-`;
+    const namespaceHash = paddedStatusHash(namespace);
+    const existing = Array.isArray(currentScripts) ? currentScripts : [];
+    const idMigrations = [];
+    const migratedExisting = existing.map(item => {
+        const oldId = String(item?.id || '');
+        if (!oldId.startsWith(legacyPrefix)) return item;
+        const oldIdentityHash = oldId.slice(legacyPrefix.length);
+        if (!/^[0-9a-z]+$/.test(oldIdentityHash)) return item;
+        const newId = `sta-${oldIdentityHash.padStart(7, '0')}-${namespaceHash}`;
+        idMigrations.push({ oldId, newId });
+        return { ...item, id: newId };
+    });
     const installedScript = {
         ...script,
         id: statusRegexInstallId(input, baseId),
         disabled: false,
     };
+    const legacyStructuredId = legacyStructuredStatusRegexInstallId(input, baseId);
     const incomingName = String(installedScript.scriptName || '');
     const incomingFind = String(installedScript.findRegex || '');
     const isSameStatusRegex = item => item?.id === installedScript.id
+        || item?.id === legacyStructuredId
         || (String(item?.scriptName || '').startsWith('九一 · ')
             && ((incomingName && item?.scriptName === incomingName)
                 || (incomingFind && item?.findRegex === incomingFind)));
-    const existing = Array.isArray(currentScripts) ? currentScripts : [];
-    const replaced = existing.filter(isSameStatusRegex);
+    const replaced = migratedExisting.filter(isSameStatusRegex);
     return {
         installedScript,
         replaced,
-        scripts: [...existing.filter(item => !isSameStatusRegex(item)), installedScript],
+        idMigrations,
+        scripts: [...migratedExisting.filter(item => !isSameStatusRegex(item)), installedScript],
     };
 }
 

@@ -55,7 +55,61 @@ test('dossier keeps its desktop artwork and adds a readable vertical phone layou
     assert.equal(applyStatusBeautyMobileLayout(result, { structure: 'beauty-dossier-04' }), result);
 });
 
+test('moon collage keeps the desktop artwork and uses a real stacked phone layout instead of shrinking it', () => {
+    const source = {
+        id: 'moon',
+        replaceString: '<html><head></head><body class="design-page design-03-page"><details class="art-card moon-art" open><div class="art-stage"><img class="art-photo" src="portrait.jpg"></div><div class="compact"></div></details></body></html>',
+    };
+    const fields = ['情愫', '欲念', '衣冠', '身处', '心语', '书信', '情愫注', '欲念注']
+        .map(label => ({ label, kind: 'long' }));
+    const result = applyStatusBeautyMobileLayout(source, {
+        structure: 'moon-collage',
+        title: '月下蝶影',
+        pages: [{ fields }],
+    });
+
+    assert.match(result.replaceString, /data-status-atelier-moon-mobile/);
+    assert.match(result.replaceString, /class="sta-moon-mobile"/);
+    assert.match(result.replaceString, /\.moon-art\[open\]>.art-stage\{display:none!important\}/);
+    assert.match(result.replaceString, /\.moon-art\[open\]>.sta-moon-mobile\{display:block!important\}/);
+    assert.match(result.replaceString, /<div class="art-stage"><img class="art-photo" src="portrait\.jpg"><\/div>/);
+    for (let capture = 1; capture <= 8; capture += 1) {
+        assert.match(result.replaceString, new RegExp(`data-capture="${capture}">\\$${capture}(?!\\d)`));
+    }
+    assert.equal(applyStatusBeautyMobileLayout(result, { structure: 'moon-collage' }), result);
+});
+
+test('crimson letter stacks every field on phones so long values are not squeezed into columns', async () => {
+    const moduleSource = await import('node:fs/promises').then(fs => fs.readFile(new URL('../status-beauty-01-15-bundle.js', import.meta.url), 'utf8'));
+    assert.match(moduleSource, /\.fields\{grid-template-columns:minmax\(0,1fr\)/);
+    assert.match(moduleSource, /grid-column:1!important;grid-row:auto!important/);
+});
+
+test('designs 11 to 15 keep their desktop canvas and gain complete themed phone pages', () => {
+    const structures = [
+        'beauty-clock-travel-11',
+        'beauty-flower-reader-12',
+        'beauty-olive-ticket-13',
+        'beauty-cat-rabbit-14',
+        'beauty-rabbit-track-15',
+    ];
+    structures.forEach(structure => {
+        const source = {
+            replaceString: '<html><head></head><body><details class="status" open><div class="canvas">desktop artwork</div><div class="compact"></div></details></body></html>',
+        };
+        const fields = Array.from({ length: 15 }, (_, index) => ({ label: `字段${index + 1}`, kind: 'long' }));
+        const result = applyStatusBeautyMobileLayout(source, { structure, title: `人物状态${structure.slice(-2)}`, pages: [{ fields }] });
+        assert.match(result.replaceString, /data-status-atelier-layered-mobile/, structure);
+        assert.match(result.replaceString, /class="sta-layered-mobile sta-layered-\d+"/, structure);
+        assert.match(result.replaceString, /\.status\[open\]>.canvas\{display:none!important\}/, structure);
+        assert.match(result.replaceString, /<div class="canvas">desktop artwork<\/div>/, structure);
+        for (let capture = 1; capture <= 15; capture += 1) {
+            assert.match(result.replaceString, new RegExp(`data-capture="${capture}">\\$${capture}(?!\\d)`), `${structure} capture ${capture}`);
+        }
+    });
+});
+
 test('unadapted bundled designs are unchanged by the mobile adapter', () => {
     const source = { replaceString: '<html><head></head><body>desktop</body></html>' };
-    assert.equal(applyStatusBeautyMobileLayout(source, { structure: 'beauty-clock-travel-11' }), source);
+    assert.equal(applyStatusBeautyMobileLayout(source, { structure: 'beauty-crimson-letter-01' }), source);
 });
