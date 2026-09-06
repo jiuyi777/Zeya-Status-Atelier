@@ -18,6 +18,7 @@ const requiredFiles = [
     'opening-overview.js',
     'worldbook-routes.js',
     'rule-generator.js',
+    'portable-regex.js',
     'status-beauty-01-15-bundle.js',
     'status-beauty-05-09.js',
     'status-beauty-05-09.css',

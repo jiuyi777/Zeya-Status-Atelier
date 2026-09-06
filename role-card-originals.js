@@ -13,6 +13,7 @@ const RAW_ORIGINAL_HTML = Object.freeze({
 const ORIGINAL_HTML = Object.freeze({
     ...RAW_ORIGINAL_HTML,
     'archive-status': RAW_ORIGINAL_HTML['archive-status']
+        .replace(/onerror="this\.onerror=null;this\.src='\/thumbnails\/Assistant\.png';"/g, 'onerror="this.hidden=true"')
         .replace(/佐藤原野|Sato/g, 'X')
         .replace(/src="https:\/\/s41\.ax1x\.com\/2026\/03\/02\/pepK81g\.jpg"/g, 'src=""')
         .replace(/src="https:\/\/s41\.ax1x\.com\/2026\/03\/02\/pepKGcQ\.jpg"/g, 'src=""')
@@ -27,9 +28,9 @@ const ORIGINAL_CSS_PATH = Object.freeze({
 });
 
 const EXPORTED_CSS_PATH = Object.freeze({
-    'archive-status': '/scripts/extensions/third-party/status-atelier/role-card-originals/archive.css',
-    'pixel-chat': '/scripts/extensions/third-party/status-atelier/role-card-originals/pixel-chat.css',
-    'pixel-handheld': '/scripts/extensions/third-party/status-atelier/role-card-originals/blackberry.css',
+    'archive-status': new URL('./role-card-originals/archive.css', import.meta.url).href,
+    'pixel-chat': new URL('./role-card-originals/pixel-chat.css', import.meta.url).href,
+    'pixel-handheld': new URL('./role-card-originals/blackberry.css', import.meta.url).href,
 });
 
 function safeJsonForScript(value) {

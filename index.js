@@ -1,3 +1,4 @@
+import { makePortableRegex } from './portable-regex.js';
 import {
     CHAT_APPEARANCE_PRESETS,
     CHAT_FRAME_ASSET_URLS,
@@ -5338,15 +5339,15 @@ async function resolveStatusRegexScript(input = resolvedStatusExportInput()) {
         const responsive = applyStatusBeautyMobileLayout(titled, rule);
         const readable = applyStatusBeautyMobileTypography(responsive, rule);
         const edited = applyStatusBeautyTextOverrides(readable, settings().profileTextOverrides?.[rule.structure]);
-        return {
+        return makePortableRegex({
             ...applyStatusBeautyMediaSettings(edited, rule.media),
             markdownOnly: rule.displayOnlyRegex,
-        };
+        });
     }
     const script = buildRegexScript(resolvedInput);
-    return isStatusBeauty16To20(rule.structure)
+    return makePortableRegex(isStatusBeauty16To20(rule.structure)
         ? applyStatusBeautyTextOverrides(script, settings().profileTextOverrides?.[rule.structure])
-        : script;
+        : script);
 }
 
 async function downloadRegex() {
