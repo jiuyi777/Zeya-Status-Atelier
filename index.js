@@ -5765,7 +5765,7 @@ function compactStatusAiText(value, limit) {
 const STATUS_CONTEXT_CONTROL_TITLE = /(?:创作|写作|文体|文风|禁止|禁词|规则|指令|提示词|prompt|system|输出格式|正则|状态栏|作者注)/iu;
 
 function isNarrativeWorldbookEntry(entry) {
-    if (!entry || entry.automationId === STATUS_WORLDBOOK_ENTRY_ID) return false;
+    if (!entry || isStatusWorldbookEntry(entry)) return false;
     const title = compactStatusAiText(entry.comment || entry.name || '', 120);
     if (STATUS_CONTEXT_CONTROL_TITLE.test(title)) return false;
     const content = compactStatusAiText(entry.content || '', 240);
