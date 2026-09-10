@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { makePortableRegex } from '../portable-regex.js';
+import { makePortableRegex, pngImageBytes } from '../portable-regex.js';
 import { readFile } from 'node:fs/promises';
 import { STATUS_STRUCTURE_PRESETS, buildRegexScript } from '../rule-generator.js';
 import { isStatusBeauty01To15, loadStatusBeautyBundledRegex } from '../status-beauty-01-15-bundle.js';
@@ -8,6 +8,22 @@ import { isStatusBeauty01To15, loadStatusBeautyBundledRegex } from '../status-be
 const baseUrl = 'http://tauri.localhost/scripts/extensions/third-party/Zeya-Status-Atelier/index.js';
 const cssUrl = new URL('status-beauty-16-20.css', baseUrl).href;
 const avatar = '/User%20Avatars/1760813107884-.png';
+
+test('character PNG metadata stays out of avatars across repeated exports without changing pixel chunks', async () => {
+    const original = new Uint8Array(await readFile(new URL('../assets/chat/cat-mascot.png', import.meta.url)));
+    const pixels = pngImageBytes(original);
+    const payload = Buffer.from('chara\0' + Buffer.from(JSON.stringify({ description: 'private-card-content', nested: 'x'.repeat(5000) })).toString('base64'));
+    const textChunk = Buffer.alloc(payload.length + 12);
+    textChunk.writeUInt32BE(payload.length); textChunk.write('tEXt', 4); payload.copy(textChunk, 8);
+    const card = new Uint8Array(Buffer.concat([pixels.subarray(0, -12), textChunk, pixels.subarray(-12)]));
+    assert.deepEqual(pngImageBytes(card), pixels);
+    const packed = await makePortableRegex({ replaceString: `<img src="${avatar}">` }, { baseUrl, fetchResource: fixtureFetch({ [new URL(avatar, baseUrl).href]: [card, 'image/png'] }) });
+    const encoded = packed.replaceString.match(/base64,([A-Za-z0-9+/=]+)/)[1];
+    assert.deepEqual(new Uint8Array(Buffer.from(encoded, 'base64')), pixels);
+    const saved = await makePortableRegex({ replaceString: `<img src="data:image/png;base64,${Buffer.from(card).toString('base64')}">` });
+    assert.equal(saved.replaceString, packed.replaceString);
+    assert.deepEqual(await makePortableRegex(packed), packed);
+});
 function fixtureFetch(files, calls = []) {
     return async url => {
         calls.push(url);

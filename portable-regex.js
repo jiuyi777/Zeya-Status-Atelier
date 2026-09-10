@@ -21,6 +21,32 @@ function dataUrl(bytes, type) {
     return `data:${type};base64,${btoa(binary)}`;
 }
 
+// Character PNGs carry card JSON in text chunks. Only pixels belong in an avatar.
+export function pngImageBytes(bytes) {
+    const signature = [137, 80, 78, 71, 13, 10, 26, 10];
+    if (!signature.every((value, index) => bytes[index] === value)) return bytes;
+    const chunks = [bytes.subarray(0, 8)];
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    let offset = 8, size = 8, removed = false;
+    while (offset + 12 <= bytes.length) {
+        const length = view.getUint32(offset);
+        const end = offset + length + 12;
+        if (end > bytes.length) throw new Error('PNG 图片数据不完整');
+        const type = String.fromCharCode(...bytes.subarray(offset + 4, offset + 8));
+        if (['tEXt', 'iTXt', 'zTXt'].includes(type)) removed = true;
+        else { chunks.push(bytes.subarray(offset, end)); size += end - offset; }
+        offset = end;
+        if (type === 'IEND') {
+            if (!removed) return bytes;
+            const output = new Uint8Array(size);
+            let cursor = 0;
+            for (const chunk of chunks) { output.set(chunk, cursor); cursor += chunk.length; }
+            return output;
+        }
+    }
+    throw new Error('PNG 图片缺少结束块');
+}
+
 export async function makePortableRegex(script, { baseUrl = import.meta.url, fetchResource = globalThis.fetch } = {}) {
     const base = new URL(baseUrl);
     const cache = new Map();
@@ -50,7 +76,7 @@ export async function makePortableRegex(script, { baseUrl = import.meta.url, fet
                 if (!/^(?:image\/|font\/|application\/(?:font|x-font|vnd\.ms-fontobject|octet-stream))/.test(type)) throw new Error('图片或字体响应格式错误');
                 const bytes = new Uint8Array(await response.arrayBuffer());
                 if (!bytes.length) throw new Error('资源为空');
-                return { data: dataUrl(bytes, type) };
+                return { data: dataUrl(pngImageBytes(bytes), type) };
             } catch (error) {
                 const name = decodeURIComponent(new URL(url).pathname.split('/').pop() || '图片');
                 throw new Error(`导出资源「${name}」读取失败：${error.message}。请确认文件存在后重新生成。`);
@@ -100,5 +126,11 @@ export async function makePortableRegex(script, { baseUrl = import.meta.url, fet
         });
     }
     html = sections.join('');
+    // Previously saved media settings may already contain an embedded character PNG.
+    html = html.replace(/data:image\/png;base64,([A-Za-z0-9+/=]+)/g, (value, encoded) => {
+        const bytes = Uint8Array.from(atob(encoded), character => character.charCodeAt(0));
+        const image = pngImageBytes(bytes);
+        return image === bytes ? value : dataUrl(image, 'image/png');
+    });
     return { ...script, replaceString: html };
 }

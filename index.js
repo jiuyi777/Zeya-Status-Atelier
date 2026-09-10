@@ -1,4 +1,4 @@
-import { makePortableRegex } from './portable-regex.js';
+import { makePortableRegex } from './portable-regex.js?v=0.11.19';
 import {
     CHAT_APPEARANCE_PRESETS,
     CHAT_FRAME_ASSET_URLS,
@@ -44,7 +44,7 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.16';
+} from './status-beauty-01-15-bundle.js?v=0.11.19';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
