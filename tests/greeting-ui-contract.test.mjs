@@ -107,7 +107,7 @@ test('status workspace exposes component, palette, real avatar and audio control
     assert.match(source, /response = await runQuietGeneration\(\)/);
     assert.match(source, /当前模型没有返回状态栏内容；插件没有改动或安装任何内容/);
     assert.match(source, /if \(!status\) notify\('error', error\?\.message \|\| '状态栏 AI 美化生成失败'\)/);
-    assert.match(source, /parseStatusOutput\(input, response\)/);
+    assert.match(source, /parseSingleStatusResult\(response, candidates\)/);
     assert.match(source, /details\.append\(instruction\)/);
     assert.doesNotMatch(source, /instructionWrap\.append\(instruction\)/);
 });
@@ -353,15 +353,15 @@ test('status AI generation stays preview-only until either entry explicitly inst
     const generateBlock = source.match(/async function testStatusAiGeneration\(button, viewName = 'settings', forceDifferent = false\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(generateBlock, /currentStatusAiContext\(\)/);
     assert.match(generateBlock, /【改造幅度：大幅改造】/);
-    assert.match(generateBlock, /diversifyStatusRecommendation\(recommendation/);
-    assert.match(generateBlock, /recentKeys: settings\(\)\.statusRecentRecommendations/);
+    assert.match(generateBlock, /singleRequest: true/);
+    assert.match(generateBlock, /settings\(\)\.statusRecentRecommendations.join/);
     assert.match(generateBlock, /statusRecommendationKey\(recommendation\)/);
     assert.match(generateBlock, /slice\(-5\)/);
     assert.match(generateBlock, /rememberGeneratedStatusTemplate\(\)/);
     assert.match(generateBlock, /用户提示词/);
     assert.match(generateBlock, /applyStatusAiRecommendation\(recommendation\)/);
     assert.match(generateBlock, /showStatusAiRecommendation\(recommendation, contextSnapshot, viewName\)/);
-    assert.match(generateBlock, /【格式纠正】/);
+    assert.doesNotMatch(generateBlock, /repairPrompt|repairedResponse/);
     assert.doesNotMatch(generateBlock, /buildLocalStatusRecords|本地已生成|usedLocalFallback/);
     assert.match(source, /STATUS_CONTEXT_CONTROL_TITLE/);
     assert.match(source, /includeCreatorNotes: false/);
