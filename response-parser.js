@@ -507,6 +507,11 @@ export function parseBatchSummaryResponse(value, requestedEntries) {
 
 export function generationErrorMessage(error) {
     const message = String(error?.message || error?.error?.message || error || '');
+    if (/(?:\b429\b|too many requests|rate[_ -]?limit)/i.test(message)) {
+        return /\b502\b/i.test(message)
+            ? '酒馆接口返回 502，错误信息同时包含上游 429 限流；请等待服务商限流恢复后再生成'
+            : '模型接口触发 429 限流；请等待服务商限流恢复后再生成';
+    }
     if (/(?:unauthorized|authentication failed|invalid api key|incorrect api key|\b401\b)/i.test(message)) {
         return '酒馆当前模型连接鉴权失败；请先在 API 连接页确认接口地址、密钥和模型可用，再重新生成';
     }

@@ -78,7 +78,7 @@ import {
     resolveStatusIdeaIntent,
     statusRecommendationKey,
     usableGreetingRecords,
-} from './response-parser.js?v=0.11.16';
+} from './response-parser.js?v=0.11.21';
 import {
     constrainRouteToCatalog,
     extractWorldbookRouteCatalog,
@@ -5886,8 +5886,9 @@ function setStatusEntryMode(viewName, mode) {
 }
 
 function applyStatusAiRecommendation(recommendation) {
+    saveCurrentProfileTemplateDraft();
+    if (recommendation.structure === 'profile') settings().profileAppearance = recommendation.profileAppearance;
     applyStatusStructure(recommendation.structure);
-    if (recommendation.structure === 'profile') applyProfileAppearance(recommendation.profileAppearance);
 }
 
 function applyStatusIdeaPlan(ideaText, recommendation) {
