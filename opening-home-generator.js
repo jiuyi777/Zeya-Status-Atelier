@@ -1,5 +1,6 @@
-const THEMES = new Set(['classical', 'newspaper', 'timeline', 'minimal', 'scroll', 'editorial', 'collage', 'dossier', 'glass', 'kinetic', 'noir-poster', 'negative-space']);
-const FONTS = new Set(['serif', 'sans', 'kai', 'mono']);
+import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme, buildBundledHomeDocument } from './opening-bundled-themes.js?v=0.11.22';
+const THEMES = new Set([...BUNDLED_HOME_TEMPLATES.map(template => template.id),'classical', 'newspaper', 'timeline', 'minimal', 'scroll', 'editorial', 'collage', 'dossier', 'glass', 'kinetic', 'noir-poster', 'negative-space']);
+const FONTS = new Set(['serif', 'sans', 'kai', 'mono', 'fangsong', 'rounded', 'clerical']);
 
 export const OPENING_HOME_DEFAULTS = Object.freeze({
     ruleId: 'zeya-opening-home-v1',
@@ -92,6 +93,7 @@ export function normalizeOpeningHomeSettings(input = {}) {
         })).filter(entry => entry.book),
     }));
     return {
+        imageUrl: /^https:\/\//i.test(String(input.imageUrl || '')) ? String(input.imageUrl) : '',
         ruleId: clean(input.ruleId, defaults.ruleId),
         title: clean(input.title, defaults.title),
         subtitle: clean(input.subtitle, defaults.subtitle),
@@ -211,7 +213,8 @@ function replacementHtml(input) {
 </script>
 </body>
 </html>`.trim();
-    return ['```html', documentHtml, '```'].join('\n');
+    const output = isBundledHomeTheme(data.theme) ? buildBundledHomeDocument(data, documentHtml.match(/<script>([\s\S]*?)<\/script>/)[1]) : documentHtml;
+    return ['```html', output, '```'].join('\n');
 }
 
 export function buildOpeningHomeRegex(input = {}) {

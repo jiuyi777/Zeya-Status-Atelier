@@ -1,3 +1,5 @@
+import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.22';
+import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.22';
 import { parseSingleStatusResult, singleStatusCatalog } from './status-ai-single.js?v=0.11.20';
 import { makePortableRegex } from './portable-regex.js?v=0.11.19';
 import {
@@ -61,7 +63,7 @@ import {
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.16';
+} from './opening-home-generator.js?v=0.11.22';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -134,7 +136,7 @@ import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.16';
+const VERSION = '0.11.22';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -142,6 +144,7 @@ const SOCIAL_THEME_ART_URLS = Object.freeze({
 });
 
 const HOME_TEMPLATES = Object.freeze([
+    ...BUNDLED_HOME_TEMPLATES,
     {
         id: 'classical', name: '01 古典徽章', description: '双层雕花框 · 海军蓝金箔',
         values: { theme: 'classical', font: 'serif', background: '#f5ead7', cardBackground: '#fffaf0', text: '#2f261e', accent: '#914538', secondary: '#7d6a56', introBackground: '#e8e0d0', buttonColor: '#1a3048' },
@@ -1739,6 +1742,15 @@ function readOpeningSummaryControl(control) {
 function renderOpeningHomePreview(host) {
     if (!host) return;
     const data = normalizeOpeningHomeSettings(settings().openingHome);
+    if (isBundledHomeTheme(data.theme)) {
+        const frame = makeElement('iframe');
+        frame.title = '开场白主页预览';
+        frame.setAttribute('sandbox', '');
+        frame.style.cssText = 'width:100%;height:700px;border:0;';
+        frame.srcdoc = buildOpeningHomeRegex(data).replaceString.slice(8, -4);
+        host.replaceChildren(frame);
+        return;
+    }
     const root = makeElement('section', 'status-atelier-opening-live');
     root.dataset.theme = data.theme;
     root.style.setProperty('--zop-accent', data.accent);
@@ -7571,6 +7583,8 @@ async function initialize() {
         if (document.querySelector('#status-atelier-opening-menu-item') && document.querySelector('#status-atelier-status-menu-item')) break;
         await new Promise(resolve => setTimeout(resolve, 250));
     }
+    const cleanupOpeningReturn = mountOpeningReturnNavigation(context, () => isBundledHomeTheme(settings().openingHome.theme));
+    globalThis.addEventListener('pagehide', cleanupOpeningReturn, { once: true });
     console.info(`[九一 正则状态工坊] v${VERSION} 已加载`);
 }
 
