@@ -1,5 +1,29 @@
 import { normalizeRule } from './rule-generator.js';
 
+export function selectStatusCandidates(candidates, { recent = [], current = '', idea = '', random = Math.random } = {}) {
+    const named = candidates.filter(item => {
+        const name = String(item.name || '').replace(/^\d+\s*[·.、-]?\s*/, '').trim();
+        return name.length > 1 && String(idea).includes(name);
+    });
+    if (named.length) return named;
+    const excluded = new Set([...recent, current]);
+    let available = candidates.filter(item => !excluded.has(item.key));
+    // A constrained request can exhaust its pool; retain the least recent options.
+    if (!available.length) {
+        available = candidates.filter(item => item.key !== current);
+        if (!available.length) available = [...candidates];
+        const rank = item => recent.indexOf(item.key);
+        const oldest = Math.min(...available.map(rank));
+        available = available.filter(item => rank(item) === oldest);
+    }
+    const shuffled = [...available];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
 // A single response carries both the chosen layout and all of its preview values.
 export function parseSingleStatusResult(text, candidates) {
     let data;
@@ -31,7 +55,7 @@ export function singleStatusCatalog(candidates) {
     return candidates.map(item => {
         const rule = normalizeRule(item.input);
         const fields = list => list.map(field => ({ label: field.label, instruction: field.instruction, kind: field.kind }));
-        return { candidate: item.key, name: item.name, shared: fields(rule.sharedFields),
+        return { candidate: item.key, name: item.name, description: item.description || '', shared: fields(rule.sharedFields),
             pages: rule.pages.map(page => ({ id: page.id, label: page.label, fields: fields(page.fields || rule.pageFields) })),
             phoneApps: rule.structure === 'phone' ? rule.pages.map(page => page.label) : [] };
     });

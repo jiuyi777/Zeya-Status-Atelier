@@ -2,11 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
-import { parseSingleStatusResult, singleStatusCatalog } from '../status-ai-single.js';
+import { parseSingleStatusResult, singleStatusCatalog, selectStatusCandidates } from '../status-ai-single.js';
 import { normalizeRule, parseFields, STATUS_STRUCTURE_PRESETS } from '../rule-generator.js';
 import { responseText, generationErrorMessage, resolveStatusIdeaIntent, applyStatusIdeaFocus, statusRecommendationKey } from '../response-parser.js';
 import { STATUS_BEAUTY_01_15_IDS } from '../status-beauty-01-15-bundle.js';
 import { STATUS_BEAUTY_16_20_IDS } from '../status-beauty-16-20.js';
+import { STATUS_BEAUTY_32_41_IDS } from '../status-beauty-32-41.js';
 
 const source = readFileSync(new URL('../index.js', import.meta.url), 'utf8');
 const runner = source.slice(source.indexOf('function isEmptyGenerationFailure('), source.indexOf('function externalApiBases('));
@@ -25,7 +26,7 @@ function harness(reply, quietOnly = false, selected = candidate) {
     const sandbox = {
         statusAiGenerationBusy: false, statusAiTestRecords: null, SUMMARY_RESPONSE_LENGTH: 4096,
         context: () => ({ generateRaw: quietOnly ? undefined : () => run('raw'), generateQuietPrompt: () => run('quiet') }),
-        responseText, generationErrorMessage, parseSingleStatusResult, singleStatusCatalog, normalizeRule,
+        responseText, generationErrorMessage, parseSingleStatusResult, singleStatusCatalog, selectStatusCandidates, normalizeRule,
         statusAiView: () => ({ status, result: node(), install: node(), source: node() }),
         compactStatusAiText: value => value || '', settings: () => stored,
         currentStatusAiContext: async () => ({ characterName: '旅人', characterContext: '阅读', chatContext: '图书馆', messageCount: 1, worldbookCount: 0 }),
@@ -121,7 +122,7 @@ test('candidate schemas preserve drafts and every offered template accepts a com
     const stored = { structure: 'profile', profileAppearance: 'beauty-record-status-08', title: '自定义标题',
         pageFieldsText: '观察|填写观察|long|observation', sharedFieldsText: '', pagesText: '此刻|当前状态', statusRecentRecommendations: [] };
     const before = structuredClone(stored);
-    const profiles = [...STATUS_BEAUTY_01_15_IDS, ...STATUS_BEAUTY_16_20_IDS, 'archive-status'];
+    const profiles = [...STATUS_BEAUTY_01_15_IDS, ...STATUS_BEAUTY_16_20_IDS, 'archive-status', ...STATUS_BEAUTY_32_41_IDS];
     const sandbox = { settings: () => stored, resolveStatusIdeaIntent, applyStatusIdeaFocus, statusRecommendationKey,
         parseFields, STATUS_STRUCTURE_PRESETS, STATUS_AI_STRUCTURE_IDS: ['phone', 'profile', 'social', 'chat', 'forum'],
         PROFILE_APPEARANCE_PRESETS: profiles.map(id => STATUS_STRUCTURE_PRESETS.find(item => item.id === id)),
