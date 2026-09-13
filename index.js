@@ -1,5 +1,6 @@
-import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.22';
-import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.22';
+import { STATUS_BEAUTY_32_41_IDS, buildStatusBeauty32To41Preview, isStatusBeauty32To41 } from './status-beauty-32-41.js?v=0.11.23';
+import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.23';
+import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.23';
 import { parseSingleStatusResult, singleStatusCatalog } from './status-ai-single.js?v=0.11.20';
 import { makePortableRegex } from './portable-regex.js?v=0.11.19';
 import {
@@ -32,7 +33,7 @@ import {
     mergeStatusRegexScripts,
     legacyStructuredStatusRegexInstallId,
     statusRegexInstallId,
-} from './rule-generator.js?v=0.11.16';
+} from './rule-generator.js?v=0.11.23';
 import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.16';
 import {
     STATUS_BEAUTY_01_15_IDS,
@@ -63,7 +64,7 @@ import {
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.22';
+} from './opening-home-generator.js?v=0.11.23';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -205,10 +206,10 @@ const STATUS_TEMPLATES = Object.freeze([
 
 const KIND_LABELS = Object.freeze({ text: '短文本', long: '长文本', number: '数字', progress: '数值 0–100', currency: '金额', avatar: '头像' });
 const PHONE_STRUCTURE_IDS = Object.freeze(['phone', 'profile', 'social', 'forum', 'chat', 'quest']);
-const PROFILE_APPEARANCE_IDS = Object.freeze([...STATUS_BEAUTY_01_15_IDS, ...STATUS_BEAUTY_16_20_IDS, 'archive-status']);
+const PROFILE_APPEARANCE_IDS = Object.freeze([...STATUS_BEAUTY_01_15_IDS, ...STATUS_BEAUTY_16_20_IDS, 'archive-status', ...STATUS_BEAUTY_32_41_IDS]);
 const PROFILE_APPEARANCE_PRESETS = Object.freeze(PROFILE_APPEARANCE_IDS.map((id, index) => {
     const structure = STATUS_STRUCTURE_PRESETS.find(item => item.id === id);
-    return { ...structure, code: String(index + 1).padStart(2, '0') };
+    return { ...structure, code: STATUS_BEAUTY_32_41_IDS.includes(id) ? id.slice(-2) : String(index + 1).padStart(2, '0') };
 }));
 const PROFILE_APPEARANCE_DEFAULT = PROFILE_APPEARANCE_PRESETS[0];
 const MOON_COLLAGE_BACKGROUND_URL = new URL('./assets/status-beauty/images/design-03-background-v3.png', import.meta.url).href;
@@ -3731,7 +3732,7 @@ function createStatusBeautyDirectEditor(rule) {
         });
         const controls = [
             heading('正在编辑：角色头像'),
-            makeElement('p', 'status-atelier-beauty-editor-note', rule.structure === 'archive-status' ? '档案状态栏可同时设置角色头像和拍立得图片。' : '21 款共用这套头像设置；没有可用头像时，编辑预览显示默认图。'),
+            makeElement('p', 'status-atelier-beauty-editor-note', rule.structure === 'archive-status' ? '档案状态栏可同时设置角色头像和拍立得图片。' : '31 款共用这套头像设置；没有可用头像时，编辑预览显示默认图。'),
             portrait,
             statusBeautyDirectEditorField('头像来源', source),
             statusBeautyDirectEditorField('图片 URL', url),
@@ -3764,6 +3765,14 @@ function renderStatusBeauty16To20Preview(host, rule, pages) {
     const frame = makeElement('iframe', 'status-atelier-rule-preview status-atelier-beauty-preview-frame');
     frame.title = `${rule.structureName}预览`;
     frame.srcdoc = buildStatusBeauty16To20Preview(rule, pages[0]?.values || []);
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+    mountStatusBeautyPreview(host, frame, rule, { labeled: true });
+}
+
+function renderStatusBeauty32To41Preview(host, rule, pages) {
+    const frame = makeElement('iframe', 'status-atelier-rule-preview status-atelier-beauty-preview-frame');
+    frame.title = `${rule.structureName}预览`;
+    frame.srcdoc = buildStatusBeauty32To41Preview(rule, pages.map(item => [...(item.values || []), item.page?.label || '当前角色']));
     frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
     mountStatusBeautyPreview(host, frame, rule, { labeled: true });
 }
@@ -4032,7 +4041,7 @@ function renderStatusPreview(host) {
         host.replaceChildren();
         return;
     }
-    if ((isStatusBeauty01To15(previewInput.structure) || isStatusBeauty05To09(previewInput.structure) || isStatusBeauty16To20(previewInput.structure))
+    if ((isStatusBeauty01To15(previewInput.structure) || isStatusBeauty05To09(previewInput.structure) || isStatusBeauty16To20(previewInput.structure) || isStatusBeauty32To41(previewInput.structure))
         && previewInput.media.avatarSource !== 'none' && !previewInput.media.avatarUrl) {
         previewInput.media.avatarUrl = DEFAULT_CHARACTER_PORTRAIT_URL;
     }
@@ -4048,6 +4057,10 @@ function renderStatusPreview(host) {
     }
     if (isStatusBeauty16To20(rule.structure)) {
         renderStatusBeauty16To20Preview(host, rule, pages);
+        return;
+    }
+    if (isStatusBeauty32To41(rule.structure)) {
+        renderStatusBeauty32To41Preview(host, rule, pages);
         return;
     }
     if (rule.structure === 'moon-collage') {
@@ -5359,7 +5372,7 @@ async function resolveStatusRegexScript(input = resolvedStatusExportInput()) {
         });
     }
     const script = buildRegexScript(resolvedInput);
-    return makePortableRegex(isStatusBeauty16To20(rule.structure)
+    return makePortableRegex((isStatusBeauty16To20(rule.structure) || isStatusBeauty32To41(rule.structure))
         ? applyStatusBeautyTextOverrides(script, settings().profileTextOverrides?.[rule.structure])
         : script);
 }

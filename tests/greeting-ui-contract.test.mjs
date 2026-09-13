@@ -113,7 +113,7 @@ test('status workspace exposes component, palette, real avatar and audio control
 });
 
 test('profile appearance keeps structure profile while exposing status beauty 01 to 21', () => {
-    assert.match(source, /const PROFILE_APPEARANCE_IDS = Object\.freeze\(\[\.\.\.STATUS_BEAUTY_01_15_IDS, \.\.\.STATUS_BEAUTY_16_20_IDS, 'archive-status'\]\)/);
+    assert.match(source, /const PROFILE_APPEARANCE_IDS = Object\.freeze\(\[\.\.\.STATUS_BEAUTY_01_15_IDS, \.\.\.STATUS_BEAUTY_16_20_IDS, 'archive-status', \.\.\.STATUS_BEAUTY_32_41_IDS\]\)/);
     assert.match(source, /profileAppearance: PROFILE_APPEARANCE_DEFAULT\.id/);
     assert.match(source, /profileTemplateSchemaVersion: 1/);
     assert.match(source, /profileTemplateDrafts: \{\}/);
@@ -299,7 +299,7 @@ test('modal and palettes stay inside mobile viewport and palette library is coll
     assert.match(source, /PHONE_STRUCTURE_IDS = Object\.freeze\(\['phone', 'profile', 'social', 'forum', 'chat', 'quest'\]\)/);
     assert.doesNotMatch(source.match(/const PHONE_STRUCTURE_IDS = Object\.freeze\(([^\n]+)\)/)?.[1] || '', /music/);
     assert.match(settingsMarkup, /<summary><strong>色卡<\/strong><small>26 套配色<\/small><\/summary>/);
-    assert.match(settingsMarkup, /<details class="status-atelier-status-style-library" open>[\s\S]*?<strong>人物状态栏<\/strong><small>21 款完整设计；每款保留自己的字段与构图<\/small>/);
+    assert.match(settingsMarkup, /<details class="status-atelier-status-style-library" open>[\s\S]*?<strong>人物状态栏<\/strong><small>31 款完整设计；每款保留自己的字段与构图<\/small>/);
     assert.match(styleSource, /status-atelier-status-style-library > summary::\-webkit-details-marker[\s\S]*?status-atelier-status-palette-library > summary::\-webkit-details-marker[\s\S]*?display:\s*none/);
     assert.match(styleSource, /max-height:\s*calc\(100dvh - 12px - env\(safe-area-inset-top\) - env\(safe-area-inset-bottom\)\)/);
     assert.match(styleSource, /\.status-atelier-dialog-body\s*\{[\s\S]*?overflow-y:\s*auto;[\s\S]*?overscroll-behavior:\s*contain;/);

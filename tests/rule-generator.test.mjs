@@ -56,8 +56,8 @@ test('parses any number of switch pages without storing story values', () => {
 });
 
 test('registers genuinely different component structures and composable palettes', () => {
-    assert.equal(STATUS_STRUCTURE_PRESETS.length, 33);
-    assert.equal(new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id)).size, 33);
+    assert.equal(STATUS_STRUCTURE_PRESETS.length, 43);
+    assert.equal(new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id)).size, 43);
     assert.equal(STATUS_PALETTE_PRESETS.length, 26);
     assert.equal(new Set(STATUS_PALETTE_PRESETS.map(item => item.id)).size, 26);
     assert.ok(STATUS_PALETTE_PRESETS.every(item => ['accent', 'background', 'card', 'text', 'muted'].every(key => /^#[0-9a-f]{6}$/i.test(item[key]))));
@@ -261,6 +261,7 @@ test('removes the rejected 40-card recipe collection from selectable structures'
         'beauty-current-status-05', 'beauty-card-status-06', 'beauty-letter-status-07', 'beauty-record-status-08', 'beauty-archive-status-09',
         'beauty-flower-echo-10', 'beauty-clock-travel-11', 'beauty-flower-reader-12', 'beauty-olive-ticket-13', 'beauty-cat-rabbit-14', 'beauty-rabbit-track-15',
         'beauty-mailbox-16', 'beauty-double-heart-17', 'beauty-checklist-18', 'beauty-broadcast-19', 'beauty-wallet-20',
+        'beauty-folded-herbarium-32', 'beauty-radar-watch-33', 'beauty-specimen-drawers-34', 'beauty-lunar-orbit-35', 'beauty-ticket-reveal-36', 'beauty-voices-carousel-37', 'beauty-telegraph-strip-38', 'beauty-perfume-wheel-39', 'beauty-radio-tuner-40', 'beauty-train-route-41',
         'custom',
     ]);
     for (const removedId of ['shop', 'travel', 'weather', 'holo', 'specimen', 'memory', 'livestream']) {

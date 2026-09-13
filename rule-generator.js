@@ -17,6 +17,11 @@ import {
     buildStatusBeauty16To20Replacement,
     isStatusBeauty16To20,
 } from './status-beauty-16-20.js';
+import {
+    STATUS_BEAUTY_32_41_PRESETS,
+    buildStatusBeauty32To41Replacement,
+    isStatusBeauty32To41,
+} from './status-beauty-32-41.js';
 
 const MOON_COLLAGE_BACKGROUND_URL = new URL('./assets/status-beauty/images/design-03-background-v3.png', import.meta.url).href;
 const MOON_COLLAGE_FOREGROUND_URL = new URL('./assets/status-beauty/images/design-03-photo-foreground-v1.png', import.meta.url).href;
@@ -377,6 +382,7 @@ export const STATUS_STRUCTURE_PRESETS = Object.freeze([
     ...STATUS_BEAUTY_05_09_PRESETS,
     ...STATUS_BEAUTY_10_15_PRESETS,
     ...STATUS_BEAUTY_16_20_PRESETS,
+    ...STATUS_BEAUTY_32_41_PRESETS,
     {
         id: 'custom', name: '自由组件板', description: '保留完全可编辑的通用字段容器',
         title: '自定义状态面板', subtitle: 'CUSTOM COMPONENTS', layout: 'grid', appearanceId: 'component-canvas', appearanceName: '自由组件板', glyph: '✦',
@@ -1091,6 +1097,15 @@ export function normalizePhoneDesktop(input = {}) {
 }
 
 export function normalizeRule(input = {}) {
+    if (STATUS_BEAUTY_32_41_PRESETS.some(preset => preset.id === input.structure && preset.compact)) {
+        const serializeFields = fields => Array.isArray(fields) ? fields.map(field => [field.label, field.instruction, field.kind, field.id].join('|')).join('\n') : undefined;
+        input = {
+            ...input,
+            pagesText: input.pagesText ?? input.pages?.map(page => [page.label, page.instruction || '填写该人物当前状态'].join('|')).join('\n'),
+            pageFieldsText: input.pageFieldsText ?? serializeFields(input.pageFields),
+            sharedFieldsText: input.sharedFieldsText ?? serializeFields(input.sharedFields),
+        };
+    }
     const pages = parsePages(input.pagesText);
     const sharedFields = parseFields(input.sharedFieldsText);
     const pageFields = parseFields(input.pageFieldsText);
@@ -1179,6 +1194,21 @@ function sanitizePhoneAppName(value, fallback = '') {
 export function buildAiInstruction(input) {
     const rule = normalizeRule(input);
     if (isStatusBeauty01To15(rule.structure)) return buildStatusBeautyBundledInstruction(rule);
+    if (STATUS_BEAUTY_32_41_PRESETS.some(preset => preset.id === rule.structure && preset.dynamicRoster)) {
+        const fields = rule.pages[0]?.fields || rule.pageFields;
+        return [
+            `<${rule.tagName}_rules>`,
+            `每轮正文后追加一份 <${rule.tagName}> 状态区块，根据当前场景主要角色和重要NPC的实际人数逐人输出。`,
+            '每人一行，编号从 View1 连续递增；一人输出一行，三人输出三行。人物进入或离开时同步更新名单，保留在场人物的相对顺序。',
+            '每行最后一项填写该人物真实姓名。每人的状态与第一人称心声独立填写，依据当前剧情，不照搬示例人物。',
+            ...fields.map((field, index) => `第${index + 1}项 ${field.label}：${field.instruction}`),
+            '字段值内使用普通文本，避开竖线、方括号、尖括号；区块直接输出。',
+            `<${rule.tagName}>`,
+            `[View1|${fields.map(field => field.label).join('|')}|人物姓名]`,
+            `</${rule.tagName}>`,
+            `</${rule.tagName}_rules>`,
+        ].join('\n');
+    }
     if (rule.structure === 'forum') {
         const forumGuide = FORUM_SKIN_PRESETS.find(item => item.id === rule.forumSkin)?.aiGuide || FORUM_SKIN_PRESETS[0].aiGuide;
         const forumReplyCount = rule.pageFields.filter(field => /^post_\d+$/.test(field.id)).length;
@@ -1277,6 +1307,13 @@ export function parseStatusOutput(input, rawOutput) {
         const parts = match[1].replace(/｜/g, '|').split('|').map(value => value.trim());
         const key = parts.shift();
         if (key) records[key] = parts;
+    }
+    if (STATUS_BEAUTY_32_41_PRESETS.some(preset => preset.id === rule.structure && preset.dynamicRoster)) {
+        const fields = rule.pages[0]?.fields || rule.pageFields;
+        const personKeys = Object.keys(records).filter(key => /^View[1-9][0-9]*$/.test(key));
+        if (personKeys.length) rule.pages = personKeys.map((id, index) => ({
+            id, label: records[id][fields.length] || rule.pages.find(page => page.id === id)?.label || `角色${index + 1}`, fields,
+        }));
     }
     const missing = [];
     if (rule.structure === 'phone' && (records.PhoneApps?.length || 0) < rule.pages.length) missing.push('PhoneApps');
@@ -2016,6 +2053,7 @@ function generatedForumReplacement(rule) {
 function generatedReplacement(rule) {
     if (isStatusBeauty05To09(rule.structure)) return buildStatusBeauty05To09Replacement(rule);
     if (isStatusBeauty16To20(rule.structure)) return buildStatusBeauty16To20Replacement(rule);
+    if (isStatusBeauty32To41(rule.structure)) return buildStatusBeauty32To41Replacement(rule);
     if (rule.structure === 'moon-collage') return generatedMoonCollageReplacement(rule);
     if (rule.structure === 'forum') return generatedForumReplacement(rule);
     if (isOriginalRoleCardStructure(rule.structure)) return buildOriginalRoleCardReplacement(rule);
@@ -2361,7 +2399,7 @@ export function makePreviewRecords(input) {
         if (rule.structure === 'forum' && field.id === 'forum_notice') return forumSample.notice;
         if (rule.structure === 'chat' && chatSamples[field.id]) return chatSamples[field.id];
         if (rule.structure === 'forum' && field.id === 'forum_presence') return 'X';
-        if (isOriginalRoleCardStructure(rule.structure) || isStatusBeauty01To15(rule.structure) || isStatusBeauty16To20(rule.structure)) return 'X';
+        if (isOriginalRoleCardStructure(rule.structure) || isStatusBeauty01To15(rule.structure) || isStatusBeauty16To20(rule.structure) || isStatusBeauty32To41(rule.structure)) return 'X';
         if (field.kind === 'progress') return 'AI动态数值';
         if (field.kind === 'currency') return 'AI动态金额';
         if (field.kind === 'avatar') return '当前角色';
