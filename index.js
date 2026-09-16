@@ -133,13 +133,13 @@ import {
     world_info,
     world_names,
 } from '../../../world-info.js';
-import { createOrEditCharacter, getThumbnailUrl, reloadCurrentChat, saveSettings, user_avatar } from '../../../../script.js';
+import { createOrEditCharacter, getThumbnailUrl, saveSettings, user_avatar } from '../../../../script.js';
 import { getCharaFilename } from '../../../utils.js';
 
 import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.26';
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.26';
+const VERSION = '0.11.27';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -5412,9 +5412,23 @@ async function installGeneratedRegex(script, requestedScope = settings().install
     const selection = type === SCRIPT_TYPES.SCOPED ? requireCurrentCharacterContext() : null;
     const ctx = selection?.context || context();
     const targetId = String(settings().ruleId || 'zeya-status-rule-v2');
-    const currentScripts = type === SCRIPT_TYPES.SCOPED
+    let currentScripts = type === SCRIPT_TYPES.SCOPED
         ? selection.character?.data?.extensions?.regex_scripts
         : getScriptsByType(type);
+    // Merge with persisted data, not a possibly stale character snapshot.
+    if (type === SCRIPT_TYPES.SCOPED) {
+        const avatar = selection.character?.avatar;
+        if (!avatar || typeof ctx?.getRequestHeaders !== 'function') throw new Error('当前酒馆没有提供可确认的角色卡保存接口');
+        const before = await fetch('/api/characters/get', {
+            method: 'POST', headers: ctx.getRequestHeaders(), cache: 'no-store',
+            body: JSON.stringify({ avatar_url: avatar }),
+        });
+        if (!before.ok) throw new Error(`安装前无法读取角色卡，已停止写入（${before.status}）`);
+        const persisted = await before.json();
+        currentScripts = persisted?.data?.extensions?.regex_scripts || [];
+        if (!Array.isArray(currentScripts)) throw new Error('角色卡中的正则列表格式异常，已停止写入');
+        if (requireCurrentCharacterContext().character?.avatar !== avatar) throw new Error('读取期间切换了角色，已停止写入');
+    }
     const { installedScript, replaced, scripts } = mergeStatusRegexScripts(
         currentScripts,
         script,
@@ -5445,6 +5459,7 @@ async function installGeneratedRegex(script, requestedScope = settings().install
 
         const verifyResponse = await fetch('/api/characters/get', {
             method: 'POST',
+            cache: 'no-store',
             headers: getRequestHeaders(),
             body: JSON.stringify({ avatar_url: avatar }),
         });
@@ -5477,6 +5492,16 @@ async function installGeneratedRegex(script, requestedScope = settings().install
             throw new Error('局部正则已写入角色卡，但没有成功启用');
         }
         await saveSettings();
+        const finalRead = await fetch('/api/characters/get', {
+            method: 'POST', headers: getRequestHeaders(), cache: 'no-store',
+            body: JSON.stringify({ avatar_url: avatar }),
+        });
+        if (!finalRead.ok) throw new Error(`保存设置后无法回读角色卡（${finalRead.status}），安装结果尚未确认`);
+        const finalCharacter = await finalRead.json();
+        const finalScripts = finalCharacter?.data?.extensions?.regex_scripts;
+        const retained = Array.isArray(finalScripts) && scripts.every(expected => finalScripts.some(actual =>
+            actual.id === expected.id && actual.findRegex === expected.findRegex && actual.replaceString === expected.replaceString));
+        if (!retained) throw new Error('最终回读未保留完整正则列表，安装未确认；请勿连续重复安装');
     } else {
         await saveScriptsByType(scripts, type);
         await saveSettings();
@@ -5494,8 +5519,6 @@ async function installGeneratedRegex(script, requestedScope = settings().install
     if (!confirmed) {
         throw new Error(`${type === SCRIPT_TYPES.SCOPED ? '局部' : '全局'}正则已写入，但酒馆正则引擎没有读取到启用结果，请重新载入角色后确认`);
     }
-
-    if (type === SCRIPT_TYPES.SCOPED) await reloadCurrentChat();
 
     return { action: replaced.length ? 'updated' : 'installed', scriptName: installedScript.scriptName };
 }
@@ -5582,7 +5605,7 @@ async function installRegex(scope) {
         if (targetAvatar && requireCurrentCharacterContext().character?.avatar !== targetAvatar) throw new Error('安装期间切换了角色，已停止安装正则');
         await installGeneratedRegex(instance.script, scope);
     } catch (error) {
-        throw new Error(`世界书“${worldbook.bookName}”已写入，但${scope === 'scoped' ? '局部' : '全局'}正则没有保存：${error?.message || '未知错误'}`);
+        throw new Error(`世界书“${worldbook.bookName}”已写入，但${scope === 'scoped' ? '局部' : '全局'}正则安装未确认：${error?.message || '未知错误'}`);
     }
     settings().promptEnabled = false;
     const promptToggle = field('status-atelier-prompt-enabled');
