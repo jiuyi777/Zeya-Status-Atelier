@@ -1,4 +1,4 @@
-import { STATUS_BEAUTY_32_41_IDS, buildStatusBeauty32To41Preview, isStatusBeauty32To41 } from './status-beauty-32-41.js?v=0.11.25';
+import { STATUS_BEAUTY_32_41_IDS, buildStatusBeauty32To41Preview, isStatusBeauty32To41 } from './status-beauty-32-41.js?v=0.11.26';
 import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.23';
 import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.23';
 import { parseSingleStatusResult, singleStatusCatalog, selectStatusCandidates } from './status-ai-single.js?v=0.11.24';
@@ -33,7 +33,7 @@ import {
     mergeStatusRegexScripts,
     legacyStructuredStatusRegexInstallId,
     statusRegexInstallId,
-} from './rule-generator.js?v=0.11.25';
+} from './rule-generator.js?v=0.11.26';
 import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.16';
 import {
     STATUS_BEAUTY_01_15_IDS,
@@ -48,16 +48,16 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.25';
+} from './status-beauty-01-15-bundle.js?v=0.11.26';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
-} from './status-beauty-05-09.js?v=0.11.25';
+} from './status-beauty-05-09.js?v=0.11.26';
 import {
     STATUS_BEAUTY_16_20_IDS,
     buildStatusBeauty16To20Preview,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.25';
+} from './status-beauty-16-20.js?v=0.11.26';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
@@ -116,7 +116,7 @@ import {
     selectStatusWorldbookTarget,
     isStatusWorldbookEntry,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.11.25';
+} from './status-worldbook.js?v=0.11.26';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -136,9 +136,10 @@ import {
 import { createOrEditCharacter, getThumbnailUrl, reloadCurrentChat, saveSettings, user_avatar } from '../../../../script.js';
 import { getCharaFilename } from '../../../utils.js';
 
+import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.26';
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.25';
+const VERSION = '0.11.26';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -5499,11 +5500,11 @@ async function installGeneratedRegex(script, requestedScope = settings().install
     return { action: replaced.length ? 'updated' : 'installed', scriptName: installedScript.scriptName };
 }
 
-async function installStatusWorldbookRule() {
+async function installStatusWorldbookRule(instanceEntry) {
     const { context: ctx } = requireCurrentCharacterContext();
     const character = ctx.characters?.[ctx.characterId];
     if (!character?.avatar) throw new Error('当前角色缺少可绑定世界书的角色标识');
-    const generatedEntry = buildWorldbookJson(resolvedStatusInput()).entries[0];
+    const generatedEntry = instanceEntry || buildWorldbookJson(resolvedStatusInput()).entries[0];
     const stored = settings();
     const storageKey = characterStorageKey(ctx);
     const bindings = stored.statusWorldbookBindings;
@@ -5546,7 +5547,7 @@ async function installStatusWorldbookRule() {
     };
 }
 
-async function installGlobalStatusWorldbookRule() {
+async function installGlobalStatusWorldbookRule(instanceEntry) {
     const bookName = '九一-状态栏-全局输出规则';
     if (!(world_names || []).includes(bookName)) {
         const created = await createNewWorldInfo(bookName, { interactive: false });
@@ -5554,7 +5555,7 @@ async function installGlobalStatusWorldbookRule() {
     }
 
     const current = await loadWorldInfo(bookName);
-    const generatedEntry = buildWorldbookJson(resolvedStatusInput()).entries[0];
+    const generatedEntry = instanceEntry || buildWorldbookJson(resolvedStatusInput()).entries[0];
     const result = upsertStatusWorldbookData(current, generatedEntry);
     await saveWorldInfo(bookName, result.data, true);
     if (!selected_world_info.includes(bookName)) selected_world_info.push(bookName);
@@ -5572,13 +5573,14 @@ async function installGlobalStatusWorldbookRule() {
 async function installRegex(scope) {
     const targetAvatar = scope === 'scoped' ? requireCurrentCharacterContext().character?.avatar : '';
     const script = await resolveStatusRegexScript();
+    const instance = createStatusInstallInstance(script, buildWorldbookJson(resolvedStatusInput()).entries[0], crypto.randomUUID());
     if (targetAvatar && requireCurrentCharacterContext().character?.avatar !== targetAvatar) throw new Error('制作期间切换了角色，已停止安装，请在目标角色内重新安装');
     const worldbook = scope === 'scoped'
-        ? await installStatusWorldbookRule()
-        : await installGlobalStatusWorldbookRule();
+        ? await installStatusWorldbookRule(instance.entry)
+        : await installGlobalStatusWorldbookRule(instance.entry);
     try {
         if (targetAvatar && requireCurrentCharacterContext().character?.avatar !== targetAvatar) throw new Error('安装期间切换了角色，已停止安装正则');
-        await installGeneratedRegex(script, scope);
+        await installGeneratedRegex(instance.script, scope);
     } catch (error) {
         throw new Error(`世界书“${worldbook.bookName}”已写入，但${scope === 'scoped' ? '局部' : '全局'}正则没有保存：${error?.message || '未知错误'}`);
     }
@@ -5588,8 +5590,8 @@ async function installRegex(scope) {
     updatePrompt();
     await saveSettings();
     notify('success', scope === 'scoped'
-        ? `当前角色状态栏已完整启用：世界书“${worldbook.bookName}”与局部正则均已更新`
-        : `全局状态栏已完整启用：世界书“${worldbook.bookName}”与全局正则均已更新`);
+        ? `当前角色状态栏已完整启用：世界书“${worldbook.bookName}”与独立局部正则均已新增`
+        : `全局状态栏已完整启用：世界书“${worldbook.bookName}”与独立全局正则均已新增`);
     return worldbook;
 }
 
@@ -6772,7 +6774,7 @@ async function applyModalStatus(button) {
         renderGreetingStatusChooser();
         const recipeName = normalizeRule(resolvedStatusInput()).structureName;
         states.forEach(state => {
-            state.textContent = `已完成：世界书“${worldbook.bookName}”已写入 AI 输出规则，局部正则已更新为“${recipeName}”。`;
+            state.textContent = `已完成：世界书“${worldbook.bookName}”已写入 AI 输出规则，已新增独立局部正则“${recipeName}”。`;
             state.dataset.state = 'success';
         });
     } catch (error) {

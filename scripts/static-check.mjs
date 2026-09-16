@@ -13,6 +13,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const requiredFiles = [
     'manifest.json',
     'index.js',
+    'status-install-instance.js',
     'entry-dialog.js',
     'greeting-workflow.js',
     'opening-overview.js',

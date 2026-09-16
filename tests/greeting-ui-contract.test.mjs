@@ -653,8 +653,8 @@ test('status prompt only runs where the generated status regex is installed', ()
 });
 
 test('one-click scoped status reuses or creates a worldbook and merges the installed regex by stable identity', () => {
-    assert.match(source, /async function installStatusWorldbookRule\(\)/);
-    const scopedWorldbook = source.match(/async function installStatusWorldbookRule\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    assert.match(source, /async function installStatusWorldbookRule\(instanceEntry\)/);
+    const scopedWorldbook = source.match(/async function installStatusWorldbookRule\(instanceEntry\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(scopedWorldbook, /currentLinkedWorldbooks\(ctx\)/);
     assert.match(scopedWorldbook, /buildStatusWorldbookName\(character, storageKey\)/);
     assert.match(scopedWorldbook, /createNewWorldInfo\(bookName, \{ interactive: false \}\)/);
@@ -663,9 +663,9 @@ test('one-click scoped status reuses or creates a worldbook and merges the insta
     assert.match(scopedWorldbook, /世界书已准备好，但没有绑定到当前角色/);
     assert.match(source, /世界书没有确认状态栏输出规则已保存/);
     const scopedInstall = source.match(/async function installRegex\(scope\) \{([\s\S]*?)\n\}/)?.[1] || '';
-    assert.match(scopedInstall, /installStatusWorldbookRule\(\)/);
+    assert.match(scopedInstall, /installStatusWorldbookRule\(instance.entry\)/);
     assert.match(scopedInstall, /installGeneratedRegex/);
-    assert.ok(scopedInstall.indexOf('installStatusWorldbookRule()') < scopedInstall.indexOf('installGeneratedRegex'));
+    assert.ok(scopedInstall.indexOf('installStatusWorldbookRule(instance.entry)') < scopedInstall.indexOf('installGeneratedRegex'));
     const regexInstall = source.match(/async function installGeneratedRegex\(script, requestedScope = settings\(\)\.installScope\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(regexInstall, /fetch\('\/api\/characters\/merge-attributes'/);
     assert.match(regexInstall, /fetch\('\/api\/characters\/get'/);

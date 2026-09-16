@@ -2334,6 +2334,12 @@ export function statusWorldbookEntryId(input) {
 }
 
 export function mergeStatusRegexScripts(currentScripts, script, input, baseId = 'zeya-status-rule-v2') {
+    if (script.statusAtelierInstance) {
+        const existing = Array.isArray(currentScripts) ? currentScripts : [];
+        const installedScript = { ...script, disabled: false };
+        return { installedScript, replaced: existing.filter(item => item.id === script.id), idMigrations: [],
+            scripts: [...existing.filter(item => item.id !== script.id), installedScript] };
+    }
     const namespace = String(baseId || 'zeya-status-rule-v2');
     const legacyPrefix = `${namespace}-`;
     const namespaceHash = paddedStatusHash(namespace);
