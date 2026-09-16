@@ -1,10 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 
 import {
     applyStatusBeautyMobileLayout,
     buildStatusBeautyBundledPreviewDocument,
 } from '../status-beauty-01-15-bundle.js';
+
+test('mailbox phone feelings leave the full card width for numeric values with descriptions', async () => {
+    const css = await readFile(new URL('../status-beauty-16-20.css', import.meta.url), 'utf8');
+    assert.match(css, /\.design-16 \.mail-feelings article\{grid-template-columns:minmax\(0,1fr\);align-content:start/);
+    assert.match(css, /\.design-16 \.mail-feelings strong\{min-width:0;max-width:100%;text-align:left;white-space:normal/);
+});
 
 test('flower echo keeps desktop markup and adds a complete phone layout with all 15 captures', () => {
     const source = {
@@ -70,6 +77,8 @@ test('moon collage keeps the desktop artwork and uses a real stacked phone layou
 
     assert.match(result.replaceString, /data-status-atelier-moon-mobile/);
     assert.match(result.replaceString, /class="sta-moon-mobile"/);
+    assert.match(result.replaceString, /sta-moon-mobile-photo"><img data-st-avatar alt="当前角色头像"/);
+    assert.doesNotMatch(result.replaceString, /target.src=source.currentSrc/);
     assert.match(result.replaceString, /\.moon-art\[open\]>.art-stage\{display:none!important\}/);
     assert.match(result.replaceString, /\.moon-art\[open\]>.sta-moon-mobile\{display:block!important\}/);
     assert.match(result.replaceString, /<div class="art-stage"><img class="art-photo" src="portrait\.jpg"><\/div>/);

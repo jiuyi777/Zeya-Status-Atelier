@@ -1,4 +1,4 @@
-import { STATUS_BEAUTY_32_41_IDS, buildStatusBeauty32To41Preview, isStatusBeauty32To41 } from './status-beauty-32-41.js?v=0.11.23';
+import { STATUS_BEAUTY_32_41_IDS, buildStatusBeauty32To41Preview, isStatusBeauty32To41 } from './status-beauty-32-41.js?v=0.11.25';
 import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.23';
 import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.23';
 import { parseSingleStatusResult, singleStatusCatalog, selectStatusCandidates } from './status-ai-single.js?v=0.11.24';
@@ -33,7 +33,7 @@ import {
     mergeStatusRegexScripts,
     legacyStructuredStatusRegexInstallId,
     statusRegexInstallId,
-} from './rule-generator.js?v=0.11.23';
+} from './rule-generator.js?v=0.11.25';
 import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.16';
 import {
     STATUS_BEAUTY_01_15_IDS,
@@ -48,16 +48,16 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.19';
+} from './status-beauty-01-15-bundle.js?v=0.11.25';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
-} from './status-beauty-05-09.js?v=0.11.16';
+} from './status-beauty-05-09.js?v=0.11.25';
 import {
     STATUS_BEAUTY_16_20_IDS,
     buildStatusBeauty16To20Preview,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.16';
+} from './status-beauty-16-20.js?v=0.11.25';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
@@ -113,9 +113,10 @@ import {
 } from './opening-context.js?v=0.11.16';
 import {
     buildStatusWorldbookName,
+    selectStatusWorldbookTarget,
     isStatusWorldbookEntry,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.11.16';
+} from './status-worldbook.js?v=0.11.25';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -132,12 +133,12 @@ import {
     world_info,
     world_names,
 } from '../../../world-info.js';
-import { createOrEditCharacter, getThumbnailUrl, saveSettings, user_avatar } from '../../../../script.js';
+import { createOrEditCharacter, getThumbnailUrl, reloadCurrentChat, saveSettings, user_avatar } from '../../../../script.js';
 import { getCharaFilename } from '../../../utils.js';
 
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.24';
+const VERSION = '0.11.25';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -3859,6 +3860,7 @@ function resizeStatusBeautyPreviewFrame(frame) {
                 node.style.removeProperty('font-size');
             }
         });
+        if (doc.documentElement.clientWidth <= 560 && !card.classList.contains('design-18')) return;
         const overflowsContainer = node => {
             const rect = node.getBoundingClientRect();
             if (node.scrollWidth > node.clientWidth + 1 || node.scrollHeight > node.clientHeight + 1) return true;
@@ -3872,6 +3874,8 @@ function resizeStatusBeautyPreviewFrame(frame) {
             return false;
         };
         nodes.forEach(node => {
+            if (node.closest('.design-06 .attire b')) return;
+            if (card.classList.contains('design-08') && doc.documentElement.clientWidth <= 560) return;
             const state = originalTextStyles.get(node);
             const textLength = [...String(node.textContent || '').replace(/\s+/g, '')].length;
             if (!state?.fontSize || !textLength) return;
@@ -5459,6 +5463,12 @@ async function installGeneratedRegex(script, requestedScope = settings().install
         }
         character.data = persistedCharacter.data;
         if (persistedCharacter.json_data) character.json_data = persistedCharacter.json_data;
+        const active = requireCurrentCharacterContext();
+        if (active.character?.avatar !== avatar) {
+            throw new Error('正则已保存到原角色，但安装期间切换了角色，请回到原角色确认');
+        }
+        active.character.data = persistedCharacter.data;
+        if (persistedCharacter.json_data) active.character.json_data = persistedCharacter.json_data;
         const jsonDataField = document.querySelector('#character_json_data');
         if (jsonDataField && character.json_data) jsonDataField.value = character.json_data;
         allowScopedScripts(selection.character);
@@ -5472,7 +5482,7 @@ async function installGeneratedRegex(script, requestedScope = settings().install
     }
 
     const confirmedScripts = type === SCRIPT_TYPES.SCOPED
-        ? selection.character?.data?.extensions?.regex_scripts
+        ? getScriptsByType(SCRIPT_TYPES.SCOPED, { allowedOnly: true })
         : getScriptsByType(type);
     const confirmed = Array.isArray(confirmedScripts)
         && confirmedScripts.some(item => item?.id === installedScript.id
@@ -5481,8 +5491,10 @@ async function installGeneratedRegex(script, requestedScope = settings().install
             && item?.replaceString === installedScript.replaceString
             && item?.disabled !== true);
     if (!confirmed) {
-        throw new Error(`${type === SCRIPT_TYPES.SCOPED ? '局部' : '全局'}正则没有确认保存并启用`);
+        throw new Error(`${type === SCRIPT_TYPES.SCOPED ? '局部' : '全局'}正则已写入，但酒馆正则引擎没有读取到启用结果，请重新载入角色后确认`);
     }
+
+    if (type === SCRIPT_TYPES.SCOPED) await reloadCurrentChat();
 
     return { action: replaced.length ? 'updated' : 'installed', scriptName: installedScript.scriptName };
 }
@@ -5491,22 +5503,15 @@ async function installStatusWorldbookRule() {
     const { context: ctx } = requireCurrentCharacterContext();
     const character = ctx.characters?.[ctx.characterId];
     if (!character?.avatar) throw new Error('当前角色缺少可绑定世界书的角色标识');
+    const generatedEntry = buildWorldbookJson(resolvedStatusInput()).entries[0];
     const stored = settings();
     const storageKey = characterStorageKey(ctx);
     const bindings = stored.statusWorldbookBindings;
     const linkedBooks = currentLinkedWorldbooks(ctx);
     const boundBook = String(bindings[storageKey] || '');
-    let bookName = (world_names || []).includes(boundBook) ? boundBook : '';
-    if (!bookName) {
-        for (const candidate of linkedBooks) {
-            const data = await loadWorldInfo(candidate);
-            if (Object.values(data?.entries || {}).some(isStatusWorldbookEntry)) {
-                bookName = candidate;
-                break;
-            }
-        }
-    }
-    bookName ||= linkedBooks.find(name => !/^九一-状态栏-/u.test(name)) || linkedBooks[0] || '';
+    const primaryBook = character.data?.extensions?.world ?? character.extensions?.world
+        ?? character.data?.world ?? character.world ?? '';
+    let bookName = selectStatusWorldbookTarget({ primaryBook, linkedBooks, boundBook, availableBooks: world_names || [] });
     let createdBook = false;
     if (!bookName) {
         bookName = buildStatusWorldbookName(character, storageKey);
@@ -5516,13 +5521,15 @@ async function installStatusWorldbookRule() {
             createdBook = true;
         }
     }
-    await charUpdateAddAuxWorld(character.avatar, bookName);
-    const fileName = getCharaFilename(null, { manualAvatarKey: character.avatar });
-    const linked = world_info?.charLore?.find(item => item?.name === fileName)?.extraBooks || [];
-    if (!linked.includes(bookName)) throw new Error('世界书已准备好，但没有绑定到当前角色');
+    if (!linkedBooks.includes(bookName)) {
+        await charUpdateAddAuxWorld(character.avatar, bookName);
+        const fileName = getCharaFilename(null, { manualAvatarKey: character.avatar });
+        const linked = world_info?.charLore?.find(item => item?.name === fileName)?.extraBooks || [];
+        if (!linked.includes(bookName)) throw new Error('世界书已准备好，但没有绑定到当前角色');
+    }
 
     const current = await loadWorldInfo(bookName);
-    const generatedEntry = buildWorldbookJson(resolvedStatusInput()).entries[0];
+    if (requireCurrentCharacterContext().character?.avatar !== character.avatar) throw new Error('安装期间切换了角色，已停止写入世界书，请在目标角色内重新安装');
     const result = upsertStatusWorldbookData(current, generatedEntry);
     await saveWorldInfo(bookName, result.data, true);
     const confirmed = await loadWorldInfo(bookName);
@@ -5563,11 +5570,15 @@ async function installGlobalStatusWorldbookRule() {
 }
 
 async function installRegex(scope) {
+    const targetAvatar = scope === 'scoped' ? requireCurrentCharacterContext().character?.avatar : '';
+    const script = await resolveStatusRegexScript();
+    if (targetAvatar && requireCurrentCharacterContext().character?.avatar !== targetAvatar) throw new Error('制作期间切换了角色，已停止安装，请在目标角色内重新安装');
     const worldbook = scope === 'scoped'
         ? await installStatusWorldbookRule()
         : await installGlobalStatusWorldbookRule();
     try {
-        await installGeneratedRegex(await resolveStatusRegexScript(), scope);
+        if (targetAvatar && requireCurrentCharacterContext().character?.avatar !== targetAvatar) throw new Error('安装期间切换了角色，已停止安装正则');
+        await installGeneratedRegex(script, scope);
     } catch (error) {
         throw new Error(`世界书“${worldbook.bookName}”已写入，但${scope === 'scoped' ? '局部' : '全局'}正则没有保存：${error?.message || '未知错误'}`);
     }

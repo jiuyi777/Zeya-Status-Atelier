@@ -6,22 +6,22 @@ import {
     buildStatusBeautyBundledInstruction,
     isStatusBeauty01To15,
     parseStatusBeautyBundledOutput,
-} from './status-beauty-01-15-bundle.js';
+} from './status-beauty-01-15-bundle.js?v=0.11.25';
 import {
     STATUS_BEAUTY_05_09_PRESETS,
     buildStatusBeauty05To09Replacement,
     isStatusBeauty05To09,
-} from './status-beauty-05-09.js';
+} from './status-beauty-05-09.js?v=0.11.25';
 import {
     STATUS_BEAUTY_16_20_PRESETS,
     buildStatusBeauty16To20Replacement,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js';
+} from './status-beauty-16-20.js?v=0.11.25';
 import {
     STATUS_BEAUTY_32_41_PRESETS,
     buildStatusBeauty32To41Replacement,
     isStatusBeauty32To41,
-} from './status-beauty-32-41.js';
+} from './status-beauty-32-41.js?v=0.11.25';
 
 const MOON_COLLAGE_BACKGROUND_URL = new URL('./assets/status-beauty/images/design-03-background-v3.png', import.meta.url).href;
 const MOON_COLLAGE_FOREGROUND_URL = new URL('./assets/status-beauty/images/design-03-photo-foreground-v1.png', import.meta.url).href;

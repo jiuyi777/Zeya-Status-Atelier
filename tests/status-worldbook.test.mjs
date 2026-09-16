@@ -3,10 +3,27 @@ import assert from 'node:assert/strict';
 import {
     STATUS_WORLDBOOK_ENTRY_ID,
     buildStatusWorldbookName,
+    selectStatusWorldbookTarget,
     isStatusWorldbookEntry,
     upsertStatusWorldbookData,
 } from '../status-worldbook.js';
 import { buildWorldbookJson, RULE_PRESETS } from '../rule-generator.js';
+
+test('writes to the current main book after rebinding, even when the old book remains available or auxiliary', () => {
+    for (const linkedBooks of [['新世界书'], ['新世界书', '旧世界书']]) {
+        assert.equal(selectStatusWorldbookTarget({ primaryBook: '新世界书', linkedBooks,
+            boundBook: '旧世界书', availableBooks: ['新世界书', '旧世界书'] }), '新世界书');
+    }
+    assert.equal(selectStatusWorldbookTarget({ primaryBook: '九一-状态栏-主世界书',
+        linkedBooks: ['九一-状态栏-主世界书', '其他书'], availableBooks: ['九一-状态栏-主世界书', '其他书'] }), '九一-状态栏-主世界书');
+});
+
+test('never resurrects an unlinked cached book and does not silently replace a missing main book', () => {
+    assert.equal(selectStatusWorldbookTarget({ linkedBooks: [], boundBook: '旧世界书', availableBooks: ['旧世界书'] }), '');
+    assert.equal(selectStatusWorldbookTarget({ linkedBooks: ['附加设定'], boundBook: '旧世界书', availableBooks: ['附加设定', '旧世界书'] }), '附加设定');
+    assert.throws(() => selectStatusWorldbookTarget({ primaryBook: '未加载的主世界书', linkedBooks: ['旧世界书'],
+        boundBook: '旧世界书', availableBooks: ['旧世界书'] }), /未加载的主世界书/);
+});
 
 test('builds a stable character-specific status worldbook name', () => {
     const first = buildStatusWorldbookName({ name: '温瑟', avatar: 'wensher.png' }, 'character:wensher.png');

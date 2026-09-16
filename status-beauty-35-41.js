@@ -83,11 +83,11 @@ export function compactRuntime(root, config, records, resolveStoryScene) {
         if (position) position.textContent = `${selected + 1} / ${pages.length} · ${page.label}`;
         const avatar = root.querySelector('[data-st-avatar]');
         // Explicit per-person media wins; resolve host portraits by exact name.
-        let url = config.ensembleAvatarUrls[selected] || (selected === 0 ? config.avatarUrl : '');
+        let url = config.avatarSource === 'none' ? '' : (config.ensembleAvatarUrls[selected] || (selected === 0 ? config.avatarUrl : ''));
         try {
             const context = window.parent.SillyTavern?.getContext?.();
             const character = context?.characters?.find(item => item.name === page.label);
-            if (!url && character?.avatar) url = context.getThumbnailUrl ? context.getThumbnailUrl('avatar', character.avatar) : '/thumbnail?type=avatar&file=' + encodeURIComponent(character.avatar);
+            if (config.avatarSource === 'character' && !url && character?.avatar) url = context.getThumbnailUrl ? context.getThumbnailUrl('avatar', character.avatar) : '/thumbnail?type=avatar&file=' + encodeURIComponent(character.avatar);
         } catch {}
         if (url) avatar.src = url; else avatar.removeAttribute('src');
         avatar.alt = page.label;

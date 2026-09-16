@@ -97,6 +97,8 @@ img[data-st-avatar]:not([src]){background:linear-gradient(145deg,#eee4e1,#c9aeb5
   .design-16 .envelope-art{height:194px}
   .design-16 .mail-status{display:block;margin-top:14px}
   .design-16 .mail-address,.design-16 .mail-feelings{grid-template-columns:1fr 1fr;margin-top:12px}
+  .design-16 .mail-feelings article{grid-template-columns:minmax(0,1fr);align-content:start;gap:8px;min-width:0}
+  .design-16 .mail-feelings strong{min-width:0;max-width:100%;text-align:left;white-space:normal;overflow-wrap:anywhere;line-height:1.5}
   .design-16 .mail-notes{grid-template-columns:1fr;margin-top:12px}
   .design-16 .letter-sheet,.design-16 .inner-note{min-height:142px;padding-bottom:22px}
   .design-16 .letter-sheet p,.design-16 .inner-note p{font-size:clamp(19px,6vw,25px);line-height:1.35}

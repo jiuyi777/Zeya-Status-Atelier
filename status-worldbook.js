@@ -1,6 +1,17 @@
 export const STATUS_WORLDBOOK_ENTRY_ID = 'jiuyi-status-output-rule-v1';
 export const STATUS_WORLDBOOK_ENTRY_PREFIX = 'jiuyi-wb-';
 
+export function selectStatusWorldbookTarget({ primaryBook = '', linkedBooks = [], boundBook = '', availableBooks = [] } = {}) {
+    const primary = String(primaryBook || '').trim();
+    if (primary) {
+        if (!availableBooks.includes(primary)) throw new Error(`当前角色的主世界书“${primary}”尚未加载，无法写入状态栏，请先确认该世界书存在`);
+        return primary;
+    }
+    const linked = linkedBooks.filter(name => availableBooks.includes(name));
+    return linked.find(name => !/^九一-状态栏-/u.test(name))
+        || (linked.includes(boundBook) ? boundBook : '') || linked[0] || '';
+}
+
 function stableHash(value) {
     let hash = 2166136261;
     for (const character of String(value || '')) {
