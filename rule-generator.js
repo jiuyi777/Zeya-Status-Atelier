@@ -6,12 +6,12 @@ import {
     buildStatusBeautyBundledInstruction,
     isStatusBeauty01To15,
     parseStatusBeautyBundledOutput,
-} from './status-beauty-01-15-bundle.js?v=0.11.25';
+} from './status-beauty-01-15-bundle.js?v=0.11.29';
 import {
     STATUS_BEAUTY_05_09_PRESETS,
     buildStatusBeauty05To09Replacement,
     isStatusBeauty05To09,
-} from './status-beauty-05-09.js?v=0.11.25';
+} from './status-beauty-05-09.js?v=0.11.29';
 import {
     STATUS_BEAUTY_16_20_PRESETS,
     buildStatusBeauty16To20Replacement,

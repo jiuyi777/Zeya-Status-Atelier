@@ -108,8 +108,8 @@ test('designs 11 to 15 keep their desktop canvas and gain complete themed phone 
         };
         const fields = Array.from({ length: 15 }, (_, index) => ({ label: `字段${index + 1}`, kind: 'long' }));
         const result = applyStatusBeautyMobileLayout(source, { structure, title: `人物状态${structure.slice(-2)}`, pages: [{ fields }] });
-        assert.match(result.replaceString, /data-status-atelier-layered-mobile/, structure);
-        assert.match(result.replaceString, /class="sta-layered-mobile sta-layered-\d+"/, structure);
+        assert.match(result.replaceString, /data-status-atelier-themed-mobile/, structure);
+        assert.match(result.replaceString, /class="sta-themed-mobile theme-\d+"/, structure);
         assert.match(result.replaceString, /\.status\[open\]>.canvas\{display:none!important\}/, structure);
         assert.match(result.replaceString, /<div class="canvas">desktop artwork<\/div>/, structure);
         for (let capture = 1; capture <= 15; capture += 1) {
@@ -121,4 +121,39 @@ test('designs 11 to 15 keep their desktop canvas and gain complete themed phone 
 test('unadapted bundled designs are unchanged by the mobile adapter', () => {
     const source = { replaceString: '<html><head></head><body>desktop</body></html>' };
     assert.equal(applyStatusBeautyMobileLayout(source, { structure: 'beauty-crimson-letter-01' }), source);
+});
+
+test('phone designs retain distinct structures and all fifteen editable values', () => {
+    const designs = {
+        'beauty-clock-travel-11': 'travel-route',
+        'beauty-flower-reader-12': 'reader-pages',
+        'beauty-olive-ticket-13': 'ticket-roll',
+        'beauty-cat-rabbit-14': 'night-dialogue',
+        'beauty-rabbit-track-15': 'planner-track',
+    };
+    for (const [structure, distinctiveClass] of Object.entries(designs)) {
+        const source = {replaceString:'<html><head></head><body><details class="status" open><div class="canvas">original</div><div class="compact"></div></details></body></html>'};
+        const result = applyStatusBeautyMobileLayout(source, {structure});
+        const markup = result.replaceString.split('</head>')[1];
+        assert.ok(markup.includes(`class="${distinctiveClass}"`));
+        assert.doesNotMatch(markup, /sta-layered-mobile/);
+        assert.doesNotMatch(markup, /<details class="sta-.*-more"/);
+        for (let slot = 1; slot <= 15; slot++) {
+            assert.equal((markup.match(new RegExp(`data-capture="${slot}"`, 'g')) || []).length, 1);
+        }
+        assert.equal(applyStatusBeautyMobileLayout(result, {structure}), result);
+    }
+});
+
+test('actual bundled letter preview moves portrait and affection text into content flow', async t => {
+    const {loadStatusBeautyBundledRegex} = await import('../status-beauty-01-15-bundle.js');
+    t.mock.method(globalThis, 'fetch', async url => new Response(await readFile(url)));
+    const script = await loadStatusBeautyBundledRegex('beauty-letter-status-07');
+    const preview = buildStatusBeautyBundledPreviewDocument(script, Array(12).fill('长地址和长段落说明'.repeat(8)));
+    assert.match(preview, /\.sender-stamp\{order:1;position:relative;inset:auto/);
+    assert.match(preview, /\.affection-seal\{order:2;position:relative;inset:auto/);
+    assert.doesNotMatch(preview, /padding-top:210px/);
+    assert.match(preview, /长地址和长段落说明/);
+    const alternateCSS = await readFile(new URL('../status-beauty-05-09.css', import.meta.url), 'utf8');
+    assert.match(alternateCSS, /\.affection-seal\{order:2;position:relative;inset:auto/);
 });

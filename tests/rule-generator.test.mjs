@@ -541,7 +541,7 @@ test('status beauty 05 to 09 keep the approved field contracts and export their 
         assert.match(replacement, /^```html\n<!doctype html>/);
         assert.match(replacement, /<body class="design-page beauty-/);
         assert.match(replacement, /status-beauty-05-09\.css/);
-        assert.match(replacement, /status-beauty-05-09\.css\?v=0\.11\.25/);
+        assert.match(replacement, /status-beauty-05-09\.css\?v=0\.11\.29/);
         assert.match(replacement, /https:\/\/example\.com\/character\.png/);
         assert.match(replacement, /\$1/);
         assert.match(replacement, /classList\.toggle\('is-collapsed'\)/);

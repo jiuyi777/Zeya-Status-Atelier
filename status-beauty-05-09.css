@@ -108,3 +108,17 @@ img[data-st-avatar]:not([src]) {
     line-height: 1.35;
   }
 }
+
+/* Letter layout: keep variable-length content in normal flow on phones. */
+@media(max-width:560px){
+  .design-07{width:100%!important;height:auto!important;min-height:0}
+  .design-07 .expanded-content{position:relative;inset:auto;padding:72px 14px 24px}
+  .design-07 .post-heading{position:relative;top:auto;left:auto;width:auto}.design-07 .post-heading h1{font-size:clamp(28px,9vw,36px)}
+  .design-07 .mail-scene{position:relative;left:auto;top:auto;width:auto;height:auto;margin-top:20px}.design-07 .envelope-back,.design-07 .postmark,.design-07 .postal-note{display:none}
+  .design-07 .letter-sheet{position:relative;left:auto;top:auto;width:auto;height:auto;min-height:0;padding:18px;transform:none;display:flex;flex-direction:column;gap:16px}
+  .design-07 .route-strip{order:0;grid-template-columns:minmax(0,1fr);width:auto;border-radius:12px}.design-07 .route-strip>*{min-width:0;overflow-wrap:anywhere;line-height:1.5}
+  .design-07 .sender-stamp{order:1;position:relative;inset:auto;width:124px;align-self:center;transform:rotate(2deg)}.design-07 .sender-stamp .avatar{width:106px;height:148px}
+  .design-07 .affection-seal{order:2;position:relative;inset:auto;align-self:center;width:100%;height:auto;min-height:70px;padding:12px 16px;border-radius:12px;gap:5px}.design-07 .affection-seal:after{border-radius:8px}.design-07 .affection-seal small{max-width:100%;overflow-wrap:anywhere;font-size:12px;line-height:1.6}
+  .design-07 .letter-copy{order:3;width:auto;padding-top:0;margin-top:0}.design-07 .written-status{grid-template-columns:minmax(0,1fr);align-items:start}.design-07 .whereabouts{flex-wrap:wrap}
+
+}
