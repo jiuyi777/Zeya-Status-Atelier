@@ -2286,7 +2286,7 @@ export function buildRegexScript(input) {
         scriptName: `九一 · ${rule.ruleName}`,
         disabled: false,
         runOnEdit: true,
-        findRegex: `/<${rule.tagName}>\\s*([\\s\\S]*?)\\s*<\\/${rule.tagName}>/i`,
+        findRegex: `/<${rule.tagName}>([\\s\\S]*?)<\\/${rule.tagName}>/i`,
         trimStrings: [],
         replaceString: generatedReplacement(rule),
         placement: [2],

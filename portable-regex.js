@@ -47,7 +47,62 @@ export function pngImageBytes(bytes) {
     throw new Error('PNG 图片缺少结束块');
 }
 
-export async function makePortableRegex(script, { baseUrl = import.meta.url, fetchResource = globalThis.fetch } = {}) {
+// Raster artwork is a display asset, not an archival original. Bound both its
+// decoded dimensions and encoded size before putting it in every chat message.
+export async function compactRasterDataUrl(value, encode = encodeRaster) {
+    const match = value.match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/i);
+    if (!match) return value;
+    let bytes = Uint8Array.from(atob(match[2]), character => character.charCodeAt(0));
+    if (match[1] === 'image/png') bytes = pngImageBytes(bytes);
+    const clean = dataUrl(bytes, match[1]);
+    // Canvas encoding takes one frame. Keep animation data intact.
+    if (match[1] === 'image/webp' && String.fromCharCode(...bytes.subarray(12, 16)) === 'VP8X' && (bytes[20] & 2)) return clean;
+    if (match[1] === 'image/png') {
+        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+        for (let offset = 8; offset + 12 <= bytes.length;) {
+            if (String.fromCharCode(...bytes.subarray(offset + 4, offset + 8)) === 'acTL') return clean;
+            offset += view.getUint32(offset) + 12;
+        }
+    }
+    if (bytes.length <= 24 * 1024) return clean;
+    const packed = await encode(bytes, match[1]);
+    if (!packed || packed.bytes.length > 24 * 1024) throw new Error('状态栏图片压缩未达到大小限制，已停止导出，避免把大图写入角色卡');
+    return dataUrl(packed.bytes, packed.type);
+}
+
+async function encodeRaster(bytes, type) {
+    const blob = new Blob([bytes], { type });
+    let image, objectUrl;
+    try {
+        if (typeof createImageBitmap === 'function') image = await createImageBitmap(blob);
+        else {
+            objectUrl = URL.createObjectURL(blob);
+            image = new Image(); image.src = objectUrl; await image.decode();
+        }
+        const width = image.width, height = image.height;
+        let scale = Math.min(1, 720 / Math.max(width, height));
+        for (let attempt = 0; attempt < 8; attempt += 1) {
+            const canvas = typeof OffscreenCanvas === 'function'
+                ? new OffscreenCanvas(Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale)))
+                : document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(width * scale)); canvas.height = Math.max(1, Math.round(height * scale));
+            canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+            const quality = Math.max(.5, .72 - attempt * .04);
+            const result = canvas.convertToBlob
+                ? await canvas.convertToBlob({ type: 'image/webp', quality })
+                : await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', quality));
+            if (!result) throw new Error('浏览器无法压缩状态栏图片');
+            if (result.size <= 24 * 1024) return { bytes: new Uint8Array(await result.arrayBuffer()), type: result.type };
+            scale *= .85;
+        }
+        throw new Error('状态栏图片过大，请减少装饰图片后重试');
+    } finally {
+        image?.close?.();
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+    }
+}
+
+export async function makePortableRegex(script, { baseUrl = import.meta.url, fetchResource = globalThis.fetch, optimizeImage = compactRasterDataUrl } = {}) {
     const base = new URL(baseUrl);
     const cache = new Map();
     function localUrl(value, relativeTo = baseUrl) {
@@ -126,11 +181,10 @@ export async function makePortableRegex(script, { baseUrl = import.meta.url, fet
         });
     }
     html = sections.join('');
-    // Previously saved media settings may already contain an embedded character PNG.
-    html = html.replace(/data:image\/png;base64,([A-Za-z0-9+/=]+)/g, (value, encoded) => {
-        const bytes = Uint8Array.from(atob(encoded), character => character.charCodeAt(0));
-        const image = pngImageBytes(bytes);
-        return image === bytes ? value : dataUrl(image, 'image/png');
+    const images = new Map();
+    html = await replaceAsync(html, /data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/=]+/gi, async match => {
+        if (!images.has(match[0])) images.set(match[0], optimizeImage(match[0]));
+        return images.get(match[0]);
     });
     return { ...script, replaceString: html };
 }

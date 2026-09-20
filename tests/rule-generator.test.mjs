@@ -1490,7 +1490,7 @@ test('generates an importable regex JSON with a full-block capture and switch UI
     });
     assert.equal(script.id, 'stable-id');
     assert.equal(script.scriptName, '九一 · 双页剧情状态');
-    assert.equal(script.findRegex, '/<zeya_status>\\s*([\\s\\S]*?)\\s*<\\/zeya_status>/i');
+    assert.equal(script.findRegex, '/<zeya_status>([\\s\\S]*?)<\\/zeya_status>/i');
     assert.deepEqual(script.placement, [2]);
     assert.match(script.replaceString, /zrs-tab/);
     assert.match(script.replaceString, /textContent/);

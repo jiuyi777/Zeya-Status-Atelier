@@ -267,6 +267,7 @@ requestAnimationFrame(fit);window.addEventListener('resize',fit);card.addEventLi
     const additions = `${sizingStyles}${bundledResponsiveLayoutStyles(structure)}${overflowStyles}${fitRuntime}`;
     return {
         ...script,
+        findRegex: script.findRegex.replaceAll('(.*?)', '([^|\\[\\]<>]*)'),
         replaceString: source.includes('</body>') ? source.replace('</body>', `${additions}</body>`) : `${source}${additions}`,
     };
 }
@@ -553,7 +554,16 @@ export function applyStatusBeautyMediaSettings(regexScript, media = {}) {
         imageAlt: String(media.imageAlt || '当前角色头像').slice(0, 80),
     }).replace(/</g, '\\u003c');
     const patch = `<script>(function(){var media=${payload};var root=document.querySelector('.status-card')||Array.from(document.body.children).find(function(node){return node.matches&&node.matches('details,section,article,main,div');})||document.body.firstElementChild;if(!root)return;var images=Array.from(root.querySelectorAll('img[data-st-avatar],img[alt*="角色头像"],img.avatar,img.art-photo'));images.forEach(function(image){image.setAttribute('data-st-avatar','');if(media.avatarSource==='none'||!media.avatarUrl){image.removeAttribute('src');image.hidden=true;return;}image.addEventListener('error',function(){if(media.avatarFallbackUrl&&media.avatarFallbackUrl!==media.avatarUrl&&image.dataset.fallbackAttempted!=='true'){image.dataset.fallbackAttempted='true';image.src=media.avatarFallbackUrl;return;}image.removeAttribute('src');image.hidden=true;});image.src=media.avatarUrl;image.alt=media.imageAlt;image.hidden=false;});})();</script>`;
-    const replacement = String(regexScript?.replaceString || '');
+    const replacement = String(regexScript?.replaceString || '').replace(/<img\b[^>]*>/gi, tag => {
+        // The media runtime owns these portraits. Carry only the selected avatar,
+        // rather than also decoding and exporting the template's sample portrait.
+        const classes = tag.match(/\bclass\s*=\s*["']([^"']*)["']/i)?.[1] || '';
+        const alt = tag.match(/\balt\s*=\s*["']([^"']*)["']/i)?.[1] || '';
+        if (/\bdata-st-avatar\b/i.test(tag) || /(?:^|\s)(?:avatar|art-photo)(?:\s|$)/.test(classes) || alt.includes('角色头像')) {
+            return tag.replace(/\s+src\s*=\s*(?:"[^"]*"|'[^']*')/gi, '');
+        }
+        return tag;
+    });
     return {
         ...regexScript,
         replaceString: /<\/body>/i.test(replacement)

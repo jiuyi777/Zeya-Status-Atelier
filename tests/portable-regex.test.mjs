@@ -1,28 +1,59 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { makePortableRegex, pngImageBytes } from '../portable-regex.js';
+import { makePortableRegex, pngImageBytes, compactRasterDataUrl } from '../portable-regex.js';
 import { readFile } from 'node:fs/promises';
 import { STATUS_STRUCTURE_PRESETS, buildRegexScript } from '../rule-generator.js';
-import { isStatusBeauty01To15, loadStatusBeautyBundledRegex } from '../status-beauty-01-15-bundle.js';
+import { isStatusBeauty01To15, loadStatusBeautyBundledRegex, applyStatusBeautyMediaSettings } from '../status-beauty-01-15-bundle.js';
 
 const baseUrl = 'http://tauri.localhost/scripts/extensions/third-party/Zeya-Status-Atelier/index.js';
 const cssUrl = new URL('status-beauty-16-20.css', baseUrl).href;
 const avatar = '/User%20Avatars/1760813107884-.png';
 
+test('selected media replaces the sample portrait without exporting its bytes', () => {
+    const original = {replaceString:'<body><img class="art-photo" src="data:image/png;base64,OLD"><img class="art-base" src="data:image/png;base64,ART"></body>'};
+    const result = applyStatusBeautyMediaSettings(original, {avatarSource:'url',avatarUrl:'data:image/jpeg;base64,NEW'});
+    assert.doesNotMatch(result.replaceString, /base64,OLD/);
+    assert.match(result.replaceString, /base64,ART/);
+    assert.match(result.replaceString, /base64,NEW/);
+    assert.match(original.replaceString, /base64,OLD/);
+});
+
+test('animated WebP retains its frames instead of passing through a still-image encoder', async () => {
+    const bytes=Buffer.alloc(30000);bytes.write('RIFF',0);bytes.write('WEBP',8);bytes.write('VP8X',12);bytes[20]=2;
+    const value='data:image/webp;base64,'+bytes.toString('base64');
+    assert.equal(await compactRasterDataUrl(value, async()=>{throw new Error('animation must remain intact');}),value);
+});
+
+test('large inline rasters are bounded once per unique image and remain stable on repeated export', async () => {
+    const large = 'data:image/jpeg;base64,' + Buffer.alloc(100000, 7).toString('base64');
+    let calls = 0;
+    const optimizeImage = value => compactRasterDataUrl(value, async bytes => {
+        calls++; assert.equal(bytes.length, 100000);
+        return { bytes: new Uint8Array(12000), type: 'image/webp' };
+    });
+    const packed = await makePortableRegex({replaceString: `<img src="${large}"><script>var avatar="${large}";</script>`}, { optimizeImage });
+    assert.equal(calls, 1);
+    assert.ok(packed.replaceString.length < 33000);
+    assert.deepEqual(await makePortableRegex(packed, { optimizeImage }), packed);
+    assert.equal(calls, 1);
+    await assert.rejects(compactRasterDataUrl(large, async () => ({ bytes: new Uint8Array(100000), type: 'image/webp' })), /大小限制/);
+});
+
 test('character PNG metadata stays out of avatars across repeated exports without changing pixel chunks', async () => {
     const original = new Uint8Array(await readFile(new URL('../assets/chat/cat-mascot.png', import.meta.url)));
     const pixels = pngImageBytes(original);
+    const optimizeImage = async value => value.replace(/data:image\/png;base64,([A-Za-z0-9+/=]+)/g, (_, encoded) => 'data:image/png;base64,' + Buffer.from(pngImageBytes(new Uint8Array(Buffer.from(encoded, 'base64')))).toString('base64'));
     const payload = Buffer.from('chara\0' + Buffer.from(JSON.stringify({ description: 'private-card-content', nested: 'x'.repeat(5000) })).toString('base64'));
     const textChunk = Buffer.alloc(payload.length + 12);
     textChunk.writeUInt32BE(payload.length); textChunk.write('tEXt', 4); payload.copy(textChunk, 8);
     const card = new Uint8Array(Buffer.concat([pixels.subarray(0, -12), textChunk, pixels.subarray(-12)]));
     assert.deepEqual(pngImageBytes(card), pixels);
-    const packed = await makePortableRegex({ replaceString: `<img src="${avatar}">` }, { baseUrl, fetchResource: fixtureFetch({ [new URL(avatar, baseUrl).href]: [card, 'image/png'] }) });
+    const packed = await makePortableRegex({ replaceString: `<img src="${avatar}">` }, { baseUrl, optimizeImage, fetchResource: fixtureFetch({ [new URL(avatar, baseUrl).href]: [card, 'image/png'] }) });
     const encoded = packed.replaceString.match(/base64,([A-Za-z0-9+/=]+)/)[1];
     assert.deepEqual(new Uint8Array(Buffer.from(encoded, 'base64')), pixels);
-    const saved = await makePortableRegex({ replaceString: `<img src="data:image/png;base64,${Buffer.from(card).toString('base64')}">` });
+    const saved = await makePortableRegex({ replaceString: `<img src="data:image/png;base64,${Buffer.from(card).toString('base64')}">` }, { optimizeImage });
     assert.equal(saved.replaceString, packed.replaceString);
-    assert.deepEqual(await makePortableRegex(packed), packed);
+    assert.deepEqual(await makePortableRegex(packed, { optimizeImage }), packed);
 });
 function fixtureFetch(files, calls = []) {
     return async url => {
@@ -118,7 +149,7 @@ test('every shipped status template can be packaged without plugin-directory ref
             const source = isStatusBeauty01To15(preset.id)
                 ? await loadStatusBeautyBundledRegex(preset.id)
                 : buildRegexScript({ structure: preset.id, pageFieldsText: preset.fields.map(field => field.join('|')).join('\n') });
-            const output = await makePortableRegex(source, { fetchResource: fileFetch });
+            const output = await makePortableRegex(source, { fetchResource: fileFetch, optimizeImage: async value => value });
             assert.doesNotMatch(output.replaceString, /file:\/\/\/|tauri\.localhost|\/scripts\/extensions\/third-party\//, preset.id);
             for (const match of output.replaceString.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) {
                 assert.doesNotThrow(() => new Function(match[1]), `${preset.id}: exported script syntax`);

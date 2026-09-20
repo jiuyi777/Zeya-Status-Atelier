@@ -2,7 +2,7 @@ import { STATUS_BEAUTY_32_41_IDS, buildStatusBeauty32To41Preview, isStatusBeauty
 import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.23';
 import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.23';
 import { parseSingleStatusResult, singleStatusCatalog, selectStatusCandidates } from './status-ai-single.js?v=0.11.24';
-import { makePortableRegex } from './portable-regex.js?v=0.11.19';
+import { makePortableRegex } from './portable-regex.js?v=0.11.30';
 import {
     CHAT_APPEARANCE_PRESETS,
     CHAT_FRAME_ASSET_URLS,
@@ -33,7 +33,7 @@ import {
     mergeStatusRegexScripts,
     legacyStructuredStatusRegexInstallId,
     statusRegexInstallId,
-} from './rule-generator.js?v=0.11.29';
+} from './rule-generator.js?v=0.11.30';
 import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.16';
 import {
     STATUS_BEAUTY_01_15_IDS,
@@ -48,7 +48,7 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.29';
+} from './status-beauty-01-15-bundle.js?v=0.11.30';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
