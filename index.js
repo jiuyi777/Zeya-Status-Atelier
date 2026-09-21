@@ -48,7 +48,7 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.32';
+} from './status-beauty-01-15-bundle.js?v=0.11.33';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,

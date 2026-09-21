@@ -230,9 +230,9 @@ const REFLOWING_BUNDLED_MOBILE_CSS = Object.freeze({
   .design-08{width:100%!important;min-height:0}.design-08:not(.is-collapsed){height:auto!important}
   .design-08:not(.is-collapsed) .expanded-content{position:relative;inset:auto;padding:72px 14px 24px}.design-08 .expanded-content:after{display:none}.design-08 .generated-backdrop{position:absolute;height:260px;opacity:.38}
   .design-08 .record-heading{position:relative;top:auto;left:auto;width:auto}.design-08 .record-heading h1{font-size:clamp(27px,8vw,35px)}
-  .design-08 .generated-record-avatar{position:relative;left:auto;top:auto;width:118px;margin:22px auto}.design-08 .track-panel{position:relative;top:auto;right:auto;width:auto}.design-08 .track-meta{grid-template-columns:1fr 1fr}.design-08 .affection-player{grid-template-columns:1fr}.design-08 .track-list article{grid-template-columns:26px 76px minmax(0,1fr)}
-  .design-08 .track-panel :is(.track-meta strong,.track-list strong,.lyric-thought p){font:400 15px/1.65 "Microsoft YaHei",sans-serif!important;white-space:normal!important;overflow-wrap:anywhere;overflow:visible;text-overflow:clip}
-  .design-08 .track-panel :is(.track-meta span,.affection-player span,.track-list span,.lyric-thought span){font-size:13px!important;font-weight:500!important;line-height:1.5!important;letter-spacing:.03em!important}
+  .design-08 .generated-record-avatar{position:relative;left:auto;top:auto;width:118px;margin:22px auto}.design-08 .track-panel{position:relative;top:auto;right:auto;width:auto}.design-08 .track-meta{grid-template-columns:1fr 1fr}.design-08 .affection-player{grid-template-columns:1fr}.design-08 .track-list article{grid-template-columns:20px 68px minmax(0,1fr);gap:8px}.design-08 .track-list article>b{font-size:11px}
+  .design-08 .track-panel :is(.track-meta strong,.track-list strong,.lyric-thought p){font:400 14px/1.65 "Noto Serif SC","Songti SC","STSong","SimSun",serif!important;white-space:normal!important;overflow-wrap:anywhere;overflow:visible;text-overflow:clip}
+  .design-08 .track-panel :is(.track-meta span,.affection-player span,.track-list span,.lyric-thought span){font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif!important;font-size:14px!important;font-weight:400!important;line-height:1.65!important;letter-spacing:0!important}
   .design-08 .affection-player strong{font-size:24px!important;line-height:1.2!important}.design-08 .affection-player small{font-size:12px}
 }`,
     'beauty-archive-status-09': `

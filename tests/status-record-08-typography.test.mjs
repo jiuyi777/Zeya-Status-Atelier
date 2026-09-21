@@ -7,8 +7,8 @@ import {loadStatusBeautyBundledRegex} from '../status-beauty-01-15-bundle.js';
 test('08 phone export retains equal text sizes for short and long values during fitting', async t => {
     t.mock.method(globalThis, 'fetch', async url => new Response(await readFile(url)));
     const result = await loadStatusBeautyBundledRegex('beauty-record-status-08');
-    assert.match(result.replaceString, /track-list strong,\.lyric-thought p\)\{font:400 15px/);
-    assert.match(result.replaceString, /lyric-thought span\)\{font-size:13px!important/);
+    assert.match(result.replaceString, /track-list strong,\.lyric-thought p\)\{font:400 14px/);
+    assert.match(result.replaceString, /lyric-thought span\)\{font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif!important;font-size:14px!important/);
     const runtime = [...result.replaceString.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)]
         .map(match => match[1]).find(code => code.includes('function fit()'));
     const writes = [];
@@ -20,7 +20,7 @@ test('08 phone export retains equal text sizes for short and long values during 
         classList:{contains:name=>name==='design-08'},querySelectorAll:()=>nodes,addEventListener(){}};
     vm.runInNewContext(runtime, {
         document:{body:{children:[card],style:style()},documentElement:{clientWidth:360,style:style()}},
-        window:{innerWidth:360,addEventListener(){}},requestAnimationFrame:fn=>fn(),getComputedStyle:()=>({fontSize:'15px'}),
+        window:{innerWidth:360,addEventListener(){}},requestAnimationFrame:fn=>fn(),getComputedStyle:()=>({fontSize:'14px'}),
     });
     assert.deepEqual(writes, [], 'phone fitting must not shrink long values below the shared CSS font size');
 });
