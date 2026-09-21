@@ -62,29 +62,17 @@ test('dossier keeps its desktop artwork and adds a readable vertical phone layou
     assert.equal(applyStatusBeautyMobileLayout(result, { structure: 'beauty-dossier-04' }), result);
 });
 
-test('moon collage keeps the desktop artwork and uses a real stacked phone layout instead of shrinking it', () => {
+test('moon collage retains its original phone canvas and centers ordinary text within the original fields without scrolling', () => {
     const source = {
         id: 'moon',
-        replaceString: '<html><head></head><body class="design-page design-03-page"><details class="art-card moon-art" open><div class="art-stage"><img class="art-photo" src="portrait.jpg"></div><div class="compact"></div></details></body></html>',
+        replaceString: '<html><head></head><body class="design-page design-03-page"><details class="art-card moon-art" open><div class="art-stage"><img class="art-photo" src="portrait.jpg"><strong class="value value-3 long-value" data-capture="3">$3</strong></div><div class="compact"></div></details></body></html>',
     };
-    const fields = ['情愫', '欲念', '衣冠', '身处', '心语', '书信', '情愫注', '欲念注']
-        .map(label => ({ label, kind: 'long' }));
-    const result = applyStatusBeautyMobileLayout(source, {
-        structure: 'moon-collage',
-        title: '月下蝶影',
-        pages: [{ fields }],
-    });
-
+    const result = applyStatusBeautyMobileLayout(source, { structure: 'moon-collage' });
     assert.match(result.replaceString, /data-status-atelier-moon-mobile/);
-    assert.match(result.replaceString, /class="sta-moon-mobile"/);
-    assert.match(result.replaceString, /sta-moon-mobile-photo"><img data-st-avatar alt="当前角色头像"/);
-    assert.doesNotMatch(result.replaceString, /target.src=source.currentSrc/);
-    assert.match(result.replaceString, /\.moon-art\[open\]>.art-stage\{display:none!important\}/);
-    assert.match(result.replaceString, /\.moon-art\[open\]>.sta-moon-mobile\{display:block!important\}/);
-    assert.match(result.replaceString, /<div class="art-stage"><img class="art-photo" src="portrait\.jpg"><\/div>/);
-    for (let capture = 1; capture <= 8; capture += 1) {
-        assert.match(result.replaceString, new RegExp(`data-capture="${capture}">\\$${capture}(?!\\d)`));
-    }
+    assert.match(result.replaceString, /<div class="art-stage"><img class="art-photo" src="portrait\.jpg">/);
+    assert.match(result.replaceString, /data-capture="3">\$3<\/strong>/);
+    assert.doesNotMatch(result.replaceString, /sta-moon-mobile|art-stage\{display:none/);
+    assert.match(result.replaceString, /overflow:hidden;overflow-wrap:anywhere/);
     assert.equal(applyStatusBeautyMobileLayout(result, { structure: 'moon-collage' }), result);
 });
 
