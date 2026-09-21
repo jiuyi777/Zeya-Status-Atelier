@@ -165,10 +165,16 @@ function adaptBundledRegex(structure, script) {
 
 const REFLOWING_BUNDLED_MOBILE_CSS = Object.freeze({
     'beauty-crimson-letter-01': `
+.portrait-caption{right:100px;font-size:13px;overflow-wrap:anywhere}
 @media(max-width:560px){
   .status-card{width:100%!important;height:auto!important;display:block!important;overflow:hidden}
-  .portrait-wing{height:245px;border-right:0;border-bottom:6px double #a46e55}
-  .portrait-mat{height:176px!important}.portrait-caption{bottom:18px!important}
+  .portrait-wing{height:244px;border-right:0;border-bottom:6px double #a46e55;background:linear-gradient(145deg,#321116 0 64%,#651c27 64%)}
+  .portrait-mat{left:24px;top:34px;width:43%;height:178px!important;padding:7px;transform:rotate(-4deg)}
+  .chapter-mark{left:54%;right:24px;top:28px;font-size:9px;letter-spacing:.15em;line-height:1.6}
+  .portrait-caption{left:54%;right:24px;top:73px;bottom:auto!important;font-size:12px;letter-spacing:.06em;line-height:1.65}
+  .portrait-caption span{display:block;margin-top:8px;font-size:8px;letter-spacing:.13em}
+  .seal{right:29px;bottom:19px;width:52px;height:52px;transform:rotate(12deg)}
+  .flower{left:6px;top:auto;bottom:8px;width:80px;height:65px}
   .record-wing{min-height:0;padding:30px 16px 24px;background:#f3e9df}
   .record-wing:before,.clock{display:none}
   .title-block{width:auto;padding-right:42px}.title-block h1{font-size:clamp(30px,10vw,40px)}
@@ -187,7 +193,7 @@ const REFLOWING_BUNDLED_MOBILE_CSS = Object.freeze({
   .album-brand{padding-right:48px}.portrait-card{left:18px;top:88px;width:124px;padding:7px 7px 15px}.portrait-card img{height:132px}.classified-side{left:158px;right:18px;bottom:55px}.wax{left:auto;right:38px;bottom:5px;width:50px;height:50px;border-width:6px}
   .album-paper{display:block;padding:30px 14px 20px}
   .album-paper :is(.sheet,.itinerary,.mini-card){margin-top:12px;transform:none}
-  .sheet{min-height:126px;padding:44px 16px 16px}.itinerary{padding:48px 0 0}.route-cards{grid-template-columns:1fr;height:auto}.route-cards article{min-height:112px;transform:none!important}.mini-card{min-height:94px}.paper-flower{display:none}
+  .sheet{min-height:126px;padding:44px 16px 16px}.itinerary{padding:48px 0 0}.route-cards{grid-template-columns:1fr;height:auto;gap:7px}.route-cards article{min-height:66px;padding:12px 16px 12px 46px;transform:none!important}.route-cards b{left:12px;top:17px;width:23px;height:23px}.route-cards h3{padding-left:0;margin-bottom:4px}.route-cards p{padding-left:0;padding-right:25px}.route-cards article:after{width:26px;height:22px;opacity:.1}.mini-card{min-height:94px}.paper-flower{display:none}
   .burgundy-album:not([open]){height:80px!important}.burgundy-album:not([open]) .album-shell{height:80px}.burgundy-album:not([open]) .album-spine{height:80px;border-bottom:0}.burgundy-album:not([open]) .album-brand{width:auto;padding:10px 54px 10px 10px}.burgundy-album:not([open]) .album-brand h1{font-size:20px}
 }`,
     'beauty-current-status-05': `
@@ -244,7 +250,7 @@ function bundledResponsiveLayoutStyles(structure) {
 
 function addBundledMobileRuntime(structure, script) {
     const source = String(script?.replaceString || '');
-    const sizingStyles = `<style>html,body{height:auto!important;min-height:0!important;overflow:hidden!important}</style>`;
+    const sizingStyles = `<style>*{scrollbar-width:none!important}*::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}html,body{height:auto!important;min-height:0!important;overflow:hidden!important}</style>`;
     const overflowStyles = structure === 'beauty-burgundy-album-02' ? `<style>
 .burgundy-album :is(.sheet p,.plans li,.route-cards h3,.route-cards p){overflow:hidden;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical}
 .burgundy-album .secret p{-webkit-line-clamp:3}
@@ -552,11 +558,51 @@ export function applyStatusBeautyControlChrome(regexScript) {
     const marker = 'data-status-atelier-control-chrome';
     const replacement = String(regexScript?.replaceString || '');
     if (!replacement || replacement.includes(marker)) return regexScript;
+    const design = replacement.match(/<title>\s*(\d{2})/)?.[1] || '01';
+    const themes = {
+        '01':['#6e2833','#f5e6d3','雪信','✉'], '02':['#702b3e','#efe2c7','相簿','II'],
+        '05':['#82636b','#e7d8ce','此刻','V'], '06':['#627761','#f0ead8','牌面','♧'],
+        '07':['#945951','#f6e9d8','来信','✉'], '08':['#456579','#daeaf0','唱片','●'],
+        '09':['#745f40','#f0e5ce','档案','IX'], '10':['#7d7049','#f1e6c7','花笺','❦'],
+        '11':['#6c5541','#efe2c9','旅页','XI'], '12':['#6b7862','#f0eadb','书页','❧'],
+        '13':['#67704e','#ede7cc','票根','XIII'], '14':['#82677a','#f5e5e4','夜话','✦'],
+        '15':['#957057','#f1e6d1','手帐','XV'],
+    };
+    const [ink,paper,caption,stamp] = themes[design] || themes['01'];
+    const themeStyle = `<style data-status-atelier-fold-theme>
+body{--fold-ink:${ink};--fold-paper:${paper}}
+:is(button.fold,details>summary[aria-label="展开或收起状态栏"]){cursor:pointer}
+button.fold:not(:disabled),details[open]>summary[aria-label="展开或收起状态栏"]{right:9px!important;top:9px!important;bottom:auto!important;width:27px!important;min-width:27px!important;height:58px!important;min-height:58px!important;padding:5px 2px!important;border:1px solid var(--fold-ink)!important;border-radius:1px!important;background:var(--fold-paper)!important;color:var(--fold-ink)!important;box-shadow:2px 3px 0 color-mix(in srgb,var(--fold-ink) 24%,transparent)!important;backdrop-filter:none!important;opacity:1!important;font-size:0!important;display:grid!important;place-items:center!important;clip-path:polygon(0 0,100% 0,100% 100%,50% 91%,0 100%)}
+button.fold>span{display:none!important}
+button.fold:after,details[open]>summary[aria-label="展开或收起状态栏"]:after{content:"收起"!important;writing-mode:vertical-rl;white-space:nowrap;font:500 10px/1.3 serif!important;letter-spacing:2px;transform:none!important;color:inherit!important}
+.is-collapsed button.fold{top:12px!important;right:12px!important;width:60px!important;min-width:60px!important;height:27px!important;min-height:27px!important;clip-path:none;border-radius:2px!important}
+.is-collapsed button.fold:after{content:"展开 +"!important;writing-mode:horizontal-tb;letter-spacing:1px}
+details:not([open])>summary[aria-label="展开或收起状态栏"]{isolation:isolate;position:relative!important;inset:auto!important;width:calc(100% - 12px)!important;height:82px!important;min-height:82px!important;margin:6px!important;padding:22px 66px 14px 20px!important;color:var(--fold-ink)!important;border:1px solid var(--fold-ink)!important;border-radius:2px!important;background:repeating-linear-gradient(0deg,transparent 0 17px,#86765b17 18px,transparent 19px),linear-gradient(115deg,var(--fold-paper),#faf3e8)!important;box-shadow:inset 5px 0 0 var(--fold-ink),inset 0 0 0 4px #fff5!important;opacity:1!important;backdrop-filter:none!important;overflow:hidden}
+details:not([open])>summary[aria-label="展开或收起状态栏"]:before{content:attr(data-fold-title);font:600 21px/1.3 "Songti SC",serif;letter-spacing:1px;text-align:left;background:#fff6;padding:3px 7px;transform:rotate(-1deg);box-shadow:1px 2px 0 #86765b22;white-space:normal}
+details:not([open])>summary[aria-label="展开或收起状态栏"]:after{content:"展开 +"!important;position:absolute;right:12px;bottom:9px;font:500 10px/1.2 serif!important;letter-spacing:1px;transform:none!important}
+.sta-fold-stamp{display:none;pointer-events:none}
+details:not([open])>summary .sta-fold-stamp{display:grid;place-items:center;position:absolute;right:14px;top:10px;width:36px;height:36px;border:3px double var(--fold-ink);border-radius:50%;color:var(--fold-ink);font:italic 700 13px/1 Georgia,serif;transform:rotate(11deg)}
+.status-card:is(.design-05,.design-06,.design-07,.design-08,.design-09).is-collapsed{height:116px!important;min-height:116px!important;background:var(--fold-paper)!important;border:1px solid var(--fold-ink)!important}
+.status-card:is(.design-05,.design-06,.design-07,.design-08,.design-09).is-collapsed .expanded-content{display:none!important}
+.status-card:is(.design-05,.design-06,.design-07,.design-08,.design-09).is-collapsed .compact-summary{position:absolute!important;inset:0!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:26px 20px 20px;gap:3px 8px!important;align-content:center!important;padding:13px 18px!important;opacity:1!important;visibility:visible!important;color:var(--fold-ink)!important;background:repeating-linear-gradient(0deg,transparent 0 19px,#806e5512 20px),var(--fold-paper);transform:none!important}
+.status-card.is-collapsed .compact-summary>strong{grid-column:1/-1;grid-row:1;padding-right:63px;font:600 18px/1.4 serif!important;color:var(--fold-ink)!important}
+.status-card.is-collapsed .compact-summary>span{grid-column:1;grid-row:2;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:10px/1.5 serif!important;color:var(--fold-ink)!important}
+.status-card.is-collapsed .compact-summary>b{grid-column:2;grid-row:2;padding:2px 6px!important;font:10px/1.3 serif!important;background:var(--fold-ink)!important;color:var(--fold-paper)!important}
+.status-card.is-collapsed .compact-summary>em{grid-column:1/-1;grid-row:3;min-width:0;font:10px/1.5 serif!important;color:var(--fold-ink)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status-card.design-05.is-collapsed .compact-summary{padding-left:79px!important}
+.design-05.is-collapsed .summary-avatar{position:absolute;left:17px;top:21px;width:47px!important;height:66px!important;border-radius:2px!important;object-fit:cover;border:3px solid #fff9;transform:rotate(-5deg)}
+.design-05 .fold{border-top:5px solid #ae898b!important}
+.design-06 .fold{outline:1px solid #fff8;outline-offset:-4px}
+.design-07 .fold{border-style:dashed!important}
+.design-08 .fold{border-radius:14px 14px 2px 2px!important;background:repeating-linear-gradient(90deg,#fff0 0 3px,#45657912 4px),var(--fold-paper)!important}
+.design-09 .fold{border:3px double var(--fold-ink)!important}
+button.fold:focus-visible,summary[aria-label="展开或收起状态栏"]:focus-visible{outline:2px solid var(--fold-ink)!important;outline-offset:3px}
+</style>`;
     const patch = `<style ${marker}>details>summary[aria-label="展开或收起状态栏"]{right:8px!important;top:8px!important;display:grid!important;width:28px!important;height:24px!important;min-width:28px!important;min-height:24px!important;place-items:center!important;padding:0!important;border:1px solid rgba(255,255,255,.7)!important;border-radius:7px!important;color:#fff!important;background:rgba(39,37,34,.58)!important;box-shadow:0 2px 7px rgba(0,0,0,.18)!important;backdrop-filter:blur(6px);opacity:.72;overflow:hidden;font-size:0!important;line-height:1!important}details>summary[aria-label="展开或收起状态栏"]:hover,details>summary[aria-label="展开或收起状态栏"]:focus-visible{opacity:1}details>summary[aria-label="展开或收起状态栏"]:before{content:attr(data-collapsed-label);display:none;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 var(--sta-readable-font,14px)/1.3 "Microsoft YaHei",sans-serif;letter-spacing:.04em}details>summary[aria-label="展开或收起状态栏"]:after{content:"⌃"!important;display:block!important;color:inherit!important;font:700 15px/1 Arial,sans-serif!important;transform:translateY(2px)!important}details:not([open])>summary[aria-label="展开或收起状态栏"]{position:relative!important;inset:auto!important;display:flex!important;justify-content:space-between!important;width:calc(100% - 16px)!important;height:56px!important;min-width:0!important;min-height:56px!important;margin:8px!important;padding:0 15px!important;border-color:rgba(255,255,255,.5)!important;border-radius:12px!important;background:linear-gradient(110deg,rgba(39,50,76,.96),rgba(103,96,119,.96))!important;opacity:1}details:not([open])>summary[aria-label="展开或收起状态栏"]:before{display:block}details:not([open])>summary[aria-label="展开或收起状态栏"]:after{content:"⌄"!important;flex:0 0 auto;transform:translateY(-1px)!important}
 .moon-fold-collage{display:none;pointer-events:none}
 details.moon-art>summary[aria-label="展开或收起状态栏"]{backdrop-filter:none;opacity:1!important;cursor:pointer}
 details.moon-art[open]>summary[aria-label="展开或收起状态栏"]{right:5px!important;top:0!important;width:25px!important;height:37px!important;min-width:25px!important;min-height:37px!important;padding:0!important;border:0!important;border-radius:0!important;background:linear-gradient(90deg,#c7b9a5,#f4e8d2 20%,#e7d8be 85%,#bda78c)!important;color:#795651!important;clip-path:polygon(0 0,100% 0,100% 100%,50% 86%,0 100%);box-shadow:none!important}
-details.moon-art[open]>summary[aria-label="展开或收起状态栏"]:after{content:"收起"!important;writing-mode:vertical-rl;font:500 9px/1.2 serif!important;letter-spacing:3px;transform:translateY(-2px)!important}
+details.moon-art[open]>summary[aria-label="展开或收起状态栏"]:after{content:"收起"!important;writing-mode:vertical-rl;white-space:nowrap;font:500 9px/1.2 serif!important;letter-spacing:3px;transform:translateY(-2px)!important}
 details.moon-art:not([open])>summary[aria-label="展开或收起状态栏"]{isolation:isolate;position:relative!important;inset:auto!important;width:100%!important;height:100px!important;min-height:100px!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;overflow:hidden;background:linear-gradient(115deg,#b4bcc7,#e8e2d9 44%,#f0e8db 72%,#b6bdc9)!important;box-shadow:inset 0 0 0 1px #ae9f90!important;clip-path:polygon(0 4%,9% 1%,23% 4%,38% 0,57% 3%,77% 0,100% 3%,99% 29%,100% 59%,99% 98%,78% 96%,62% 100%,44% 96%,27% 99%,11% 96%,0 100%)}
 details.moon-art:not([open]) .moon-fold-collage{display:block;position:absolute;inset:0;z-index:-1;background:repeating-linear-gradient(0deg,transparent 0 17px,#8f82721c 18px,transparent 19px)}
 .moon-fold-collage img{position:absolute!important;display:block!important;max-width:none!important;pointer-events:none}
@@ -567,11 +613,23 @@ details.moon-art:not([open]) .moon-fold-collage{display:block;position:absolute;
 details.moon-art:not([open])>summary[aria-label="展开或收起状态栏"]:before{content:attr(data-moon-title);position:absolute;left:99px;top:31px;z-index:1;display:block;width:154px;box-sizing:border-box;padding:8px 10px;color:#51414b;background:#f6eee0;border:1px solid #a9998970;outline:1px solid #f9f2e6;outline-offset:3px;box-shadow:1px 3px 4px #51424a22;transform:rotate(-3deg);font:500 22px/1.1 "Songti SC",serif;letter-spacing:3px;text-align:center}
 details.moon-art:not([open])>summary[aria-label="展开或收起状态栏"]:after{content:"展开 ⌄"!important;position:absolute;left:125px;bottom:9px;z-index:2;display:block;color:#745e66!important;font:500 9px/1.2 serif!important;letter-spacing:3px;transform:rotate(-3deg)!important}
 details.moon-art>summary[aria-label="展开或收起状态栏"]:focus-visible{outline:2px solid #79576a!important;outline-offset:-4px}
+
+.dossier-fold-slip{display:none}
+details.dossier-art>summary[aria-label="展开或收起状态栏"]{opacity:1!important;backdrop-filter:none;box-shadow:none!important;cursor:pointer}
+details.dossier-art[open]>summary[aria-label="展开或收起状态栏"]{right:5px!important;top:9px!important;width:23px!important;min-width:23px!important;height:60px!important;min-height:60px!important;padding:0!important;border:1px solid #a64725!important;border-radius:1px!important;background:#bd522c!important;color:#fff0d8!important;box-shadow:2px 2px 0 #18364c33!important}
+details.dossier-art[open]>summary[aria-label="展开或收起状态栏"]:after{content:"收起"!important;writing-mode:vertical-rl;white-space:nowrap;font:500 10px/1.1 serif!important;letter-spacing:3px;transform:none!important}
+details.dossier-art:not([open])>summary[aria-label="展开或收起状态栏"]{isolation:isolate;position:relative!important;inset:auto!important;width:calc(100% - 12px)!important;height:92px!important;min-height:92px!important;margin:6px!important;padding:0!important;overflow:hidden;border:1px solid #ad9c82!important;border-radius:3px!important;color:#1e3b50!important;background:linear-gradient(168deg,transparent 0 76%,#d2bfa255 77%),repeating-linear-gradient(0deg,#f3ead7 0 17px,#e2d7c4 18px,#f3ead7 19px)!important;box-shadow:inset 0 0 0 4px #faf2e3!important}
+details.dossier-art:not([open]) .dossier-fold-slip{display:block;position:absolute;inset:0;pointer-events:none;border-left:8px solid #1e3b50}
+.dossier-fold-slip small{position:absolute;left:17px;top:10px;padding:3px 7px;color:#fff0d9;background:#bd522c;font:8px/1.1 Georgia,serif;letter-spacing:1.5px;transform:rotate(-2deg)}
+.dossier-fold-slip b{position:absolute;right:12px;top:17px;width:45px;height:45px;display:grid;place-items:center;border:3px double #ba532e;border-radius:50%;color:#ba532e;font:italic 700 21px/1 Georgia,serif;transform:rotate(12deg)}
+details.dossier-art:not([open])>summary[aria-label="展开或收起状态栏"]:before{content:attr(data-dossier-title);position:absolute;left:23px;right:70px;top:35px;display:block!important;font:700 22px/1.2 "Songti SC",serif;letter-spacing:1px;background:#fbf5e7;box-shadow:2px 2px 0 #c7b99b;transform:rotate(-1deg);padding:3px 7px;color:#1e3b50}
+details.dossier-art:not([open])>summary[aria-label="展开或收起状态栏"]:after{content:"展开卷宗  +"!important;position:absolute;right:15px;bottom:9px;color:#994725!important;font:500 9px/1.2 serif!important;letter-spacing:1px;transform:none!important}
+details.dossier-art>summary[aria-label="展开或收起状态栏"]:focus-visible{outline:2px solid #bd522c;outline-offset:-3px}
 </style>`;
-    const labelPatch = `<script>(function(){function setup(){var summary=document.querySelector('details>summary[aria-label="展开或收起状态栏"]');if(!summary)return;var heading=document.querySelector('[data-design-title],h1,h2,h3,h4');var title=(heading&&heading.textContent||document.title||'状态栏').trim();summary.setAttribute('data-collapsed-label',title+' 已收起 · 点击展开');if(summary.parentElement.matches('.moon-art')){summary.setAttribute('data-moon-title',title.replace(/^03\\s*[·.、-]?\\s*/,''));var collage=document.createElement('span');collage.className='moon-fold-collage';collage.setAttribute('aria-hidden','true');summary.appendChild(collage);[['.art-base','moon-fold-paper'],['.art-photo','moon-fold-photo'],['.art-foreground','moon-fold-flower']].forEach(function(pair){var source=summary.parentElement.querySelector(pair[0]);if(!source)return;var image=document.createElement('img');image.alt='';image.className=pair[1];collage.appendChild(image);function sync(){var src=source.getAttribute('src');if(src&&!source.hidden){image.src=src;image.style.visibility='visible';}else{image.removeAttribute('src');image.style.visibility='hidden';}}sync();summary.parentElement.addEventListener('toggle',sync);});}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();})();</script>`;
+    const labelPatch = `<script>(function(){function setup(){document.querySelectorAll('button.fold').forEach(function(button){var card=button.closest('.status-card');if(!card)return;function sync(){var open=!card.classList.contains('is-collapsed');button.setAttribute('aria-expanded',String(open));button.setAttribute('aria-label',open?'收起${caption}':'展开${caption}');var compact=card.querySelector('.compact-summary');if(compact)compact.setAttribute('aria-hidden',String(open));}button.addEventListener('click',function(){requestAnimationFrame(sync);});sync();});var summary=document.querySelector('details>summary[aria-label="展开或收起状态栏"]');if(!summary)return;var heading=document.querySelector('[data-design-title],h1,h2,h3,h4');var title=(heading&&heading.textContent||document.title||'状态栏').trim();summary.setAttribute('data-collapsed-label',title+' 已收起 · 点击展开');summary.setAttribute('data-fold-title',title.replace(/^\\d{2}\\s*[·.、-]?\\s*/,''));if(!summary.parentElement.matches('.moon-art,.dossier-art')){var stamp=document.createElement('span');stamp.className='sta-fold-stamp';stamp.setAttribute('aria-hidden','true');stamp.textContent='${stamp}';summary.appendChild(stamp);}if(summary.parentElement.matches('.dossier-art')){summary.setAttribute('data-dossier-title',title);var slip=document.createElement('span');slip.className='dossier-fold-slip';slip.setAttribute('aria-hidden','true');slip.innerHTML='<small>ARCHIVE / PERSONAL FILE</small><b>04</b>';summary.appendChild(slip);}if(summary.parentElement.matches('.moon-art')){summary.setAttribute('data-moon-title',title.replace(/^03\\s*[·.、-]?\\s*/,''));var collage=document.createElement('span');collage.className='moon-fold-collage';collage.setAttribute('aria-hidden','true');summary.appendChild(collage);[['.art-base','moon-fold-paper'],['.art-photo','moon-fold-photo'],['.art-foreground','moon-fold-flower']].forEach(function(pair){var source=summary.parentElement.querySelector(pair[0]);if(!source)return;var image=document.createElement('img');image.alt='';image.className=pair[1];collage.appendChild(image);function sync(){var src=source.getAttribute('src');if(src&&!source.hidden){image.src=src;image.style.visibility='visible';}else{image.removeAttribute('src');image.style.visibility='hidden';}}sync();summary.parentElement.addEventListener('toggle',sync);});}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();})();</script>`;
     const withStyle = /<\/head>/i.test(replacement)
-        ? replacement.replace(/<\/head>/i, `${patch}</head>`)
-        : `${patch}${replacement}`;
+        ? replacement.replace(/<\/head>/i, `${patch.replace("\ndetails.moon-art", "</style>" + themeStyle + "<style>\ndetails.moon-art")}</head>`)
+        : `${patch}${themeStyle}${replacement}`;
     return {
         ...regexScript,
         replaceString: /<\/body>/i.test(withStyle)
