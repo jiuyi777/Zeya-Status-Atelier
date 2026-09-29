@@ -1,3 +1,4 @@
+import { REFINED_HOME_THEMES, buildRefinedHomeDocument } from './opening-refined-layouts.js?v=0.11.34';
 import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme, buildBundledHomeDocument } from './opening-bundled-themes.js?v=0.11.22';
 const THEMES = new Set([...BUNDLED_HOME_TEMPLATES.map(template => template.id),'classical', 'newspaper', 'timeline', 'minimal', 'scroll', 'editorial', 'collage', 'dossier', 'glass', 'kinetic', 'noir-poster', 'negative-space']);
 const FONTS = new Set(['serif', 'sans', 'kai', 'mono', 'fangsong', 'rounded', 'clerical']);
@@ -213,7 +214,7 @@ function replacementHtml(input) {
 </script>
 </body>
 </html>`.trim();
-    const output = isBundledHomeTheme(data.theme) ? buildBundledHomeDocument(data, documentHtml.match(/<script>([\s\S]*?)<\/script>/)[1]) : documentHtml;
+    const output = REFINED_HOME_THEMES.includes(data.theme) ? buildRefinedHomeDocument(data, documentHtml.match(/<script>([\s\S]*?)<\/script>/)[1]) : isBundledHomeTheme(data.theme) ? buildBundledHomeDocument(data, documentHtml.match(/<script>([\s\S]*?)<\/script>/)[1]) : documentHtml;
     return ['```html', output, '```'].join('\n');
 }
 

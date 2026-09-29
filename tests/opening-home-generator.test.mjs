@@ -110,10 +110,10 @@ test('all twelve homepage templates produce genuinely themed exported HTML', () 
     const negativeSpace = buildOpeningHomeRegex({ ...OPENING_HOME_DEFAULTS, theme: 'negative-space' }).replaceString;
     assert.match(kinetic, /writing-mode:vertical-rl/);
     assert.match(kinetic, /transform:rotate\(-7deg\)/);
-    assert.match(noir, /grid-template-columns:112px minmax\(0,1fr\)/);
-    assert.match(noir, /background:linear-gradient\(148deg/);
-    assert.match(negativeSpace, /grid-template-columns:1fr 1fr minmax\(150px,.65fr\)/);
-    assert.match(negativeSpace, /content:"LAYOUT \/ DESIGN"/);
+    assert.match(noir, /class="masthead"/);
+    assert.match(noir, /\.entry-copy p\{color:#c7bdb9\}/);
+    assert.match(negativeSpace, /grid-template-columns:28px minmax\(0,1fr\) 40px/);
+    assert.doesNotMatch(negativeSpace, /content:"LAYOUT \/ DESIGN"/);
 });
 
 test('opening homepage regex directly replaces one marker and keeps real navigation APIs', () => {

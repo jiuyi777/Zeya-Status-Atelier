@@ -1,3 +1,4 @@
+import { REFINED_HOME_THEMES } from '../opening-refined-layouts.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Script } from 'node:vm';
@@ -5,7 +6,7 @@ import { BUNDLED_HOME_TEMPLATES } from '../opening-bundled-themes.js';
 import { buildOpeningHomeRegex, normalizeOpeningHomeSettings } from '../opening-home-generator.js';
 import { homeSwipeIndex, returnToOpeningHome } from '../opening-return-navigation.js';
 
-for (const theme of BUNDLED_HOME_TEMPLATES) test(`${theme.name}: production layout keeps actual targets and worldbook binding`, async () => {
+for (const theme of [...BUNDLED_HOME_TEMPLATES, ...REFINED_HOME_THEMES.map(id => ({ name: id, values: { theme: id } }))]) test(`${theme.name}: production layout keeps actual targets and worldbook binding`, async () => {
     const data = { ...theme.values, title: '用户作品', intro: '真实背景', entries: [{ title: '第四条', summary: '真实摘要', target: 4, worldlineId: 'route-a' }], worldlines: [{ id: 'route-a', name: '甲线', description: '线路说明', entries: [{ book: '故事', uid: 7 }] }] };
     const regex = buildOpeningHomeRegex(data);
     assert.match(regex.replaceString, /^```html\n<!DOCTYPE html>/);
@@ -13,7 +14,7 @@ for (const theme of BUNDLED_HOME_TEMPLATES) test(`${theme.name}: production layo
     assert.match(regex.replaceString, /用户作品/);
     assert.match(regex.replaceString, /线路说明/);
     assert.equal((regex.replaceString.match(/class="zoh-jump"/g) || []).length, 1);
-    assert.equal((regex.replaceString.match(/<article class="zoh-entry /g) || []).length, 1);
+    assert.equal((regex.replaceString.match(/<article class="zoh-entry[" ]/g) || []).length, 1);
     const calls = [], bookCalls = [];
     let click;
     const button = { addEventListener: (_type, fn) => { click = fn; } };

@@ -1,3 +1,4 @@
+import { REFINED_HOME_THEMES } from './opening-refined-layouts.js?v=0.11.34';
 import { STATUS_BEAUTY_32_41_IDS, buildStatusBeauty32To41Preview, isStatusBeauty32To41 } from './status-beauty-32-41.js?v=0.11.26';
 import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.23';
 import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.23';
@@ -139,7 +140,7 @@ import { getCharaFilename } from '../../../utils.js';
 import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.26';
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.29';
+const VERSION = '0.11.34';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -1745,7 +1746,7 @@ function readOpeningSummaryControl(control) {
 function renderOpeningHomePreview(host) {
     if (!host) return;
     const data = normalizeOpeningHomeSettings(settings().openingHome);
-    if (isBundledHomeTheme(data.theme)) {
+    if (isBundledHomeTheme(data.theme) || REFINED_HOME_THEMES.includes(data.theme)) {
         const frame = makeElement('iframe');
         frame.title = '开场白主页预览';
         frame.setAttribute('sandbox', '');
