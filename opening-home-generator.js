@@ -1,3 +1,4 @@
+import { buildOpeningReturnRegex } from './opening-return-navigation.js?v=0.11.35';
 import { REFINED_HOME_THEMES, buildRefinedHomeDocument } from './opening-refined-layouts.js?v=0.11.34';
 import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme, buildBundledHomeDocument } from './opening-bundled-themes.js?v=0.11.22';
 const THEMES = new Set([...BUNDLED_HOME_TEMPLATES.map(template => template.id),'classical', 'newspaper', 'timeline', 'minimal', 'scroll', 'editorial', 'collage', 'dossier', 'glass', 'kinetic', 'noir-poster', 'negative-space']);
@@ -235,4 +236,8 @@ export function buildOpeningHomeRegex(input = {}) {
         markdownOnly: true,
         promptOnly: false,
     };
+}
+
+export function buildOpeningHomeRegexPack(input = {}) {
+    return [buildOpeningHomeRegex(input), buildOpeningReturnRegex()];
 }

@@ -666,7 +666,7 @@ test('one-click scoped status reuses or creates a worldbook and merges the insta
     assert.match(scopedInstall, /installStatusWorldbookRule\(instance.entry\)/);
     assert.match(scopedInstall, /installGeneratedRegex/);
     assert.ok(scopedInstall.indexOf('installStatusWorldbookRule(instance.entry)') < scopedInstall.indexOf('installGeneratedRegex'));
-    const regexInstall = source.match(/async function installGeneratedRegex\(script, requestedScope = settings\(\)\.installScope\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    const regexInstall = source.match(/async function installGeneratedRegex\(script, requestedScope = settings\(\)\.installScope, preserveIdentity = false\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(regexInstall, /fetch\('\/api\/characters\/merge-attributes'/);
     assert.match(regexInstall, /fetch\('\/api\/characters\/get'/);
     assert.match(regexInstall, /mergeStatusRegexScripts\(/);

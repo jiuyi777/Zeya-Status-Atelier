@@ -1,6 +1,6 @@
+import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.35';
 import { REFINED_HOME_THEMES } from './opening-refined-layouts.js?v=0.11.34';
 import { STATUS_BEAUTY_32_41_IDS, buildStatusBeauty32To41Preview, isStatusBeauty32To41 } from './status-beauty-32-41.js?v=0.11.26';
-import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.23';
 import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.23';
 import { parseSingleStatusResult, singleStatusCatalog, selectStatusCandidates } from './status-ai-single.js?v=0.11.24';
 import { makePortableRegex } from './portable-regex.js?v=0.11.30';
@@ -64,8 +64,9 @@ import {
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
+    buildOpeningHomeRegexPack,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.23';
+} from './opening-home-generator.js?v=0.11.35';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -140,7 +141,7 @@ import { getCharaFilename } from '../../../utils.js';
 import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.26';
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.34';
+const VERSION = '0.11.35';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -5408,7 +5409,7 @@ function downloadWorldbook() {
     notify('success', '世界书 JSON 已生成；导入后会要求 AI 每轮动态填写状态');
 }
 
-async function installGeneratedRegex(script, requestedScope = settings().installScope) {
+async function installGeneratedRegex(script, requestedScope = settings().installScope, preserveIdentity = false) {
     const type = requestedScope === 'global' ? SCRIPT_TYPES.GLOBAL : SCRIPT_TYPES.SCOPED;
     const selection = type === SCRIPT_TYPES.SCOPED ? requireCurrentCharacterContext() : null;
     const ctx = selection?.context || context();
@@ -5430,7 +5431,12 @@ async function installGeneratedRegex(script, requestedScope = settings().install
         if (!Array.isArray(currentScripts)) throw new Error('角色卡中的正则列表格式异常，已停止写入');
         if (requireCurrentCharacterContext().character?.avatar !== avatar) throw new Error('读取期间切换了角色，已停止写入');
     }
-    const { installedScript, replaced, scripts } = mergeStatusRegexScripts(
+    currentScripts = Array.isArray(currentScripts) ? currentScripts : [];
+    const { installedScript, replaced, scripts } = preserveIdentity ? {
+        installedScript: script,
+        replaced: currentScripts.filter(item => item.id === script.id || item.scriptName === script.scriptName),
+        scripts: [...currentScripts.filter(item => item.id !== script.id && item.scriptName !== script.scriptName), script],
+    } : mergeStatusRegexScripts(
         currentScripts,
         script,
         resolvedStatusInput(),
@@ -5620,7 +5626,9 @@ async function installRegex(scope) {
 }
 
 async function installOpeningHomeRegex(scope) {
-    await installGeneratedRegex(buildOpeningHomeRegex(settings().openingHome), scope);
+    for (const script of buildOpeningHomeRegexPack(settings().openingHome)) {
+        await installGeneratedRegex(script, scope, true);
+    }
 }
 
 async function runInstallButton(button, installer, scope, errorMessage) {
@@ -7602,7 +7610,7 @@ async function addSettingsPanel() {
         notify('success', '已复制主页标记【主页】；请放进主开场白');
     });
     field('status-atelier-opening-download-regex').addEventListener('click', () => {
-        downloadJson('regex-九一-通用开场白主页.json', buildOpeningHomeRegex(settings().openingHome));
+        downloadJson('regex-九一-通用开场白主页.json', buildOpeningHomeRegexPack(settings().openingHome));
         notify('success', '开场白主页正则 JSON 已生成');
     });
     field('status-atelier-opening-install-scoped').addEventListener('click', event => applyGreetingModal(event.currentTarget));
@@ -7646,7 +7654,11 @@ async function initialize() {
         if (document.querySelector('#status-atelier-opening-menu-item') && document.querySelector('#status-atelier-status-menu-item')) break;
         await new Promise(resolve => setTimeout(resolve, 250));
     }
-    const cleanupOpeningReturn = mountOpeningReturnNavigation(context, () => isBundledHomeTheme(settings().openingHome.theme));
+    const cleanupOpeningReturn = mountOpeningReturnNavigation(context, () => {
+        const portable = [SCRIPT_TYPES.SCOPED, SCRIPT_TYPES.GLOBAL].some(type =>
+            getScriptsByType(type, { allowedOnly: true }).some(rule => rule.id === 'jiuyi-opening-return-portable-v1' && !rule.disabled));
+        return !portable && isBundledHomeTheme(settings().openingHome.theme);
+    });
     globalThis.addEventListener('pagehide', cleanupOpeningReturn, { once: true });
     console.info(`[九一 正则状态工坊] v${VERSION} 已加载`);
 }

@@ -5,7 +5,7 @@ import {readFile} from 'node:fs/promises';
 import {mergeStatusRegexScripts} from '../rule-generator.js';
 
 const source = await readFile(new URL('../index.js', import.meta.url), 'utf8');
-const code = source.match(/async function installGeneratedRegex\(script, requestedScope = settings\(\)\.installScope\) \{[\s\S]*?\n\}/)[0];
+const code = source.match(/async function installGeneratedRegex\(script, requestedScope = settings\(\)\.installScope, preserveIdentity = false\) \{[\s\S]*?\n\}/)[0];
 test('copy install confirms the active regex engine and does not reload a missing or unsaved chat', async () => {
     for (const engineSeesInstall of [false, true]) {
         const script = {id:'35',scriptName:'月相观测簿',findRegex:'test',replaceString:'<body>test</body>',disabled:false};
@@ -57,5 +57,31 @@ test('scoped install merges from disk and rejects data lost after settings save'
             assert.deepEqual(disk[0],old);
             assert.equal(disk[1].id,fresh.id);
         }
+    }
+});
+
+
+test('opening pair survives installation, repeat installation and persisted reread together', async () => {
+    const { buildOpeningHomeRegexPack } = await import('../opening-home-generator.js');
+    const pack = buildOpeningHomeRegexPack();
+    const old = {id:'unrelated',scriptName:'保留旧状态栏',findRegex:'old',replaceString:'old'};
+    let disk = [old];
+    const character = {avatar:'test.png',data:{extensions:{regex_scripts:[]}}};
+    const box = {settings:()=>({}),SCRIPT_TYPES:{SCOPED:1,GLOBAL:0},
+        requireCurrentCharacterContext:()=>({character,context:{getRequestHeaders:()=>({})}}),
+        mergeStatusRegexScripts,resolvedStatusInput:()=>({}),
+        fetch:async (url,init)=>{
+            if(url.endsWith('merge-attributes')) disk=JSON.parse(init.body).data.extensions.regex_scripts;
+            return {ok:true,json:async()=>({data:{extensions:{regex_scripts:structuredClone(disk)}}})};
+        },document:{querySelector:()=>null},allowScopedScripts(){},isScopedScriptsAllowed:()=>true,
+        saveSettings:async()=>{},getScriptsByType:()=>character.data.extensions.regex_scripts,
+        reloadCurrentChat:()=>{throw new Error('must not rewrite chat');},
+    };
+    vm.runInNewContext(code,box);
+    for (let repeat=0;repeat<2;repeat++) {
+        for(const script of pack) await box.installGeneratedRegex(script,'scoped',true);
+        assert.equal(disk.length,3);
+        assert.deepEqual(disk[0],old);
+        assert.deepEqual(disk.slice(1).map(item=>item.id),pack.map(item=>item.id));
     }
 });

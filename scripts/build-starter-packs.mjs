@@ -1,7 +1,7 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildOpeningHomeBlock, buildOpeningHomeRegex } from '../opening-home-generator.js';
+import { buildOpeningHomeBlock, buildOpeningHomeRegexPack } from '../opening-home-generator.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const outputRoot = join(root, 'starter-packs');
@@ -48,10 +48,12 @@ for (const pack of openingPacks) {
         entries: openingEntries,
     };
     const template = buildOpeningHomeBlock(settings);
-    const regex = buildOpeningHomeRegex(settings);
-    regex.scriptName = `九一 · 开场白主页${pack.code}·${pack.name}`;
+    const regex = buildOpeningHomeRegexPack(settings);
+    regex[0].scriptName = `九一 · 开场白主页${pack.code}·${pack.name}`;
     await writeJson(join(folder, `regex-开场白主页${pack.code}-${pack.name}.json`), regex);
     await writeFile(join(folder, `开场白主页${pack.code}-可编辑模板.txt`), `${template}\n`, 'utf8');
 }
+
+await writeJson(join(outputRoot, '开场白主页', 'regex-返回作品目录-旧卡补装.json'), buildOpeningHomeRegexPack()[1]);
 
 console.log(`STARTER_PACKS_BUILT ${outputRoot}`);

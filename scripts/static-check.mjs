@@ -140,7 +140,9 @@ const statusIds = new Set();
 for (const [code, name] of openingDefinitions) {
     const openingFolder = join(root, 'starter-packs', '开场白主页', `${code}-${name}`);
     try {
-        const openingRegex = JSON.parse(await readFile(join(openingFolder, `regex-开场白主页${code}-${name}.json`), 'utf8'));
+        const openingPack = JSON.parse(await readFile(join(openingFolder, `regex-开场白主页${code}-${name}.json`), 'utf8'));
+        const [openingRegex, returnRegex] = openingPack;
+        if (openingPack.length !== 2 || returnRegex?.id !== 'jiuyi-opening-return-portable-v1' || !returnRegex?.replaceString.includes('getCurrentMessageId')) errors.push(`开场白主页${code}缺少随卡返回规则`);
         const openingTemplate = await readFile(join(openingFolder, `开场白主页${code}-可编辑模板.txt`), 'utf8');
         openingIds.add(openingRegex.id);
         if (openingTemplate.trim() !== '【主页】' || openingRegex.findRegex !== '/【主页】/s') {
