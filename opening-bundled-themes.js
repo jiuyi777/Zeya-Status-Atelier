@@ -3,15 +3,17 @@ import { buildLilyPage } from './opening-lily-moon.js';
 import { buildNoirPage } from './opening-sakura-noir.js';
 import { buildOrbitPage } from './opening-lunar-orbit.js';
 import { buildFloralPage } from './opening-floral-letter.js';
+import { buildBloomPage } from './opening-bloom-letter.js?v=0.11.36';
 
-const builders = { 'star-atlas': buildStarPage, 'lily-moon': buildLilyPage, 'sakura-noir': buildNoirPage, 'lunar-orbit': buildOrbitPage, 'floral-letter': buildFloralPage };
+const builders = { 'bloom-letter': buildBloomPage, 'star-atlas': buildStarPage, 'lily-moon': buildLilyPage, 'sakura-noir': buildNoirPage, 'lunar-orbit': buildOrbitPage, 'floral-letter': buildFloralPage };
 export const BUNDLED_HOME_TEMPLATES = [
+    ['bloom-letter', '见花如晤', '青绿沙金 · 印刷花信', '#d38a53', '#028e96'],
     ['star-atlas', '星芒云笺', '藏蓝金色 · 星芒云笺', '#e9a343', '#123a59'],
     ['lily-moon', '月下百合', '月光百合 · 书签目录', '#c5a759', '#425e79'],
     ['sakura-noir', '樱色夜刊', '黑粉海报 · 开场票', '#ef91a4', '#f8dfe5'],
     ['lunar-orbit', '循月而行', '月相轨道 · 清蓝目录', '#94bad1', '#304760'],
     ['floral-letter', '花间来信', '白金花卉 · 紧凑信笺', '#bca56b', '#57515e'],
-].map(([id, name, description, accent, text]) => ({ id, name, description, values: { theme: id, font: id === 'floral-letter' ? 'kai' : 'serif', accent, text } }));
+].map(([id, name, description, accent, text]) => ({ id, name, description, values: { theme: id, font: ['floral-letter', 'bloom-letter'].includes(id) ? 'kai' : 'serif', accent, text } }));
 export const isBundledHomeTheme = theme => Object.hasOwn(builders, theme);
 
 // Reuse the production navigation/worldbook runtime, with the approved sample layout.

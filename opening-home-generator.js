@@ -1,6 +1,6 @@
 import { buildOpeningReturnRegex } from './opening-return-navigation.js?v=0.11.35';
 import { REFINED_HOME_THEMES, buildRefinedHomeDocument } from './opening-refined-layouts.js?v=0.11.34';
-import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme, buildBundledHomeDocument } from './opening-bundled-themes.js?v=0.11.22';
+import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme, buildBundledHomeDocument } from './opening-bundled-themes.js?v=0.11.36';
 const THEMES = new Set([...BUNDLED_HOME_TEMPLATES.map(template => template.id),'classical', 'newspaper', 'timeline', 'minimal', 'scroll', 'editorial', 'collage', 'dossier', 'glass', 'kinetic', 'noir-poster', 'negative-space']);
 const FONTS = new Set(['serif', 'sans', 'kai', 'mono', 'fangsong', 'rounded', 'clerical']);
 
@@ -95,6 +95,7 @@ export function normalizeOpeningHomeSettings(input = {}) {
         })).filter(entry => entry.book),
     }));
     return {
+        artUrl: /^https:\/\//i.test(String(input.artUrl || '')) ? String(input.artUrl) : '',
         imageUrl: /^https:\/\//i.test(String(input.imageUrl || '')) ? String(input.imageUrl) : '',
         ruleId: clean(input.ruleId, defaults.ruleId),
         title: clean(input.title, defaults.title),

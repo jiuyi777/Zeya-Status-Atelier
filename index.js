@@ -1,7 +1,10 @@
 import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.35';
+import { createOpeningImagePicker } from './opening-image-picker.js?v=0.11.36';
+import { insertImageAt } from './opening-image-tools.js?v=0.11.36';
+import { createOpeningTemplate, applyOpeningTemplate } from './opening-template-package.js?v=0.11.36';
 import { REFINED_HOME_THEMES } from './opening-refined-layouts.js?v=0.11.34';
 import { STATUS_BEAUTY_32_41_IDS, buildStatusBeauty32To41Preview, isStatusBeauty32To41 } from './status-beauty-32-41.js?v=0.11.26';
-import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.23';
+import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.36';
 import { parseSingleStatusResult, singleStatusCatalog, selectStatusCandidates } from './status-ai-single.js?v=0.11.24';
 import { makePortableRegex } from './portable-regex.js?v=0.11.30';
 import {
@@ -66,7 +69,7 @@ import {
     buildOpeningHomeRegex,
     buildOpeningHomeRegexPack,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.35';
+} from './opening-home-generator.js?v=0.11.36';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -141,7 +144,7 @@ import { getCharaFilename } from '../../../utils.js';
 import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.26';
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.35';
+const VERSION = '0.11.36';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -350,6 +353,7 @@ const OPENING_HOME_FIELDS = Object.freeze({
     'status-atelier-opening-home-intro-background': 'introBackground',
     'status-atelier-opening-home-button-color': 'buttonColor',
     'status-atelier-opening-home-image-url': 'imageUrl',
+    'status-atelier-opening-home-art-url': 'artUrl',
     'status-atelier-opening-home-image-alt': 'imageAlt',
     'status-atelier-opening-home-image-position': 'imagePosition',
     'status-atelier-opening-home-image-width': 'imageWidth',
@@ -7605,6 +7609,37 @@ async function addSettingsPanel() {
     field('status-atelier-entry-dialog-close').addEventListener('click', closeEntryDialog);
     field('status-atelier-entry-dialog-cancel').addEventListener('click', closeEntryDialog);
     field('status-atelier-entry-dialog-confirm').addEventListener('click', confirmEntryDialog);
+    let openingImagePicker;
+    const pickOpeningImage = callback => { openingImagePicker ??= createOpeningImagePicker(); openingImagePicker.open(callback); };
+    field('status-atelier-bloom-insert-image').addEventListener('click', () => {
+        const input = field('status-atelier-opening-home-intro'), original = input.value, start = input.selectionStart ?? original.length, end = input.selectionEnd ?? start;
+        pickOpeningImage((url, alt) => {
+            if (input.value !== original) { notify('error', '简介已变化，请重新选择插入位置'); return; }
+            const result = insertImageAt(original, start, end, url, alt);
+            input.value = result.text;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.focus(); input.setSelectionRange(result.cursor, result.cursor);
+        });
+    });
+    field('status-atelier-bloom-upload-art').addEventListener('click', () => pickOpeningImage(url => {
+        const input = field('status-atelier-opening-home-art-url'); input.value = url; input.dispatchEvent(new Event('input', { bubbles: true }));
+    }));
+    field('status-atelier-template-gallery').addEventListener('click', () => window.open(new URL('./opening-template-gallery.html', import.meta.url).href, '_blank', 'noopener'));
+    field('status-atelier-template-export').addEventListener('click', () => downloadJson('开场白-外观模板.json', createOpeningTemplate(settings().openingHome)));
+    field('status-atelier-template-import').addEventListener('change', async event => {
+        try {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (file.size > 65536) throw new Error('外观模板请小于 64KB');
+            settings().openingHome = applyOpeningTemplate(settings().openingHome, JSON.parse(await file.text()));
+            syncOpeningHomeControls();
+            renderGreetingThemeChooser();
+            updateOpeningHomePreview();
+            saveSettingsSoon();
+            notify('success', '已应用外观模板，原开场白和世界书绑定已保留');
+        } catch (error) { notify('error', error.message); }
+        finally { event.target.value = ''; }
+    });
     field('status-atelier-opening-copy-block').addEventListener('click', async () => {
         await copyText(buildOpeningHomeBlock(settings().openingHome));
         notify('success', '已复制主页标记【主页】；请放进主开场白');

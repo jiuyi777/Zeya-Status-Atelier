@@ -28,6 +28,7 @@
                     <div><strong>已收藏主页模板</strong><small>收藏后的模板只在这里显示。</small></div>
                     <span>点卡片右上角 ☆ 收藏</span>
                 </div>
+                <div class="status-atelier-actions"><button type="button" id="status-atelier-template-gallery" class="menu_button">模板展架 / 投稿</button><button type="button" id="status-atelier-template-export" class="menu_button">下载外观模板</button><label class="menu_button">导入外观模板<input id="status-atelier-template-import" type="file" accept=".json,application/json" hidden></label></div><small>外观模板只更换样式，保留角色开场白与世界书绑定。</small>
                 <div id="status-atelier-home-favorites" class="status-atelier-template-grid"></div>
                 <details class="status-atelier-library-more">
                     <summary>展开未收藏主页模板</summary>
@@ -64,7 +65,7 @@
                             </div>
                             <small>“13 立绘分割”会使用这组设置；其他主页模板不会强行显示图片。</small>
                         </details>
-                        <input id="status-atelier-opening-home-theme" type="hidden">
+                        <details class="status-atelier-inline-details"><summary>见花如晤 · 插图与信封</summary><button type="button" id="status-atelier-bloom-insert-image" class="menu_button">在简介光标处插入图片</button><label>花信插画图床 URL（留空使用定稿信封）<input id="status-atelier-opening-home-art-url" class="text_pole" type="url" placeholder="https://…"></label><button type="button" id="status-atelier-bloom-upload-art" class="menu_button">选择插画（压缩后上传）</button><small>使用“见花如晤”模板显示段落内图片；图片仅以链接保存。</small></details><input id="status-atelier-opening-home-theme" type="hidden">
                     </details>
 
                     <section class="status-atelier-setting-section">
