@@ -299,7 +299,7 @@ test('modal and palettes stay inside mobile viewport and palette library is coll
     assert.match(source, /PHONE_STRUCTURE_IDS = Object\.freeze\(\['phone', 'profile', 'social', 'forum', 'chat', 'quest'\]\)/);
     assert.doesNotMatch(source.match(/const PHONE_STRUCTURE_IDS = Object\.freeze\(([^\n]+)\)/)?.[1] || '', /music/);
     assert.match(settingsMarkup, /<summary><strong>色卡<\/strong><small>26 套配色<\/small><\/summary>/);
-    assert.match(settingsMarkup, /<details class="status-atelier-status-style-library" open>[\s\S]*?<strong>人物状态栏<\/strong><small>31 款完整设计；每款保留自己的字段与构图<\/small>/);
+    assert.match(settingsMarkup, /<details class="status-atelier-status-style-library" open>[\s\S]*?<strong>人物状态栏<\/strong><small id="status-atelier-style-count">每款保留自己的字段与构图<\/small>/);
     assert.match(styleSource, /status-atelier-status-style-library > summary::\-webkit-details-marker[\s\S]*?status-atelier-status-palette-library > summary::\-webkit-details-marker[\s\S]*?display:\s*none/);
     assert.match(styleSource, /max-height:\s*calc\(100dvh - 12px - env\(safe-area-inset-top\) - env\(safe-area-inset-bottom\)\)/);
     assert.match(styleSource, /\.status-atelier-dialog-body\s*\{[\s\S]*?overflow-y:\s*auto;[\s\S]*?overscroll-behavior:\s*contain;/);
@@ -558,7 +558,7 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(resizeBlock, /getPropertyPriority\('font-size'\)/);
     assert.doesNotMatch(resizeBlock, /minimumTouchScale|Math\.max\(220/);
     assert.match(resizeBlock, /frame\.style\.height = `\$\{Math\.ceil\(contentHeight\)\}px`/);
-    const previewBindingBlock = source.match(/function bindStatusBeautyPreviewEditing\(frame, rule[\s\S]*?interactionStyle\.textContent = '([^']+)'/)?.[1] || '';
+    const previewBindingBlock = source.match(/function bindStatusBeautyPreviewEditing\(frame, rule[\s\S]*?\n\}/)?.[0] || '';
     assert.match(previewBindingBlock, /background:transparent!important/);
     assert.match(previewBindingBlock, /padding:0!important/);
     assert.doesNotMatch(previewBindingBlock, /padding:10px/);

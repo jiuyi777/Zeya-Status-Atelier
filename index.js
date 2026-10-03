@@ -145,7 +145,7 @@ import { getCharaFilename } from '../../../utils.js';
 import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.26';
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.37';
+const VERSION = '0.11.38';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -917,6 +917,8 @@ function renderStatusDesignControls() {
     populateStatusStructureSelect(structureSelect);
     if (structureSelect) structureSelect.value = settings().structure || 'custom';
     const styleHost = field('status-atelier-status-styles');
+    const styleCount = field('status-atelier-style-count');
+    if (styleCount) styleCount.textContent = `${PROFILE_APPEARANCE_PRESETS.length} 款完整设计；每款保留自己的字段与构图`;
     const profileAppearanceMode = settings().structure === 'profile';
     const styleLibrary = styleHost?.closest('.status-atelier-status-style-library');
     if (styleLibrary) styleLibrary.hidden = !profileAppearanceMode;
@@ -3181,14 +3183,6 @@ function updateForumPageLabel(pageIndex, label) {
 function renderForumPreview(host, previewRecords) {
     if (!host) return;
     const { rule, shared, pages } = previewRecords;
-    if (isPortraitFree(rule.structure)) {
-        const frame = makeElement('iframe', 'status-atelier-rule-preview status-atelier-beauty-preview-frame');
-        frame.title = `${rule.structureName}预览`;
-        frame.srcdoc = buildPortraitFreePreview(rule, pages);
-        frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-        mountStatusBeautyPreview(host, frame, rule, { labeled: true });
-        return;
-    }
     const skin = FORUM_SKIN_PRESETS.find(item => item.id === rule.forumSkin) || FORUM_SKIN_PRESETS[0];
     const draft = forumPreviewDraftForSkin(skin.id);
     const draftPageAt = index => {
@@ -3780,17 +3774,28 @@ function mountStatusBeautyPreview(host, frame, rule, options = {}) {
     const editor = createStatusBeautyDirectEditor(rule);
     const stack = makeElement('div', 'status-atelier-beauty-preview-stack');
     const actions = makeElement('div', 'status-atelier-beauty-preview-actions');
-    const avatarButton = makeElement('button', 'menu_button status-atelier-avatar-edit-button', '修改头像');
-    avatarButton.type = 'button';
-    avatarButton.addEventListener('click', editor.openMedia);
-    actions.append(
-        makeElement('span', '', '点击画面中的字段名称、X、固定文字或头像即可修改。'),
-        avatarButton,
-    );
+    const portraitFree = isPortraitFree(rule.structure);
+    actions.append(makeElement('span', '', portraitFree
+        ? '点击画面中的字段名称、X 或固定文字即可修改。'
+        : '点击画面中的字段名称、X、固定文字或头像即可修改。'));
+    if (!portraitFree) {
+        const avatarButton = makeElement('button', 'menu_button status-atelier-avatar-edit-button', '修改头像');
+        avatarButton.type = 'button';
+        avatarButton.addEventListener('click', editor.openMedia);
+        actions.append(avatarButton);
+    }
     stack.append(frame, actions, editor.root);
     host.replaceChildren(stack);
     bindStatusBeautyPreviewEditing(frame, rule, { ...options, editor });
     return stack;
+}
+
+function renderPortraitFreePreview(host, rule, pages) {
+    const frame = makeElement('iframe', 'status-atelier-rule-preview status-atelier-beauty-preview-frame');
+    frame.title = `${rule.structureName}预览`;
+    frame.srcdoc = buildPortraitFreePreview(rule, pages);
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+    mountStatusBeautyPreview(host, frame, rule, { labeled: true });
 }
 
 function renderStatusBeauty16To20Preview(host, rule, pages) {
@@ -3986,9 +3991,11 @@ function bindStatusBeautyPreviewEditing(frame, rule, { labeled = false, captureM
         const doc = frame.contentDocument;
         if (!doc || !editor) return;
         const interactionStyle = doc.createElement('style');
-        interactionStyle.textContent = 'html,body{width:100%!important;max-width:100%!important;background:transparent!important}body{display:flex!important;justify-content:center!important;align-items:flex-start!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}.status-atelier-beauty-edit-target{cursor:pointer;pointer-events:auto!important;touch-action:manipulation}.status-atelier-beauty-edit-target:is(:hover,:focus-visible){outline:3px solid #d45f75!important;outline-offset:3px!important}';
+        const portraitFree = isPortraitFree(rule.structure);
+        const layoutStyle = portraitFree ? '' : 'html,body{width:100%!important;max-width:100%!important;background:transparent!important}body{display:flex!important;justify-content:center!important;align-items:flex-start!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}';
+        interactionStyle.textContent = `${layoutStyle}.status-atelier-beauty-edit-target{cursor:pointer;pointer-events:auto!important;touch-action:manipulation}.status-atelier-beauty-edit-target:is(:hover,:focus-visible){outline:3px solid #d45f75!important;outline-offset:3px!important}`;
         doc.head?.append(interactionStyle);
-        resizeStatusBeautyPreviewFrame(frame);
+        if (!portraitFree) resizeStatusBeautyPreviewFrame(frame);
         doc.querySelectorAll('img[data-st-avatar],img[alt*="角色头像"],img.avatar,img.art-photo').forEach(image => {
             image.setAttribute('data-st-avatar', '');
             bindStatusBeautyPreviewTarget(image, '点击修改角色头像', editor.openMedia);
@@ -4089,6 +4096,10 @@ function renderStatusPreview(host) {
     }
     if (isStatusBeauty32To41(rule.structure)) {
         renderStatusBeauty32To41Preview(host, rule, pages);
+        return;
+    }
+    if (isPortraitFree(rule.structure)) {
+        renderPortraitFreePreview(host, rule, pages);
         return;
     }
     if (rule.structure === 'moon-collage') {
