@@ -1,0 +1,20 @@
+:root { font-synthesis: none; }
+* { box-sizing: border-box; scrollbar-width: none; }
+*::-webkit-scrollbar { display: none; width: 0; height: 0; }
+html, body { margin: 0; min-height: 0; background: transparent; }
+body { font: 14px/1.65 "Microsoft YaHei", "PingFang SC", sans-serif; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+[hidden] { display: none !important; }
+.status { max-width: 760px; margin: auto; color: var(--ink); overflow-wrap: anywhere; }
+h1, h2, h3, p, dl, dd, blockquote { margin: 0; }
+h1 { font-weight: 500; }
+.fold { flex: 0 0 40px; width: 40px; height: 40px; padding: 0; }
+.people { display: flex; gap: 4px; flex-wrap: wrap; min-width: 0; }
+.people button { min-width: 64px; min-height: 42px; }
+.folded-summary { padding: 12px 18px; font-size: 14px; }
+[data-field] { overflow-wrap: anywhere; }
+.meter { position: relative; height: 4px; }
+.meter-fill { display: block; width: var(--score, 72%); height: 100%; background: var(--accent); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; clip-path: inset(50%); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }

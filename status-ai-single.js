@@ -1,4 +1,4 @@
-import { normalizeRule } from './rule-generator.js';
+import { normalizeRule } from './rule-generator.js?v=0.11.37';
 
 export function selectStatusCandidates(candidates, { recent = [], current = '', idea = '', random = Math.random } = {}) {
     const named = candidates.filter(item => {

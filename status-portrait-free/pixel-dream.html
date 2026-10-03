@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>像素梦游 · 状态栏</title>
+  <link rel="stylesheet" href="sample.css">
+  <link rel="stylesheet" href="pixel-dream.css">
+</head>
+<body>
+<article class="status dream-terminal" aria-label="像素梦游状态栏">
+  <header class="system-bar">
+    <span class="system-name"><i class="disk-icon" aria-hidden="true"></i><span data-design-title>梦游.exe</span></span>
+    <nav class="people" aria-label="切换人物">
+      <button data-person="0" aria-pressed="true">林赛</button>
+      <button data-person="1" aria-pressed="false">艾登</button>
+    </nav>
+    <button class="fold bevel-button" aria-expanded="true" aria-controls="status-content" aria-label="收起状态栏">−</button>
+  </header>
+
+  <div id="status-content" class="dream-desktop">
+    <img class="scene-art" src="assets/dream-room-pixel.webp" alt="" aria-hidden="true">
+    <div class="scene-depth" aria-hidden="true"></div>
+
+    <div class="dream-stage">
+      <section class="pixel-window identity-window" aria-label="人物资料">
+        <header class="window-title"><span>PERSONA.DAT</span><i class="window-mark" aria-hidden="true"></i></header>
+        <div class="identity-body">
+          <h1 data-field="name">林赛</h1>
+          <p data-field="identity"></p>
+        </div>
+      </section>
+
+      <aside class="pixel-window trust-window" aria-label="关系状态">
+        <header class="window-title"><span>LINK.SYS</span></header>
+        <div class="trust-body">
+          <div class="trust-number"><span>信任</span><strong data-field="score"></strong></div>
+          <div class="link-meter" role="meter" aria-label="信任值" aria-valuemin="0" aria-valuemax="100" aria-valuenow="72"><span></span></div>
+          <p data-field="relation"></p>
+        </div>
+      </aside>
+    </div>
+
+    <section class="pixel-window record-window" data-panel-group aria-label="人物记录">
+      <header class="window-title"><span>当前记录 / MEMORY.TXT</span><i class="window-mark" aria-hidden="true"></i></header>
+      <nav class="pixel-tabs" role="tablist" aria-label="查看状态分类">
+        <button class="bevel-button" id="dream-voice" role="tab" aria-selected="true" aria-controls="dream-voice-panel">心声</button>
+        <button class="bevel-button" id="dream-now" role="tab" aria-selected="false" aria-controls="dream-now-panel" tabindex="-1">此刻</button>
+        <button class="bevel-button" id="dream-plan" role="tab" aria-selected="false" aria-controls="dream-plan-panel" tabindex="-1">下一程</button>
+      </nav>
+      <div class="memory-sheet">
+        <div class="dream-panel" role="tabpanel" id="dream-voice-panel" aria-labelledby="dream-voice" tabindex="0">
+          <p class="voice-copy" data-field="voice"></p>
+          <div class="memory-note"><span class="pixel-corner" aria-hidden="true"></span><p data-field="relationNote"></p></div>
+        </div>
+        <div class="dream-panel" role="tabpanel" id="dream-now-panel" aria-labelledby="dream-now" tabindex="0" hidden>
+          <dl class="dream-records">
+            <div><dt>衣着</dt><dd data-field="attire"></dd></div>
+            <div><dt>状态</dt><dd data-field="condition"></dd></div>
+            <div><dt>行动</dt><dd data-field="action"></dd></div>
+          </dl>
+        </div>
+        <div class="dream-panel" role="tabpanel" id="dream-plan-panel" aria-labelledby="dream-plan" tabindex="0" hidden>
+          <span class="next-label">下一次见面</span>
+          <p class="voice-copy" data-field="plan"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pixel-window location-window" aria-label="时间与地点">
+      <div class="location-icon" aria-hidden="true">⌖</div>
+      <div class="location-copy"><p data-field="place"></p><p data-field="time"></p></div>
+    </section>
+  </div>
+
+  <div class="folded-summary" hidden><span data-field="name"></span> · <span data-field="relation"></span></div>
+  <footer class="case-foot"><span class="power-light" aria-hidden="true"></span><span>梦游终端</span><span>九一</span></footer>
+</article>
+<script src="sample.js"></script>
+<script src="reference-controls.js"></script>
+</body>
+</html>

@@ -20,6 +20,8 @@ const requiredFiles = [
     'worldbook-routes.js',
     'rule-generator.js',
     'portable-regex.js',
+    'status-portrait-free.js',
+    'status-portrait-free-templates.js',
     'status-beauty-01-15-bundle.js',
     'status-beauty-05-09.js',
     'status-beauty-05-09.css',
@@ -225,7 +227,7 @@ if (STATUS_STYLE_PRESETS.length !== 22) errors.push('状态栏外观注册表必
 if (new Set(STATUS_STYLE_PRESETS.map(style => style.id)).size !== 22) errors.push('22套状态栏外观必须使用22个独立主题 ID');
 if (statusIds.size !== selectableStructures.length) errors.push('可选状态栏模板必须生成独立正则 ID');
 
-if (STATUS_STRUCTURE_PRESETS.length !== 43) errors.push('编辑器必须保留原有结构并注册新增状态栏32至41');
+if (STATUS_STRUCTURE_PRESETS.length !== 46) errors.push('编辑器必须保留原有结构并注册新增状态栏42至44');
 const bundledRegexFolder = join(root, 'assets', 'status-beauty', 'regexes');
 try {
     const bundledRegexFiles = (await readdir(bundledRegexFolder)).filter(file => file.endsWith('.json'));

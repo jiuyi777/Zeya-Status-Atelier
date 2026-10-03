@@ -113,7 +113,7 @@ test('status workspace exposes component, palette, real avatar and audio control
 });
 
 test('profile appearance keeps structure profile while exposing status beauty 01 to 21', () => {
-    assert.match(source, /const PROFILE_APPEARANCE_IDS = Object\.freeze\(\[\.\.\.STATUS_BEAUTY_01_15_IDS, \.\.\.STATUS_BEAUTY_16_20_IDS, 'archive-status', \.\.\.STATUS_BEAUTY_32_41_IDS\]\)/);
+    assert.match(source, /const PROFILE_APPEARANCE_IDS = Object\.freeze\(\[\.\.\.STATUS_BEAUTY_01_15_IDS, \.\.\.STATUS_BEAUTY_16_20_IDS, 'archive-status', \.\.\.STATUS_BEAUTY_32_41_IDS, \.\.\.PORTRAIT_FREE_IDS\]\)/);
     assert.match(source, /profileAppearance: PROFILE_APPEARANCE_DEFAULT\.id/);
     assert.match(source, /profileTemplateSchemaVersion: 1/);
     assert.match(source, /profileTemplateDrafts: \{\}/);

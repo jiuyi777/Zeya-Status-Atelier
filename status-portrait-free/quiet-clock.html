@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>慢一刻 · 状态栏</title>
+  <link rel="stylesheet" href="sample.css">
+  <link rel="stylesheet" href="quiet-clock.css">
+</head>
+<body>
+<article class="status quiet-clock" aria-label="慢一刻状态栏">
+  <header class="clock-header">
+    <p><span class="status-light" aria-hidden="true"></span><span data-design-title>慢一刻</span> <small data-design-subtitle>STILL / 03</small></p>
+    <nav class="people clock-people" aria-label="切换人物"><button data-person="0" aria-pressed="true">林赛</button><button data-person="1" aria-pressed="false">艾登</button></nav>
+    <button class="fold" aria-label="收起状态栏" aria-expanded="true" aria-controls="status-content">−</button>
+  </header>
+  <div id="status-content" class="clock-layout">
+    <section class="clock-scene" aria-label="人物与时间">
+      <div class="clock-hero">
+        <div class="clock-identity">
+          <p class="eyebrow">这一刻，与</p>
+          <h1 data-field="name">林赛</h1>
+          <p class="identity-caption" data-field="identity"></p>
+          <div class="clock-relation"><strong data-field="score"></strong><div><small>信任 / 100</small><p data-field="relation"></p></div></div>
+        </div>
+        <div class="time-object">
+          <div class="clock-well" role="img" aria-label="本地时间" data-device-clock>
+            <div class="clock-face" aria-hidden="true">
+              <span class="hour-number n12">12</span><span class="hour-number n3">3</span><span class="hour-number n6">6</span><span class="hour-number n9">9</span>
+              <span class="hand hour-hand"></span><span class="hand minute-hand"></span><span class="hand second-hand"></span><span class="clock-hub"></span>
+            </div>
+          </div>
+          <div class="clock-readout"><time class="digital-time" data-clock-readout>—:—</time><button class="clock-motion" type="button" data-clock-motion aria-label="暂停时钟" aria-pressed="false" title="暂停时钟" hidden>Ⅱ</button></div>
+          <p class="clock-caption" data-clock-caption>本地时间</p>
+        </div>
+      </div>
+      <div class="scene-caption"><p data-field="place"></p><p><span>剧情 · </span><span data-field="time"></span></p></div>
+    </section>
+    <section class="clock-reading" data-panel-group aria-label="人物记录">
+      <div class="reading-well">
+        <div class="record-panel" role="tabpanel" id="quiet-voice-panel" aria-labelledby="quiet-voice" tabindex="0">
+          <h2>没有说出口的</h2><p class="voice-text" data-field="voice"></p><p class="aside-note" data-field="relationNote"></p>
+        </div>
+        <div class="record-panel" role="tabpanel" id="quiet-now-panel" aria-labelledby="quiet-now" tabindex="0" hidden>
+          <dl class="record-rows"><div><dt>衣着</dt><dd data-field="attire"></dd></div><div><dt>状态</dt><dd data-field="condition"></dd></div><div><dt>行动</dt><dd data-field="action"></dd></div></dl>
+        </div>
+        <div class="record-panel" role="tabpanel" id="quiet-plan-panel" aria-labelledby="quiet-plan" tabindex="0" hidden><h2>留给下一刻</h2><p class="voice-text" data-field="plan"></p></div>
+      </div>
+      <nav class="state-tabs clock-tabs" role="tablist" aria-label="查看状态分类">
+        <button id="quiet-voice" role="tab" aria-selected="true" aria-controls="quiet-voice-panel">心声</button>
+        <button id="quiet-now" role="tab" aria-selected="false" aria-controls="quiet-now-panel" tabindex="-1">此刻</button>
+        <button id="quiet-plan" role="tab" aria-selected="false" aria-controls="quiet-plan-panel" tabindex="-1">下一程</button>
+      </nav>
+    </section>
+  </div>
+  <div class="folded-summary" hidden><span data-field="name"></span><span class="summary-relation" data-field="relation"></span></div>
+  <footer class="clock-footer"><span>把时间，留在这里。</span><span>九一</span></footer>
+</article>
+<script src="sample.js"></script>
+<script src="reference-controls.js"></script>
+<script type="module" src="quiet-clock.js"></script>
+</body>
+</html>

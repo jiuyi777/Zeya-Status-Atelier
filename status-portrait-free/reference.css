@@ -1,0 +1,16 @@
+@font-face{font-family:StatusSans;src:url('fonts/NotoSansSC.woff2') format('woff2');font-weight:100 900;font-display:swap}
+@font-face{font-family:NightDisplay;src:url('fonts/PirataOne-Regular.woff2') format('woff2');font-weight:400;font-display:swap}
+body{font-family:StatusSans,"Microsoft YaHei",sans-serif}
+.status{font-family:inherit}
+button{touch-action:manipulation}
+.state-tabs{display:flex}
+.state-tabs button{min-height:44px}
+.record-panel{outline-offset:-5px}
+.record-rows{margin:0}
+.record-rows>div{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;padding:6px 0}
+.record-rows dt{font-size:11px;line-height:23px;opacity:.65}
+.record-rows dd{font-size:14px;line-height:1.75}
+.record-panel p{font-size:14px;line-height:1.8}
+.record-panel .aside-note{font-size:14px;line-height:1.7;margin-top:10px;opacity:.7}
+.reference-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:10px;line-height:1.5}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}

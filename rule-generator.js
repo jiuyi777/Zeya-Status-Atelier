@@ -1,4 +1,5 @@
 import { buildOriginalRoleCardReplacement, isOriginalRoleCardStructure } from './role-card-originals.js';
+import { PORTRAIT_FREE_PRESETS, buildPortraitFreeReplacement, isPortraitFree } from './status-portrait-free.js?v=0.11.37';
 import {
     STATUS_BEAUTY_01_02_PRESETS,
     STATUS_BEAUTY_04_PRESETS,
@@ -383,6 +384,7 @@ export const STATUS_STRUCTURE_PRESETS = Object.freeze([
     ...STATUS_BEAUTY_10_15_PRESETS,
     ...STATUS_BEAUTY_16_20_PRESETS,
     ...STATUS_BEAUTY_32_41_PRESETS,
+    ...PORTRAIT_FREE_PRESETS,
     {
         id: 'custom', name: '自由组件板', description: '保留完全可编辑的通用字段容器',
         title: '自定义状态面板', subtitle: 'CUSTOM COMPONENTS', layout: 'grid', appearanceId: 'component-canvas', appearanceName: '自由组件板', glyph: '✦',
@@ -1194,7 +1196,7 @@ function sanitizePhoneAppName(value, fallback = '') {
 export function buildAiInstruction(input) {
     const rule = normalizeRule(input);
     if (isStatusBeauty01To15(rule.structure)) return buildStatusBeautyBundledInstruction(rule);
-    if (STATUS_BEAUTY_32_41_PRESETS.some(preset => preset.id === rule.structure && preset.dynamicRoster)) {
+    if (isPortraitFree(rule.structure) || STATUS_BEAUTY_32_41_PRESETS.some(preset => preset.id === rule.structure && preset.dynamicRoster)) {
         const fields = rule.pages[0]?.fields || rule.pageFields;
         return [
             `<${rule.tagName}_rules>`,
@@ -1308,7 +1310,7 @@ export function parseStatusOutput(input, rawOutput) {
         const key = parts.shift();
         if (key) records[key] = parts;
     }
-    if (STATUS_BEAUTY_32_41_PRESETS.some(preset => preset.id === rule.structure && preset.dynamicRoster)) {
+    if (isPortraitFree(rule.structure) || STATUS_BEAUTY_32_41_PRESETS.some(preset => preset.id === rule.structure && preset.dynamicRoster)) {
         const fields = rule.pages[0]?.fields || rule.pageFields;
         const personKeys = Object.keys(records).filter(key => /^View[1-9][0-9]*$/.test(key));
         if (personKeys.length) rule.pages = personKeys.map((id, index) => ({
@@ -2051,6 +2053,7 @@ function generatedForumReplacement(rule) {
 
 
 function generatedReplacement(rule) {
+    if (isPortraitFree(rule.structure)) return buildPortraitFreeReplacement(rule);
     if (isStatusBeauty05To09(rule.structure)) return buildStatusBeauty05To09Replacement(rule);
     if (isStatusBeauty16To20(rule.structure)) return buildStatusBeauty16To20Replacement(rule);
     if (isStatusBeauty32To41(rule.structure)) return buildStatusBeauty32To41Replacement(rule);
@@ -2286,7 +2289,7 @@ export function buildRegexScript(input) {
         scriptName: `九一 · ${rule.ruleName}`,
         disabled: false,
         runOnEdit: true,
-        findRegex: `/<${rule.tagName}>([\\s\\S]*?)<\\/${rule.tagName}>/i`,
+        findRegex: isPortraitFree(rule.structure) ? `/<${rule.tagName}>([^<>]*?)<\\/${rule.tagName}>/i` : `/<${rule.tagName}>([\\s\\S]*?)<\\/${rule.tagName}>/i`,
         trimStrings: [],
         replaceString: generatedReplacement(rule),
         placement: [2],
@@ -2405,7 +2408,7 @@ export function makePreviewRecords(input) {
         if (rule.structure === 'forum' && field.id === 'forum_notice') return forumSample.notice;
         if (rule.structure === 'chat' && chatSamples[field.id]) return chatSamples[field.id];
         if (rule.structure === 'forum' && field.id === 'forum_presence') return 'X';
-        if (isOriginalRoleCardStructure(rule.structure) || isStatusBeauty01To15(rule.structure) || isStatusBeauty16To20(rule.structure) || isStatusBeauty32To41(rule.structure)) return 'X';
+        if (isPortraitFree(rule.structure) || isOriginalRoleCardStructure(rule.structure) || isStatusBeauty01To15(rule.structure) || isStatusBeauty16To20(rule.structure) || isStatusBeauty32To41(rule.structure)) return 'X';
         if (field.kind === 'progress') return 'AI动态数值';
         if (field.kind === 'currency') return 'AI动态金额';
         if (field.kind === 'avatar') return '当前角色';

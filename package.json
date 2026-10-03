@@ -1,13 +1,14 @@
 {
   "name": "status-atelier",
-  "version": "0.11.36",
+  "version": "0.11.37",
   "private": true,
   "type": "module",
   "description": "A configurable SillyTavern generator for dynamic status panels, lorebook formats, and greeting navigation homepages.",
   "scripts": {
+    "build:portrait-free": "node scripts/build-portrait-free.mjs",
     "build:packs": "node scripts/build-starter-packs.mjs",
     "preview:status": "node scripts/build-status-preview.mjs",
-    "test": "node --check index.js && node --test tests/*.test.mjs && node scripts/static-check.mjs"
+    "test": "node --check index.js && node scripts/build-portrait-free.mjs --check && node --test tests/*.test.mjs && node scripts/static-check.mjs"
   },
   "engines": {
     "node": ">=18"

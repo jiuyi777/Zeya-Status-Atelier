@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>地球失眠 · 状态栏</title>
+<link rel="stylesheet" href="sample.css"><link rel="stylesheet" href="reference.css"><link rel="stylesheet" href="earth-night.css">
+</head><body>
+<article class="status earth-terminal" aria-label="地球失眠状态栏">
+  <header class="earth-header"><p><span data-design-title>地球失眠</span><small data-design-subtitle>EARTH AFTER HOURS</small></p><button class="earth-motion" data-earth-toggle aria-label="暂停地球自转" aria-pressed="false">Ⅱ</button><button class="fold" aria-label="收起状态栏" aria-expanded="true" aria-controls="status-content">−</button></header>
+  <div id="status-content" class="earth-body">
+    <div class="earth-art" aria-hidden="true"><div class="earth-sphere"><img class="earth-still" src="assets/earth-apollo17.jpg" alt=""><canvas data-earth width="240" height="240"></canvas></div><span class="earth-grain"></span></div>
+    <section class="earth-scene" aria-label="人物与关系">
+      <div class="earth-identity"><h1 data-field="name">林赛</h1><p class="identity-stamp" data-field="identity"></p>
+        <nav class="people earth-people" aria-label="切换人物"><button data-person="0" aria-pressed="true">林赛</button><button data-person="1" aria-pressed="false">艾登</button></nav>
+      </div>
+      <div class="earth-link"><strong data-field="score"></strong><div><span>信任 / 100</span><p data-field="relation"></p></div></div>
+      <span class="earth-caption" aria-hidden="true">还醒着。</span>
+    </section>
+    <section class="signal-record" data-panel-group aria-label="人物记录"><div class="record-face">
+      <nav class="state-tabs earth-tabs" role="tablist" aria-label="查看状态分类"><button id="earth-voice" role="tab" aria-selected="true" aria-controls="earth-voice-panel">心声</button><button id="earth-now" role="tab" aria-selected="false" aria-controls="earth-now-panel" tabindex="-1">此刻</button><button id="earth-plan" role="tab" aria-selected="false" aria-controls="earth-plan-panel" tabindex="-1">下一程</button></nav>
+      <div class="record-panel" role="tabpanel" id="earth-voice-panel" aria-labelledby="earth-voice" tabindex="0"><p data-field="voice"></p><p class="aside-note" data-field="relationNote"></p></div>
+      <div class="record-panel" role="tabpanel" id="earth-now-panel" aria-labelledby="earth-now" tabindex="0" hidden><dl class="record-rows"><div><dt>衣着</dt><dd data-field="attire"></dd></div><div><dt>状态</dt><dd data-field="condition"></dd></div><div><dt>行动</dt><dd data-field="action"></dd></div></dl></div>
+      <div class="record-panel" role="tabpanel" id="earth-plan-panel" aria-labelledby="earth-plan" tabindex="0" hidden><p class="next-mark">下次见面</p><p data-field="plan"></p></div>
+    </div></section>
+    <section class="earth-context" aria-label="时间与地点"><span class="place-mark" aria-hidden="true">⌖</span><div><p data-field="place"></p><p data-field="time"></p></div></section>
+  </div>
+  <div class="folded-summary" hidden><span data-field="name"></span> · <span data-field="relation"></span></div>
+  <footer class="earth-foot"><span>夜晚还没有结束</span><span>九一</span></footer>
+</article>
+<script src="sample.js"></script><script src="reference-controls.js"></script><script src="earth-night.js"></script>
+</body></html>

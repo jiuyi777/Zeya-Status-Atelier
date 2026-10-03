@@ -4,8 +4,9 @@ import { insertImageAt } from './opening-image-tools.js?v=0.11.36';
 import { createOpeningTemplate, applyOpeningTemplate } from './opening-template-package.js?v=0.11.36';
 import { REFINED_HOME_THEMES } from './opening-refined-layouts.js?v=0.11.34';
 import { STATUS_BEAUTY_32_41_IDS, buildStatusBeauty32To41Preview, isStatusBeauty32To41 } from './status-beauty-32-41.js?v=0.11.26';
+import { PORTRAIT_FREE_IDS, buildPortraitFreePreview, isPortraitFree } from './status-portrait-free.js?v=0.11.37';
 import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.36';
-import { parseSingleStatusResult, singleStatusCatalog, selectStatusCandidates } from './status-ai-single.js?v=0.11.24';
+import { parseSingleStatusResult, singleStatusCatalog, selectStatusCandidates } from './status-ai-single.js?v=0.11.37';
 import { makePortableRegex } from './portable-regex.js?v=0.11.30';
 import {
     CHAT_APPEARANCE_PRESETS,
@@ -37,7 +38,7 @@ import {
     mergeStatusRegexScripts,
     legacyStructuredStatusRegexInstallId,
     statusRegexInstallId,
-} from './rule-generator.js?v=0.11.30';
+} from './rule-generator.js?v=0.11.37';
 import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.16';
 import {
     STATUS_BEAUTY_01_15_IDS,
@@ -52,7 +53,7 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.33';
+} from './status-beauty-01-15-bundle.js?v=0.11.37';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
@@ -144,7 +145,7 @@ import { getCharaFilename } from '../../../utils.js';
 import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.26';
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.36';
+const VERSION = '0.11.37';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -213,10 +214,10 @@ const STATUS_TEMPLATES = Object.freeze([
 
 const KIND_LABELS = Object.freeze({ text: '短文本', long: '长文本', number: '数字', progress: '数值 0–100', currency: '金额', avatar: '头像' });
 const PHONE_STRUCTURE_IDS = Object.freeze(['phone', 'profile', 'social', 'forum', 'chat', 'quest']);
-const PROFILE_APPEARANCE_IDS = Object.freeze([...STATUS_BEAUTY_01_15_IDS, ...STATUS_BEAUTY_16_20_IDS, 'archive-status', ...STATUS_BEAUTY_32_41_IDS]);
+const PROFILE_APPEARANCE_IDS = Object.freeze([...STATUS_BEAUTY_01_15_IDS, ...STATUS_BEAUTY_16_20_IDS, 'archive-status', ...STATUS_BEAUTY_32_41_IDS, ...PORTRAIT_FREE_IDS]);
 const PROFILE_APPEARANCE_PRESETS = Object.freeze(PROFILE_APPEARANCE_IDS.map((id, index) => {
     const structure = STATUS_STRUCTURE_PRESETS.find(item => item.id === id);
-    return { ...structure, code: STATUS_BEAUTY_32_41_IDS.includes(id) ? id.slice(-2) : String(index + 1).padStart(2, '0') };
+    return { ...structure, code: STATUS_BEAUTY_32_41_IDS.includes(id) || isPortraitFree(id) ? id.slice(-2) : String(index + 1).padStart(2, '0') };
 }));
 const PROFILE_APPEARANCE_DEFAULT = PROFILE_APPEARANCE_PRESETS[0];
 const MOON_COLLAGE_BACKGROUND_URL = new URL('./assets/status-beauty/images/design-03-background-v3.png', import.meta.url).href;
@@ -1071,7 +1072,7 @@ function renderTemplateMediaControls() {
     const section = field('status-atelier-template-media');
     if (!section) return;
     const archiveProfile = structure === 'profile' && settings().profileAppearance === 'archive-status';
-    const usesAvatar = ['profile', 'social', 'chat'].includes(structure);
+    const usesAvatar = ['profile', 'social', 'chat'].includes(structure) && !(structure === 'profile' && isPortraitFree(settings().profileAppearance));
     const usesImage = ['social', 'collage', 'music'].includes(structure);
     const usesArchiveImages = archiveProfile;
     const usesAudio = structure === 'music';
@@ -3180,6 +3181,14 @@ function updateForumPageLabel(pageIndex, label) {
 function renderForumPreview(host, previewRecords) {
     if (!host) return;
     const { rule, shared, pages } = previewRecords;
+    if (isPortraitFree(rule.structure)) {
+        const frame = makeElement('iframe', 'status-atelier-rule-preview status-atelier-beauty-preview-frame');
+        frame.title = `${rule.structureName}预览`;
+        frame.srcdoc = buildPortraitFreePreview(rule, pages);
+        frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+        mountStatusBeautyPreview(host, frame, rule, { labeled: true });
+        return;
+    }
     const skin = FORUM_SKIN_PRESETS.find(item => item.id === rule.forumSkin) || FORUM_SKIN_PRESETS[0];
     const draft = forumPreviewDraftForSkin(skin.id);
     const draftPageAt = index => {
@@ -5391,7 +5400,7 @@ async function resolveStatusRegexScript(input = resolvedStatusExportInput()) {
         });
     }
     const script = buildRegexScript(resolvedInput);
-    return makePortableRegex((isStatusBeauty16To20(rule.structure) || isStatusBeauty32To41(rule.structure))
+    return makePortableRegex((isPortraitFree(rule.structure) || isStatusBeauty16To20(rule.structure) || isStatusBeauty32To41(rule.structure))
         ? applyStatusBeautyTextOverrides(script, settings().profileTextOverrides?.[rule.structure])
         : script);
 }

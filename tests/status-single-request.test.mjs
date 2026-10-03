@@ -8,6 +8,7 @@ import { responseText, generationErrorMessage, resolveStatusIdeaIntent, applySta
 import { STATUS_BEAUTY_01_15_IDS } from '../status-beauty-01-15-bundle.js';
 import { STATUS_BEAUTY_16_20_IDS } from '../status-beauty-16-20.js';
 import { STATUS_BEAUTY_32_41_IDS } from '../status-beauty-32-41.js';
+import { PORTRAIT_FREE_IDS } from '../status-portrait-free.js';
 
 const source = readFileSync(new URL('../index.js', import.meta.url), 'utf8');
 const runner = source.slice(source.indexOf('function isEmptyGenerationFailure('), source.indexOf('function externalApiBases('));
@@ -122,7 +123,7 @@ test('candidate schemas preserve drafts and every offered template accepts a com
     const stored = { structure: 'profile', profileAppearance: 'beauty-record-status-08', title: '自定义标题',
         pageFieldsText: '观察|填写观察|long|observation', sharedFieldsText: '', pagesText: '此刻|当前状态', statusRecentRecommendations: [] };
     const before = structuredClone(stored);
-    const profiles = [...STATUS_BEAUTY_01_15_IDS, ...STATUS_BEAUTY_16_20_IDS, 'archive-status', ...STATUS_BEAUTY_32_41_IDS];
+    const profiles = [...STATUS_BEAUTY_01_15_IDS, ...STATUS_BEAUTY_16_20_IDS, 'archive-status', ...STATUS_BEAUTY_32_41_IDS, ...PORTRAIT_FREE_IDS];
     const sandbox = { settings: () => stored, resolveStatusIdeaIntent, applyStatusIdeaFocus, statusRecommendationKey,
         parseFields, STATUS_STRUCTURE_PRESETS, STATUS_AI_STRUCTURE_IDS: ['phone', 'profile', 'social', 'chat', 'forum'],
         PROFILE_APPEARANCE_PRESETS: profiles.map(id => STATUS_STRUCTURE_PRESETS.find(item => item.id === id)),
