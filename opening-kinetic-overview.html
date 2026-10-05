@@ -1,0 +1,14 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>三种动态，三种开始</title><style>
+*{box-sizing:border-box;scrollbar-width:none}*::-webkit-scrollbar{display:none}body{margin:0;color:#25302b;background:#dce0d9;font:14px/1.7 system-ui,sans-serif}header,section{max-width:980px;margin:auto}header{padding:46px 24px 26px}header small{font:10px Consolas;letter-spacing:2px;color:#6d7d6d}h1{font-size:35px;letter-spacing:-1.5px;margin:10px 0}header p{font-size:12px;color:#657462}section{padding:25px 24px 50px}.section-head{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:16px}h2{font-size:20px;margin:0}.section-head p{font-size:12px;margin:4px 0;color:#697b68}a{display:inline-block;color:#344536;font-size:12px;padding:7px 13px;border:1px solid #93a28b;text-decoration:none}iframe{display:block;border:0;width:100%;height:700px}footer{text-align:center;color:#7d8d78;padding:10px 20px 45px;font-size:11px}@media(max-width:480px){header{padding:27px 20px 10px}h1{font-size:28px}section{padding:20px 0 35px}.section-head{padding:0 20px}.section-head h2{font-size:17px}.section-head p{font-size:10px}a{white-space:nowrap;font-size:10px}}
+</style></head><body><header><small>MOTION STUDIES / 01—03</small><h1>三种动态，三种开始。</h1><p>指针、信号、像素。下面都是可点击的动态预览，名称和正文可以进入编辑页修改。</p></header><div id="scenes"></div><footer>九一 · 本地预览与示例故事</footer><script type="module">
+import { KINETIC_THEMES,kineticDefaults,buildKineticPage } from './opening-kinetic.js?v=0.11.39';
+const scenes=document.getElementById('scenes'),data=KINETIC_THEMES.map(t=>kineticDefaults(t.id)),frames=[];
+function render(i,page='home'){
+ const adapter='<script>window.getChatMessages=async()=>parent.motionRead('+i+');window.setChatMessages=async rows=>parent.motionSwitch('+i+',rows);document.addEventListener("DOMContentLoaded",()=>new ResizeObserver(()=>parent.motionResize('+i+',document.querySelector("main").getBoundingClientRect().bottom+8)).observe(document.querySelector("main")));<\/script>';
+ frames[i].srcdoc=buildKineticPage(data[i],page,{preview:true}).replace('<body>','<body>'+adapter);
+}
+window.motionRead=i=>[{swipes:['home',...data[i].entries.map(e=>e.id)].map(id=>'<main data-star-page="'+data[i].theme+'-'+id+'"></main>')}];
+window.motionSwitch=async(i,rows)=>{const id=['home',...data[i].entries.map(e=>e.id)][rows[0].swipe_id];if(id)render(i,id);};
+window.motionResize=(i,h)=>{if(Number.isFinite(h))frames[i].style.height=Math.max(250,Math.ceil(h))+'px';};
+KINETIC_THEMES.forEach((t,i)=>{const section=document.createElement('section');section.innerHTML='<div class="section-head"><div><h2>0'+(i+1)+' / '+t.name+'</h2><p>'+t.description+'</p></div><a href="./opening-kinetic-preview.html?theme='+t.id+'">编辑与下载 ↗</a></div><iframe title="'+t.name+'动态预览"></iframe>';scenes.append(section);frames.push(section.querySelector('iframe'));render(i);});
+</script></body></html>

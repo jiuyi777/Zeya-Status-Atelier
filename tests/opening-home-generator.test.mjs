@@ -108,8 +108,8 @@ test('all twelve homepage templates produce genuinely themed exported HTML', () 
     const kinetic = buildOpeningHomeRegex({ ...OPENING_HOME_DEFAULTS, theme: 'kinetic' }).replaceString;
     const noir = buildOpeningHomeRegex({ ...OPENING_HOME_DEFAULTS, theme: 'noir-poster' }).replaceString;
     const negativeSpace = buildOpeningHomeRegex({ ...OPENING_HOME_DEFAULTS, theme: 'negative-space' }).replaceString;
-    assert.match(kinetic, /writing-mode:vertical-rl/);
-    assert.match(kinetic, /transform:rotate\(-7deg\)/);
+    assert.match(kinetic, /class="edition-mark"/);
+    assert.doesNotMatch(kinetic, /transform:rotate\(-7deg\)|transform:skew\(-8deg\)/);
     assert.match(noir, /class="masthead"/);
     assert.match(noir, /\.entry-copy p\{color:#c7bdb9\}/);
     assert.match(negativeSpace, /grid-template-columns:28px minmax\(0,1fr\) 40px/);

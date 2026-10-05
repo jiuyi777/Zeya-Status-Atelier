@@ -4,7 +4,7 @@ export function buildBloomPrintStyle(data, font) {
 :root{--paper:#f7f1e4;--ink:${data.ink};--accent:${data.accent};--sage:#7f9c80;--sand:#d1ac6b;--text:color-mix(in srgb,var(--ink) 24%,#4a4138);--warm-text:color-mix(in srgb,var(--accent) 42%,#665445);--font:${font};--ui:'Noto Sans SC','Microsoft YaHei',sans-serif;--grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='paper'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55 .82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Cpath fill='%2398845e' opacity='.24' filter='url(%23paper)' d='M0 0h180v180H0z'/%3E%3C/svg%3E")}
 body{margin:0;background:transparent;color:var(--text);font:16px/1.85 var(--font)}
 button{cursor:pointer;color:inherit;font:inherit}button:focus-visible{outline:2px solid var(--ink);outline-offset:5px}button:disabled{cursor:default}
-.bloom-page{position:relative;isolation:isolate;width:calc(100% - 40px);max-width:560px;margin:18px auto;padding:32px 42px 34px;border:1px solid #ac977144;border-radius:3px 7px 4px 6px;background:linear-gradient(110deg,#fffdf555,transparent 40%,#b8995510),var(--paper);box-shadow:inset 0 0 32px #ad89550c,2px 3px 0 #e9dfc8,3px 4px 0 #b8a58966,0 13px 28px #534c3018;container-type:inline-size}
+.bloom-page{position:relative;isolation:isolate;width:calc(100% - 40px);max-width:620px;margin:18px auto;padding:30px 36px 28px;border:1px solid #ac977144;border-radius:3px 7px 4px 6px;background:linear-gradient(110deg,#fffdf555,transparent 40%,#b8995510),var(--paper);box-shadow:inset 0 0 32px #ad89550c,2px 3px 0 #e9dfc8,3px 4px 0 #b8a58966,0 13px 28px #534c3018;container-type:inline-size}
 .bloom-page:after{content:'';position:absolute;inset:0;z-index:8;border-radius:inherit;background-image:var(--grain);opacity:.42;mix-blend-mode:multiply;pointer-events:none}
 .bloom-head{position:relative;z-index:2;text-align:right}
 .eyebrow,.bloom-footer{display:none}
@@ -26,9 +26,15 @@ button{cursor:pointer;color:inherit;font:inherit}button:focus-visible{outline:2p
 .bloom-letter{position:relative;margin:16px auto 0}
 .letter-meta{display:flex;justify-content:space-between;align-items:center;gap:14px;font:10px/1.5 var(--ui);letter-spacing:.08em;color:var(--warm-text)}
 .letter-meta button,.bloom-letter>button{border:0;background:transparent;color:var(--warm-text);padding:7px 0;font:13px/1.6 var(--font)}
-.bloom-letter h2{font:400 28px/1.6 var(--font);color:var(--text);letter-spacing:.12em;margin:18px 0 20px;overflow-wrap:anywhere}
-.bloom-letter h2:focus{outline:none}.letter-intro{font:400 ${data.fontSize}px/2 var(--font);white-space:pre-wrap;overflow-wrap:anywhere}
-.bloom-index{margin:26px 0 0}.bloom-entry{display:grid;grid-template-columns:26px minmax(0,1fr) 56px;gap:14px;align-items:center;padding:18px 0}
+.bloom-letter h2{font:400 26px/1.6 var(--font);color:var(--text);letter-spacing:.12em;margin:17px 0 16px;overflow-wrap:anywhere}
+.bloom-letter h2:focus{outline:none}.letter-intro{font:400 ${data.fontSize}px/1.9 var(--font);white-space:pre-wrap;overflow-wrap:anywhere}
+.bloom-page[data-star-page="bloom-home"] .letter-intro{font-size:max(14px,calc(${data.fontSize}px - 1px))}
+.letter-publication{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;border-top:1px solid #ab9b773d;border-bottom:1px solid #ab9b773d;padding:15px 0;margin:23px 0;font-family:var(--ui)}
+.letter-publication dt{font:10px/1.6 var(--ui);letter-spacing:.1em;color:#8b7b63;margin-bottom:6px}
+.letter-publication dd{margin:0;display:flex;flex-wrap:wrap;gap:2px 9px;font:12px/1.8 var(--ui);color:#687269;overflow-wrap:anywhere}
+.letter-routes{margin:21px 0}.letter-routes h3{font:400 14px/1.8 var(--font);margin:12px 0 5px}.letter-routes p{font:13px/1.85 var(--font);white-space:pre-wrap;margin:0;color:#687269}
+.letter-directory-heading{display:flex;justify-content:space-between;gap:14px;color:#8b7b63;font:11px/1.8 var(--ui);letter-spacing:.08em;padding-bottom:9px;border-bottom:1px solid #ab9b773d}
+.bloom-index{margin:24px 0 0}.bloom-entry+.bloom-entry{border-top:1px solid #ab9b7726}.bloom-entry{display:grid;grid-template-columns:26px minmax(0,1fr) 56px;gap:14px;align-items:center;padding:18px 0}
 .num{font:italic 400 15px/1.8 Georgia,serif;color:var(--warm-text);align-self:start}
 .bloom-entry h3{font:400 18px/1.6 var(--font);overflow-wrap:anywhere;margin:0 0 7px}
 .bloom-entry p{font:400 14px/1.8 var(--font);color:#586c62;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
@@ -40,8 +46,8 @@ button{cursor:pointer;color:inherit;font:inherit}button:focus-visible{outline:2p
 .inline-picture figcaption{text-align:center;color:#586c62;font:12px/1.5 var(--ui);margin-top:8px}
 .notice{font:13px/1.6 var(--ui);color:var(--warm-text)}.notice:empty{display:none}
 @media(max-width:600px){
- .bloom-page{width:calc(100% - 26px);margin:14px auto;padding:25px 25px 28px}
- .bloom-head h1{font-size:13px}.bloom-letter{margin-top:14px}.bloom-letter h2{font-size:26px}
+ .bloom-page{width:calc(100% - 16px);margin:10px auto;padding:22px 22px 24px}
+ .bloom-head h1{font-size:13px}.bloom-letter{margin-top:14px}.bloom-letter h2{font-size:24px}
  .bloom-entry{grid-template-columns:24px minmax(0,1fr) 47px;gap:8px;padding:15px 0}
  .bloom-entry h3{font-size:17px}.bloom-entry p{font-size:13px}
 }

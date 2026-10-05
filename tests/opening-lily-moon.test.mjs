@@ -13,7 +13,7 @@ test('lily exports reference the GitHub image URL and include complete executabl
     assert.match(page, /<body>[\s\S]*<\/body><\/html>\n```$/);
     for (const script of page.matchAll(/<script>([\s\S]*?)<\/script>/g)) new Script(script[1]);
   }
-  for (const page of fields.alternate_greetings) assert.equal([...page.matchAll(/data-target="lily-home"/g)].length, 2);
+  for (const page of fields.alternate_greetings) assert.equal([...page.matchAll(/data-target="lily-home"/g)].length, 1);
 });
 
 test('lily return resolves its own navigation among reordered pages including another style', async () => {

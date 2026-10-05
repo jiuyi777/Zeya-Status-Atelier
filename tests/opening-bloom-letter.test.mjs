@@ -80,3 +80,12 @@ test('sharing and importing appearance preserves private greetings and worldbook
  const imported=applyOpeningTemplate(home,pkg);assert.equal(imported.entries,home.entries);assert.equal(imported.worldlines,home.worldlines);assert.equal(imported.title,home.title);
  assert.throws(()=>parseOpeningTemplate({...pkg,version:2}));assert.throws(()=>parseOpeningTemplate({...pkg,appearance:{theme:'unknown'}}));
 });
+
+test('workshop letter keeps the introduction separate from complete recommendations and routes',()=>{
+ const html=buildOpeningHomeRegex({theme:'bloom-letter',intro:'作品的长篇背景。',model:'模型甲\n模型乙',preset:'预设丙',worldlines:[{id:'a',name:'路线甲',description:'完整线路说明'}],entries:[{title:'重逢',target:4}]}).replaceString;
+ const intro=html.match(/<div class="letter-intro">([\s\S]*?)<\/div>/)[1];
+ assert.equal(intro,'作品的长篇背景。');
+ assert.match(html,/<dl class="letter-publication">[\s\S]*模型甲[\s\S]*模型乙[\s\S]*预设丙[\s\S]*<\/dl>/);
+ assert.match(html,/<div class="letter-routes">[\s\S]*完整线路说明/);
+ assert.match(html,/信中目录/);
+});

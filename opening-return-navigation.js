@@ -59,6 +59,19 @@ export function mountOpeningReturnNavigation(getContext, enabled, doc = document
 async function portableOpeningReturn() {
     const button = document.getElementById('sta-opening-return');
     const note = document.getElementById('sta-opening-return-note');
+    function syncFrame() {
+        // An empty body is 0px, but Tavern Helper keeps a new iframe's default 150px height.
+        // Resize only the frame owned by this return control, including inapplicable message floors.
+        try {
+            const frame = typeof window === 'undefined' ? null : window.frameElement;
+            if (!frame) return;
+            const visible = !button.hidden || !note.hidden;
+            frame.hidden = !visible;
+            frame.style.display = visible ? 'block' : 'none';
+            frame.style.height = visible ? `${Math.ceil(document.body.scrollHeight)}px` : '0px';
+        } catch {}
+    }
+    syncFrame();
     try {
         if (typeof getCurrentMessageId !== 'function' || getCurrentMessageId() !== 0) return;
         if (typeof getChatMessages !== 'function' || typeof setChatMessages !== 'function') {
@@ -84,12 +97,12 @@ async function portableOpeningReturn() {
             } catch (error) {
                 note.hidden = false;
                 note.textContent = error.message || '返回失败，请重试';
-            } finally { button.disabled = false; }
+            } finally { button.disabled = false; syncFrame(); }
         });
     } catch (error) {
         note.hidden = false;
         note.textContent = error.message || '读取开场白失败';
-    }
+    } finally { syncFrame(); }
 }
 
 export function buildOpeningReturnRegex() {
@@ -97,8 +110,9 @@ export function buildOpeningReturnRegex() {
         id: 'jiuyi-opening-return-portable-v1',
         scriptName: '九一 · 开场白返回作品目录',
         disabled: false, runOnEdit: true,
-        findRegex: '/^(?!\\s*【主页】)/', trimStrings: [],
-        replaceString: '```html\n<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;background:transparent;scrollbar-width:none}*::-webkit-scrollbar{display:none}button{display:block;margin:8px auto;padding:7px 16px;border:1px solid #9c8970;border-radius:4px;background:#f3eadb;color:#594638;font:14px/1.5 serif;cursor:pointer}[hidden]{display:none!important}p{margin:4px;font:13px/1.5 serif;color:#a54b39}</style></head><body><button id="sta-opening-return" type="button" hidden>← 返回作品目录</button><p id="sta-opening-return-note" role="status" hidden></p><script>(' + portableOpeningReturn.toString() + ')();</script></body></html>\n```\n',
+        findRegex: '/^(?!\\s*【主页】)(?![\\s\\S]*<!--sta-opening-home-->)([\\s\\S]+)$/', trimStrings: [],
+        // SillyTavern expands numbered captures; retain the complete text before the return iframe.
+        replaceString: '$1\n\n```html\n<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;background:transparent;scrollbar-width:none}*::-webkit-scrollbar{display:none}button{display:block;margin:8px auto;padding:7px 16px;border:1px solid #9c8970;border-radius:4px;background:#f3eadb;color:#594638;font:14px/1.5 serif;cursor:pointer}[hidden]{display:none!important}p{margin:4px;font:13px/1.5 serif;color:#a54b39}</style></head><body><button id="sta-opening-return" type="button" hidden>← 返回作品目录</button><p id="sta-opening-return-note" role="status" hidden></p><script>(' + portableOpeningReturn.toString() + ')();</script></body></html>\n```\n',
         placement: [2], substituteRegex: 0, minDepth: null, maxDepth: null,
         markdownOnly: true, promptOnly: false,
     };

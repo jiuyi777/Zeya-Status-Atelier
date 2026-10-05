@@ -10,7 +10,7 @@ test('exported pages contain runnable complete documents and automatic return bu
     assert.match(page, /<body>[\s\S]*<\/body><\/html>\n```$/);
     for (const script of page.matchAll(/<script>([\s\S]*?)<\/script>/g)) new Script(script[1]);
   }
-  for (const page of fields.alternate_greetings) assert.equal([...page.matchAll(/data-target="home"/g)].length, 2);
+  for (const page of fields.alternate_greetings) assert.equal([...page.matchAll(/data-target="home"/g)].length, 1);
   assert.equal(fields.alternate_greetings.length, 3);
 });
 
@@ -30,7 +30,7 @@ test('missing or ambiguous pages and missing helpers never write to chat', async
   const write = () => { writes++; };
   await assert.rejects(switchStarPage('home', undefined, write));
   await assert.rejects(switchStarPage('home', () => [{ swipes: ['original greeting'] }], write));
-  await assert.rejects(switchStarPage('home', () => [{ swipes: ['data-star-page="home"', 'data-star-page="home"'] }], write));
+  await assert.rejects(switchStarPage('home', () => [{ swipes: ['<main data-star-page="home"></main>', '<main data-star-page="home"></main>'] }], write), /重复页面标记/);
   assert.equal(writes, 0);
 });
 

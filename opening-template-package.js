@@ -1,4 +1,4 @@
-import { normalizeOpeningHomeSettings } from './opening-home-generator.js?v=0.11.36';
+import { normalizeOpeningHomeSettings } from './opening-home-generator.js?v=0.11.39';
 // Appearance-only sharing deliberately omits real greetings and worldbook bindings.
 const keys=['theme','font','accent','background','cardBackground','text','secondary','introBackground','buttonColor'];
 export function createOpeningTemplate(home, name=home.title, author=home.author){
