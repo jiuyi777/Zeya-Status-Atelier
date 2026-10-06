@@ -14,7 +14,8 @@
   --focus: #f5d787;
 }
 
-* { box-sizing: border-box; }
+* { box-sizing: border-box; scrollbar-width: none; }
+*::-webkit-scrollbar { display: none; }
 html, body { min-width: 320px; min-height: 100%; margin: 0; background: var(--shell); }
 button, input, select, textarea { font: inherit; }
 button { touch-action: manipulation; }
@@ -573,7 +574,7 @@ svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentCo
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--panel);
-  scrollbar-width: thin;
+  scrollbar-width: none;
 }
 .inspector-empty { display: grid; min-height: 430px; padding: 28px; place-content: center; text-align: center; }
 .inspector-empty[hidden] { display: none; }
