@@ -1,8 +1,8 @@
 import { createOpeningImagePicker } from './opening-image-picker.js';
 import { insertImageAt } from './opening-image-tools.js';
-import { BLOOM_DEFAULTS as FLORAL_DEFAULTS, buildBloomPage as buildFloralPage, buildBloomGreetingFields as buildFloralGreetingFields } from './opening-bloom-letter.js?v=0.11.36';
-import { normalizeFloral } from './opening-floral-letter.js';
-import { createOpeningTemplate } from './opening-template-package.js';
+import { BLOOM_DEFAULTS as FLORAL_DEFAULTS, buildBloomPage as buildFloralPage, buildBloomGreetingFields as buildFloralGreetingFields } from './opening-bloom-letter.js?v=0.11.39';
+import { normalizeFloral } from './opening-floral-letter.js?v=0.11.39';
+import { createOpeningTemplate } from './opening-template-package.js?v=0.11.39';
 const $ = id => document.getElementById(id);
 const frame = document.querySelector('iframe');
 let data = normalizeFloral(structuredClone(FLORAL_DEFAULTS)), selected = data.entries[0].id, current = 'home', homeOpened = false;
@@ -57,7 +57,6 @@ $('add').onclick = () => { const id = 'opening-' + crypto.randomUUID(); data.ent
 $('remove').onclick = () => { data.entries = data.entries.filter(item => item.id !== selected); selected = data.entries[0]?.id; updateSelection(); scheduleRender(); };
 $('up').onclick = () => { const i = data.entries.findIndex(item => item.id === selected); if (i > 0) { [data.entries[i-1], data.entries[i]] = [data.entries[i], data.entries[i-1]]; updateSelection(); scheduleRender(); } };
 $('read').onclick = () => { current = selected; render(); };
-$('home').onclick = () => { current = 'home'; render(); };
 $('width').onclick = () => { const phone = $('stage').classList.toggle('phone'); $('width').textContent = phone ? '恢复宽屏' : '手机宽度'; };
 $('toggle-editor').onclick = () => { const hidden = $('editor').hidden = !$('editor').hidden; document.querySelector('.workspace').style.gridTemplateColumns = hidden ? '1fr' : ''; $('toggle-editor').textContent = hidden ? '展开编辑' : '收起编辑'; };
 $('save').onclick = () => { try { localStorage.setItem('status-atelier-bloom-letter-draft-v1', JSON.stringify(data)); $('editor-status').textContent = '草稿已保存在本机浏览器'; } catch { $('editor-status').textContent = '本地保存失败，请下载可编辑配置保存。'; } };

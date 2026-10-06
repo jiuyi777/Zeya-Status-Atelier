@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { REFINED_HOME_THEMES } from '../opening-refined-layouts.js';
+import { buildOpeningHomeRegex } from '../opening-home-generator.js';
 
 const source = fs.readFileSync(new URL('../index.js', import.meta.url), 'utf8');
 const settingsMarkup = fs.readFileSync(new URL('../settings.html', import.meta.url), 'utf8');
@@ -72,7 +74,10 @@ test('home templates apply complete and visibly distinct visual settings', () =>
     assert.equal(new Set(backgrounds).size, 12);
     for (const theme of ['scroll', 'editorial', 'collage', 'dossier', 'glass', 'kinetic', 'noir-poster', 'negative-space']) {
         assert.match(source, new RegExp(`id: '${theme}'`));
-        assert.match(styleSource, new RegExp(`status-atelier-opening-live\\[data-theme="${theme}"\\]`));
+        if(REFINED_HOME_THEMES.includes(theme)) {
+            assert.match(source, /frame\.srcdoc = buildOpeningHomePreviewDocument\(data\)/);
+            assert.match(buildOpeningHomeRegex({theme}).replaceString,new RegExp(`zoh-root\\[data-theme="${theme}"\\]`));
+        } else assert.match(styleSource, new RegExp(`status-atelier-opening-live\\[data-theme="${theme}"\\]`));
     }
     assert.match(styleSource, /writing-mode: vertical-rl/);
     assert.match(styleSource, /grid-template-columns: minmax\(0, var\(--zop-media-width\)\) minmax\(0, 1fr\)/);

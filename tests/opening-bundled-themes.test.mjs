@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Script } from 'node:vm';
 import { BUNDLED_HOME_TEMPLATES } from '../opening-bundled-themes.js';
-import { buildOpeningHomeRegex, normalizeOpeningHomeSettings } from '../opening-home-generator.js';
+import { buildOpeningHomeRegex, buildOpeningHomePreviewDocument, normalizeOpeningHomeSettings } from '../opening-home-generator.js';
 import { homeSwipeIndex, returnToOpeningHome } from '../opening-return-navigation.js';
 
 for (const theme of [...BUNDLED_HOME_TEMPLATES, ...REFINED_HOME_THEMES.map(id => ({ name: id, values: { theme: id } }))]) test(`${theme.name}: production layout keeps actual targets and worldbook binding`, async () => {
@@ -13,7 +13,7 @@ for (const theme of [...BUNDLED_HOME_TEMPLATES, ...REFINED_HOME_THEMES.map(id =>
     assert.match(regex.replaceString, /<body>[\s\S]*<\/body>[\s\S]*<\/html>\n```$/);
     assert.match(regex.replaceString, /用户作品/);
     assert.match(regex.replaceString, /线路说明/);
-    assert.equal((regex.replaceString.match(/class="zoh-jump"/g) || []).length, 1);
+    assert.equal((regex.replaceString.match(/<button\b[^>]*class="[^"]*\bzoh-jump\b[^"]*"/g) || []).length, 1);
     assert.equal((regex.replaceString.match(/<article class="zoh-entry[" ]/g) || []).length, 1);
     const calls = [], bookCalls = [];
     let click;
@@ -38,6 +38,18 @@ for (const theme of [...BUNDLED_HOME_TEMPLATES, ...REFINED_HOME_THEMES.map(id =>
 
 test('extra font selections survive production normalization', () => {
     for (const font of ['fangsong', 'rounded', 'clerical']) assert.equal(normalizeOpeningHomeSettings({ font }).font, font);
+});
+
+test('editor previews run local motion without installing host navigation or worldbook writes',()=>{
+    for(const theme of ['bloom-letter','pixel-dusk','soft-clock','dossier']){
+        const input={theme,entries:[{title:'测试开场',target:4}],worldlines:[{id:'a',name:'甲线',entries:[{book:'故事',uid:7}]}]};
+        const preview=buildOpeningHomePreviewDocument(input);
+        assert.doesNotMatch(preview,/updateWorldbookWith|setChatMessages|executeSlashCommandsWithOptions/);
+        if(theme==='bloom-letter')assert.match(preview,/<script data-bloom-interaction>/);
+        if(theme==='pixel-dusk')assert.match(preview,/<script data-kinetic-interaction>/);
+        for(const [,script] of preview.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g))new Script(script);
+        assert.match(buildOpeningHomeRegex(input).replaceString,/updateWorldbookWith/);
+    }
 });
 
 test('return finds a reordered unique homepage and never replaces greeting text', async () => {

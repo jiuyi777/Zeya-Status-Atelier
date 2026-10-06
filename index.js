@@ -1,11 +1,11 @@
-import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.35';
+import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.39';
 import { createOpeningImagePicker } from './opening-image-picker.js?v=0.11.36';
 import { insertImageAt } from './opening-image-tools.js?v=0.11.36';
-import { createOpeningTemplate, applyOpeningTemplate } from './opening-template-package.js?v=0.11.36';
-import { REFINED_HOME_THEMES } from './opening-refined-layouts.js?v=0.11.34';
+import { createOpeningTemplate, applyOpeningTemplate } from './opening-template-package.js?v=0.11.39';
+import { REFINED_HOME_THEMES } from './opening-refined-layouts.js?v=0.11.39';
 import { STATUS_BEAUTY_32_41_IDS, buildStatusBeauty32To41Preview, isStatusBeauty32To41 } from './status-beauty-32-41.js?v=0.11.26';
 import { PORTRAIT_FREE_IDS, buildPortraitFreePreview, isPortraitFree } from './status-portrait-free.js?v=0.11.37';
-import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.36';
+import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.39';
 import { parseSingleStatusResult, singleStatusCatalog, selectStatusCandidates } from './status-ai-single.js?v=0.11.37';
 import { makePortableRegex } from './portable-regex.js?v=0.11.30';
 import {
@@ -38,7 +38,7 @@ import {
     mergeStatusRegexScripts,
     legacyStructuredStatusRegexInstallId,
     statusRegexInstallId,
-} from './rule-generator.js?v=0.11.39';
+} from './rule-generator.js?v=0.11.40';
 import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.16';
 import {
     STATUS_BEAUTY_01_15_IDS,
@@ -68,9 +68,10 @@ import {
     appendOpeningWorldline,
     buildOpeningHomeBlock,
     buildOpeningHomeRegex,
+    buildOpeningHomePreviewDocument,
     buildOpeningHomeRegexPack,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.36';
+} from './opening-home-generator.js?v=0.11.39';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -145,7 +146,7 @@ import { getCharaFilename } from '../../../utils.js';
 import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.26';
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.39';
+const VERSION = '0.11.40';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -179,19 +180,19 @@ const HOME_TEMPLATES = Object.freeze([
         values: { theme: 'editorial', font: 'sans', background: '#f4ead5', cardBackground: '#fffaf0', text: '#162c3a', accent: '#b32d25', secondary: '#d29b35', introBackground: '#e9d4ad', buttonColor: '#162c3a' },
     },
     {
-        id: 'collage', name: '08 拼贴手账', description: '胶带便签 · 错位卡片 · 手作纸纹',
+        id: 'collage', name: '08 拼贴手账', description: '纸页拼贴 · 墨印序号 · 手记目录',
         values: { theme: 'collage', font: 'kai', background: '#efe6d7', cardBackground: '#fff8ea', text: '#31302c', accent: '#d55445', secondary: '#3d8190', introBackground: '#f2cc63', buttonColor: '#3d8190' },
     },
     {
-        id: 'dossier', name: '09 黑银档案', description: '机密卷宗 · 红色标签 · 工业编号',
-        values: { theme: 'dossier', font: 'mono', background: '#1b1d1f', cardBackground: '#292d31', text: '#f0eadf', accent: '#c6aa68', secondary: '#a9afb3', introBackground: '#34383d', buttonColor: '#8e2631' },
+        id: 'dossier', name: '09 黑银档案', description: '黑银卷宗 · 细线索引 · 纸白文字',
+        values: { theme: 'dossier', font: 'sans', background: '#1b1d1f', cardBackground: '#292d31', text: '#f0eadf', accent: '#bac8c5', secondary: '#a9afb3', introBackground: '#34383d', buttonColor: '#bac8c5' },
     },
     {
         id: 'glass', name: '10 水色玻璃', description: '雾面玻璃 · 漂浮胶囊 · 柔光渐变',
         values: { theme: 'glass', font: 'sans', background: '#dbecef', cardBackground: '#f1f8f7', text: '#24444d', accent: '#45999b', secondary: '#667ca0', introBackground: '#c8e2df', buttonColor: '#397f83' },
     },
     {
-        id: 'kinetic', name: '11 动态字构', description: '斜向超大字 · 蓝白动势 · 竖排侧题',
+        id: 'kinetic', name: '11 动态字构', description: '蓝白刊页 · 字体入场 · 连续篇目',
         values: { theme: 'kinetic', font: 'sans', background: '#f1f1ef', cardBackground: '#ffffff', text: '#102c9e', accent: '#1438c2', secondary: '#7187df', introBackground: '#dce3ff', buttonColor: '#1438c2' },
     },
     {
@@ -340,6 +341,7 @@ const STATUS_AI_STRUCTURE_IDS = Object.freeze(['phone', 'profile', 'social', 'ch
 const OPENING_HOME_FIELDS = Object.freeze({
     'status-atelier-opening-home-title': 'title',
     'status-atelier-opening-home-subtitle': 'subtitle',
+    'status-atelier-opening-home-display-title': 'displayTitle',
     'status-atelier-opening-home-author': 'author',
     'status-atelier-opening-home-model': 'model',
     'status-atelier-opening-home-preset': 'preset',
@@ -1692,6 +1694,7 @@ function loadSettingsUI() {
         const control = field(id);
         if (control) control.value = String(stored.openingSummary[key] ?? '');
     }
+    updateOpeningDisplayTitleVisibility();
     setWorkspace(stored.activeWorkspace, { persist: false });
     renderTemplateLibraries();
     renderSavedStatusTemplates();
@@ -1735,10 +1738,16 @@ function setOpeningReadStatus(message, state = 'idle', persistNow = false) {
     return Promise.resolve();
 }
 
+function updateOpeningDisplayTitleVisibility() {
+    const row = field('status-atelier-opening-home-display-title')?.closest('label');
+    if (row) row.hidden = settings().openingHome.theme !== 'pixel-dusk';
+}
+
 function readOpeningHomeControl(control) {
     const key = OPENING_HOME_FIELDS[control.id];
     if (!key) return;
     settings().openingHome[key] = control.value;
+    updateOpeningDisplayTitleVisibility();
     updateOpeningHomePreview();
     saveSettingsSoon();
 }
@@ -1757,9 +1766,9 @@ function renderOpeningHomePreview(host) {
     if (isBundledHomeTheme(data.theme) || REFINED_HOME_THEMES.includes(data.theme)) {
         const frame = makeElement('iframe');
         frame.title = '开场白主页预览';
-        frame.setAttribute('sandbox', '');
+        frame.setAttribute('sandbox', 'allow-scripts');
         frame.style.cssText = 'width:100%;height:700px;border:0;';
-        frame.srcdoc = buildOpeningHomeRegex(data).replaceString.slice(8, -4);
+        frame.srcdoc = buildOpeningHomePreviewDocument(data);
         host.replaceChildren(frame);
         return;
     }
@@ -6516,6 +6525,7 @@ async function regenerateOpeningEntry(index) {
 }
 
 function syncOpeningHomeControls() {
+    updateOpeningDisplayTitleVisibility();
     for (const [id, key] of Object.entries(OPENING_HOME_FIELDS)) {
         const control = field(id);
         if (control && control.value !== String(settings().openingHome[key] ?? '')) control.value = String(settings().openingHome[key] ?? '');
@@ -7132,6 +7142,7 @@ function buildGreetingHomeQuickEditor() {
     const definitions = [
         ['主页标题', 'title', false, 80],
         ['小副标题', 'subtitle', false, 100],
+        ...(settings().openingHome.theme === 'pixel-dusk' ? [['顶部像素大字（可换行，留空隐藏）', 'displayTitle', true, 80]] : []),
         ['作者', 'author', false, 80],
         ['推荐模型（每行一个）', 'model', true, 400],
         ['推荐预设（每行一个）', 'preset', true, 400],
