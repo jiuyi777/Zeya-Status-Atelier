@@ -25,6 +25,34 @@ function element(tag, className = '', text = '') {
 }
 const descendants = node => [node, ...node.children.flatMap(descendants)];
 
+test('地图在制作弹窗提供真实编辑器入口，切换其他作品后恢复面板', () => {
+  const host = element('section');
+  const sections = new Map();
+  const stored = { structure: 'quest' };
+  let opened = false;
+  const box = {
+    settings: () => stored,
+    greetingModal: { querySelector(selector) {
+      if (selector === '#status-atelier-modal-structure-controls') return host;
+      if (!sections.has(selector)) sections.set(selector, {});
+      return sections.get(selector);
+    } },
+    makeElement(tag, cls, text) { return { ...element(tag, cls, text), addEventListener(type, fn) { this[type] = fn; } }; },
+    openQuestMapEditor: () => { opened = true; },
+  };
+  vm.runInNewContext(functionSource('renderModalStructureControls'), box);
+  box.renderModalStructureControls();
+  const entry = host.children.find(node => node.tag === 'button');
+  assert.equal(host.hidden, false);
+  assert.ok(entry);
+  entry.click();
+  assert.equal(opened, true);
+  assert.ok([...sections.values()].every(node => node.hidden));
+  stored.structure = 'forum';
+  box.renderModalStructureControls();
+  assert.ok([...sections.values()].every(node => !node.hidden));
+});
+
 for (const preset of portrait.PORTRAIT_FREE_PRESETS) {
   test(`${preset.title}: 制作弹窗选择后渲染专属无头像界面，并导出同一款`, () => {
     const stored = { structure: 'profile', profileAppearance: 'moon-collage',

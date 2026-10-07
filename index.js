@@ -39,7 +39,7 @@ import {
     mergeStatusRegexScripts,
     legacyStructuredStatusRegexInstallId,
     statusRegexInstallId,
-} from './rule-generator.js?v=0.11.37';
+} from './rule-generator.js?v=0.11.40';
 import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.16';
 import {
     STATUS_BEAUTY_01_15_IDS,
@@ -147,7 +147,7 @@ import { getCharaFilename } from '../../../utils.js';
 import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.26';
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.39';
+const VERSION = '0.11.40';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -4033,6 +4033,8 @@ function renderStatusPreview(host) {
         previewShell.dataset.previewStructure = settings().structure;
         previewShell.hidden = settings().structure === 'quest';
     }
+    const modalPreview = host.closest('.status-atelier-modal-status-preview-wrap');
+    if (modalPreview) modalPreview.hidden = settings().structure === 'quest';
     if (settings().structure === 'quest') {
         host.replaceChildren();
         return;
@@ -6597,8 +6599,20 @@ function renderModalStructureControls() {
     const host = greetingModal?.querySelector('#status-atelier-modal-structure-controls');
     if (!host) return;
     host.replaceChildren();
-    host.hidden = settings().structure !== 'phone';
+    const questMode = settings().structure === 'quest';
+    for (const selector of ['.status-atelier-modal-schema-editor', '.status-atelier-status-palette-library', '.status-atelier-expert-install', '.status-atelier-modal-status-preview-wrap']) {
+        const section = greetingModal.querySelector(selector);
+        if (section) section.hidden = questMode;
+    }
+    host.hidden = !questMode && settings().structure !== 'phone';
     if (host.hidden) return;
+    if (questMode) {
+        const open = makeElement('button', 'menu_button status-atelier-primary-action', '进入地图模板编辑器');
+        open.type = 'button';
+        open.addEventListener('click', () => openQuestMapEditor(open));
+        host.append(makeElement('p', '', '在地图编辑器中选择模板、编辑地点、连接路线并生成正则。'), open);
+        return;
+    }
 
     const phone = settings().phoneDesktop;
     const grid = makeElement('div', 'status-atelier-modal-phone-grid');

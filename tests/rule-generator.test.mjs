@@ -847,7 +847,7 @@ test('phone desktop is editable and exports real app navigation with a back acti
     assert.match(STATUS_PHONE_CSS, /focus-visible/);
     assert.match(STATUS_PHONE_CSS, /prefers-reduced-motion:reduce/);
     assert.doesNotMatch(STATUS_PHONE_CSS, /data-phone-shell="classic"\]\{width:min\(94vw,360px\)/);
-    assert.match(STATUS_PHONE_CSS, /data-phone-shell="handheld-white"\]\)\{width:min\(96vw,430px\);height:480px/);
+    assert.doesNotMatch(STATUS_PHONE_CSS, /height:480px/);
 });
 
 test('the original phone, three handheld shells, two touch phone styles, and blackberry are selectable', () => {
