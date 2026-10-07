@@ -1,10 +1,11 @@
-import { EDITORIAL_HOME_STYLE } from './opening-editorial-style.js?v=0.11.39';
-import { buildOpeningReturnRegex } from './opening-return-navigation.js?v=0.11.39';
-import { REFINED_HOME_THEMES, buildRefinedHomeDocument } from './opening-refined-layouts.js?v=0.11.39';
-import { isBundledHomeTheme, buildBundledHomeDocument } from './opening-bundled-themes.js?v=0.11.39';
-import { HOME_TEMPLATES } from './opening-home-catalog.js?v=0.11.39';
-import { CLASSICAL_HOME_STYLE } from './opening-classical-style.js?v=0.11.39';
-import { SCROLL_HOME_STYLE } from './opening-scroll-style.js?v=0.11.39';
+import { withClassicalFrame } from './opening-classical-frame.js?v=0.11.41';
+import { EDITORIAL_HOME_STYLE } from './opening-editorial-style.js?v=0.11.41';
+import { buildOpeningReturnRegex } from './opening-return-navigation.js?v=0.11.41';
+import { REFINED_HOME_THEMES, buildRefinedHomeDocument } from './opening-refined-layouts.js?v=0.11.41';
+import { isBundledHomeTheme, buildBundledHomeDocument } from './opening-bundled-themes.js?v=0.11.41';
+import { HOME_TEMPLATES } from './opening-home-catalog.js?v=0.11.41';
+import { CLASSICAL_HOME_STYLE } from './opening-classical-style.js?v=0.11.41';
+import { SCROLL_HOME_STYLE } from './opening-scroll-style.js?v=0.11.41';
 const THEMES = new Set(HOME_TEMPLATES.map(template => template.id));
 const FONTS = new Set(['serif', 'sans', 'kai', 'mono', 'fangsong', 'rounded', 'clerical']);
 
@@ -223,7 +224,7 @@ function replacementHtml(input) {
     const dedicatedStyle = data.theme === 'classical' ? CLASSICAL_HOME_STYLE : data.theme === 'scroll' ? SCROLL_HOME_STYLE : data.theme === 'editorial' ? EDITORIAL_HOME_STYLE : null;
     const output = dedicatedStyle ? documentHtml.replace(/<style>[\s\S]*?<\/style>/, () => `<style>${dedicatedStyle}</style>`) : REFINED_HOME_THEMES.includes(data.theme) ? buildRefinedHomeDocument(data, documentHtml.match(/<script>([\s\S]*?)<\/script>/)[1]) : isBundledHomeTheme(data.theme) ? buildBundledHomeDocument(data, documentHtml.match(/<script>([\s\S]*?)<\/script>/)[1]) : documentHtml;
     // The following return rule receives this rendered HTML, not the original homepage token.
-    return ['```html', output.replace('<body>', '<body><!--sta-opening-home-->'), '```'].join('\n');
+    return ['```html', (data.theme === 'classical' ? withClassicalFrame(output) : output).replace('<body>', '<body><!--sta-opening-home-->'), '```'].join('\n');
 }
 
 export function buildOpeningHomePreviewDocument(input = {}) {
@@ -242,7 +243,7 @@ export function buildOpeningHomeRegex(input = {}) {
         runOnEdit: true,
         findRegex: '/【主页】/s',
         trimStrings: [],
-        replaceString: replacementHtml(data),
+        replaceString: replacementHtml(data).replaceAll(new URL('./assets/', import.meta.url).href, 'https://raw.githubusercontent.com/jiuyi777/Zeya-Status-Atelier/v0.11.41/assets/'),
         placement: [1, 2],
         substituteRegex: 0,
         minDepth: null,

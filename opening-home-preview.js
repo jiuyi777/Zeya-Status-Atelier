@@ -1,8 +1,7 @@
-import { buildNoirCollagePreview } from './opening-noir-collage.js';
-import { withClassicalFrame } from './opening-classical-frame.js';
-import { LEGACY_HOME_TEMPLATES } from './opening-home-catalog.js?v=0.11.39';
-import { buildOpeningHomePreviewDocument } from './opening-home-generator.js?v=0.11.39';
-import { createOpeningTemplate } from './opening-template-package.js?v=0.11.39';
+import { buildNoirCollagePreview } from './opening-noir-collage.js?v=0.11.41';
+import { LEGACY_HOME_TEMPLATES } from './opening-home-catalog.js?v=0.11.41';
+import { buildOpeningHomePreviewDocument } from './opening-home-generator.js?v=0.11.41';
+import { createOpeningTemplate } from './opening-template-package.js?v=0.11.41';
 const $=id=>document.getElementById(id),frame=document.querySelector('iframe');
 let theme=LEGACY_HOME_TEMPLATES.find(t=>t.id===new URLSearchParams(location.search).get('theme'))||LEGACY_HOME_TEMPLATES[0];
 $('theme').replaceChildren(...LEGACY_HOME_TEMPLATES.map(t=>new Option(t.name,t.id)));
@@ -13,12 +12,10 @@ function settings(){return {...theme.values,title:$('title').value,subtitle:$('s
 function render(){
  $('theme').value=theme.id;$('name').textContent=theme.name;$('description').textContent=theme.description;
  const collage=theme.id==='noir-poster'&&new URLSearchParams(location.search).get('edition')==='collage';
- const ornate=theme.id==='classical'&&new URLSearchParams(location.search).get('edition')==='ornate';
- $('download').disabled=collage||ornate;$('download').title=collage||ornate?'新视觉样稿确认后开放导出':'';
+ $('download').disabled=collage;$('download').title=collage?'新视觉样稿确认后开放导出':'';
  if(collage)$('description').textContent='胶片拼贴 · 动态主视觉 · 新版视觉样稿';
- if(ornate)$('description').textContent='素笺题名 · 暖白纸色 · 金线卷目';
  const html=collage?buildNoirCollagePreview(settings()):buildOpeningHomePreviewDocument(settings());
- frame.srcdoc=(ornate?withClassicalFrame(html):html).replace('</body>',`<script>new ResizeObserver(()=>parent.postMessage({type:'opening-preview-height',height:Math.ceil(document.body.getBoundingClientRect().height)},${JSON.stringify(location.origin)})).observe(document.body);<\/script></body>`);
+ frame.srcdoc=html.replace('</body>',`<script>new ResizeObserver(()=>parent.postMessage({type:'opening-preview-height',height:Math.ceil(document.body.getBoundingClientRect().height)},${JSON.stringify(location.origin)})).observe(document.body);<\/script></body>`);
 }
 window.addEventListener('message',event=>{if(event.source===frame.contentWindow&&event.origin===location.origin&&event.data?.type==='opening-preview-height'&&Number.isFinite(event.data.height))frame.style.height=Math.max(300,Math.min(16000,event.data.height+30))+'px';});
 $('theme').onchange=()=>{theme=LEGACY_HOME_TEMPLATES.find(t=>t.id===$('theme').value);history.replaceState(null,'','?theme='+theme.id);render();};

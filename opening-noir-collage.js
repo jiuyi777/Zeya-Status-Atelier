@@ -1,4 +1,4 @@
-import { normalizeOpeningHomeSettings } from './opening-home-generator.js?v=0.11.39';
+import { normalizeOpeningHomeSettings } from './opening-home-generator.js?v=0.11.41';
 const esc=value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll('`','&#96;');
 const reel = new URL('./assets/opening-noir-poster/film-reel-halftone-v1.webp',import.meta.url).href;
 const sans = new URL('./status-portrait-free/fonts/NotoSansSC.woff2',import.meta.url).href;

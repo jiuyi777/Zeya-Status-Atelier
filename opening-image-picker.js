@@ -1,4 +1,4 @@
-import {compressOpeningImage,uploadOpeningImage,httpsImageUrl} from './opening-image-tools.js';
+import {compressOpeningImage,uploadOpeningImage,httpsImageUrl} from './opening-image-tools.js?v=0.11.41';
 const hostKey='jiuyi-opening-image-host-v1';
 export function createOpeningImagePicker(){
  const dialog=document.createElement('dialog');dialog.className='opening-image-picker';

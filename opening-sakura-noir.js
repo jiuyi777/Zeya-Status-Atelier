@@ -1,4 +1,4 @@
-import { normalizeStar, switchStarPage } from './opening-star-atlas.js?v=0.11.39';
+import { normalizeStar, switchStarPage } from './opening-star-atlas.js?v=0.11.41';
 export const NOIR_IMAGE_URL = 'https://raw.githubusercontent.com/jiuyi777/Zeya-Status-Atelier/e07963a5dfb076a256bff7207f3981c2ea05d5bf/assets/opening-sakura-noir/sakura-noir-20260912.png';
 export const NOIR_DEFAULTS = {
   title: '今夜开场', subtitle: 'SAKURA / AFTER DARK', author: '九一',

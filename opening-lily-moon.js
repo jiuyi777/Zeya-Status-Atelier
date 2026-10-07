@@ -1,4 +1,4 @@
-import { normalizeStar, switchStarPage } from './opening-star-atlas.js?v=0.11.39';
+import { normalizeStar, switchStarPage } from './opening-star-atlas.js?v=0.11.41';
 
 export const LILY_IMAGE_URL = 'https://raw.githubusercontent.com/jiuyi777/Zeya-Status-Atelier/2e50a4bc14ab453ee9846d3125f1fb416463fecf/assets/opening-lily-moon/lily-moon-20260912.png';
 export const LILY_DEFAULTS = {

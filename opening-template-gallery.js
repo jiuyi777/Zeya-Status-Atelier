@@ -1,5 +1,5 @@
-import { HOME_TEMPLATES, LEGACY_HOME_TEMPLATES, openingPreviewHref } from './opening-home-catalog.js?v=0.11.39';
-import { createOpeningTemplate, parseOpeningTemplate } from './opening-template-package.js?v=0.11.39';
+import { HOME_TEMPLATES, LEGACY_HOME_TEMPLATES, openingPreviewHref } from './opening-home-catalog.js?v=0.11.41';
+import { createOpeningTemplate, parseOpeningTemplate } from './opening-template-package.js?v=0.11.41';
 const gallery=document.getElementById('gallery'),notice=document.getElementById('notice'),key='jiuyi-opening-template-shelf-v1';
 let local=[];
 try{local=JSON.parse(localStorage.getItem(key)||'[]').map(parseOpeningTemplate);}catch{notice.textContent='本机展架读取失败，仍可下载内置模板。';}
@@ -19,7 +19,6 @@ function render(){
   const preview=document.createElement('a');preview.className='button';preview.href=openingPreviewHref(p.appearance.theme);preview.textContent='打开预览 ↗';preview.setAttribute('aria-label','预览 '+p.name);
   const button=document.createElement('button');button.className='secondary';button.textContent='下载外观 ↓';button.onclick=()=>download(p);
   actions.append(preview,button);card.append(swatches,name,meta,actions);
-  if(p.appearance.theme==='bloom-letter'){const candidate=document.createElement('a');candidate.href='./opening-bloom-letter-preview.html?art=pencil';candidate.textContent='看新版花朵与信封 ↗';candidate.className='candidate';card.append(candidate);}
   gallery.append(card);
  }
 }

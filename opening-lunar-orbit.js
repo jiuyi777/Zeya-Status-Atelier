@@ -1,4 +1,4 @@
-import { normalizeStar, switchStarPage } from './opening-star-atlas.js?v=0.11.39';
+import { normalizeStar, switchStarPage } from './opening-star-atlas.js?v=0.11.41';
 export const ORBIT_DEFAULTS = {
   title: '循月而行', subtitle: 'PHASES OF A STORY', author: '九一',
   intro: '在这里填写作品的背景、人物与阅读提示。\n选择一个起点，让故事继续。',

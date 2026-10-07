@@ -1,8 +1,8 @@
-import { createOpeningImagePicker } from './opening-image-picker.js';
-import { insertImageAt } from './opening-image-tools.js';
-import { BLOOM_DEFAULTS as FLORAL_DEFAULTS, buildBloomPage as buildFloralPage, buildBloomGreetingFields as buildFloralGreetingFields } from './opening-bloom-letter.js?v=0.11.39';
-import { normalizeFloral } from './opening-floral-letter.js?v=0.11.39';
-import { createOpeningTemplate } from './opening-template-package.js?v=0.11.39';
+import { createOpeningImagePicker } from './opening-image-picker.js?v=0.11.41';
+import { insertImageAt } from './opening-image-tools.js?v=0.11.41';
+import { BLOOM_DEFAULTS as FLORAL_DEFAULTS, buildBloomPage as buildFloralPage, buildBloomGreetingFields as buildFloralGreetingFields } from './opening-bloom-letter.js?v=0.11.41';
+import { normalizeFloral } from './opening-floral-letter.js?v=0.11.41';
+import { createOpeningTemplate } from './opening-template-package.js?v=0.11.41';
 const pencilCandidate = new URLSearchParams(location.search).get('art') === 'pencil';
 const $ = id => document.getElementById(id);
 const frame = document.querySelector('iframe');
@@ -106,9 +106,5 @@ $('upload-cover').onclick=()=>chooseCover($('imageUrl'),'imageUrl',data);
 $('upload-entry-cover').onclick=()=>{if(entry())chooseCover($('entry-imageUrl'),'imageUrl',entry());};
 $('upload-decoration').onclick=()=>chooseCover($('artUrl'),'artUrl',data);
 
-if(pencilCandidate){
- document.body.classList.add('pencil-candidate');
- document.querySelector('.toolbar small').textContent='花朵与信封 · 新版视觉样稿';
- const note=document.createElement('p');note.className='candidate-note';note.textContent='轻触信封，拆开后阅读作品介绍。';document.querySelector('#canvas').prepend(note);
- for(const id of ['export-template','export-draft','export-pages']){$(id).disabled=true;$(id).title='新版插画确认并托管后开放导出；原稿可从展架打开下载。';}
-}
+document.body.classList.add('pencil-candidate');
+document.querySelector('.toolbar small').textContent='纸笺来信 · 点击拆信后阅读作品介绍';

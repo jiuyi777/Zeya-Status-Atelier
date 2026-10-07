@@ -1,4 +1,4 @@
-import { LILY_DEFAULTS, normalizeLily, buildLilyPage, buildLilyGreetingFields } from './opening-lily-moon.js?v=0.11.39';
+import { LILY_DEFAULTS, normalizeLily, buildLilyPage, buildLilyGreetingFields } from './opening-lily-moon.js?v=0.11.41';
 const $ = id => document.getElementById(id);
 const frame = document.querySelector('iframe');
 let data = structuredClone(LILY_DEFAULTS), selected = data.entries[0].id, current = 'home';

@@ -1,5 +1,5 @@
-import { encounterSelection, encounterPool, encounterDraftRecord, randomEncounter, encounterPrompt, encounterScene, submitEncounter } from './opening-encounter-model.js';
-import { encounterStyle } from './opening-encounter-style.js';
+import { encounterSelection, encounterPool, encounterDraftRecord, randomEncounter, encounterPrompt, encounterScene, submitEncounter } from './opening-encounter-model.js?v=0.11.41';
+import { encounterStyle } from './opening-encounter-style.js?v=0.11.41';
 export const ENCOUNTER_MARKER='【江湖偶遇簿】';
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 

@@ -1,7 +1,7 @@
-import { buildBloomPrintStyle } from './opening-bloom-print-style.js?v=0.11.39';
-import { renderImageText, httpsImageUrl } from './opening-image-tools.js?v=0.11.36';
-import { normalizeFloral } from './opening-floral-letter.js?v=0.11.39';
-import { switchStarPage } from './opening-star-atlas.js?v=0.11.39';
+import { buildBloomPrintStyle } from './opening-bloom-print-style.js?v=0.11.41';
+import { renderImageText, httpsImageUrl } from './opening-image-tools.js?v=0.11.41';
+import { normalizeFloral } from './opening-floral-letter.js?v=0.11.41';
+import { switchStarPage } from './opening-star-atlas.js?v=0.11.41';
 export const BLOOM_ART = 'https://raw.githubusercontent.com/jiuyi777/Zeya-Status-Atelier/main/assets/opening-bloom-letter/letter-turquoise-cord.webp';
 const BLOOM_PREVIEW_ART = new URL('./assets/opening-bloom-letter/letter-turquoise-cord.webp', import.meta.url).href;
 export const BLOOM_DEFAULTS = { title: '见花如晤', subtitle: 'A LETTER IN BLOOM', author: '九一', intro: '把未说完的话，藏在花里。\n选一封信，让故事从这里开始。', accent: '#d38a53', ink: '#028e96', fontStyle: 'kai', fontSize: 17, entries: [{id:'opening-1',title:'初见时，花尚未眠',summary:'一场迟来的相逢。',body:'黄昏落在窗沿，你收到了一封没有署名的信。\n\n信纸上只有一句话：\n「花开的时候，你会来吗？」'},{id:'opening-2',title:'寄往旧日的信',summary:'重逢，或重新开始。',body:'旧信封里，藏着一片褪色的花瓣。\n\n你还记得，那个没有说完的春天。'}] };
@@ -41,9 +41,9 @@ export function buildBloomPage(input={},pageId='home',options={}) {
  const d=normalizeFloral({...BLOOM_DEFAULTS,...input}), home=pageId==='home', page=d.entries.find(e=>e.id===pageId); if(!home&&!page)throw new Error('开场白不存在');
  const opened=!home||options.opened===true;
  const key=JSON.stringify([d.title,d.author,d.entries.map(entry=>entry.id)]);
- const pencil=options.preview===true&&options.artVariant==='pencil';
+ const pencil=options.artVariant!=='legacy';
  const font={kai:pencil?'"LXGW WenKai",STKaiti,KaiTi,serif':'STKaiti,KaiTi,serif',serif:'"Noto Serif SC","Source Han Serif SC","Songti SC",STSong,SimSun,serif',sans:'"Noto Sans SC","Microsoft YaHei",sans-serif',fangsong:'STFangsong,FangSong,serif',rounded:'YouYuan,sans-serif',clerical:'LiSu,serif'}[d.fontStyle];
- const art=pencil?new URL('./assets/opening-bloom-letter/letter-pencil-blush-v2.webp',import.meta.url).href:httpsImageUrl(input.artUrl)||(options.preview?BLOOM_PREVIEW_ART:BLOOM_ART);
+ const art=httpsImageUrl(input.artUrl)||(pencil?(options.preview?new URL('./assets/opening-bloom-letter/letter-pencil-blush-v2.webp',import.meta.url).href:'https://raw.githubusercontent.com/jiuyi777/Zeya-Status-Atelier/v0.11.41/assets/opening-bloom-letter/letter-pencil-blush-v2.webp'):(options.preview?BLOOM_PREVIEW_ART:BLOOM_ART));
  const values=v=>String(v??'').split('\n').map(v=>v.trim()).filter(Boolean).map(v=>`<span>${esc(v)}</span>`).join('');
  const recommendations=[['推荐模型',input.model],['推荐预设',input.preset]].filter(([,v])=>String(v??'').trim()).map(([label,v])=>`<div><dt>${label}</dt><dd>${values(v)}</dd></div>`).join('');
  const routes=(input.worldlines||[]).filter(line=>line.description).map(line=>`<section><h3>${esc(line.name)}</h3><p>${esc(line.description)}</p></section>`).join('');

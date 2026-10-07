@@ -10,6 +10,8 @@ import { buildBloomPage } from '../opening-bloom-letter.js';
 test('the full catalog preserves all 12 early and 13 later designs with working preview targets',()=>{
  assert.equal(HOME_TEMPLATES.length,25);assert.equal(LEGACY_HOME_TEMPLATES.length,12);
  assert.equal(new Set(HOME_TEMPLATES.map(t=>t.id)).size,25);
+ const later=HOME_TEMPLATES.filter(t=>!LEGACY_HOME_TEMPLATES.includes(t));
+ assert.deepEqual(later.map(t=>Number(t.name.match(/^\d+/)?.[0])),Array.from({length:13},(_,i)=>i+14));
  for(const t of HOME_TEMPLATES){
   assert.equal(normalizeOpeningHomeSettings(t.values).theme,t.id);
   assert.equal(parseOpeningTemplate(createOpeningTemplate(t.values,t.name)).appearance.theme,t.id);
@@ -23,10 +25,11 @@ test('the full catalog preserves all 12 early and 13 later designs with working 
  }
  assert.throws(()=>openingPreviewHref('unknown'));
 });
-test('workbench and gallery use the same catalog and the new letter remains an isolated visual candidate',()=>{
+test('workbench and gallery use the same catalog and approved letter art reaches preview and export',()=>{
  for(const file of ['index.js','opening-template-gallery.js'])assert.match(readFileSync(new URL('../'+file,import.meta.url),'utf8'),/import \{[^}]*HOME_TEMPLATES[^}]*\} from '.\/opening-home-catalog/);
  const candidate=buildBloomPage({},'home',{preview:true,artVariant:'pencil'});
  assert.match(candidate,/letter-pencil-blush-v2.webp/);assert.match(candidate,/bloom-pencil/);assert.match(candidate,/data-bloom-interaction/);
- assert.match(buildBloomPage(),/letter-turquoise-cord.webp/);
- assert.doesNotMatch(buildBloomPage({},'home',{artVariant:'pencil'}),/letter-pencil-blush-v2/);
+ assert.match(buildBloomPage(),/https:\/\/raw.githubusercontent.com\/[^" ]+letter-pencil-blush-v2.webp/);
+ assert.match(buildBloomPage({},'home',{artVariant:'pencil'}),/letter-pencil-blush-v2/);
+ for(const theme of ['classical','scroll','collage','glass']){const exported=buildOpeningHomeRegex({theme}).replaceString;assert.doesNotMatch(exported,/file:\/\/|http:\/\/(?:localhost|127\.0\.0\.1)/);assert.match(exported,/https:\/\/raw.githubusercontent.com\/jiuyi777\/Zeya-Status-Atelier\/v0.11.41\/assets\//);}
 });

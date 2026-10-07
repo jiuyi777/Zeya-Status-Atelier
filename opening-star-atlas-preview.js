@@ -1,4 +1,4 @@
-import { STAR_DEFAULTS, normalizeStar, buildStarPage, buildStarGreetingFields } from './opening-star-atlas.js?v=0.11.39';
+import { STAR_DEFAULTS, normalizeStar, buildStarPage, buildStarGreetingFields } from './opening-star-atlas.js?v=0.11.41';
 const $ = id => document.getElementById(id);
 const frame = document.querySelector('iframe');
 let data = structuredClone(STAR_DEFAULTS), selected = data.entries[0].id, current = 'home';

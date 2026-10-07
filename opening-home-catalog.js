@@ -1,4 +1,4 @@
-import { BUNDLED_HOME_TEMPLATES } from './opening-bundled-themes.js?v=0.11.39';
+import { BUNDLED_HOME_TEMPLATES } from './opening-bundled-themes.js?v=0.11.41';
 
 export const HOME_TEMPLATES = Object.freeze([
     ...BUNDLED_HOME_TEMPLATES,

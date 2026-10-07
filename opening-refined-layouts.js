@@ -1,6 +1,6 @@
-import { collageStyle } from './opening-collage-style.js';
-import { noirPosterStyle } from './opening-noir-poster-style.js?v=0.11.39';
-import { refinedRevisionStyle } from './opening-refined-style.js?v=0.11.39';
+import { collageStyle } from './opening-collage-style.js?v=0.11.41';
+import { noirPosterStyle } from './opening-noir-poster-style.js?v=0.11.41';
+import { refinedRevisionStyle } from './opening-refined-style.js?v=0.11.41';
 const GLASS_ART = new URL('./assets/opening-glass/iris-pond-v1.webp', import.meta.url).href;
 export const REFINED_HOME_THEMES = ['glass', 'collage', 'noir-poster', 'negative-space', 'kinetic', 'dossier'];
 const escape = value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll('`', '&#96;');

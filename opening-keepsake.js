@@ -1,7 +1,7 @@
-import { normalizeFloral } from './opening-floral-letter.js?v=0.11.39';
-import { switchStarPage } from './opening-star-atlas.js?v=0.11.39';
-import { renderImageText, httpsImageUrl } from './opening-image-tools.js';
-import { keepsakeStyle } from './opening-keepsake-style.js?v=0.11.39';
+import { normalizeFloral } from './opening-floral-letter.js?v=0.11.41';
+import { switchStarPage } from './opening-star-atlas.js?v=0.11.41';
+import { renderImageText, httpsImageUrl } from './opening-image-tools.js?v=0.11.41';
+import { keepsakeStyle } from './opening-keepsake-style.js?v=0.11.41';
 
 export const KEEPSAKE_BOTANICAL_ART = 'https://raw.githubusercontent.com/jiuyi777/Zeya-Status-Atelier/opening-keepsake-artwork/assets/opening-keepsakes/pencil-chamomile.webp';
 const localBotanicalArt = new URL('./assets/opening-keepsakes/pencil-chamomile.webp', import.meta.url).href;

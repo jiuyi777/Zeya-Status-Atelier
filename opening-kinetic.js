@@ -1,9 +1,9 @@
-import { normalizeFloral } from './opening-floral-letter.js?v=0.11.39';
-import { switchStarPage } from './opening-star-atlas.js?v=0.11.39';
-import { renderImageText } from './opening-image-tools.js';
-import { kineticStyle } from './opening-kinetic-style.js?v=0.11.39';
-import { kineticInteraction, clockSelection } from './opening-kinetic-runtime.js?v=0.11.39';
-import { railwayLayout, railwayPoint, pixelRailCar, pixelRailwayRuntime } from './opening-pixel-rail.js?v=0.11.39';
+import { normalizeFloral } from './opening-floral-letter.js?v=0.11.41';
+import { switchStarPage } from './opening-star-atlas.js?v=0.11.41';
+import { renderImageText } from './opening-image-tools.js?v=0.11.41';
+import { kineticStyle } from './opening-kinetic-style.js?v=0.11.41';
+import { kineticInteraction, clockSelection } from './opening-kinetic-runtime.js?v=0.11.41';
+import { railwayLayout, railwayPoint, pixelRailCar, pixelRailwayRuntime } from './opening-pixel-rail.js?v=0.11.41';
 
 export const KINETIC_THEMES = [
   { id: 'soft-clock', name: '此刻，开场', subtitle: 'A MOMENT TO BEGIN', description: '转动时钟 · 指针替你选一个开头', accent: '#ad4e3e', ink: '#282b28', fontStyle: 'serif' },

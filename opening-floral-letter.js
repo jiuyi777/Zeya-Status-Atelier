@@ -1,4 +1,4 @@
-import { normalizeStar, switchStarPage } from './opening-star-atlas.js?v=0.11.39';
+import { normalizeStar, switchStarPage } from './opening-star-atlas.js?v=0.11.41';
 export const FLORAL_DEFAULTS={title:'花间来信',subtitle:'LETTERS IN BLOOM',author:'九一',intro:'在这里填写作品的背景、人物与阅读提示。\n选择一封开场来信，翻开故事。',accent:'#bca56b',ink:'#57515e',fontSize:16,fontStyle:'kai',imageUrl:'',entries:[1,2,3].map(n=>({id:`opening-${n}`,title:`开场白 ${String(n).padStart(2,'0')}`,summary:'填写这封来信的故事简介。',body:'在这里填写开场白正文。\n\n每一段故事，都可以从一封信开始。',imageUrl:''}))};
 function imageUrl(value){try{const url=new URL(value);return url.protocol==='https:'?url.href:'';}catch{return '';}}
 export function normalizeFloral(input){const value={...FLORAL_DEFAULTS,...input},data=normalizeStar(value);data.fontStyle=['serif','kai','sans','fangsong','rounded','clerical'].includes(value.fontStyle)?value.fontStyle:'kai';data.imageUrl=imageUrl(value.imageUrl);data.entries=data.entries.map((entry,index)=>({...entry,imageUrl:imageUrl(value.entries?.[index]?.imageUrl)}));return data;}

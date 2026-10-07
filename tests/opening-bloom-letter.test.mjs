@@ -70,7 +70,7 @@ test('default exports and workshop generation use the published compressed envel
  const fields=buildBloomGreetingFields(BLOOM_DEFAULTS);
  const workshop=buildOpeningHomeRegex({theme:'bloom-letter',title:'公开作品',entries:[{title:'来信',target:2}]}).replaceString;
  for(const html of [fields.first_mes,workshop]){
-  assert.match(html,/<img src="https:\/\/raw\.githubusercontent\.com\/jiuyi777\/Zeya-Status-Atelier\/main\/assets\/opening-bloom-letter\/letter-turquoise-cord\.webp"/);
+  assert.match(html,/<img src="https:\/\/raw\.githubusercontent\.com\/jiuyi777\/Zeya-Status-Atelier\/v0.11.41\/assets\/opening-bloom-letter\/letter-pencil-blush-v2\.webp"/);
   assert.doesNotMatch(html,/<img[^>]+src="(?:file:|http:|blob:|data:)/);
  }
 });
@@ -87,5 +87,5 @@ test('workshop letter keeps the introduction separate from complete recommendati
  assert.equal(intro,'作品的长篇背景。');
  assert.match(html,/<dl class="letter-publication">[\s\S]*模型甲[\s\S]*模型乙[\s\S]*预设丙[\s\S]*<\/dl>/);
  assert.match(html,/<div class="letter-routes">[\s\S]*完整线路说明/);
- assert.match(html,/信中目录/);
+ assert.match(html,/随信附页/);
 });

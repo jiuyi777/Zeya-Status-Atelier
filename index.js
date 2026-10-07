@@ -1,12 +1,12 @@
-import { HOME_TEMPLATES } from './opening-home-catalog.js?v=0.11.39';
-import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.39';
-import { createOpeningImagePicker } from './opening-image-picker.js?v=0.11.36';
-import { insertImageAt } from './opening-image-tools.js?v=0.11.36';
-import { createOpeningTemplate, applyOpeningTemplate } from './opening-template-package.js?v=0.11.39';
-import { REFINED_HOME_THEMES } from './opening-refined-layouts.js?v=0.11.39';
+import { HOME_TEMPLATES } from './opening-home-catalog.js?v=0.11.41';
+import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.41';
+import { createOpeningImagePicker } from './opening-image-picker.js?v=0.11.41';
+import { insertImageAt } from './opening-image-tools.js?v=0.11.41';
+import { createOpeningTemplate, applyOpeningTemplate } from './opening-template-package.js?v=0.11.41';
+import { REFINED_HOME_THEMES } from './opening-refined-layouts.js?v=0.11.41';
 import { STATUS_BEAUTY_32_41_IDS, buildStatusBeauty32To41Preview, isStatusBeauty32To41 } from './status-beauty-32-41.js?v=0.11.26';
 import { PORTRAIT_FREE_IDS, buildPortraitFreePreview, isPortraitFree } from './status-portrait-free.js?v=0.11.37';
-import { isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.39';
+import { isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.41';
 import { parseSingleStatusResult, singleStatusCatalog, selectStatusCandidates } from './status-ai-single.js?v=0.11.37';
 import { makePortableRegex } from './portable-regex.js?v=0.11.30';
 import {
@@ -72,7 +72,7 @@ import {
     buildOpeningHomePreviewDocument,
     buildOpeningHomeRegexPack,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.39';
+} from './opening-home-generator.js?v=0.11.41';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -112,13 +112,13 @@ import {
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
 } from './greeting-workflow.js?v=0.11.16';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.16';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.41';
 import {
     buildCharacterHomepageContext,
     describeCurrentCharacterContext,
     resolveCurrentCharacterContext,
     selectCurrentSillyTavernContext,
-} from './opening-context.js?v=0.11.16';
+} from './opening-context.js?v=0.11.41';
 import {
     buildStatusWorldbookName,
     selectStatusWorldbookTarget,
@@ -147,7 +147,7 @@ import { getCharaFilename } from '../../../utils.js';
 import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.26';
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.40';
+const VERSION = '0.11.41';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,

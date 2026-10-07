@@ -1,7 +1,7 @@
-import { createOpeningImagePicker } from './opening-image-picker.js';
-import { insertImageAt } from './opening-image-tools.js';
-import { KEEPSAKE_THEMES, keepsakeDefaults, normalizeKeepsake as normalizeFloral, buildKeepsakePage as buildFloralPage, buildKeepsakeGreetingFields as buildFloralGreetingFields } from './opening-keepsake.js?v=0.11.39';
-import { createOpeningTemplate } from './opening-template-package.js?v=0.11.39';
+import { createOpeningImagePicker } from './opening-image-picker.js?v=0.11.41';
+import { insertImageAt } from './opening-image-tools.js?v=0.11.41';
+import { KEEPSAKE_THEMES, keepsakeDefaults, normalizeKeepsake as normalizeFloral, buildKeepsakePage as buildFloralPage, buildKeepsakeGreetingFields as buildFloralGreetingFields } from './opening-keepsake.js?v=0.11.41';
+import { createOpeningTemplate } from './opening-template-package.js?v=0.11.41';
 const $ = id => document.getElementById(id);
 const frame = document.querySelector('iframe');
 const initialTheme = new URLSearchParams(location.search).get('theme');
