@@ -11,29 +11,6 @@ export const refinedRevisionStyle = `
 .zoh-root:is([data-theme="collage"],[data-theme="kinetic"],[data-theme="dossier"]) .entry-copy p{font-size:13px;line-height:1.85;white-space:pre-wrap}
 .zoh-root:is([data-theme="collage"],[data-theme="kinetic"],[data-theme="dossier"]) .zoh-jump{border:0;font-size:11px}
 
-/* A notebook made of separate sheets, with small ink stamps and stitched labels. */
-.zoh-root[data-theme="collage"]{--paper:#ede7dc;--card:#fffcf5;--muted:#797064;--ink:#403b33;--accent:#aa5946;background:radial-gradient(#92826a1a .7px,transparent .7px) 0 0/5px 5px,var(--paper);padding:32px 26px}
-.zoh-root[data-theme="collage"] .edition-mark{margin-bottom:24px;letter-spacing:.1em;color:#8c7b65}
-.zoh-root[data-theme="collage"] .edition-mark b{border:1px solid #aa59467a;padding:3px 8px;color:var(--accent);transform:rotate(-5deg)}
-.zoh-root[data-theme="collage"] .masthead{padding:6px 7px 21px;border:0}
-.zoh-root[data-theme="collage"] .masthead h1{font-size:34px;letter-spacing:.055em;line-height:1.5;margin:9px 0 12px}
-.zoh-root[data-theme="collage"] .subtitle{letter-spacing:.13em;font-size:11px}
-.zoh-root[data-theme="collage"] .byline{font-size:12px}
-.zoh-root[data-theme="collage"] .meta{padding:15px 7px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 0 27px}
-.zoh-root[data-theme="collage"] .intro{position:relative;background:var(--card);border:1px solid #d9cdbb;padding:25px 22px 22px;margin:0 0 32px;box-shadow:3px 4px 0 #d5cbb980;isolation:isolate}
-.zoh-root[data-theme="collage"] .intro:before{content:'';position:absolute;width:60px;height:17px;background:#bbc4ae99;top:-9px;left:calc(50% - 30px);transform:rotate(-3deg);border:1px solid #a9b2a026}
-.zoh-root[data-theme="collage"] .intro h2{color:#9a715b;margin-bottom:10px}
-.zoh-root[data-theme="collage"] .directory-heading{padding:0 4px;margin-bottom:17px}
-.zoh-root[data-theme="collage"] .directory-heading h2{font-size:18px}
-.zoh-root[data-theme="collage"] .zoh-list{gap:17px}
-.zoh-root[data-theme="collage"] .zoh-entry{position:relative;grid-template-columns:29px minmax(0,1fr);gap:10px;background:var(--card);padding:20px 18px 13px;border:1px solid #d3c7b5;box-shadow:2px 3px 0 #d5cbb955}
-.zoh-root[data-theme="collage"] .number{font-size:16px;font-style:normal;width:27px;height:27px;text-align:center;line-height:24px;border:1px solid #af78675c;transform:rotate(-6deg)}
-.zoh-root[data-theme="collage"] .entry-copy h3{font-size:17px;font-weight:400}
-.zoh-root[data-theme="collage"] .entry-copy p{color:#776a5e;margin-top:10px}
-.zoh-root[data-theme="collage"] .zoh-jump{grid-column:2;justify-self:end;flex-direction:row;gap:10px;min-width:68px;color:#a3654d;padding:3px 0;min-height:40px}
-.zoh-root[data-theme="collage"] .zoh-jump b{font-size:18px}
-.zoh-root[data-theme="collage"] .route{font-size:10px;color:#8a8174;margin-top:8px}
-
 /* Blue-and-white editorial typography; entries read as one continuous index. */
 .zoh-root[data-theme="kinetic"]{--paper:#f6f6f2;--card:#fff;--ink:#2f343d;--muted:#777c85;--line:#cdd2da;--accent:#314ab4;background:var(--paper)}
 .zoh-root[data-theme="kinetic"] .edition-mark{color:var(--accent);border-bottom:1px solid #bcc6dc;padding-bottom:13px;margin-bottom:0}
@@ -84,9 +61,6 @@ export const refinedRevisionStyle = `
 .zoh-root[data-theme="dossier"] .colophon{border:0;font:9px/1.5 ui-monospace,monospace;letter-spacing:.12em;color:#8a9b97}
 @media(max-width:560px){
  .zoh-root:is([data-theme="collage"],[data-theme="kinetic"],[data-theme="dossier"]){padding:24px 21px}
- .zoh-root[data-theme="collage"] .masthead h1{font-size:29px}
- .zoh-root[data-theme="collage"] .intro{padding:24px 18px 20px}
- .zoh-root[data-theme="collage"] .zoh-entry{padding:18px 15px 11px}
  .zoh-root[data-theme="kinetic"] .masthead h1{font-size:34px}
  .zoh-root[data-theme="kinetic"] .zoh-entry{grid-template-columns:29px minmax(0,1fr) 35px;gap:10px}
  .zoh-root[data-theme="kinetic"] .number{font-size:23px}

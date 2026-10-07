@@ -696,9 +696,8 @@
 
 .status-atelier-opening-live[data-theme="noir-poster"] .status-atelier-opening-live-intro {
     margin: 0;
-    border: 0;
-    background: var(--zop-intro);
-    box-shadow: inset 10px 0 var(--zop-accent);
+    border: 1px solid var(--zop-accent);
+    background: transparent;
     text-align: left;
 }
 

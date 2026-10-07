@@ -1,3 +1,4 @@
+import { LEGACY_HOME_TEMPLATES } from '../opening-home-catalog.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -69,11 +70,11 @@ test('regenerate all preserves written work intro and only fills missing homepag
 
 test('home templates apply complete and visibly distinct visual settings', () => {
     assert.match(source, /Object\.assign\(settings\(\)\.openingHome, template\.values\)/);
-    const backgrounds = [...source.matchAll(/values: \{ theme: '[^']+', font: '[^']+', background: '(#[0-9a-f]+)'/gi)].map(match => match[1]);
+    const backgrounds = LEGACY_HOME_TEMPLATES.map(template => template.values.background);
     assert.equal(backgrounds.length, 12);
     assert.equal(new Set(backgrounds).size, 12);
     for (const theme of ['scroll', 'editorial', 'collage', 'dossier', 'glass', 'kinetic', 'noir-poster', 'negative-space']) {
-        assert.match(source, new RegExp(`id: '${theme}'`));
+        assert.ok(LEGACY_HOME_TEMPLATES.some(template => template.id === theme));
         if(REFINED_HOME_THEMES.includes(theme)) {
             assert.match(source, /frame\.srcdoc = buildOpeningHomePreviewDocument\(data\)/);
             assert.match(buildOpeningHomeRegex({theme}).replaceString,new RegExp(`zoh-root\\[data-theme="${theme}"\\]`));

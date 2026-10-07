@@ -1,3 +1,4 @@
+import { HOME_TEMPLATES } from './opening-home-catalog.js?v=0.11.39';
 import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.39';
 import { createOpeningImagePicker } from './opening-image-picker.js?v=0.11.36';
 import { insertImageAt } from './opening-image-tools.js?v=0.11.36';
@@ -5,7 +6,7 @@ import { createOpeningTemplate, applyOpeningTemplate } from './opening-template-
 import { REFINED_HOME_THEMES } from './opening-refined-layouts.js?v=0.11.39';
 import { STATUS_BEAUTY_32_41_IDS, buildStatusBeauty32To41Preview, isStatusBeauty32To41 } from './status-beauty-32-41.js?v=0.11.26';
 import { PORTRAIT_FREE_IDS, buildPortraitFreePreview, isPortraitFree } from './status-portrait-free.js?v=0.11.37';
-import { BUNDLED_HOME_TEMPLATES, isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.39';
+import { isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.39';
 import { parseSingleStatusResult, singleStatusCatalog, selectStatusCandidates } from './status-ai-single.js?v=0.11.37';
 import { makePortableRegex } from './portable-regex.js?v=0.11.30';
 import {
@@ -153,57 +154,7 @@ const SOCIAL_THEME_ART_URLS = Object.freeze({
     'dossier-clipping': new URL('./assets/personal-feed/editorial-clipping-dossier-v1.jpg', import.meta.url).href,
 });
 
-const HOME_TEMPLATES = Object.freeze([
-    ...BUNDLED_HOME_TEMPLATES,
-    {
-        id: 'classical', name: '01 古典徽章', description: '双层雕花框 · 海军蓝金箔',
-        values: { theme: 'classical', font: 'serif', background: '#f5ead7', cardBackground: '#fffaf0', text: '#2f261e', accent: '#914538', secondary: '#7d6a56', introBackground: '#e8e0d0', buttonColor: '#1a3048' },
-    },
-    {
-        id: 'newspaper', name: '03 复古报刊', description: '报头分栏 · 印章与粗细线',
-        values: { theme: 'newspaper', font: 'serif', background: '#f3eddc', cardBackground: '#eee4ce', text: '#201d19', accent: '#8d2d23', secondary: '#5a5348', introBackground: '#e1d5b9', buttonColor: '#201d19' },
-    },
-    {
-        id: 'timeline', name: '04 中轴时间线', description: '粉青节点 · 立体柔边卡片',
-        values: { theme: 'timeline', font: 'kai', background: '#fffaf1', cardBackground: '#fffaf0', text: '#3c3330', accent: '#b46662', secondary: '#6d9799', introBackground: '#e6efeb', buttonColor: '#6d9799' },
-    },
-    {
-        id: 'minimal', name: '05 构成编辑', description: '米白纸张 · 黑色网格 · 暗红索引',
-        values: { theme: 'minimal', font: 'sans', background: '#f6f4ee', cardBackground: '#fffaf0', text: '#2c322f', accent: '#9b332c', secondary: '#a98763', introBackground: '#e8e0d0', buttonColor: '#171717' },
-    },
-    {
-        id: 'scroll', name: '06 古风卷轴', description: '宣纸卷轴 · 朱印题签 · 竖线笺格',
-        values: { theme: 'scroll', font: 'kai', background: '#ead9b8', cardBackground: '#f7edcf', text: '#3f2d20', accent: '#9a3e2f', secondary: '#6f7251', introBackground: '#dfc99e', buttonColor: '#8a3329' },
-    },
-    {
-        id: 'editorial', name: '07 美式杂志', description: '超大报头 · 不对称分栏 · 黑红索引',
-        values: { theme: 'editorial', font: 'sans', background: '#f4ead5', cardBackground: '#fffaf0', text: '#162c3a', accent: '#b32d25', secondary: '#d29b35', introBackground: '#e9d4ad', buttonColor: '#162c3a' },
-    },
-    {
-        id: 'collage', name: '08 拼贴手账', description: '纸页拼贴 · 墨印序号 · 手记目录',
-        values: { theme: 'collage', font: 'kai', background: '#efe6d7', cardBackground: '#fff8ea', text: '#31302c', accent: '#d55445', secondary: '#3d8190', introBackground: '#f2cc63', buttonColor: '#3d8190' },
-    },
-    {
-        id: 'dossier', name: '09 黑银档案', description: '黑银卷宗 · 细线索引 · 纸白文字',
-        values: { theme: 'dossier', font: 'sans', background: '#1b1d1f', cardBackground: '#292d31', text: '#f0eadf', accent: '#bac8c5', secondary: '#a9afb3', introBackground: '#34383d', buttonColor: '#bac8c5' },
-    },
-    {
-        id: 'glass', name: '10 水色玻璃', description: '雾面玻璃 · 漂浮胶囊 · 柔光渐变',
-        values: { theme: 'glass', font: 'sans', background: '#dbecef', cardBackground: '#f1f8f7', text: '#24444d', accent: '#45999b', secondary: '#667ca0', introBackground: '#c8e2df', buttonColor: '#397f83' },
-    },
-    {
-        id: 'kinetic', name: '11 动态字构', description: '蓝白刊页 · 字体入场 · 连续篇目',
-        values: { theme: 'kinetic', font: 'sans', background: '#f1f1ef', cardBackground: '#ffffff', text: '#102c9e', accent: '#1438c2', secondary: '#7187df', introBackground: '#dce3ff', buttonColor: '#1438c2' },
-    },
-    {
-        id: 'noir-poster', name: '12 赤黑电影海报', description: '深红片头 · 横向海报 · 高对比字幕',
-        values: { theme: 'noir-poster', font: 'sans', background: '#b83a30', cardBackground: '#171313', text: '#fff8ed', accent: '#ef5a49', secondary: '#d6c6b5', introBackground: '#302725', buttonColor: '#fff8ed' },
-    },
-    {
-        id: 'negative-space', name: '13 立绘分割', description: '大图 / 立绘区 · 左右切换 · 自定义比例',
-        values: { theme: 'negative-space', font: 'sans', background: '#f4f1ea', cardBackground: '#fffdfa', text: '#201b1b', accent: '#6c463b', secondary: '#81746b', introBackground: '#ded7cd', buttonColor: '#201b1b', imagePosition: 'left', imageWidth: 42 },
-    },
-]);
+
 
 const STATUS_TEMPLATES = Object.freeze([
     { id: 'custom', name: '自由组件版', description: '默认空白画布，自由增加字段、数值和组件' },

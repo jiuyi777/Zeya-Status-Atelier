@@ -3,6 +3,7 @@ import { insertImageAt } from './opening-image-tools.js';
 import { BLOOM_DEFAULTS as FLORAL_DEFAULTS, buildBloomPage as buildFloralPage, buildBloomGreetingFields as buildFloralGreetingFields } from './opening-bloom-letter.js?v=0.11.39';
 import { normalizeFloral } from './opening-floral-letter.js?v=0.11.39';
 import { createOpeningTemplate } from './opening-template-package.js?v=0.11.39';
+const pencilCandidate = new URLSearchParams(location.search).get('art') === 'pencil';
 const $ = id => document.getElementById(id);
 const frame = document.querySelector('iframe');
 let data = normalizeFloral(structuredClone(FLORAL_DEFAULTS)), selected = data.entries[0].id, current = 'home', homeOpened = false;
@@ -29,7 +30,7 @@ function render() {
     if(title){editable(title,()=>parent.floralQuickEdit('title'),'点击修改作品名称');}
     document.querySelectorAll('[data-image-slot]').forEach(slot=>editable(slot,()=>parent.floralQuickEdit('image',slot.dataset.imageSlot),'添加或更换本条配图'));
   });<\/script>`;
-  frame.srcdoc = buildFloralPage(data, current, {opened:homeOpened,preview:true}).replace('<body>', '<body>' + adapter);
+  frame.srcdoc = buildFloralPage(data, current, {opened:homeOpened,preview:true,artVariant:pencilCandidate?'pencil':undefined}).replace('<body>', '<body>' + adapter);
   $('location').textContent = current === 'home' ? data.title : data.entries.find(item => item.id === current).title;
 }
 // Only this development page provides the simulated host; exported pages use TavernHelper.
@@ -44,7 +45,7 @@ window.floralPreviewSwitch = async rows => {
   if (!target) throw new Error('目标开场白不存在');
   current = target;
   render();
-  $('feedback').textContent = target === 'home' ? '本地模拟：已返回作品导航。' : '本地模拟：已进入开场白；页首和页尾都能返回作品导航。';
+  $('feedback').textContent = target === 'home' ? '本地模拟：已返回作品导航。' : '本地模拟：已进入开场白；页尾可返回作品导航。';
 };
 let pending;
 function scheduleRender() { clearTimeout(pending); pending = setTimeout(render, 180); $('editor-status').textContent = '修改待保存'; }
@@ -104,3 +105,10 @@ function chooseCover(control,key,object){imagePicker.open(url=>{object[key]=url;
 $('upload-cover').onclick=()=>chooseCover($('imageUrl'),'imageUrl',data);
 $('upload-entry-cover').onclick=()=>{if(entry())chooseCover($('entry-imageUrl'),'imageUrl',entry());};
 $('upload-decoration').onclick=()=>chooseCover($('artUrl'),'artUrl',data);
+
+if(pencilCandidate){
+ document.body.classList.add('pencil-candidate');
+ document.querySelector('.toolbar small').textContent='花朵与信封 · 新版视觉样稿';
+ const note=document.createElement('p');note.className='candidate-note';note.textContent='轻触信封，拆开后阅读作品介绍。';document.querySelector('#canvas').prepend(note);
+ for(const id of ['export-template','export-draft','export-pages']){$(id).disabled=true;$(id).title='新版插画确认并托管后开放导出；原稿可从展架打开下载。';}
+}

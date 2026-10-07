@@ -1,0 +1,7 @@
+# 独立水墨祥云
+
+2026-10-06，使用内置 image_gen，以上一版 moon-window-v2.webp 右上方祥云为编辑参考。原始文件 exec-18ba5eda-e5be-47bb-801c-99caa6603df4.png，RGBA 1983 × 793，外部透明像素已核验。压缩交付 ruyi-cloud-v3.webp，640 × 256，21438 字节。标题与角部装饰均按原比例固定大小绘制；可变高度的边框和分隔线仍用 CSS。图片为独立文件，不内嵌角色卡，尚未上传公开地址。
+
+## 提示词
+
+Edit / asset extraction. From the input illustration extract and redraw ONLY the two elongated Chinese ruyi auspicious clouds that sit at the upper right of the ring. Preserve their beautiful flat watercolor style, pale creamy ivory fill, subdued light blue-green watercolor centers, and delicate muted golden-brown ink outlines, curving spiral centers and graceful elongated tapering horizontal tails pointing right. Remove the circular frame, all rocks, all bamboo and all other elements. Output ONE standalone compact flowing cloud motif comprising one larger curled cloud and one smaller trailing cloud, entirely isolated on genuine alpha transparency. Horizontal aspect ratio roughly 2.5 to 1, cloud fills 85% canvas width and 65% height. Keep entire tails and curls within canvas with safe transparent margin, crisp clear boundaries and subtle watercolor grain. This will be displayed at 90px wide beside a live webpage title and at 52px wide as fixed corner decoration. NO text, NO ring or frame, NO shadow, NO 3D shading, NO checkerboard drawn into image, NO black or white background. The cloudy swirls must match the input's upper-right cloud shapes rather than cartoon circles.
