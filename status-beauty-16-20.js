@@ -1,5 +1,5 @@
 const STATUS_BEAUTY_STYLESHEET_URL = new URL('./status-beauty-16-20.css?v=0.11.25', import.meta.url).href;
-const STATUS_BEAUTY_ENVELOPE_URL = new URL('./assets/status-beauty/images/envelope-pink-single-v2.png', import.meta.url).href;
+const STATUS_BEAUTY_ENVELOPE_URL = new URL('./assets/status-beauty/images/envelope-ivory-closed-v2.png', import.meta.url).href;
 const STATUS_BEAUTY_HEART_FRAME_URL = new URL('./assets/status-beauty/images/double-heart-frame-pink-v1.png', import.meta.url).href;
 
 export const STATUS_BEAUTY_16_20_PRESETS = Object.freeze([
@@ -13,7 +13,7 @@ export const STATUS_BEAUTY_16_20_PRESETS = Object.freeze([
             ['衣冠', '具体描述角色当前衣着、配饰与可见细节', 'long', 'attire'],
             ['情愫', '填写角色当前情愫数值或简短阶段', 'text', 'affection'],
             ['欲念', '填写角色当前欲念数值或简短状态', 'text', 'desire'],
-            ['来信', '以角色口吻写此刻最想传达的一小段话', 'long', 'letter'],
+            ['来信', '以角色口吻写完整的第一段来信，至少50个汉字，建议80至150字；结合当前经历、所见与想对收信人说的话自然展开，不重复心声字段', 'long', 'letter'],
             ['心声', '第一人称填写角色没有说出口的真实想法', 'long', 'inner_voice'],
         ],
     },
@@ -84,38 +84,22 @@ export const STATUS_BEAUTY_16_20_IDS = Object.freeze(STATUS_BEAUTY_16_20_PRESETS
 const templates = Object.freeze({
     'beauty-mailbox-16': `
 <article class="status-card design-16">
-  <button class="fold" type="button" aria-expanded="true"><span>收起邮匣</span></button>
-  <div class="compact-summary" aria-hidden="true"><strong data-design-title>邮匣</strong><span><i data-label="1">位置</i> · <i data-value="1"></i></span><b><i data-label="3">情愫</i> <i data-value="3"></i></b><em data-value="6"></em></div>
-  <div class="expanded-content">
-    <header class="mail-heading"><p>P16 · PRIVATE MAILBOX</p><h1 data-design-title>邮匣</h1><span>一封完整来信，收好此刻的位置、衣冠与心绪</span></header>
-    <div class="mail-layout">
-      <section class="mail-object" aria-label="角色与完整信封">
-        <div class="envelope-wrap"><img class="envelope-art" data-design-asset="envelope" alt="一只完整的粉色信封"></div>
-        <div class="sender-card"><img class="avatar" data-st-avatar alt="当前角色头像"><div><span>寄信人</span><strong data-character-name>角色</strong><small>PRIVATE LETTER · <i data-value="0"></i></small></div></div>
-      </section>
-      <section class="mail-status" aria-label="角色来信状态">
-        <section class="mail-address"><article><span data-label="1">位置</span><strong data-value="1"></strong></article><article><span data-label="2">衣冠</span><strong data-value="2"></strong></article></section>
-        <section class="mail-feelings"><article><span data-label="3">情愫</span><i></i><strong data-value="3"></strong></article><article><span data-label="4">欲念</span><i></i><strong data-value="4"></strong></article></section>
-        <div class="mail-notes"><article class="letter-sheet"><span data-label="5">来信</span><p data-value="5"></p><small>LETTER · SEALED FOR YOU</small></article><article class="inner-note"><span data-label="6">心声</span><p data-value="6"></p><small>INNER VOICE</small></article></div>
-      </section>
-    </div>
-  </div>
+ <header class="mail-heading"><h1 data-design-title>邮匣</h1><span data-value="0"></span></header>
+ <button class="mail-seal" type="button" data-mail-open aria-expanded="false" aria-controls="mail-content" aria-label="拆开来信"><img data-design-asset="envelope" alt="棉线与灰褐火漆封缄的米白信封"><span>轻触拆信</span></button>
+ <div class="mail-recipient"><img data-st-avatar alt="寄信人头像"><span><strong data-character-name></strong> 寄来一封信</span></div>
+ <section class="mail-content" id="mail-content" hidden>
+  <article class="mail-sheet" tabindex="-1">
+   <header><span data-label="5"></span><span data-value="0"></span></header>
+   <div class="mail-salutation"><h2>展信安。</h2></div><p class="mail-prose" data-value="5"></p>
+   <section class="mail-postscript"><h3 data-label="6"></h3><p data-value="6"></p></section>
+   <div class="mail-annotation"><p><span data-label="1"></span><b data-value="1"></b></p><p><span data-label="2"></span><b data-value="2"></b></p></div>
+   <footer><div><span data-label="3"></span><b data-value="3"></b></div><div><span data-label="4"></span><b data-value="4"></b></div><strong data-character-name></strong></footer>
+  </article>
+  <button type="button" class="mail-close" data-mail-close>收好信件</button>
+ </section>
 </article>`,
     'beauty-double-heart-17': `
-<article class="status-card design-17">
-  <button class="fold" type="button" aria-expanded="true"><span>收起观察窗</span></button>
-  <div class="compact-summary" aria-hidden="true"><strong data-design-title>双心观察窗</strong><span><i data-label="1">位置</i> · <i data-value="1"></i></span><b><i data-value="3"></i> / <i data-value="4"></i></b><em data-value="6"></em></div>
-  <div class="expanded-content">
-    <header class="window-heading"><p>P17 · DOUBLE HEART WINDOW</p><h1 data-design-title>双心观察窗</h1><span>头像、关系状态与此刻心声</span></header>
-    <div class="window-layout">
-      <section class="heart-column" aria-label="双心观察窗">
-        <div class="heart-stage"><div class="heart-pane portrait-pane"><img class="avatar" data-st-avatar alt="当前角色头像"></div><div class="heart-pane thought-pane"><span data-label="5">内心状态</span><p data-value="5"></p></div><img class="heart-frame" data-design-asset="heartFrame" alt="粉色双心窗框"></div>
-        <section class="heart-readings"><article><span data-label="3">情愫</span><i></i><strong data-value="3"></strong></article><article><span data-label="4">欲念</span><i></i><strong data-value="4"></strong></article></section>
-      </section>
-      <section class="window-status"><section class="window-details"><article><span data-label="1">位置</span><strong data-value="1"></strong></article><article><span data-label="2">衣冠</span><strong data-value="2"></strong></article></section><article class="window-letter"><span data-label="6">来信</span><p data-value="6"></p><small>PRIVATE MESSAGE · <i data-value="0"></i></small></article></section>
-    </div>
-  </div>
-</article>`,
+<article class="status-card design-17"><button class="fold" type="button" aria-expanded="true"><span>收起</span></button><div class="compact-summary"><strong data-design-title>双心观察窗</strong><span data-value="1"></span></div><div class="expanded-content"><header class="folio-title"><p>TWO HEARTS / ONE MOMENT</p><h1 data-design-title>双心观察窗</h1></header><div class="heart-stage"><div class="heart-pane portrait-pane"><img data-st-avatar alt="角色头像"></div><div class="heart-pane thought-pane"><span data-label="3"></span><strong data-value="3"></strong></div><img class="heart-frame" data-design-asset="heartFrame" alt="双心窗框"></div><div class="window-readings"><article><span data-label="0"></span><strong data-value="0"></strong></article><article><span data-label="4"></span><strong data-value="4"></strong></article></div><div class="window-details"><article><span data-label="1"></span><p data-value="1"></p></article><article><span data-label="2"></span><p data-value="2"></p></article></div><article class="window-voice"><span data-label="5"></span><p data-value="5"></p></article><article class="window-letter"><span data-label="6"></span><p data-value="6"></p></article></div></article>`,
     'beauty-checklist-18': `
 <article class="status-card design-18">
   <button class="fold" type="button" aria-expanded="true"><span>收起清单</span></button>
@@ -197,13 +181,13 @@ function buildDocument(rule, source) {
     if (!template) return '';
     const config = safeJsonForScript(designConfig(rule));
     return `<!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="${STATUS_BEAUTY_STYLESHEET_URL}"></head>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="${['beauty-mailbox-16','beauty-double-heart-17'].includes(rule.structure) ? new URL('./status-letter-window.css?v=0.11.42', import.meta.url).href : STATUS_BEAUTY_STYLESHEET_URL}"></head>
 <body class="design-page ${rule.structure}">${template}<textarea class="status-beauty-source" hidden>${sourceMarkup(source)}</textarea><script>
 (function(){
   var root=document.querySelector('.status-card');if(!root)return;var config=${config};
   var dynamicTextSelector='[data-capture],[data-value]';var originalTextStyles=new WeakMap();
-  function mobileScale(){if(window.matchMedia&&window.matchMedia('(max-width:560px)').matches)return 1;var available=Math.max(1,document.documentElement.clientWidth||window.innerWidth||900)-20;return Math.min(1,available/900);}
-  function syncAdaptiveText(){var nodes=Array.from(root.querySelectorAll(dynamicTextSelector));nodes.forEach(function(node){var state=originalTextStyles.get(node);if(!state){state={value:node.style.getPropertyValue('font-size'),priority:node.style.getPropertyPriority('font-size'),fontSize:parseFloat(getComputedStyle(node).fontSize)||0};originalTextStyles.set(node,state)}if(state.value)node.style.setProperty('font-size',state.value,state.priority);else node.style.removeProperty('font-size')});if(document.documentElement.clientWidth<=560&&!root.classList.contains('design-18'))return;function overflows(node){var rect=node.getBoundingClientRect();if(node.scrollWidth>node.clientWidth+1||node.scrollHeight>node.clientHeight+1)return true;for(var parent=node.parentElement;parent&&parent!==root.parentElement;parent=parent.parentElement){var style=getComputedStyle(parent);var parentRect=parent.getBoundingClientRect();var clips=parent===root||/hidden|clip/.test((style.overflowX||'')+' '+(style.overflowY||''))||style.position==='absolute';if(clips&&(rect.right>parentRect.right-1||rect.bottom>parentRect.bottom-1))return true;if(parent===root)break}return false}nodes.forEach(function(node){var state=originalTextStyles.get(node);var textLength=Array.from(String(node.textContent||'').replace(/\s+/g,'')).length;if(!state||!state.fontSize||!textLength)return;var factor=textLength>48?0.56:textLength>32?0.64:textLength>20?0.74:textLength>12?0.86:1;var minimum=Math.min(state.fontSize,12);var target=Math.max(minimum,state.fontSize*factor);if(target<state.fontSize)node.style.setProperty('font-size',target+'px','important');for(var attempts=0;attempts<8&&target>minimum&&overflows(node);attempts++){target=Math.max(minimum,target*.92);node.style.setProperty('font-size',target+'px','important')}})}
+  function mobileScale(){if(config.structure==='beauty-mailbox-16'||config.structure==='beauty-double-heart-17')return 1;if(window.matchMedia&&window.matchMedia('(max-width:560px)').matches)return 1;var available=Math.max(1,document.documentElement.clientWidth||window.innerWidth||900)-20;return Math.min(1,available/900);}
+  function syncAdaptiveText(){if(config.structure==='beauty-mailbox-16'||config.structure==='beauty-double-heart-17')return;var nodes=Array.from(root.querySelectorAll(dynamicTextSelector));nodes.forEach(function(node){var state=originalTextStyles.get(node);if(!state){state={value:node.style.getPropertyValue('font-size'),priority:node.style.getPropertyPriority('font-size'),fontSize:parseFloat(getComputedStyle(node).fontSize)||0};originalTextStyles.set(node,state)}if(state.value)node.style.setProperty('font-size',state.value,state.priority);else node.style.removeProperty('font-size')});if(document.documentElement.clientWidth<=560&&!root.classList.contains('design-18'))return;function overflows(node){var rect=node.getBoundingClientRect();if(node.scrollWidth>node.clientWidth+1||node.scrollHeight>node.clientHeight+1)return true;for(var parent=node.parentElement;parent&&parent!==root.parentElement;parent=parent.parentElement){var style=getComputedStyle(parent);var parentRect=parent.getBoundingClientRect();var clips=parent===root||/hidden|clip/.test((style.overflowX||'')+' '+(style.overflowY||''))||style.position==='absolute';if(clips&&(rect.right>parentRect.right-1||rect.bottom>parentRect.bottom-1))return true;if(parent===root)break}return false}nodes.forEach(function(node){var state=originalTextStyles.get(node);var textLength=Array.from(String(node.textContent||'').replace(/\s+/g,'')).length;if(!state||!state.fontSize||!textLength)return;var factor=textLength>48?0.56:textLength>32?0.64:textLength>20?0.74:textLength>12?0.86:1;var minimum=Math.min(state.fontSize,12);var target=Math.max(minimum,state.fontSize*factor);if(target<state.fontSize)node.style.setProperty('font-size',target+'px','important');for(var attempts=0;attempts<8&&target>minimum&&overflows(node);attempts++){target=Math.max(minimum,target*.92);node.style.setProperty('font-size',target+'px','important')}})}
   function syncHostFrameHeight(){var frame=window.frameElement;if(!frame||frame.classList.contains('status-atelier-beauty-preview-frame'))return;var height=Math.ceil(Math.max(root.offsetHeight||0,root.scrollHeight||0,1)*mobileScale()+20);frame.style.height=height+'px';frame.style.minHeight='0';frame.style.maxHeight='none';}
   function syncLayout(){var scale=mobileScale();root.style.setProperty('--sta-readable-font',(scale<1?Math.ceil(8/scale):8)+'px');syncAdaptiveText();requestAnimationFrame(syncHostFrameHeight);}window.addEventListener('resize',syncLayout);
   var raw=document.querySelector('.status-beauty-source').value||'';var values=[];
@@ -220,6 +204,9 @@ function buildDocument(rule, source) {
   if(config.avatarSource==='none')avatar='';
   root.querySelectorAll('img[data-st-avatar]').forEach(function(image){image.hidden=!avatar;if(!avatar)image.removeAttribute('src');if(avatar){image.src=avatar;image.alt=config.photoAlt;image.referrerPolicy='no-referrer';}image.addEventListener('error',function(){image.removeAttribute('src');});});
   var button=root.querySelector('.fold');var label=button&&button.querySelector('span');if(button)button.addEventListener('click',function(){var closed=root.classList.toggle('is-collapsed');button.setAttribute('aria-expanded',String(!closed));button.setAttribute('aria-label',closed?config.foldClosed:config.foldOpen);if(label)label.textContent=closed?config.foldClosed:config.foldOpen;requestAnimationFrame(syncLayout);});
+  var mailOpen=root.querySelector('[data-mail-open]');var mailClose=root.querySelector('[data-mail-close]');var mailContent=root.querySelector('.mail-content');
+  if(mailOpen&&mailClose&&mailContent){mailOpen.addEventListener('click',function(){if(root.classList.contains('is-letter-open'))return;root.classList.add('is-letter-open');mailOpen.setAttribute('aria-expanded','true');mailContent.hidden=false;root.querySelector('.mail-sheet').focus({preventScroll:true});syncLayout();});mailClose.addEventListener('click',function(){root.classList.remove('is-letter-open');mailContent.hidden=true;mailOpen.setAttribute('aria-expanded','false');mailOpen.focus({preventScroll:true});syncLayout();});}
+  root.querySelectorAll('img').forEach(function(image){image.addEventListener('load',syncLayout);});
   requestAnimationFrame(syncLayout);if(window.ResizeObserver)new ResizeObserver(function(){requestAnimationFrame(syncHostFrameHeight);}).observe(root);
 })();
 </script></body></html>`;

@@ -79,7 +79,7 @@ test('wrapped 429 remains visible and ends after one request', async () => {
 });
 
 test('real AI template application preserves the previous profile draft across structures', () => {
-    const presets = STATUS_BEAUTY_01_15_IDS.map(id => STATUS_STRUCTURE_PRESETS.find(item => item.id === id));
+    const presets = STATUS_BEAUTY_01_15_IDS.map(id => STATUS_STRUCTURE_PRESETS.find(item => item.id === id)).filter(Boolean);
     const [first, second] = presets;
     const stored = { structure: 'profile', profileAppearance: first.id, title: '用户自定义标题',
         pageFieldsText: '观察|用户填写要求|long|observation', profileTemplateDrafts: {}, media: {} };
@@ -123,7 +123,7 @@ test('candidate schemas preserve drafts and every offered template accepts a com
     const stored = { structure: 'profile', profileAppearance: 'beauty-record-status-08', title: '自定义标题',
         pageFieldsText: '观察|填写观察|long|observation', sharedFieldsText: '', pagesText: '此刻|当前状态', statusRecentRecommendations: [] };
     const before = structuredClone(stored);
-    const profiles = [...STATUS_BEAUTY_01_15_IDS, ...STATUS_BEAUTY_16_20_IDS, 'archive-status', ...STATUS_BEAUTY_32_41_IDS, ...PORTRAIT_FREE_IDS];
+    const profiles = [...STATUS_BEAUTY_01_15_IDS, ...STATUS_BEAUTY_16_20_IDS, 'archive-status', ...STATUS_BEAUTY_32_41_IDS, ...PORTRAIT_FREE_IDS].filter(id => STATUS_STRUCTURE_PRESETS.some(item => item.id === id));
     const sandbox = { settings: () => stored, resolveStatusIdeaIntent, applyStatusIdeaFocus, statusRecommendationKey,
         parseFields, STATUS_STRUCTURE_PRESETS, STATUS_AI_STRUCTURE_IDS: ['phone', 'profile', 'social', 'chat', 'forum'],
         PROFILE_APPEARANCE_PRESETS: profiles.map(id => STATUS_STRUCTURE_PRESETS.find(item => item.id === id)),

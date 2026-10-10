@@ -1,12 +1,12 @@
-import { HOME_TEMPLATES } from './opening-home-catalog.js?v=0.11.41';
-import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.41';
-import { createOpeningImagePicker } from './opening-image-picker.js?v=0.11.41';
-import { insertImageAt } from './opening-image-tools.js?v=0.11.41';
-import { createOpeningTemplate, applyOpeningTemplate } from './opening-template-package.js?v=0.11.41';
-import { REFINED_HOME_THEMES } from './opening-refined-layouts.js?v=0.11.41';
-import { STATUS_BEAUTY_32_41_IDS, buildStatusBeauty32To41Preview, isStatusBeauty32To41 } from './status-beauty-32-41.js?v=0.11.26';
+import { HOME_TEMPLATES } from './opening-home-catalog.js?v=0.11.42';
+import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.42';
+import { createOpeningImagePicker } from './opening-image-picker.js?v=0.11.42';
+import { insertImageAt } from './opening-image-tools.js?v=0.11.42';
+import { createOpeningTemplate, applyOpeningTemplate } from './opening-template-package.js?v=0.11.42';
+import { REFINED_HOME_THEMES } from './opening-refined-layouts.js?v=0.11.42';
+import { STATUS_BEAUTY_32_41_IDS, buildStatusBeauty32To41Preview, isStatusBeauty32To41 } from './status-beauty-32-41.js?v=0.11.42';
 import { PORTRAIT_FREE_IDS, buildPortraitFreePreview, isPortraitFree } from './status-portrait-free.js?v=0.11.37';
-import { isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.41';
+import { isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.42';
 import { parseSingleStatusResult, singleStatusCatalog, selectStatusCandidates } from './status-ai-single.js?v=0.11.37';
 import { makePortableRegex } from './portable-regex.js?v=0.11.30';
 import {
@@ -39,7 +39,7 @@ import {
     mergeStatusRegexScripts,
     legacyStructuredStatusRegexInstallId,
     statusRegexInstallId,
-} from './rule-generator.js?v=0.11.40';
+} from './rule-generator.js?v=0.11.42';
 import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.16';
 import {
     STATUS_BEAUTY_01_15_IDS,
@@ -54,7 +54,7 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.37';
+} from './status-beauty-01-15-bundle.js?v=0.11.42';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
@@ -63,7 +63,7 @@ import {
     STATUS_BEAUTY_16_20_IDS,
     buildStatusBeauty16To20Preview,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.26';
+} from './status-beauty-16-20.js?v=0.11.42';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
@@ -72,7 +72,7 @@ import {
     buildOpeningHomePreviewDocument,
     buildOpeningHomeRegexPack,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.41';
+} from './opening-home-generator.js?v=0.11.42';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -112,19 +112,19 @@ import {
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
 } from './greeting-workflow.js?v=0.11.16';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.41';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.42';
 import {
     buildCharacterHomepageContext,
     describeCurrentCharacterContext,
     resolveCurrentCharacterContext,
     selectCurrentSillyTavernContext,
-} from './opening-context.js?v=0.11.41';
+} from './opening-context.js?v=0.11.42';
 import {
     buildStatusWorldbookName,
     selectStatusWorldbookTarget,
     isStatusWorldbookEntry,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.11.26';
+} from './status-worldbook.js?v=0.11.42';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -144,10 +144,10 @@ import {
 import { createOrEditCharacter, getThumbnailUrl, saveSettings, user_avatar } from '../../../../script.js';
 import { getCharaFilename } from '../../../utils.js';
 
-import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.26';
+import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.42';
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.41';
+const VERSION = '0.11.42';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -169,8 +169,9 @@ const PHONE_STRUCTURE_IDS = Object.freeze(['phone', 'profile', 'social', 'forum'
 const PROFILE_APPEARANCE_IDS = Object.freeze([...STATUS_BEAUTY_01_15_IDS, ...STATUS_BEAUTY_16_20_IDS, 'archive-status', ...STATUS_BEAUTY_32_41_IDS, ...PORTRAIT_FREE_IDS]);
 const PROFILE_APPEARANCE_PRESETS = Object.freeze(PROFILE_APPEARANCE_IDS.map((id, index) => {
     const structure = STATUS_STRUCTURE_PRESETS.find(item => item.id === id);
+    if (!structure) return null;
     return { ...structure, code: STATUS_BEAUTY_32_41_IDS.includes(id) || isPortraitFree(id) ? id.slice(-2) : String(index + 1).padStart(2, '0') };
-}));
+}).filter(Boolean));
 const PROFILE_APPEARANCE_DEFAULT = PROFILE_APPEARANCE_PRESETS[0];
 const MOON_COLLAGE_BACKGROUND_URL = new URL('./assets/status-beauty/images/design-03-background-v3.png', import.meta.url).href;
 const MOON_COLLAGE_FOREGROUND_URL = new URL('./assets/status-beauty/images/design-03-photo-foreground-v1.png', import.meta.url).href;
@@ -881,11 +882,11 @@ function renderStatusDesignControls() {
             const button = makeElement('button', 'status-atelier-status-style');
             button.type = 'button';
             button.dataset.statusStyle = style.id;
-            button.title = `${style.code} ${style.name}`;
+            button.title = style.name;
             button.append(
                 makeElement('b', '', style.code),
                 makeElement('span', 'status-atelier-status-style-glyph', style.glyph || '✦'),
-                makeElement('small', '', style.name),
+                makeElement('small', '', style.name.replace(/^\d+\s*[·.、-]?\s*/, '')),
             );
             styleHost.append(button);
         });
@@ -5531,7 +5532,7 @@ async function installStatusWorldbookRule(instanceEntry) {
     let bookName = selectStatusWorldbookTarget({ primaryBook, linkedBooks, boundBook, availableBooks: world_names || [] });
     let createdBook = false;
     if (!bookName) {
-        bookName = buildStatusWorldbookName(character, storageKey);
+        bookName = buildStatusWorldbookName(character, storageKey, world_names || []);
         if (!(world_names || []).includes(bookName)) {
             const created = await createNewWorldInfo(bookName, { interactive: false });
             if (!created) throw new Error('无法创建当前角色的状态栏世界书');

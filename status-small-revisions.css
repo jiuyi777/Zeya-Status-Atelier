@@ -1,0 +1,15 @@
+@import url('./status-approved-type.css');
+.sta-themed-mobile:is(.theme-13,.theme-14){font-family:AtelierApprovedSong,serif!important}
+.sta-themed-mobile:is(.theme-13,.theme-14) h1{font-family:AtelierApprovedHei,serif!important;font-size:24px!important}
+.sta-themed-mobile:is(.theme-13,.theme-14) .mobile-entry>p{font-family:AtelierApprovedSong,serif!important;font-size:15px!important;line-height:1.85!important}
+.sta-themed-mobile:is(.theme-13,.theme-14) .mobile-entry>span{font-family:AtelierApprovedSong,serif!important;font-size:12px!important}
+.sta-themed-mobile.theme-13 .ticket-roll h2{font:19px/1.5 AtelierApprovedHei,serif;margin:8px 0 14px;letter-spacing:.02em}
+.sta-themed-mobile.theme-13 .ticket-roll>section{padding:16px 0;border-bottom:2px dashed #a6ad8c}
+.sta-themed-mobile.theme-13 .ticket-cover{background:#46533c;padding-block:22px}
+.sta-themed-mobile.theme-13 .ticket-end{border-top:4px double #89916f;padding-block:18px}
+.sta-themed-mobile.theme-14{border:5px double #a78d69;padding:18px;background:#f6eddb;box-shadow:inset 0 0 0 5px #fff7e8}
+.sta-themed-mobile.theme-14 .night-meters{border-block:4px double #b4a17e}
+.sta-themed-mobile.theme-14 .night-facts{border-block:4px double #b4a17e;padding-block:10px}
+.sta-themed-mobile.theme-14 .night-notes{position:relative;margin-top:18px;padding:12px 12px 24px;background:#faf5e9;border:1px solid #c7b897;border-radius:0 0 35% 4% / 0 0 10px 3px;box-shadow:0 4px 0 #e4d4b9}
+.sta-themed-mobile.theme-14 .night-notes:after{content:'☾  ·  NIGHT NOTES  ·  ✦';display:block;text-align:center;padding-top:18px;font:11px Georgia,serif;color:#8b704d;letter-spacing:.18em}
+.sta-themed-mobile.theme-14 .night-notes .mobile-entry{border-bottom:1px dashed #baaa88;padding:10px 0}

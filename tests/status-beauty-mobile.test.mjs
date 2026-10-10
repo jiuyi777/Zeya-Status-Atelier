@@ -13,20 +13,16 @@ test('mailbox phone feelings leave the full card width for numeric values with d
     assert.match(css, /\.design-16 \.mail-feelings strong\{min-width:0;max-width:100%;text-align:left;white-space:normal/);
 });
 
-test('flower echo keeps desktop markup and adds a complete phone layout with all 15 captures', () => {
+test('flower echo preserves the original botanical composition on phones', () => {
     const source = {
         id: 'flower',
         replaceString: '<html><head></head><body><details class="status"><div class="canvas"></div><div class="compact"></div></details></body></html>',
     };
     const result = applyStatusBeautyMobileLayout(source, { structure: 'beauty-flower-echo-10' });
 
-    assert.match(result.replaceString, /data-status-atelier-flower-mobile/);
-    assert.match(result.replaceString, /@media\(max-width:700px\)/);
-    assert.match(result.replaceString, /sta-flower-mobile-avatar avatar/);
-    assert.match(result.replaceString, /展开更多状态/);
-    for (let capture = 1; capture <= 15; capture += 1) {
-        assert.match(result.replaceString, new RegExp(`\\$${capture}(?!\\d)`));
-    }
+    assert.match(result.replaceString, /data-flower-reading/);
+    assert.match(result.replaceString, /data-capture="6">\$6/);
+    assert.doesNotMatch(result.replaceString, /sta-flower-mobile/);
     assert.match(result.replaceString, /<div class="canvas"><\/div>/);
 });
 
@@ -117,7 +113,7 @@ test('phone designs retain distinct structures and all fifteen editable values',
         'beauty-flower-reader-12': 'reader-pages',
         'beauty-olive-ticket-13': 'ticket-roll',
         'beauty-cat-rabbit-14': 'night-dialogue',
-        'beauty-rabbit-track-15': 'planner-track',
+        'beauty-rabbit-track-15': 'rabbit-heading',
     };
     for (const [structure, distinctiveClass] of Object.entries(designs)) {
         const source = {replaceString:'<html><head></head><body><details class="status" open><div class="canvas">original</div><div class="compact"></div></details></body></html>'};
@@ -127,7 +123,8 @@ test('phone designs retain distinct structures and all fifteen editable values',
         assert.doesNotMatch(markup, /sta-layered-mobile/);
         assert.doesNotMatch(markup, /<details class="sta-.*-more"/);
         for (let slot = 1; slot <= 15; slot++) {
-            assert.equal((markup.match(new RegExp(`data-capture="${slot}"`, 'g')) || []).length, 1);
+            const retired = Number(structure.slice(-2)) >= 13 && [12,13,14].includes(slot);
+            assert.equal((markup.match(new RegExp(`data-capture="${slot}"`, 'g')) || []).length, retired ? 0 : 1);
         }
         assert.equal(applyStatusBeautyMobileLayout(result, {structure}), result);
     }

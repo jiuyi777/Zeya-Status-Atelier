@@ -7,7 +7,7 @@ import {
     buildStatusBeautyBundledInstruction,
     isStatusBeauty01To15,
     parseStatusBeautyBundledOutput,
-} from './status-beauty-01-15-bundle.js?v=0.11.29';
+} from './status-beauty-01-15-bundle.js?v=0.11.42';
 import {
     STATUS_BEAUTY_05_09_PRESETS,
     buildStatusBeauty05To09Replacement,
@@ -17,12 +17,12 @@ import {
     STATUS_BEAUTY_16_20_PRESETS,
     buildStatusBeauty16To20Replacement,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.25';
+} from './status-beauty-16-20.js?v=0.11.42';
 import {
     STATUS_BEAUTY_32_41_PRESETS,
     buildStatusBeauty32To41Replacement,
     isStatusBeauty32To41,
-} from './status-beauty-32-41.js?v=0.11.25';
+} from './status-beauty-32-41.js?v=0.11.42';
 
 const MOON_COLLAGE_BACKGROUND_URL = new URL('./assets/status-beauty/images/design-03-background-v3.png', import.meta.url).href;
 const MOON_COLLAGE_FOREGROUND_URL = new URL('./assets/status-beauty/images/design-03-photo-foreground-v1.png', import.meta.url).href;
@@ -381,9 +381,9 @@ export const STATUS_STRUCTURE_PRESETS = Object.freeze([
     },
     ...STATUS_BEAUTY_04_PRESETS,
     ...STATUS_BEAUTY_05_09_PRESETS,
-    ...STATUS_BEAUTY_10_15_PRESETS,
-    ...STATUS_BEAUTY_16_20_PRESETS,
-    ...STATUS_BEAUTY_32_41_PRESETS,
+    ...STATUS_BEAUTY_10_15_PRESETS.filter(item => item.id !== 'beauty-flower-echo-10'),
+    ...STATUS_BEAUTY_16_20_PRESETS.filter(item => item.id !== 'beauty-double-heart-17'),
+    ...STATUS_BEAUTY_32_41_PRESETS.filter(item => item.id !== 'beauty-train-route-41'),
     ...PORTRAIT_FREE_PRESETS,
     {
         id: 'custom', name: '自由组件板', description: '保留完全可编辑的通用字段容器',
@@ -452,7 +452,9 @@ export const SOCIAL_APPEARANCE_PRESETS = Object.freeze([
 
 const SOCIAL_APPEARANCE_IDS = new Set(SOCIAL_APPEARANCE_PRESETS.map(item => item.id));
 
-const STATUS_STRUCTURE_IDS = new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id));
+// Retired designs remain readable in existing saved cards, but are not offered for new installations.
+const STATUS_STRUCTURE_REGISTRY = [...STATUS_STRUCTURE_PRESETS, ...STATUS_BEAUTY_10_15_PRESETS, ...STATUS_BEAUTY_16_20_PRESETS, ...STATUS_BEAUTY_32_41_PRESETS];
+const STATUS_STRUCTURE_IDS = new Set(STATUS_STRUCTURE_REGISTRY.map(item => item.id));
 const STATUS_PALETTE_IDS = new Set(STATUS_PALETTE_PRESETS.map(item => item.id));
 const STATUS_CUSTOM_VARIANT_IDS = new Set();
 
@@ -1112,7 +1114,7 @@ export function normalizeRule(input = {}) {
     const sharedFields = parseFields(input.sharedFieldsText);
     const pageFields = parseFields(input.pageFieldsText);
     const structure = STATUS_STRUCTURE_IDS.has(input.structure) ? input.structure : 'custom';
-    const structurePreset = STATUS_STRUCTURE_PRESETS.find(item => item.id === structure)
+    const structurePreset = STATUS_STRUCTURE_REGISTRY.find(item => item.id === structure)
         || STATUS_STRUCTURE_PRESETS.find(item => item.id === 'custom');
     const forumSkin = FORUM_SKIN_IDS.has(input.forumSkin) ? input.forumSkin : 'mist-bbs';
     const forumSkinPreset = FORUM_SKIN_PRESETS.find(item => item.id === forumSkin) || FORUM_SKIN_PRESETS[0];
@@ -1282,6 +1284,7 @@ export function buildAiInstruction(input) {
         `每次正文结束后，必须追加一个 <${rule.tagName}> 状态区块。`,
         '区块中的所有值都必须根据当前剧情动态生成；模板中的双花括号只是填写说明，回复时不得原样保留。',
         phoneNamingGuide,
+        rule.structure === 'beauty-mailbox-16' ? '第一段来信正文至少50个汉字，建议80至150字，结合当前经历自然展开，写成完整段落。' : '',
         valueRule,
         '不要把状态区块放进 Markdown 代码块，不要输出 HTML，不要遗漏记录，也不要附加同类的第二套状态格式。',
         '',
@@ -1813,6 +1816,13 @@ export const CHAT_REFERENCE_CSS = `
 `;
 
 export const STATUS_PHONE_CSS = `
+.zeya-regex-status[data-structure="phone"][data-phone-layout="handheld"]:not(.is-phone-home){aspect-ratio:auto;min-height:360px;filter:none}
+.zeya-regex-status[data-structure="phone"][data-phone-layout="handheld"]:not(.is-phone-home) .zrs-card{position:relative!important;inset:auto!important;width:100%!important;height:360px!important;border:2px solid var(--z-phone-accent);border-radius:18px;background:var(--z-phone-bg)}
+.zeya-regex-status[data-structure="phone"][data-phone-layout="handheld"]:not(.is-phone-home) .zrs-phone-controls{display:none}
+.zeya-regex-status[data-structure="phone"][data-phone-layout="handheld"]:not(.is-phone-home) .zrs-phone-frame{display:none}
+.zeya-regex-status[data-structure="phone"][data-phone-layout="handheld"]:not(.is-phone-home) .zrs-content{inset:5px!important;width:auto!important;height:auto!important}
+.zeya-regex-status[data-structure="phone"][data-phone-layout="handheld"]:not(.is-phone-home) :is(.zrs-value,.zrs-phone-copy,.zrs-phone-diary-body,.zrs-phone-chat){font-size:16px!important;line-height:1.75!important;font-weight:400}
+
 .zrs-phone-pagebar{display:none}
 .zeya-regex-status[data-structure="phone"]{width:min(100%,280px);height:520px;color:#5f84b0;font-family:"Microsoft YaHei UI","PingFang SC","Noto Sans SC",sans-serif}.zeya-regex-status[data-structure="phone"] .zrs-card{width:280px;max-width:100%;height:520px;min-height:0;overflow:hidden;border:4px solid #fff;border-radius:36px;background:#e8f0f8;box-shadow:0 15px 35px rgba(95,132,176,.2)}.zeya-regex-status[data-structure="phone"] .zrs-card::before{content:"";position:absolute;z-index:50;top:10px;left:50%;width:70px;height:20px;transform:translateX(-50%);border-radius:10px;background:#fff;box-shadow:0 2px 5px #0000000d}.zeya-regex-status[data-structure="phone"] .zrs-chrome,.zeya-regex-status[data-structure="phone"] .zrs-header{display:none!important}.zeya-regex-status[data-structure="phone"] .zrs-content{position:absolute;inset:0;min-height:0;padding:45px 15px 25px;overflow:hidden;background:linear-gradient(160deg,#ddecf8,#bad3eb)}.zeya-regex-status[data-structure="phone"] .zrs-content::before{content:"";position:absolute;z-index:1;inset:0;background:#ffffff26;pointer-events:none}.zeya-regex-status[data-structure="phone"] .zrs-structure-art,.zeya-regex-status[data-structure="phone"] .zrs-structure-head{display:none!important}.zeya-regex-status[data-structure="phone"] .zrs-phone-wallpaper{position:absolute;z-index:0;inset:0;overflow:hidden}.zeya-regex-status[data-structure="phone"] .zrs-phone-wallpaper img{display:block;width:100%;height:100%;object-fit:cover;transform-origin:center;will-change:transform,object-position}
 .zeya-regex-status[data-structure="phone"] .zrs-phone-petals{position:absolute;z-index:2;inset:0;overflow:hidden;pointer-events:none}.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i{position:absolute;top:-24px;left:6%;color:#a3c6ed;font:400 12px/1 sans-serif;opacity:.8;animation:zrs-phone-petal-fall 7s linear infinite}.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i::before{content:"✤"}.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i:nth-child(3n+1){color:#77a5d9;font-size:15px;animation-duration:8.5s}.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i:nth-child(3n+2){color:#5f84b0;font-size:10px;animation-duration:6.2s}.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i:nth-child(2){left:15%;animation-delay:-4.8s}.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i:nth-child(3){left:24%;animation-delay:-2.6s}.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i:nth-child(4){left:32%;animation-delay:-7.2s}.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i:nth-child(5){left:40%;animation-delay:-1.4s}.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i:nth-child(6){left:48%;animation-delay:-5.5s}.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i:nth-child(7){left:56%;animation-delay:-3.3s}.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i:nth-child(8){left:64%;animation-delay:-6.8s}.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i:nth-child(9){left:72%;animation-delay:-.7s}.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i:nth-child(10){left:80%;animation-delay:-4.1s}.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i:nth-child(11){left:88%;animation-delay:-2s}.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i:nth-child(12){left:94%;animation-delay:-7.7s}.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i:nth-child(13){left:20%;animation-delay:-6s}.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i:nth-child(14){left:52%;animation-delay:-.2s}.zeya-regex-status[data-structure="phone"] .zrs-phone-petals i:nth-child(15){left:84%;animation-delay:-5s}@keyframes zrs-phone-petal-fall{0%{top:-24px;transform:translateX(0) rotate(0)}50%{transform:translateX(20px) rotate(180deg)}100%{top:540px;transform:translateX(-8px) rotate(360deg)}}

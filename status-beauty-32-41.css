@@ -588,9 +588,10 @@ button {
  width:min(680px,100%);border:2px solid #a8ae98;border-radius:22px;background:var(--paper);box-shadow:0 3px 5px #414c3020,inset 0 0 0 3px #fffdf6;
 }
 .beauty-specimen-drawers-34 .sa32-heading {display:none;}
-.beauty-specimen-drawers-34 .sa32-fold {top:15px;right:11px;width:32px;min-height:34px;justify-content:center;padding:5px;border:0;border-radius:9px;background:transparent;color:var(--accent);}
-.beauty-specimen-drawers-34 .sa32-fold span {font-size:0;}
-.beauty-specimen-drawers-34 .sa32-fold span:after {content:"···";font:bold 22px/1 serif;letter-spacing:2px;}
+.beauty-specimen-drawers-34 .sa32-fold {top:15px;right:11px;width:64px;min-height:34px;justify-content:center;padding:5px;border:0;border-radius:9px;background:transparent;color:var(--accent);}
+.beauty-specimen-drawers-34 .sa32-fold span {font-size:12px;}
+.beauty-specimen-drawers-34 .sa32-fold span:before {content:"全部";}
+.beauty-specimen-drawers-34 .sage-header {padding-right:80px}
 .beauty-specimen-drawers-34 .sa32-fold i {display:none;}
 .beauty-specimen-drawers-34 .scene-drawers {min-height:0;padding:0;color:var(--ink);}
 .sage-header {display:flex;align-items:center;gap:13px;padding:13px 49px 13px 18px;border-bottom:1px solid var(--line);min-height:69px;}
@@ -761,3 +762,19 @@ button {
   .sage-metrics .sa32-field span,.sage-metrics .sa32-field strong {font-size:13px;}
   .sage-bottom .sage-drawer > button {padding:9px 8px;gap:8px;font-size:16px;}
 }
+
+/* Artwork sits in a fixed-ratio window; live data stays outside it. */
+.train-landscape:has(.train-generated-window:not([hidden])){border:0;border-radius:12px;overflow:hidden}
+.train-landscape:has([data-window-scene="dusk"]:not([hidden])){height:auto;aspect-ratio:3/2}
+.train-generated-window{display:block;width:100%;height:100%;object-fit:cover}
+.train-view:has([data-window-scene="dusk"]:not([hidden])) .train-sill{display:none}
+.train-landscape:has([data-window-scene="dusk"]:not([hidden])) .train-window-divider{display:none}
+.pocket-vinyl .pocket-radio{padding:15px;gap:14px;border:1px solid #a7b3a7;border-radius:18px;background:linear-gradient(135deg,#d8dfce,#b7c8bd);box-shadow:inset 0 1px 0 #fff9,0 5px 14px #283e371c}
+.pocket-vinyl .turntable-deck{border:2px solid #81978d;border-radius:12px;background:linear-gradient(145deg,#a7bdb0,#d9deca);box-shadow:inset 0 0 0 4px #e7ead966,0 3px 5px #29473c22}
+.pocket-vinyl .pocket-disc{box-shadow:0 5px 8px #1b352f44,inset 0 0 0 2px #1e3434;background:repeating-radial-gradient(circle,#243e3d 0 2px,#49625d 3px,#243e3d 4px)}
+.pocket-vinyl .pocket-disc i{box-shadow:inset 0 0 0 2px #ead6ae,0 0 0 2px #213b35;background:#b47955}
+.pocket-vinyl .radio-console{border:3px double #b2af90;border-radius:20px;background:linear-gradient(120deg,#f7f0d8,#e5e1c7);box-shadow:2px 3px 6px #405b4422}
+.pocket-vinyl .frequency-scale{background:#f9f3df;box-shadow:inset 0 2px 4px #5b614622}
+.pocket-vinyl .radio-knob{background:radial-gradient(circle at 35% 30%,#fffbed,#c0bea0);box-shadow:1px 3px 4px #48584c44;border:3px double #899985}
+.pocket-vinyl .radio-playlist{margin-top:16px}.pocket-vinyl .radio-program-head{border-bottom:3px double #82958a}
+.sage-bottom .sage-content{min-width:0}.sage-bottom .sa32-field strong{overflow-wrap:anywhere}

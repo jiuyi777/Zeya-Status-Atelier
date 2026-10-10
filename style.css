@@ -4461,9 +4461,10 @@ summary.status-atelier-section-heading {
 }
 
 .status-atelier-status-style-glyph {
-    grid-row: 1 / 3;
-    font-size: 1.25em;
+    display: none;
 }
+
+.zeya-regex-status[data-structure="phone"]:not(.is-phone-home) .status-atelier-phone-wallpaper-edit{display:none}
 
 .status-atelier-chat-style-preview {
     position: relative;
@@ -4532,17 +4533,16 @@ summary.status-atelier-section-heading {
 
 .status-atelier-status-style small {
     min-width: 0;
-    overflow: hidden;
-    font-size: .72em;
-    line-height: 1.15;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-size: .82em;
+    line-height: 1.5;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .status-atelier-status-style[aria-pressed="true"] {
     color: var(--saw-panel);
     background: var(--saw-ink);
-    box-shadow: inset 4px 0 var(--saw-accent);
+    box-shadow: none;
 }
 
 .status-atelier-status-style[aria-pressed="true"] :is(b, small) {

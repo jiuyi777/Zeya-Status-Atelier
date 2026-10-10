@@ -414,7 +414,7 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(settingsMarkup, /选择状态栏模板/);
     assert.doesNotMatch(settingsMarkup, /模板决定完整构图与交互/);
     assert.doesNotMatch(settingsMarkup, /换素材与动效|都是独立模板/);
-    assert.match(settingsMarkup, /status-atelier-setting-section status-atelier-collapsible" open>[\s\S]*?选择状态栏模板/);
+    assert.match(settingsMarkup, /status-atelier-setting-section status-atelier-template-selector">[\s\S]*?选择状态栏模板/);
     assert.doesNotMatch(settingsMarkup, /外观改字体、边框、材质、圆角和组件造型|色卡只控制颜色/);
     assert.match(settingsMarkup, /id="status-atelier-appearance-section"[^>]*open>[\s\S]*?<h4[^>]*>外观与配色<\/h4>/);
     assert.match(source, /appearanceSection\.hidden = \['phone', 'forum', 'chat', 'quest'\]\.includes\(stored\.structure\)/);
@@ -662,7 +662,7 @@ test('one-click scoped status reuses or creates a worldbook and merges the insta
     assert.match(source, /async function installStatusWorldbookRule\(instanceEntry\)/);
     const scopedWorldbook = source.match(/async function installStatusWorldbookRule\(instanceEntry\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(scopedWorldbook, /currentLinkedWorldbooks\(ctx\)/);
-    assert.match(scopedWorldbook, /buildStatusWorldbookName\(character, storageKey\)/);
+    assert.match(scopedWorldbook, /buildStatusWorldbookName\(character, storageKey, world_names \|\| \[\]\)/);
     assert.match(scopedWorldbook, /createNewWorldInfo\(bookName, \{ interactive: false \}\)/);
     assert.match(scopedWorldbook, /charUpdateAddAuxWorld\(character\.avatar, bookName\)/);
     assert.match(source, /saveWorldInfo\(bookName, result\.data, true\)/);

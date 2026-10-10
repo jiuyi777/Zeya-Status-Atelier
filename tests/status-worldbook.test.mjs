@@ -31,7 +31,8 @@ test('builds a stable character-specific status worldbook name', () => {
     const other = buildStatusWorldbookName({ name: '塞恩', avatar: 'saien.png' }, 'character:saien.png');
     assert.equal(first, again);
     assert.notEqual(first, other);
-    assert.match(first, /^九一-状态栏-温瑟-/);
+    assert.equal(first, '九一-状态栏-温瑟');
+    assert.equal(buildStatusWorldbookName({ name: '温瑟' }, '', [first]), '九一-状态栏-温瑟（2）');
 });
 
 test('keeps different status rules, updates only the same identity, and preserves unrelated entries', () => {

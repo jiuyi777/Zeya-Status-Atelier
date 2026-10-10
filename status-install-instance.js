@@ -12,9 +12,8 @@ export function createStatusInstallInstance(script, entry, token) {
     let content = String(entry.content || '');
     for (const oldTag of tags) content = content.replaceAll(`<${oldTag}>`, `<${tag}>`).replaceAll(`</${oldTag}>`, `</${tag}>`);
     if (!content.includes(`<${tag}>`)) throw new Error('世界书与正则标签不一致，已停止安装');
-    const label = key.slice(-8);
     return {
-        script: {...script, id:`sta-instance-${key}`, statusAtelierInstance:key, scriptName:`${script.scriptName} · ${label}`, findRegex},
-        entry: {...entry, automationId:`jiuyi-wb-instance-${key}`, comment:`${entry.comment} · ${label}`, content},
+        script: {...script, id:`sta-instance-${key}`, statusAtelierInstance:key, scriptName:script.scriptName, findRegex},
+        entry: {...entry, automationId:`jiuyi-wb-instance-${key}`, comment:entry.comment, content},
     };
 }

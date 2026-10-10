@@ -56,8 +56,8 @@ test('parses any number of switch pages without storing story values', () => {
 });
 
 test('registers genuinely different component structures and composable palettes', () => {
-    assert.equal(STATUS_STRUCTURE_PRESETS.length, 46);
-    assert.equal(new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id)).size, 46);
+    assert.equal(STATUS_STRUCTURE_PRESETS.length, 43);
+    assert.equal(new Set(STATUS_STRUCTURE_PRESETS.map(item => item.id)).size, 43);
     assert.equal(STATUS_PALETTE_PRESETS.length, 26);
     assert.equal(new Set(STATUS_PALETTE_PRESETS.map(item => item.id)).size, 26);
     assert.ok(STATUS_PALETTE_PRESETS.every(item => ['accent', 'background', 'card', 'text', 'muted'].every(key => /^#[0-9a-f]{6}$/i.test(item[key]))));
@@ -259,9 +259,9 @@ test('removes the rejected 40-card recipe collection from selectable structures'
         'phone', 'profile', 'archive-status', 'pixel-chat', 'pixel-handheld', 'social', 'forum', 'chat', 'collage', 'music', 'quest', 'casefile',
         'beauty-crimson-letter-01', 'beauty-burgundy-album-02', 'moon-collage', 'beauty-dossier-04',
         'beauty-current-status-05', 'beauty-card-status-06', 'beauty-letter-status-07', 'beauty-record-status-08', 'beauty-archive-status-09',
-        'beauty-flower-echo-10', 'beauty-clock-travel-11', 'beauty-flower-reader-12', 'beauty-olive-ticket-13', 'beauty-cat-rabbit-14', 'beauty-rabbit-track-15',
-        'beauty-mailbox-16', 'beauty-double-heart-17', 'beauty-checklist-18', 'beauty-broadcast-19', 'beauty-wallet-20',
-        'beauty-folded-herbarium-32', 'beauty-radar-watch-33', 'beauty-specimen-drawers-34', 'beauty-lunar-orbit-35', 'beauty-ticket-reveal-36', 'beauty-voices-carousel-37', 'beauty-telegraph-strip-38', 'beauty-perfume-wheel-39', 'beauty-radio-tuner-40', 'beauty-train-route-41',
+        'beauty-clock-travel-11', 'beauty-flower-reader-12', 'beauty-olive-ticket-13', 'beauty-cat-rabbit-14', 'beauty-rabbit-track-15',
+        'beauty-mailbox-16', 'beauty-checklist-18', 'beauty-broadcast-19', 'beauty-wallet-20',
+        'beauty-folded-herbarium-32', 'beauty-radar-watch-33', 'beauty-specimen-drawers-34', 'beauty-lunar-orbit-35', 'beauty-ticket-reveal-36', 'beauty-voices-carousel-37', 'beauty-telegraph-strip-38', 'beauty-perfume-wheel-39', 'beauty-radio-tuner-40',
         'portrait-pixel-dream-42', 'portrait-earth-night-43', 'portrait-quiet-clock-44',
         'custom',
     ]);
@@ -286,7 +286,7 @@ test('status beauty 01 to 15 map every bundled original regex to its exact AI ou
         STATUS_STRUCTURE_PRESETS.find(item => item.id === 'moon-collage').fields.map(field => field[0]),
         ['情愫', '欲念', '衣冠', '身处', '心语', '书信', '情愫注', '欲念注'],
     );
-    for (const id of STATUS_BEAUTY_01_15_IDS) {
+    for (const id of STATUS_BEAUTY_01_15_IDS.filter(id => STATUS_STRUCTURE_PRESETS.some(p => p.id === id))) {
         const preset = STATUS_STRUCTURE_PRESETS.find(item => item.id === id);
         assert.ok(preset, `${id} is selectable`);
         const input = {
@@ -466,7 +466,7 @@ test('status beauty 01 to 15 export the edited field order into their bundled la
     assert.ok(browserScripts.length);
     browserScripts.forEach(match => assert.doesNotThrow(() => new Function(match[1])));
 
-    for (const id of STATUS_BEAUTY_01_15_IDS) {
+    for (const id of STATUS_BEAUTY_01_15_IDS.filter(id => STATUS_STRUCTURE_PRESETS.some(p => p.id === id))) {
         const bundledPreset = STATUS_STRUCTURE_PRESETS.find(item => item.id === id);
         const meta = statusBeautyBundleMeta(id);
         const bundledScript = JSON.parse(readFileSync(new URL(`../assets/status-beauty/regexes/${meta.file}`, import.meta.url), 'utf8'));
@@ -588,7 +588,6 @@ test('status beauty 16 to 20 keep their own field contracts and export complete 
     assert.match(statusBeauty16To20Css, /\[data-value\]\[data-sta-kind="long"\][^{]*\{font-family:[^}]*font-weight:400!important/);
     const expected = new Map([
         ['beauty-mailbox-16', ['时间', '位置', '衣冠', '情愫', '欲念', '来信', '心声']],
-        ['beauty-double-heart-17', ['时间', '位置', '衣冠', '情愫', '欲念', '内心状态', '来信']],
         ['beauty-checklist-18', ['时间', '位置', '身体状态', '双手动作', '当前姿态', '心绪', '好感度', '关系状态']],
         ['beauty-broadcast-19', ['时间', '位置', '今日播报', '今日宜', '今日忌', '章节', '角色心声', '御神签', '签文']],
         ['beauty-wallet-20', ['时间', '位置', '身体状态', '双手动作', '当前姿态', '心绪', '好感度', '关系状态']],
@@ -614,8 +613,8 @@ test('status beauty 16 to 20 keep their own field contracts and export complete 
         assert.match(instruction, new RegExp(`\\[View1\\|\\{\\{当前角色·${labels[0]}`));
         assert.match(replacement, /^```html\n<!doctype html>/);
         assert.match(replacement, /<body class="design-page beauty-/);
-        assert.match(replacement, /status-beauty-16-20\.css/);
-        assert.match(replacement, /status-beauty-16-20\.css\?v=0\.11\.25/);
+        assert.match(replacement, /-(16|17)$/.test(id) ? /status-letter-window\.css/ : /status-beauty-16-20\.css/);
+        if (!/-(16|17)$/.test(id)) assert.match(replacement, /status-beauty-16-20\.css\?v=0\.11\.25/);
         assert.match(replacement, /https:\/\/example\.com\/character\.png/);
         assert.match(replacement, /\$1/);
         assert.match(replacement, /classList\.toggle\('is-collapsed'\)/);
@@ -661,7 +660,7 @@ test('all bundled status regexes receive the same readable mobile title and body
     assert.match(result.replaceString, /var kinds=\["long"\]/);
     assert.equal(applyStatusBeautyMobileTypography(result, rule), result);
 
-    for (const id of STATUS_BEAUTY_01_15_IDS) {
+    for (const id of STATUS_BEAUTY_01_15_IDS.filter(id => STATUS_STRUCTURE_PRESETS.some(p => p.id === id))) {
         const preset = STATUS_STRUCTURE_PRESETS.find(item => item.id === id);
         const bundled = JSON.parse(readFileSync(new URL(`../assets/status-beauty/regexes/${statusBeautyBundleMeta(id).file}`, import.meta.url), 'utf8'));
         const normalized = normalizeRule({

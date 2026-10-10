@@ -12,15 +12,6 @@ export function selectStatusWorldbookTarget({ primaryBook = '', linkedBooks = []
         || (linked.includes(boundBook) ? boundBook : '') || linked[0] || '';
 }
 
-function stableHash(value) {
-    let hash = 2166136261;
-    for (const character of String(value || '')) {
-        hash ^= character.codePointAt(0);
-        hash = Math.imul(hash, 16777619);
-    }
-    return (hash >>> 0).toString(36).slice(0, 7);
-}
-
 function safeBookPart(value) {
     return String(value || '角色')
         .replace(/\.[^.]+$/, '')
@@ -30,9 +21,12 @@ function safeBookPart(value) {
         .slice(0, 28) || '角色';
 }
 
-export function buildStatusWorldbookName(character = {}, storageKey = '') {
+export function buildStatusWorldbookName(character = {}, storageKey = '', availableBooks = []) {
     const identity = character.avatar || character.name || storageKey || '角色';
-    return `九一-状态栏-${safeBookPart(character.name || identity)}-${stableHash(identity)}`;
+    const base = `九一-状态栏-${safeBookPart(character.name || identity)}`;
+    let name = base;
+    for (let number = 2; availableBooks.includes(name); number += 1) name = `${base}（${number}）`;
+    return name;
 }
 
 export function isStatusWorldbookEntry(entry) {

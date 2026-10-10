@@ -1,0 +1,39 @@
+@font-face{font-family:AtelierBookSong;src:url("https://raw.githubusercontent.com/Janergy/Portada/b2b5b7427c2be744807b18d0cb58696bacbb4f8b/Beautybook-2023-07-05/chinesefonts/FZXSSJW.TTF") format("truetype");font-weight:400;font-display:swap}
+@font-face{font-family:AtelierBookHei;src:url("https://raw.githubusercontent.com/Janergy/Portada/b2b5b7427c2be744807b18d0cb58696bacbb4f8b/Beautybook-2023-07-05/chinesefonts/FZH.TTF") format("truetype");font-weight:400;font-display:swap}
+/* Flat journal layout; typography follows field and chapter hierarchy. */
+html,body{background:transparent!important;min-height:0!important;scrollbar-width:none}*::-webkit-scrollbar{display:none}
+.status:has(.theme-15){width:100%!important;max-width:720px!important;min-height:0!important;aspect-ratio:auto!important;border:0!important;background:transparent!important;filter:none!important}
+.status[open]:has(.theme-15)>.canvas{display:none!important}
+.status[open]>.sta-themed-mobile.theme-15{display:block!important}
+.sta-themed-mobile.theme-15{--book-art:none;padding:0!important;border:0!important;border-radius:0!important;overflow:visible!important;background:#eae7dd!important;color:#191c17!important;box-shadow:3px 5px 10px #151a162e!important;font-family:AtelierBookSong,serif!important}
+.theme-15 *{box-sizing:border-box;min-width:0;scrollbar-width:none}.theme-15 [hidden]{display:none!important}
+.theme-15 .rabbit-heading{position:relative;min-height:275px;padding:23px 25px 22px!important;background:linear-gradient(90deg,#f2efe5 0 60%,#46523d 60%);display:flex;flex-direction:column;justify-content:space-between;border-bottom:5px solid #252d20}
+.theme-15 .book-imprint,.theme-15 .book-cover-foot{display:flex;justify-content:space-between;gap:14px;font:10px/1.5 Georgia,serif;letter-spacing:.08em}
+.theme-15 .book-imprint>span:last-child{color:#eeeee3}.theme-15 .book-title{margin:20px 0}.theme-15 .book-title small{font-size:12px;letter-spacing:.12em}.theme-15 .rabbit-heading h1{margin:8px 0 12px!important;font-size:24px!important;font-family:AtelierBookHei!important;line-height:1.5!important;letter-spacing:.02em;font-weight:600!important;color:#151912!important;text-shadow:0 1px #fff4}
+.theme-15 .book-title>b{display:block;font:700 clamp(40px,12vw,64px)/.83 Georgia,serif;letter-spacing:-.055em;color:#11170e;text-shadow:0 1px #ffffff25}.theme-15 .book-cover-foot{font-size:11px;letter-spacing:0;align-items:end}.theme-15 .book-cover-foot>span{max-width:54%;font-family:inherit}.theme-15 .book-cover-foot a{color:#f5f3e8;text-decoration:none;border-bottom:1px solid #e9e7d4;padding-bottom:3px;white-space:nowrap}
+.theme-15 .rabbit-pages{background:#f4f1e8;padding:0 25px 0 22px;border-right:7px double #30442c;border-left:1px solid #d6d2c7}
+.theme-15 .rabbit-pages>section,.theme-15 .rabbit-pages>details{margin:0;padding:22px 0;border:0;border-bottom:1px solid #a5ac9b;background:transparent;box-shadow:none;border-radius:0;color:#22271e}
+.theme-15 .rabbit-pages h2{margin:5px 0 14px;font-family:inherit;font-size:20px;font-weight:500;line-height:1.5}.theme-15 .rabbit-pages header small,.theme-15 summary small{font:9px/1.5 Georgia,serif;letter-spacing:.1em;color:#4d5c46;display:block;margin-bottom:5px}
+.theme-15 .rabbit-id{display:flex;gap:18px;align-items:center}.theme-15 .rabbit-id .mobile-portrait{display:block;width:84px;height:112px;position:static;object-fit:cover;border:5px solid #eeede4;border-bottom-width:15px;box-shadow:1px 3px 4px #1a271e33;transform:rotate(-3deg)}.theme-15 .rabbit-id>div{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:9px}.theme-15 .rabbit-id .mobile-entry:last-child{grid-column:1/-1}
+.theme-15 .mobile-entry{padding:5px 0!important}.theme-15 .mobile-entry>span{display:block;font-family:inherit;font-size:12px!important;color:#5d6855;opacity:1!important;letter-spacing:.02em!important}.theme-15 .mobile-entry>p{margin:4px 0 0!important;font-family:inherit;font-size:15px!important;line-height:1.85!important;font-weight:400!important;color:#252a20;white-space:normal;overflow-wrap:anywhere}
+.theme-15 .rabbit-thought .mobile-entry>p{text-indent:0;text-align:left;letter-spacing:0;word-break:normal;line-break:strict}
+.theme-15 .rabbit-thought .mobile-entry+.mobile-entry{margin-top:16px}
+.theme-15 .rabbit-thought>header{position:relative;padding-right:64px;min-height:58px;margin-bottom:16px}
+.theme-15 .rabbit-thought>header:after{content:'';position:absolute;right:0;top:0;width:52px;height:52px;background:url('./assets/status-beauty/images/rabbit-journal-seal.svg') center/contain no-repeat}
+.status .sta-themed-mobile.theme-15 .mobile-entry>span{font-family:AtelierBookHei,serif!important;font-size:14px!important;line-height:1.5!important;letter-spacing:0!important;color:#45543d}
+.status .sta-themed-mobile.theme-15 .mobile-entry>p{font-size:15px!important;line-height:1.8!important;margin-top:7px!important;letter-spacing:0!important;text-align:left;text-indent:0}
+.status .sta-themed-mobile.theme-15 .rabbit-pages h2{font-family:AtelierBookHei,serif;font-size:20px;font-weight:400}
+.status .sta-themed-mobile.theme-15 .rabbit-plan .mobile-entry>span{color:#d3d9c9}
+
+.theme-15 .rabbit-pages>.rabbit-plan{padding:20px 16px;margin:17px -8px;background:#364c31 var(--book-art) right center/270% auto;color:#f3efe3;border:1px solid #34432d;box-shadow:2px 3px 4px #26342125}.theme-15 .rabbit-plan .mobile-entry>span,.theme-15 .rabbit-plan summary small{color:#d3d9c9}.theme-15 .rabbit-plan .mobile-entry>p{color:#fff9e9}
+.theme-15 details>summary{display:flex;justify-content:space-between;align-items:center;gap:10px;list-style:none;cursor:pointer;font-family:inherit;font-weight:500;font-size:20px;line-height:1.5;padding:0}.theme-15 details>summary::-webkit-details-marker{display:none}.theme-15 summary>span{font-size:20px}.theme-15 summary>b{font:24px/1 Georgia,serif}.theme-15 details[open]>summary{margin-bottom:14px}.theme-15 .rabbit-letter>div .mobile-entry+.mobile-entry{margin-top:13px}.theme-15 .book-colophon{padding:20px 0;display:flex;align-items:end;justify-content:space-between;font:9px/1 Georgia,serif;letter-spacing:.15em;color:#526049}.theme-15 .book-colophon b{font-size:28px;font-weight:400}
+@media(min-width:561px){.theme-15 .rabbit-heading{min-height:310px}.theme-15 .book-title>b{font-size:90px}.theme-15 .rabbit-pages{padding-inline:40px}.theme-15 .rabbit-body-fields{display:grid;grid-template-columns:1fr 1fr;gap:16px}}
+.status .sta-themed-mobile.theme-15 [data-sta-typography-value],.status .sta-themed-mobile.theme-15 [data-sta-typography-label],.status .sta-themed-mobile.theme-15 .mobile-entry>p{font-family:AtelierBookSong,serif!important}
+
+.theme-15 .rabbit-plan>summary{border-bottom:2px dashed #c4cbb3;padding-bottom:12px;position:relative}
+.theme-15 .rabbit-plan>summary:after{content:'收起 −';font:11px/1.5 AtelierBookSong;position:absolute;right:0;bottom:14px}
+.theme-15 .rabbit-plan:not([open])>summary:after{content:'撕开查看 ↗'}
+.theme-15 .rabbit-plan>summary>b{visibility:hidden}
+.theme-15 .rabbit-plan[open]>.mobile-entry{animation:tear-reveal .45s ease-out both}
+@keyframes tear-reveal{from{opacity:0;transform:translateY(-8px);clip-path:inset(0 0 100%)}to{opacity:1;transform:none;clip-path:inset(0)}}
+@media(prefers-reduced-motion:reduce){.theme-15 .rabbit-plan[open]>.mobile-entry{animation:none}}

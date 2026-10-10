@@ -25,6 +25,8 @@ test('every template installs three independent instances with matching output t
             assert.ok(pair.entry.content.includes(`<sta_instance${i}>`),preset.id);
             assert.ok(pair.script.findRegex.includes(`<sta_instance${i}>`),preset.id);
             assert.ok(pair.script.findRegex.includes(`<\\/sta_instance${i}>`),preset.id);
+            assert.equal(pair.script.scriptName, original.scriptName);
+            assert.equal(pair.entry.comment, entry.comment);
             tags.push(pair.script.findRegex);
         }
         assert.equal(scripts.length,4,preset.id);
