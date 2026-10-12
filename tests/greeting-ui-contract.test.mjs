@@ -119,7 +119,7 @@ test('status workspace exposes component, palette, real avatar and audio control
 });
 
 test('profile appearance keeps structure profile while exposing status beauty 01 to 21', () => {
-    assert.match(source, /const PROFILE_APPEARANCE_IDS = Object\.freeze\(\[\.\.\.STATUS_BEAUTY_01_15_IDS, \.\.\.STATUS_BEAUTY_16_20_IDS, 'archive-status', \.\.\.STATUS_BEAUTY_32_41_IDS, \.\.\.PORTRAIT_FREE_IDS\]\)/);
+    assert.match(source, /const PROFILE_APPEARANCE_IDS = Object\.freeze\(\[\.\.\.STATUS_BEAUTY_01_15_IDS, \.\.\.STATUS_BEAUTY_16_20_IDS, 'archive-status', \.\.\.STATUS_BEAUTY_32_41_IDS, \.\.\.PORTRAIT_FREE_IDS, \.\.\.REFERENCE_STATUS_IDS\]\)/);
     assert.match(source, /profileAppearance: PROFILE_APPEARANCE_DEFAULT\.id/);
     assert.match(source, /profileTemplateSchemaVersion: 1/);
     assert.match(source, /profileTemplateDrafts: \{\}/);
@@ -601,7 +601,7 @@ test('status workbench separates templates, appearance and palettes and supports
     assert.match(source, /moveFieldDefinition/);
     assert.match(source, /avatar:\s*'头像'/);
     assert.match(source, /status-atelier-preview-field-avatar zrs-field-avatar/);
-    assert.match(source, /status-atelier-avatar-edit-button', '修改头像'/);
+    assert.match(source, /status-atelier-avatar-edit-button', isReferenceStatus\(rule.structure\) \? '头像 \/ 图片 \/ 音乐链接' : '修改头像'/);
     assert.match(styleSource, /status-atelier-avatar-edit-button[\s\S]*?writing-mode: horizontal-tb;[\s\S]*?white-space: nowrap;/);
     for (const removedSlider of ['wallpaper-x', 'wallpaper-y', 'widget-x', 'widget-y', 'avatar-x', 'avatar-y']) {
         assert.doesNotMatch(settingsMarkup, new RegExp(`id="status-atelier-phone-${removedSlider}"`));

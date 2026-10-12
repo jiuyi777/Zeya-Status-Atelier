@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import * as rules from '../rule-generator.js';
 import * as portrait from '../status-portrait-free.js';
+import * as references from '../reference-status.js';
 
 const source = readFileSync(new URL('../index.js', import.meta.url), 'utf8');
 const functionSource = name => {
@@ -58,7 +59,7 @@ for (const preset of portrait.PORTRAIT_FREE_PRESETS) {
     const stored = { structure: 'profile', profileAppearance: 'moon-collage',
       media: { avatarSource: 'character' }, phoneDesktop: {}, profileTextOverrides: {} };
     const host = element('div');
-    const box = { ...rules, ...portrait, settings: () => stored,
+    const box = { ...rules, ...portrait, ...references, settings: () => stored,
       DEFAULT_SETTINGS: { media: {}, phoneDesktop: {} }, clone: structuredClone,
       PROFILE_APPEARANCE_PRESETS: portrait.PORTRAIT_FREE_PRESETS,
       PROFILE_APPEARANCE_DEFAULT: portrait.PORTRAIT_FREE_PRESETS[0],
@@ -98,7 +99,7 @@ test('专属响应式预览保留自身布局和高度，旧款继续使用原�
   for (const structure of ['portrait-quiet-clock-44', 'beauty-current-status-05']) {
     const styles = [];
     let resized = 0;
-    const box = { isPortraitFree: portrait.isPortraitFree, settings: () => ({}),
+    const box = { isPortraitFree: portrait.isPortraitFree, ...references, settings: () => ({}),
       resizeStatusBeautyPreviewFrame: () => { resized += 1; }, statusBeautyStaticTextNodes: () => [],
     };
     vm.runInNewContext(functionSource('bindStatusBeautyPreviewEditing'), box);

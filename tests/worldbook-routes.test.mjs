@@ -80,3 +80,28 @@ test('uses embedded lore for route labels without claiming its UIDs are switchab
     syncRouteCatalogWorldlines(importedLines, importedCopy);
     assert.deepEqual(importedLines[0].entries.map(item => ({ book: item.book, uid: item.uid })), [{ book: '卡内设定', uid: 2 }]);
 });
+
+
+test('recognizes numbered route titles from the reported mobile worldbook', () => {
+    const names = ['线路一｜长期共事', '线路二 | 背叛之后', '线路三｜合法伴侣', '线路四｜离婚冷战'];
+    const catalog = extractWorldbookRouteCatalog([{name:'角色世界书', entries:names.map((comment,uid)=>({uid,comment,disable:uid>0,content:'剧情设定'}))}]);
+    assert.deepEqual(worldbookRouteLabels(catalog), ['长期共事线','背叛之后线','合法伴侣线','离婚冷战线']);
+    const lines=[];
+    const ids=syncRouteCatalogWorldlines(lines,catalog);
+    assert.equal(lines.length,4);
+    assert.deepEqual(lines.map(line=>line.entries[0].uid),[0,1,2,3]);
+    assert.ok(ids['合法伴侣线']);
+    assert.equal(constrainRouteToCatalog('线路三｜合法伴侣',catalog),'合法伴侣线');
+    assert.equal(constrainRouteToCatalog('合法伴侣线',catalog),'合法伴侣线');
+    syncRouteCatalogWorldlines(lines,catalog);
+    assert.equal(lines.length,4);
+});
+
+test('supports route number and separator variants without inventing routes for unrelated entries', () => {
+    for(const title of ['路线1：长期共事','线路二 — 长期共事','【线路三】长期共事','线路四 长期共事','路线：长期共事','线路｜长期共事','Route 2: 长期共事']) {
+        assert.equal(canonicalWorldbookRouteLabel(title),'长期共事线',title);
+    }
+    assert.equal(canonicalWorldbookRouteLabel('线路三'),'线路三');
+    assert.equal(canonicalWorldbookRouteLabel('世界观设定'),'');
+    assert.equal(canonicalWorldbookRouteLabel('亲密关系·自我放逐'),'');
+});

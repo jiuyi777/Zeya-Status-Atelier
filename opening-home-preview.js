@@ -1,6 +1,6 @@
 import { buildNoirCollagePreview } from './opening-noir-collage.js?v=0.11.41';
-import { LEGACY_HOME_TEMPLATES } from './opening-home-catalog.js?v=0.11.41';
-import { buildOpeningHomePreviewDocument } from './opening-home-generator.js?v=0.11.41';
+import { LEGACY_HOME_TEMPLATES } from './opening-home-catalog.js?v=0.11.43';
+import { buildOpeningHomePreviewDocument } from './opening-home-generator.js?v=0.11.43';
 import { createOpeningTemplate } from './opening-template-package.js?v=0.11.41';
 const $=id=>document.getElementById(id),frame=document.querySelector('iframe');
 let theme=LEGACY_HOME_TEMPLATES.find(t=>t.id===new URLSearchParams(location.search).get('theme'))||LEGACY_HOME_TEMPLATES[0];

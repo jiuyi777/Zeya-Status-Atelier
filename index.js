@@ -1,12 +1,14 @@
-import { HOME_TEMPLATES } from './opening-home-catalog.js?v=0.11.42';
-import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.42';
-import { createOpeningImagePicker } from './opening-image-picker.js?v=0.11.42';
-import { insertImageAt } from './opening-image-tools.js?v=0.11.42';
-import { createOpeningTemplate, applyOpeningTemplate } from './opening-template-package.js?v=0.11.42';
-import { REFINED_HOME_THEMES } from './opening-refined-layouts.js?v=0.11.42';
-import { STATUS_BEAUTY_32_41_IDS, buildStatusBeauty32To41Preview, isStatusBeauty32To41 } from './status-beauty-32-41.js?v=0.11.42';
+import { HOME_TEMPLATES } from './opening-home-catalog.js?v=0.11.43';
+import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.43';
+import { createOpeningImagePicker } from './opening-image-picker.js?v=0.11.43';
+import { insertImageAt } from './opening-image-tools.js?v=0.11.43';
+import { createOpeningTemplate, applyOpeningTemplate } from './opening-template-package.js?v=0.11.43';
+import { REFINED_HOME_THEMES } from './opening-refined-layouts.js?v=0.11.43';
+import { STATUS_BEAUTY_32_41_IDS, buildStatusBeauty32To41Preview, isStatusBeauty32To41 } from './status-beauty-32-41.js?v=0.11.43';
+import { REFERENCE_STATUS_IDS, isReferenceStatus, referenceStatusMeta, buildReferencePreview } from './reference-status.js';
+import { SOCIAL_HOME_FIELDS } from './opening-social-reference.js';
 import { PORTRAIT_FREE_IDS, buildPortraitFreePreview, isPortraitFree } from './status-portrait-free.js?v=0.11.37';
-import { isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.42';
+import { isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.43';
 import { parseSingleStatusResult, singleStatusCatalog, selectStatusCandidates } from './status-ai-single.js?v=0.11.37';
 import { makePortableRegex } from './portable-regex.js?v=0.11.30';
 import {
@@ -39,7 +41,7 @@ import {
     mergeStatusRegexScripts,
     legacyStructuredStatusRegexInstallId,
     statusRegexInstallId,
-} from './rule-generator.js?v=0.11.42';
+} from './rule-generator.js?v=0.11.43';
 import { isOriginalRoleCardStructure, mountOriginalRoleCard } from './role-card-originals.js?v=0.11.16';
 import {
     STATUS_BEAUTY_01_15_IDS,
@@ -54,7 +56,7 @@ import {
     isStatusBeauty01To15,
     loadStatusBeautyBundledRegex,
     statusBeautyBundleMeta,
-} from './status-beauty-01-15-bundle.js?v=0.11.42';
+} from './status-beauty-01-15-bundle.js?v=0.11.43';
 import {
     buildStatusBeauty05To09Preview,
     isStatusBeauty05To09,
@@ -63,7 +65,7 @@ import {
     STATUS_BEAUTY_16_20_IDS,
     buildStatusBeauty16To20Preview,
     isStatusBeauty16To20,
-} from './status-beauty-16-20.js?v=0.11.42';
+} from './status-beauty-16-20.js?v=0.11.43';
 import {
     OPENING_HOME_DEFAULTS,
     appendOpeningWorldline,
@@ -72,7 +74,7 @@ import {
     buildOpeningHomePreviewDocument,
     buildOpeningHomeRegexPack,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.42';
+} from './opening-home-generator.js?v=0.11.43';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -96,7 +98,7 @@ import {
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.11.16';
+} from './worldbook-routes.js?v=0.11.43';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
@@ -112,19 +114,19 @@ import {
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
 } from './greeting-workflow.js?v=0.11.16';
-import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.42';
+import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.43';
 import {
     buildCharacterHomepageContext,
     describeCurrentCharacterContext,
     resolveCurrentCharacterContext,
     selectCurrentSillyTavernContext,
-} from './opening-context.js?v=0.11.42';
+} from './opening-context.js?v=0.11.43';
 import {
     buildStatusWorldbookName,
     selectStatusWorldbookTarget,
     isStatusWorldbookEntry,
     upsertStatusWorldbookData,
-} from './status-worldbook.js?v=0.11.42';
+} from './status-worldbook.js?v=0.11.43';
 import {
     SCRIPT_TYPES,
     allowScopedScripts,
@@ -144,10 +146,10 @@ import {
 import { createOrEditCharacter, getThumbnailUrl, saveSettings, user_avatar } from '../../../../script.js';
 import { getCharaFilename } from '../../../utils.js';
 
-import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.42';
+import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.43';
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.42';
+const VERSION = '0.11.43';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -166,11 +168,11 @@ const STATUS_TEMPLATES = Object.freeze([
 
 const KIND_LABELS = Object.freeze({ text: '短文本', long: '长文本', number: '数字', progress: '数值 0–100', currency: '金额', avatar: '头像' });
 const PHONE_STRUCTURE_IDS = Object.freeze(['phone', 'profile', 'social', 'forum', 'chat', 'quest']);
-const PROFILE_APPEARANCE_IDS = Object.freeze([...STATUS_BEAUTY_01_15_IDS, ...STATUS_BEAUTY_16_20_IDS, 'archive-status', ...STATUS_BEAUTY_32_41_IDS, ...PORTRAIT_FREE_IDS]);
+const PROFILE_APPEARANCE_IDS = Object.freeze([...STATUS_BEAUTY_01_15_IDS, ...STATUS_BEAUTY_16_20_IDS, 'archive-status', ...STATUS_BEAUTY_32_41_IDS, ...PORTRAIT_FREE_IDS, ...REFERENCE_STATUS_IDS]);
 const PROFILE_APPEARANCE_PRESETS = Object.freeze(PROFILE_APPEARANCE_IDS.map((id, index) => {
     const structure = STATUS_STRUCTURE_PRESETS.find(item => item.id === id);
     if (!structure) return null;
-    return { ...structure, code: STATUS_BEAUTY_32_41_IDS.includes(id) || isPortraitFree(id) ? id.slice(-2) : String(index + 1).padStart(2, '0') };
+    return { ...structure, code: isReferenceStatus(id) ? String(45 + REFERENCE_STATUS_IDS.indexOf(id)) : STATUS_BEAUTY_32_41_IDS.includes(id) || isPortraitFree(id) ? id.slice(-2) : String(index + 1).padStart(2, '0') };
 }).filter(Boolean));
 const PROFILE_APPEARANCE_DEFAULT = PROFILE_APPEARANCE_PRESETS[0];
 const MOON_COLLAGE_BACKGROUND_URL = new URL('./assets/status-beauty/images/design-03-background-v3.png', import.meta.url).href;
@@ -2442,9 +2444,11 @@ function resolvedStatusInput(source = settings()) {
         pageFieldsText: source.pageFieldsText,
         themeAssetUrl: socialThemeAssetUrl,
         media: { ...DEFAULT_SETTINGS.media, ...(source.media || {}) },
+        referenceTextOverrides: source.profileTextOverrides?.[source.profileAppearance] || {},
         phoneDesktop: clone(source.phoneDesktop || DEFAULT_SETTINGS.phoneDesktop),
     };
     const ctx = context();
+    output.media.characterName = ctx?.characters?.[ctx?.characterId]?.name || '';
     const thumbnail = ctx?.getThumbnailUrl || getThumbnailUrl;
     try {
         if (output.media.avatarSource === 'character') {
@@ -3673,6 +3677,56 @@ function createStatusBeautyDirectEditor(rule) {
         ], input);
     };
     const openMedia = () => {
+        if (isReferenceStatus(rule.structure)) {
+            const stored = settings();
+            const options = stored.media?.referenceSettings?.[rule.structure] || {};
+            const meta = referenceStatusMeta(rule.structure);
+            const controls = [heading('头像、配图与音乐链接')];
+            const inputs = {};
+            const add = (key, label, value, multiline = false) => {
+                const input = makeElement(multiline ? 'textarea' : 'input', 'text_pole');
+                if (multiline) input.rows = 4;
+                input.value = value || '';
+                inputs[key] = input;
+                controls.push(statusBeautyDirectEditorField(label, input));
+            };
+            add('characterName', '人物一 / 当前角色名称（留空跟随当前角色）', options.characterName);
+            add('secondaryName', '人物二名称（用于双人模板）', options.secondaryName);
+            if (rule.structure === 'reference-eclipse-player') add('locationText', '唱机画面地点文字', options.locationText);
+            if (rule.structure === 'reference-wechat-night') {
+                add('worldbookName','主题设置所在世界书（与社交主页一致，可选）',options.worldbookName);
+                add('settingsUid','微信主题设置条目 UID',options.settingsUid);
+            }
+            const avatarSource = makeElement('select', 'text_pole');
+            for (const [value,label] of [['character','当前角色'],['user','当前 User'],['url','自定义链接'],['none','不显示头像']]) { const option = makeElement('option','',label); option.value=value; avatarSource.append(option); }
+            avatarSource.value = stored.media?.avatarSource || 'character';
+            controls.push(statusBeautyDirectEditorField('头像来源',avatarSource));
+            if (meta.avatarSelectors.length) {
+                add('avatarUrl', '角色头像 URL（留空使用所选头像来源）', stored.media?.avatarUrl);
+                if (rule.structure === 'reference-weibo') for (let i = 0; i < 4; i++) add('avatar'+i, ['主号头像 URL','小号头像 URL','第三账号头像 URL','关注对象头像 URL'][i], options['avatar'+i]);
+                if (rule.structure === 'reference-dual-voice') add('userAvatarOverride', 'User 头像 URL（留空跟随当前 User）', options.userAvatarOverride);
+            }
+            add('imageUrl', '配图 URL（可选，保留原布局并追加配图）', options.imageUrl);
+            add('audioUrl', '音乐链接（音频直链）', options.audioUrl);
+            if (meta.defaultPlaylist) add('playlist', '播放列表（每行一条音乐链接）', options.playlist ?? meta.defaultPlaylist.join('\n'), true);
+            const save = makeElement('button', 'menu_button status-atelier-primary-action', '保存并更新预览');
+            save.type = 'button';
+            save.addEventListener('click', () => {
+                stored.media ??= clone(DEFAULT_SETTINGS.media);
+                stored.media.referenceSettings ??= {};
+                const next = { ...options };
+                for (const [key,input] of Object.entries(inputs)) {
+                    if (key === 'avatarUrl') { stored.media.avatarUrl = input.value.trim(); }
+                    else next[key] = input.value.trim();
+                }
+                stored.media.avatarSource = avatarSource.value;
+                stored.media.referenceSettings[rule.structure] = next;
+                statusAiTestRecords = null;
+                saveSettingsSoon({snapshotOpening:false});
+                scheduleStatusPreviewUpdate();
+            });
+            controls.push(save);show(controls, Object.values(inputs)[0]);return;
+        }
         const media = settings().media || clone(DEFAULT_SETTINGS.media);
         const portrait = makeElement('img', 'status-atelier-beauty-editor-portrait');
         portrait.alt = '当前选择的头像预览';
@@ -3740,7 +3794,7 @@ function mountStatusBeautyPreview(host, frame, rule, options = {}) {
         ? '点击画面中的字段名称、X 或固定文字即可修改。'
         : '点击画面中的字段名称、X、固定文字或头像即可修改。'));
     if (!portraitFree) {
-        const avatarButton = makeElement('button', 'menu_button status-atelier-avatar-edit-button', '修改头像');
+        const avatarButton = makeElement('button', 'menu_button status-atelier-avatar-edit-button', isReferenceStatus(rule.structure) ? '头像 / 图片 / 音乐链接' : '修改头像');
         avatarButton.type = 'button';
         avatarButton.addEventListener('click', editor.openMedia);
         actions.append(avatarButton);
@@ -3952,7 +4006,7 @@ function bindStatusBeautyPreviewEditing(frame, rule, { labeled = false, captureM
         const doc = frame.contentDocument;
         if (!doc || !editor) return;
         const interactionStyle = doc.createElement('style');
-        const portraitFree = isPortraitFree(rule.structure);
+        const portraitFree = isPortraitFree(rule.structure) || isReferenceStatus(rule.structure);
         const layoutStyle = portraitFree ? '' : 'html,body{width:100%!important;max-width:100%!important;background:transparent!important}body{display:flex!important;justify-content:center!important;align-items:flex-start!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}';
         interactionStyle.textContent = `${layoutStyle}.status-atelier-beauty-edit-target{cursor:pointer;pointer-events:auto!important;touch-action:manipulation}.status-atelier-beauty-edit-target:is(:hover,:focus-visible){outline:3px solid #d45f75!important;outline-offset:3px!important}`;
         doc.head?.append(interactionStyle);
@@ -3962,6 +4016,7 @@ function bindStatusBeautyPreviewEditing(frame, rule, { labeled = false, captureM
             bindStatusBeautyPreviewTarget(image, '点击修改角色头像', editor.openMedia);
         });
         const textOverrides = settings().profileTextOverrides?.[rule.structure] || {};
+        doc.querySelectorAll('[data-sta-reference-avatar]').forEach(node => bindStatusBeautyPreviewTarget(node, '点击设置头像与图片', editor.openMedia));
         const definitions = rule.pages?.[0]?.fields || rule.pageFields || [];
         const designTitleNodes = [...doc.querySelectorAll('[data-design-title]')];
         designTitleNodes.forEach(node => bindStatusBeautyPreviewTarget(node, '点击修改状态栏标题', () => editor.openTitle(designTitleNodes)));
@@ -4045,6 +4100,14 @@ function renderStatusPreview(host) {
         ? { ...statusAiTestRecords, rule: { ...statusAiTestRecords.rule, media: currentRule.media, phoneDesktop: currentRule.phoneDesktop } }
         : makePreviewRecords(previewInput);
     const { rule, shared, pages } = previewRecords;
+    if (isReferenceStatus(rule.structure)) {
+        const frame = makeElement('iframe', 'status-atelier-rule-preview status-atelier-beauty-preview-frame');
+        frame.title = `${rule.structureName}预览`;
+        frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+        mountStatusBeautyPreview(host, frame, rule, { captureMap: rule.pageFields.map((_,i) => i) });
+        frame.srcdoc = buildReferencePreview(rule, statusAiTestRecords ? (pages[0]?.values || []) : rule.pageFields.map(field => /强度|数值|好感度/.test(field.label) ? '50' : 'X'));
+        return;
+    }
     if (isStatusBeauty01To15(rule.structure)) {
         renderStatusBeautyBundledPreview(host, rule, pages[0]?.values || []);
         return;
@@ -7107,6 +7170,20 @@ function buildGreetingHomeQuickEditor() {
         grid.append(label);
     });
     panel.append(grid);
+    if (settings().openingHome.theme === 'social-reference') {
+        const bindings = makeElement('details', 'status-atelier-home-social-bindings');
+        bindings.append(makeElement('summary', '', '社交主页：世界书绑定、音乐与身份说明'));
+        SOCIAL_HOME_FIELDS.forEach(([key, labelText]) => {
+            const {label,input} = labeledInput(labelText, settings().openingHome.socialBindings?.[key] || '', {multiline:key.startsWith('mode'),maxLength:2000});
+            input.addEventListener('input', () => {
+                settings().openingHome.socialBindings ??= {};
+                settings().openingHome.socialBindings[key] = input.value;
+                updateOpeningHomePreview();saveSettingsSoon();
+            });
+            bindings.append(label);
+        });
+        panel.append(bindings);
+    }
     const routeEditor = makeElement('div', 'status-atelier-home-quick-routes');
     routeEditor.append(makeElement('h4', '', '世界线介绍（可选）'));
     const worldlines = settings().openingHome.worldlines;

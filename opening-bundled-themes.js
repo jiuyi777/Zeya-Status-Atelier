@@ -6,6 +6,7 @@ import { buildFloralPage } from './opening-floral-letter.js?v=0.11.41';
 import { buildBloomPage } from './opening-bloom-letter.js?v=0.11.41';
 import { KEEPSAKE_THEMES, buildKeepsakePage } from './opening-keepsake.js?v=0.11.41';
 import { KINETIC_THEMES, buildKineticPage } from './opening-kinetic.js?v=0.11.41';
+import { buildSocialReferenceHome } from './opening-social-reference.js';
 
 const builders = { ...Object.fromEntries(KINETIC_THEMES.map(theme => [theme.id, buildKineticPage])), ...Object.fromEntries(KEEPSAKE_THEMES.map(theme => [theme.id, buildKeepsakePage])), 'bloom-letter': buildBloomPage, 'star-atlas': buildStarPage, 'lily-moon': buildLilyPage, 'sakura-noir': buildNoirPage, 'lunar-orbit': buildOrbitPage, 'floral-letter': buildFloralPage };
 export const BUNDLED_HOME_TEMPLATES = [
@@ -17,11 +18,13 @@ export const BUNDLED_HOME_TEMPLATES = [
     ['sakura-noir', '樱色夜刊', '黑粉海报 · 开场票', '#ef91a4', '#f8dfe5'],
     ['lunar-orbit', '循月而行', '月相轨道 · 清蓝目录', '#94bad1', '#304760'],
     ['floral-letter', '花间来信', '白金花卉 · 紧凑信笺', '#bca56b', '#57515e'],
+    ['social-reference', '暗夜社交主页', '身份翻牌 · 资料表单 · 世界书开关', '#58a6ff', '#c9d1d9', 'sans'],
 ].map(([id, name, description, accent, text, font], index) => ({ id, name: `${index + 14} ${name}`, description, values: { theme: id, font: font || (['floral-letter', 'bloom-letter'].includes(id) ? 'kai' : 'serif'), accent, text } }));
-export const isBundledHomeTheme = theme => Object.hasOwn(builders, theme);
+export const isBundledHomeTheme = theme => theme === 'social-reference' || Object.hasOwn(builders, theme);
 
 // Reuse the production navigation/worldbook runtime, with the approved sample layout.
 export function buildBundledHomeDocument(data, navigationScript) {
+    if (data.theme === 'social-reference') return buildSocialReferenceHome(data, navigationScript);
     const notes = [data.intro, data.model && `推荐模型：${data.model}`, data.preset && `推荐预设：${data.preset}`,
         ...data.worldlines.filter(line => line.description).map(line => `${line.name}\n${line.description}`)].filter(Boolean).join('\n\n');
     let html = builders[data.theme]({ ...data, intro: data.theme === 'bloom-letter' ? data.intro : notes, ink: data.text, fontStyle: data.font,

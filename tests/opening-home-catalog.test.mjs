@@ -7,11 +7,11 @@ import { buildOpeningHomePreviewDocument, buildOpeningHomeRegex, normalizeOpenin
 import { createOpeningTemplate, parseOpeningTemplate } from '../opening-template-package.js';
 import { buildBloomPage } from '../opening-bloom-letter.js';
 
-test('the full catalog preserves all 12 early and 13 later designs with working preview targets',()=>{
- assert.equal(HOME_TEMPLATES.length,25);assert.equal(LEGACY_HOME_TEMPLATES.length,12);
- assert.equal(new Set(HOME_TEMPLATES.map(t=>t.id)).size,25);
+test('the full catalog preserves all 12 early and 14 later designs with working preview targets',()=>{
+ assert.equal(HOME_TEMPLATES.length,26);assert.equal(LEGACY_HOME_TEMPLATES.length,12);
+ assert.equal(new Set(HOME_TEMPLATES.map(t=>t.id)).size,26);
  const later=HOME_TEMPLATES.filter(t=>!LEGACY_HOME_TEMPLATES.includes(t));
- assert.deepEqual(later.map(t=>Number(t.name.match(/^\d+/)?.[0])),Array.from({length:13},(_,i)=>i+14));
+ assert.deepEqual(later.map(t=>Number(t.name.match(/^\d+/)?.[0])),Array.from({length:14},(_,i)=>i+14));
  for(const t of HOME_TEMPLATES){
   assert.equal(normalizeOpeningHomeSettings(t.values).theme,t.id);
   assert.equal(parseOpeningTemplate(createOpeningTemplate(t.values,t.name)).appearance.theme,t.id);

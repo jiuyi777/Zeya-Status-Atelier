@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" fill="none" aria-hidden="true">
+ <defs><g id="tail-leaf" stroke="currentColor" stroke-width=".9" stroke-linecap="round">
+  <path d="M115 29C88 48 63 47 45 33S15 20 10 31C7 40 19 44 22 36C24 31 16 28 15 33M108 31C89 33 83 11 66 13C54 15 53 29 64 30C74 31 76 20 68 19C64 19 62 23 65 25M68 41C54 53 37 52 29 44"/>
+  <path d="M99 35C92 24 96 12 101 8C106 18 108 25 99 35ZM87 39C78 39 72 51 65 55C65 45 72 36 87 39ZM56 36C41 36 35 19 28 15C44 16 52 23 56 36ZM39 44C29 42 20 48 15 52C29 56 37 51 39 44Z" fill="currentColor" stroke="none"/>
+  <path d="M91 31C88 22 80 13 78 7C89 11 93 20 91 31ZM48 34C39 30 29 33 24 38C35 41 43 39 48 34Z" fill="currentColor" stroke="none"/>
+  <path d="M50 28C45 22 40 21 36 20M80 44C76 48 74 49 72 50" stroke-width=".45"/>
+ </g></defs>
+ <use href="#tail-leaf"/><use href="#tail-leaf" transform="translate(240 0) scale(-1 1)"/>
+ <g stroke="currentColor" stroke-width="1"><path d="M120 47C115 39 106 34 108 25C109 18 114 17 116 20L120 10L124 20C126 17 131 18 132 25C134 34 125 39 120 47Z"/><path d="M120 39V18M120 32Q109 24 114 23M120 32Q131 24 126 23"/><path d="M116 49Q120 54 124 49M117 55H123"/></g>
+</svg>

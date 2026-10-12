@@ -1,4 +1,4 @@
-import { BUNDLED_HOME_TEMPLATES } from './opening-bundled-themes.js?v=0.11.41';
+import { BUNDLED_HOME_TEMPLATES } from './opening-bundled-themes.js?v=0.11.43';
 
 export const HOME_TEMPLATES = Object.freeze([
     ...BUNDLED_HOME_TEMPLATES,
@@ -55,6 +55,7 @@ export const HOME_TEMPLATES = Object.freeze([
 export const LEGACY_HOME_TEMPLATES = HOME_TEMPLATES.filter(t => !BUNDLED_HOME_TEMPLATES.some(b => b.id === t.id));
 export function openingPreviewHref(id) {
   if (!HOME_TEMPLATES.some(t => t.id === id)) throw new Error('未知开场白模板');
+  if (id === 'social-reference') return './opening-home-preview.html?theme=' + id;
   if (['soft-clock','signal-field','pixel-dusk'].includes(id)) return './opening-kinetic-preview.html?theme=' + id;
   if (['cloth-book','mixtape','folded-map','vellum-page'].includes(id)) return './opening-keepsake-preview.html?theme=' + id;
   if (BUNDLED_HOME_TEMPLATES.some(t => t.id === id)) return './opening-' + id + '-preview.html';

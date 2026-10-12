@@ -5,6 +5,15 @@ function clean(value) {
 export function canonicalWorldbookRouteLabel(value) {
     const source = clean(value);
     if (!source) return '';
+    // Numbered worldbook headings, including Chinese and full-width separators.
+    const heading = source.match(/^[【[(（]?\s*(?:路线|线路|route|line)\s*([一二三四五六七八九十百零〇两\d]+)?(?:\s*[｜|:：=_—–-]\s*|\s*[】\])）]\s*|\s+)([^|｜：:【\[（(】\])）]+?)(?:\s*(?:nsfw|sfw))?$/iu);
+    if (heading) {
+        const name = clean(heading[2]).replace(/(?:路线|线路|线)$/u, '');
+        if (name) return `${name}线`;
+    }
+    const numbered = source.match(/^[【[(（]?\s*(?:路线|线路|route|line)\s*([一二三四五六七八九十百零〇两\d]+)\s*[】\])）]?$/iu);
+    if (numbered) return `线路${numbered[1]}`;
+
     const prefixed = source.match(/(?:路线|线路|route|line)\s*[:：=_-]\s*[【[(（]?([\p{Script=Han}A-Za-z0-9·_-]{1,12})/iu)?.[1];
     if (prefixed) return `${prefixed.replace(/(?:路线|线路|线)$/u, '')}线`;
     const match = source.match(/([\p{Script=Han}A-Za-z0-9·_-]{1,12}?)(?:路线|线路|线)(?=\s|[：:（(【[]|nsfw|NSFW|$)/u);

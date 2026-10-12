@@ -4,6 +4,7 @@ import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import * as single from '../status-ai-single.js';
 import { normalizeRule } from '../rule-generator.js';
+import { isReferenceStatus } from '../reference-status.js';
 
 const source = readFileSync(new URL('../index.js', import.meta.url), 'utf8');
 const candidates = Array.from({ length: 41 }, (_, i) => ({ key: `profile:${i + 1}`, name: `${i + 1} · 款式${i + 1}`, description: `构图${i + 1}`, input: { structure: 'profile' } }));
@@ -44,7 +45,7 @@ test('AI preview keeps generated values but resolves the newly selected avatar',
     const oldRule = normalizeRule({ structure: 'moon-collage', media: { avatarSource: 'url', avatarUrl: 'https://example.com/old.png' } });
     const newInput = { structure: 'moon-collage', media: { avatarSource: 'character', avatarUrl: '/characters/new.png' } };
     let rendered;
-    const box = { document: { querySelector: () => ({}) }, resolvedStatusInput: () => newInput,
+    const box = { isReferenceStatus, document: { querySelector: () => ({}) }, resolvedStatusInput: () => newInput,
         settings: () => ({ structure: 'profile' }), statusAiTestRecords: { rule: oldRule, pages: [{ values: ['剧情值'] }] },
         normalizeRule, makePreviewRecords: () => { throw Error('Must preserve generated records'); },
         isStatusBeauty01To15: () => true, isStatusBeauty05To09: () => false, isStatusBeauty16To20: () => false, isStatusBeauty32To41: () => false,

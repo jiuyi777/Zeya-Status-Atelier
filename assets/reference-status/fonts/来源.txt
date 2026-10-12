@@ -1,0 +1,5 @@
+汇文明朝体（符号修正版）
+来源：https://github.com/bosswnx/huiwenmincho-improved
+原作者：特里王
+许可：CC0，见 LICENSE.txt
+网页预览共用完整字体；独立正则嵌入完整字体。

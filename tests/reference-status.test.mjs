@@ -1,0 +1,25 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {REFERENCE_STATUS_PRESETS,referenceStatusTag,buildReferencePreview} from '../reference-status.js';
+import {buildAiInstruction,buildRegexScript,buildWorldbookJson,normalizeRule,parseStatusOutput,STATUS_STRUCTURE_PRESETS} from '../rule-generator.js';
+export const inputFor=p=>({structure:p.id,title:p.title,ruleName:p.title,pagesText:p.pagesText,pageFieldsText:p.fields.map(f=>f.join('|')).join('\n'),sharedFieldsText:'',media:{avatarSource:'url',avatarUrl:'https://example.com/avatar.png',referenceSettings:{[p.id]:{audioUrl:'https://example.com/music.mp3',imageUrl:'https://example.com/image.png'}}}});
+for(const p of REFERENCE_STATUS_PRESETS)test(p.name+' output -> parse -> exported renderer',()=>{
+ const input=inputFor(p),rule=normalizeRule(input);let n=0;
+ const raw=`<${referenceStatusTag(p.id)}>\n`+p.lines.map(([key,count])=>'['+key+'|'+Array.from({length:count},()=>`值${++n}`).join('|')+']').join('\n')+`\n</${referenceStatusTag(p.id)}>`;
+ assert(STATUS_STRUCTURE_PRESETS.some(x=>x.id===p.id));
+ assert.equal(parseStatusOutput(input,raw).pages[0].values.length,p.fields.length);
+ assert.throws(()=>parseStatusOutput(input,raw.replace('值1','')));
+ assert(buildAiInstruction(input).includes(referenceStatusTag(p.id)));
+ assert(JSON.stringify(buildWorldbookJson(input)).includes(referenceStatusTag(p.id)));
+ const script=buildRegexScript(input);const [,pattern,flags]=script.findRegex.match(/^\/(.*)\/([a-z]*)$/s);
+ const output=raw.replace(new RegExp(pattern,flags),script.replaceString);
+ assert.equal((script.replaceString.match(/\$\d+/g)||[]).length,1,'only raw payload is a replacement capture');
+ assert(!output.includes('$1'),'no accidental nested captures');
+ assert(output.includes('https://example.com/avatar.png'));
+ assert(output.includes('https://example.com/music.mp3'));
+ assert(output.includes('https://example.com/image.png'));
+ assert(!new RegExp(pattern,flags).test(raw.replace('值1','<img src=x>')));
+ for(const m of output.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi))new vm.Script(m[1]);
+ for(const m of buildReferencePreview(rule,Array(n).fill('演示')).matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi))new vm.Script(m[1]);
+});

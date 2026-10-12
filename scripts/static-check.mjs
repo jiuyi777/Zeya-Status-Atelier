@@ -12,6 +12,12 @@ import {
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const requiredFiles = [
     'manifest.json',
+    'reference-status.js',
+    'reference-editorial-runtime.js',
+    'reference-font-data.js',
+    'reference-status-data.js',
+    'opening-social-reference.js',
+    'reference-home-data.js',
     'index.js',
     'status-install-instance.js',
     'entry-dialog.js',
@@ -227,7 +233,7 @@ if (STATUS_STYLE_PRESETS.length !== 22) errors.push('状态栏外观注册表必
 if (new Set(STATUS_STYLE_PRESETS.map(style => style.id)).size !== 22) errors.push('22套状态栏外观必须使用22个独立主题 ID');
 if (statusIds.size !== selectableStructures.length) errors.push('可选状态栏模板必须生成独立正则 ID');
 
-if (STATUS_STRUCTURE_PRESETS.length !== 43) errors.push('编辑器应保留43个可选结构（已移除10、17、41）');
+if (STATUS_STRUCTURE_PRESETS.length !== 59) errors.push('编辑器应保留43款既有结构并注册16款通用状态栏');
 const bundledRegexFolder = join(root, 'assets', 'status-beauty', 'regexes');
 try {
     const bundledRegexFiles = (await readdir(bundledRegexFolder)).filter(file => file.endsWith('.json'));

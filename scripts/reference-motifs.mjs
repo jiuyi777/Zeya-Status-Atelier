@@ -1,0 +1,34 @@
+// Engraved vector artwork: each theme has its own subject, crest and endpiece.
+import {mkdir,writeFile} from 'node:fs/promises';
+const svg=(content,view='0 0 360 116')=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${view}" fill="none" aria-hidden="true"><g stroke="currentColor" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round">${content}</g></svg>`;
+const star=(x,y,r=12)=>`<path d="M${x} ${y-r}L${x+3} ${y-3}L${x+r} ${y}L${x+3} ${y+3}L${x} ${y+r}L${x-3} ${y+3}L${x-r} ${y}L${x-3} ${y-3}Z" fill="currentColor" stroke="none"/>`;
+const sunRays=Array.from({length:16},(_,i)=>`<path transform="rotate(${i*22.5})" d="M0-29Q-4-36 0-44Q4-36 0-29Z"${i%2?'':' fill="currentColor"'}/>`).join('');
+const dialTicks=Array.from({length:32},(_,i)=>`<path transform="rotate(${i*11.25})" d="M0-39V-${i%4?42:45}"/>`).join('');
+const subjects={
+ solar:`${sunRays}<circle r="26"/><circle r="22" stroke-width=".5"/><path d="M-15-4Q-10-10-4-4M4-4Q10-10 15-4M-13-3L-10-2L-7-3M7-3L10-2L13-3M0-7L-3 6H2M-8 12Q0 17 8 12M-6 19Q0 21 6 19"/><path d="M-18 1L-17 5M17 1L18 5M-18 11L-15 14M15 14L18 11" stroke-width=".5"/>`,
+ lunar:`<circle r="39" stroke-width=".5" stroke-dasharray="1 4"/><path d="M12-34A36 36 0 1 0 12 34A30 30 0 0 1 12-34Z" fill="currentColor" fill-opacity=".18"/><path d="M9-32A32 32 0 1 0 9 32" stroke-width=".5"/><circle cx="-23" cy="-12" r="5"/><circle cx="-26" cy="9" r="3"/><path d="M-16 21q-7-2-8-6M-16-24q-5 0-7 5"/>${star(13,-9,10)}${star(24,16,6)}<path d="M-36 35Q0 53 36 35M-27 42Q0 55 27 42"/>`,
+ arcane:`<circle r="44"/><circle r="37"/><circle r="30" stroke-dasharray="1 3"/>${dialTicks}<path d="M0-31L27 16H-27ZM0 31L-27-16H27Z"/><path d="M-21 0Q0-20 21 0Q0 20-21 0Z" fill="var(--paper)"/><circle r="7"/><ellipse rx="2" ry="5" fill="currentColor"/><path d="M-13-4L-16-9M13-4L16-9M0-10V-15M-13 4L-16 9M13 4L16 9M0 10V15"/>`,
+ stellar:`<ellipse rx="45" ry="18" transform="rotate(-24)"/><ellipse rx="45" ry="18" transform="rotate(24)" stroke-width=".5"/><circle r="32" stroke-dasharray="1 4"/><path d="M0-40L7-14L25-25L14-7L40 0L14 7L25 25L7 14L0 40L-7 14L-25 25L-14 7L-40 0L-14-7L-25-25L-7-14Z" fill="currentColor" fill-opacity=".15"/><path d="M0-28L6-6L28 0L6 6L0 28L-6 6L-28 0L-6-6Z" fill="currentColor"/><circle cx="-37" cy="16" r="4" fill="var(--paper)"/><circle cx="35" cy="-17" r="3" fill="currentColor"/>`,
+ book:`<path d="M0 30Q-23 14-44 25V-20Q-23-29 0-13Q23-29 44-20V25Q23 14 0 30Z" fill="var(--paper)"/><path d="M0-13V30M-40-15Q-22-20-6-10M-40-8Q-22-13-6-3M-40-1Q-22-6-6 4M-40 6Q-22 1-6 11M6 4Q23-5 39-1M6 11Q23 2 39 6M-48-16V30Q-24 20 0 35Q24 20 48 30V-16" stroke-width=".65"/><path d="M2 14C16-6 5-38 39-45C39-17 20-9 2 14Z" fill="currentColor"/><path d="M6 8L33-37M18-12L17-25M22-19L33-23M26-27L27-35" stroke="var(--paper)" stroke-width=".7"/><path d="M-7 41H7"/>`,
+ music:`<path d="M-20-27C-42-43-48-11-29-9L-19 26Q0 40 19 26L29-9C48-11 42-43 20-27M-20-27Q0-18 20-27M-29-9Q0-3 29-9M-19 26Q0 32 19 26M-14 36H14M-18 41H18"/><path d="M-23-23C-35-34-40-18-31-16M23-23C35-34 40-18 31-16"/><path d="M-16-8L-11 27M-8-6L-5 29M0-5V30M8-6L5 29M16-8L11 27" stroke-width=".6"/><path d="M-22 29Q0 43 22 29L18 34Q0 45-18 34Z" fill="currentColor"/>${star(0,-37,9)}`,
+ letter:`<path d="M-42-22H42V30H-42Z"/><path d="M-38-19L0 10L38-19M-38 27L-14 5M38 27L14 5"/><path d="M-29-27V-40H26V-27M-22-33H19M-22-28H9"/><path d="M-10 0L-4-4L3-3L9 0L12 7L9 14L3 17L-4 16L-11 12L-13 6Z" fill="var(--paper)"/><circle cy="6" r="7"/><path d="M-3 10L3 2M-3 3L3 10"/><path d="M-24 35Q0 43 24 35"/>`
+};
+function flanks(type){
+ if(type==='lunar')return `<path d="M22 62Q61 95 118 64M242 64Q299 95 338 62"/><g fill="currentColor"><path d="M44 45a12 12 0 1 0 0 24a10 12 0 0 1 0-24ZM316 45a12 12 0 1 1 0 24a10 12 0 0 0 0-24Z"/><circle cx="92" cy="55" r="7"/><circle cx="268" cy="55" r="7"/></g>${star(63,27,5)}${star(298,30,6)}<path d="M119 57H128M232 57H241"/>`;
+ if(type==='arcane')return `<path d="M13 58L60 31L113 58L60 85ZM247 58L300 31L347 58L300 85Z" stroke-width=".6"/><circle cx="60" cy="58" r="20"/><circle cx="300" cy="58" r="20"/>${star(60,58,14)}${star(300,58,14)}<path d="M60 22V29M60 87V94M300 22V29M300 87V94M13 58H35M325 58H347"/><circle cx="117" cy="58" r="3"/><circle cx="243" cy="58" r="3"/>`;
+ if(type==='stellar')return `<path d="M8 80Q76 3 135 37M225 79Q287 113 352 31M21 85Q77 20 125 40M235 77Q287 95 338 30" stroke-width=".65"/><path d="M20 70L61 50L96 65L118 36M242 80L269 51L310 65L340 37" stroke-dasharray="2 4"/>${star(61,50,15)}${star(310,65,13)}${star(118,36,6)}${star(242,80,6)}<circle cx="20" cy="70" r="3"/><circle cx="96" cy="65" r="4"/><circle cx="269" cy="51" r="4"/><circle cx="340" cy="37" r="3"/>`;
+ if(type==='solar')return `<path d="M12 69Q37 47 64 60Q90 37 119 58M241 58Q270 37 296 60Q323 47 348 69M20 76H113M247 76H340M37 83H98M262 83H323"/><path d="M51 56V37M44 40L39 30M58 39L63 29M309 56V37M302 39L297 29M316 40L321 30"/><path d="M43 66Q51 52 60 66M300 66Q309 52 317 66" fill="currentColor"/>`;
+ if(type==='music')return `<path d="M15 47Q65 38 120 53M15 54Q65 45 120 60M15 61Q65 52 120 67M15 68Q65 59 120 74M240 53Q295 38 345 47M240 60Q295 45 345 54M240 67Q295 52 345 61M240 74Q295 59 345 68" stroke-width=".5"/><path d="M56 62V30L83 24V54M56 35L83 29M279 62V31L304 37V68M279 36L304 42"/><ellipse cx="50" cy="63" rx="7" ry="4" fill="currentColor"/><ellipse cx="77" cy="55" rx="7" ry="4" fill="currentColor"/><ellipse cx="273" cy="63" rx="7" ry="4" fill="currentColor"/><ellipse cx="298" cy="69" rx="7" ry="4" fill="currentColor"/>`;
+ return `<path d="M20 72C47 45 85 76 119 53M241 53C275 76 313 45 340 72M25 78C53 52 85 84 115 64M245 64C275 84 307 52 335 78"/><path d="M59 62C44 47 43 34 45 28C59 36 63 48 59 62ZM84 65C88 48 97 42 106 40C103 55 96 65 84 65ZM301 62C316 47 317 34 315 28C301 36 297 48 301 62ZM276 65C272 48 263 42 254 40C257 55 264 65 276 65Z" fill="currentColor"/><path d="M48 35L57 54M99 46L88 60M312 35L303 54M261 46L272 60" stroke="var(--paper)" stroke-width=".5"/>`;
+}
+export const MOTIF_BY_ID={
+ 'blue-gold':'book','wechat-night':'letter','weibo':'solar','purple-thoughts':'floral','song-theatre':'music','tianji':'arcane',
+ 'gazette-one':'book','gazette-two':'solar','dual-voice':'lunar','magic-note':'arcane','mode-monitor':'arcane','dream-canvas':'stellar',
+ 'study-slime':'book','body-record':'floral','eclipse-player':'lunar','magazine':'stellar','social-home':'letter'
+};
+export const MOTIFS=Object.fromEntries(Object.entries(subjects).map(([type,shape])=>[type,{
+ head:svg(flanks(type)+`<g transform="translate(180 55)">${shape}</g>`),
+ tail:svg(`<g transform="translate(180 55) scale(.68)">${shape}</g><path d="M104 55H138M222 55H256"/>`),
+ corner:svg(`<g transform="translate(55 55)">${shape}</g>`,'0 0 110 110')
+}]));
+export async function writeMotifAssets(dir){await mkdir(dir,{recursive:true});for(const [type,art] of Object.entries(MOTIFS))for(const [position,content] of Object.entries(art))await writeFile(new URL(`${type}-${position}.svg`,dir),content+'\n');}

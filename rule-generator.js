@@ -1,4 +1,5 @@
 import { buildOriginalRoleCardReplacement, isOriginalRoleCardStructure } from './role-card-originals.js';
+import { REFERENCE_STATUS_PRESETS, isReferenceStatus, referenceStatusTag, buildReferenceInstruction, parseReferenceOutput, buildReferenceReplacement } from './reference-status.js';
 import { PORTRAIT_FREE_PRESETS, buildPortraitFreeReplacement, isPortraitFree } from './status-portrait-free.js?v=0.11.37';
 import {
     STATUS_BEAUTY_01_02_PRESETS,
@@ -384,6 +385,7 @@ export const STATUS_STRUCTURE_PRESETS = Object.freeze([
     ...STATUS_BEAUTY_10_15_PRESETS.filter(item => item.id !== 'beauty-flower-echo-10'),
     ...STATUS_BEAUTY_16_20_PRESETS.filter(item => item.id !== 'beauty-double-heart-17'),
     ...STATUS_BEAUTY_32_41_PRESETS.filter(item => item.id !== 'beauty-train-route-41'),
+    ...REFERENCE_STATUS_PRESETS,
     ...PORTRAIT_FREE_PRESETS,
     {
         id: 'custom', name: '自由组件板', description: '保留完全可编辑的通用字段容器',
@@ -994,6 +996,8 @@ function normalizeMedia(input = {}) {
     )].slice(0, 12);
     return {
         avatarSource,
+        characterName: String(media.characterName || '').slice(0,80),
+        referenceSettings: media.referenceSettings && typeof media.referenceSettings === 'object' && !Array.isArray(media.referenceSettings) ? JSON.parse(JSON.stringify(media.referenceSettings)) : {},
         avatarUrl: safeMediaUrl(media.avatarUrl, 'image'),
         avatarFallbackUrl: safeMediaUrl(media.avatarFallbackUrl, 'image'),
         userAvatarUrl: safeMediaUrl(media.userAvatarUrl, 'image'),
@@ -1155,7 +1159,8 @@ export function normalizeRule(input = {}) {
     return {
         ruleId: String(input.ruleId || 'zeya-status-rule'),
         ruleName: String(input.ruleName || '双页剧情状态').trim() || '双页剧情状态',
-        tagName: sanitizeTagName(input.tagName),
+        tagName: isReferenceStatus(structure) ? referenceStatusTag(structure) : sanitizeTagName(input.tagName),
+        referenceTextOverrides: input.referenceTextOverrides || {},
         title: String(input.title || '人物状态记录'),
         subtitle: String(input.subtitle || 'STORY STATUS'),
         theme: socialAppearance?.id || structurePreset.appearanceId || fallbackStyle.id,
@@ -1197,6 +1202,7 @@ function sanitizePhoneAppName(value, fallback = '') {
 
 export function buildAiInstruction(input) {
     const rule = normalizeRule(input);
+    if (isReferenceStatus(rule.structure)) return buildReferenceInstruction(rule);
     if (isStatusBeauty01To15(rule.structure)) return buildStatusBeautyBundledInstruction(rule);
     if (isPortraitFree(rule.structure) || STATUS_BEAUTY_32_41_PRESETS.some(preset => preset.id === rule.structure && preset.dynamicRoster)) {
         const fields = rule.pages[0]?.fields || rule.pageFields;
@@ -1304,6 +1310,7 @@ export function buildAiInstruction(input) {
 
 export function parseStatusOutput(input, rawOutput) {
     const rule = normalizeRule(input);
+    if (isReferenceStatus(rule.structure)) return parseReferenceOutput(rule, rawOutput);
     if (isStatusBeauty01To15(rule.structure)) return parseStatusBeautyBundledOutput(rule, rawOutput);
     const source = String(rawOutput || '');
     const block = source.match(new RegExp(`<${rule.tagName}>\\s*([\\s\\S]*?)\\s*<\\/${rule.tagName}>`, 'i'))?.[1] || source;
@@ -2050,6 +2057,7 @@ function generatedForumReplacement(rule) {
 
 
 function generatedReplacement(rule) {
+    if (isReferenceStatus(rule.structure)) return buildReferenceReplacement(rule);
     if (isPortraitFree(rule.structure)) return buildPortraitFreeReplacement(rule);
     if (isStatusBeauty05To09(rule.structure)) return buildStatusBeauty05To09Replacement(rule);
     if (isStatusBeauty16To20(rule.structure)) return buildStatusBeauty16To20Replacement(rule);
@@ -2285,7 +2293,7 @@ export function buildRegexScript(input) {
         scriptName: `九一 · ${rule.ruleName}`,
         disabled: false,
         runOnEdit: true,
-        findRegex: isPortraitFree(rule.structure) ? `/<${rule.tagName}>([^<>]*?)<\\/${rule.tagName}>/i` : `/<${rule.tagName}>([\\s\\S]*?)<\\/${rule.tagName}>/i`,
+        findRegex: isPortraitFree(rule.structure) || isReferenceStatus(rule.structure) ? `/<${rule.tagName}>([^<>]*?)<\\/${rule.tagName}>/i` : `/<${rule.tagName}>([\\s\\S]*?)<\\/${rule.tagName}>/i`,
         trimStrings: [],
         replaceString: generatedReplacement(rule),
         placement: [2],

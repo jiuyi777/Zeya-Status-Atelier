@@ -1,4 +1,4 @@
-import { HOME_TEMPLATES, LEGACY_HOME_TEMPLATES, openingPreviewHref } from './opening-home-catalog.js?v=0.11.41';
+import { HOME_TEMPLATES, LEGACY_HOME_TEMPLATES, openingPreviewHref } from './opening-home-catalog.js?v=0.11.43';
 import { createOpeningTemplate, parseOpeningTemplate } from './opening-template-package.js?v=0.11.41';
 const gallery=document.getElementById('gallery'),notice=document.getElementById('notice'),key='jiuyi-opening-template-shelf-v1';
 let local=[];

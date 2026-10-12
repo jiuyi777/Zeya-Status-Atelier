@@ -23,8 +23,8 @@ for (const theme of [...BUNDLED_HOME_TEMPLATES, ...REFINED_HOME_THEMES.map(id =>
     const root = { classList: { contains: () => true }, querySelector: selector => selector === '.zoh-list' ? { querySelectorAll: () => [article] } : notice };
     const parent = { SillyTavern: { getContext: () => ({ chat: [{ swipe_id: 0 }] }) }, toastr: { success() {}, error() {} }, document: { querySelector: () => null } };
     const scripts = [...regex.replaceString.matchAll(/<script>([\s\S]*?)<\/script>/g)];
-    assert.equal(scripts.length, 1);
-    new Script(scripts[0][1]).runInNewContext({ document: { querySelector: () => root, currentScript: {} }, window: { parent }, console,
+    assert.equal(scripts.length, theme.values.theme === 'social-reference' ? 2 : 1);
+    new Script(scripts.at(-1)[1]).runInNewContext({ document: { querySelector: () => root, currentScript: {} }, window: { parent }, console,
         getChatMessages: async () => [{ swipes: ['【主页】', '一', '二', '三'] }],
         setChatMessages: async rows => calls.push(JSON.parse(JSON.stringify(rows))),
         updateWorldbookWith: async (book, update) => bookCalls.push({ book, entries: update([{ uid: 7, enabled: false }, { uid: 8, enabled: false }]) }),

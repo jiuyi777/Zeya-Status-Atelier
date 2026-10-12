@@ -2,11 +2,12 @@ import { withClassicalFrame } from './opening-classical-frame.js?v=0.11.41';
 import { EDITORIAL_HOME_STYLE } from './opening-editorial-style.js?v=0.11.41';
 import { buildOpeningReturnRegex } from './opening-return-navigation.js?v=0.11.41';
 import { REFINED_HOME_THEMES, buildRefinedHomeDocument } from './opening-refined-layouts.js?v=0.11.41';
-import { isBundledHomeTheme, buildBundledHomeDocument } from './opening-bundled-themes.js?v=0.11.41';
-import { HOME_TEMPLATES } from './opening-home-catalog.js?v=0.11.41';
+import { isBundledHomeTheme, buildBundledHomeDocument } from './opening-bundled-themes.js?v=0.11.43';
+import { HOME_TEMPLATES } from './opening-home-catalog.js?v=0.11.43';
 import { CLASSICAL_HOME_STYLE } from './opening-classical-style.js?v=0.11.41';
 import { SCROLL_HOME_STYLE } from './opening-scroll-style.js?v=0.11.41';
 const THEMES = new Set(HOME_TEMPLATES.map(template => template.id));
+import { normalizeSocialBindings } from './opening-social-reference.js';
 const FONTS = new Set(['serif', 'sans', 'kai', 'mono', 'fangsong', 'rounded', 'clerical']);
 
 export const OPENING_HOME_DEFAULTS = Object.freeze({
@@ -105,6 +106,7 @@ export function normalizeOpeningHomeSettings(input = {}) {
         imageUrl: /^https:\/\//i.test(String(input.imageUrl || '')) ? String(input.imageUrl) : '',
         ruleId: clean(input.ruleId, defaults.ruleId),
         title: clean(input.title, defaults.title),
+        socialBindings: normalizeSocialBindings(input.socialBindings),
         subtitle: clean(input.subtitle, defaults.subtitle),
         displayTitle: cleanMultiline(input.displayTitle ?? defaults.displayTitle).slice(0,80),
         author: clean(input.author, defaults.author),

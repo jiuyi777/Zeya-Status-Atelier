@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 68" fill="none" aria-hidden="true">
+ <defs>
+  <g id="engraved-scroll" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+   <path d="M171 39C145 61 118 60 96 45S51 21 28 37C16 46 8 38 12 30C16 23 27 29 23 35C21 39 16 35 18 32M164 40C141 51 119 50 102 39S65 18 45 26C32 31 27 21 34 16C40 11 47 18 42 21"/>
+   <path d="M137 45C140 28 126 18 114 24C99 32 113 45 121 37C126 31 119 26 115 31M100 43C89 54 67 57 54 48C45 41 52 33 59 37C65 40 61 47 57 43"/>
+   <path d="M165 38C151 34 146 18 152 9C158 19 162 21 165 38Z" fill="currentColor" stroke="none"/>
+   <path d="M151 43C146 47 138 56 131 54C134 45 141 40 151 43ZM110 46C99 49 96 60 84 59C87 52 93 46 110 46ZM90 32C75 34 66 24 60 14C73 16 85 21 90 32Z" fill="currentColor" stroke="none"/>
+   <path d="M54 28C44 33 39 38 35 44C42 46 55 43 54 28ZM30 38C20 44 19 53 11 55C12 46 18 40 30 38Z" fill="currentColor" stroke="none"/>
+   <path d="M143 40C134 33 132 12 115 10C119 18 127 26 143 40ZM80 43C69 35 68 25 54 25M114 50C109 60 99 64 87 64"/>
+   <path d="M146 35C138 28 135 15 126 14M113 54C107 60 99 62 96 62" stroke-width=".55"/>
+   <circle cx="47" cy="54" r="1.8" fill="currentColor" stroke="none"/><circle cx="104" cy="15" r="1.4" fill="currentColor" stroke="none"/>
+  </g>
+ </defs>
+ <use href="#engraved-scroll"/><use href="#engraved-scroll" transform="translate(360 0) scale(-1 1)"/>
+ <g stroke="currentColor" stroke-width="1.1">
+  <path d="M180 6C185 15 197 17 195 29C194 39 184 43 180 54C176 43 166 39 165 29C163 17 175 15 180 6Z"/>
+  <path d="M180 13C183 20 189 23 188 29C187 35 182 38 180 43C178 38 173 35 172 29C171 23 177 20 180 13Z"/>
+  <path d="M180 21L184 28L180 35L176 28Z" fill="currentColor"/>
+  <path d="M177 57H183M179 60H181" stroke-linecap="round"/>
+ </g>
+</svg>
