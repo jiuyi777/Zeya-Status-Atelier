@@ -10,7 +10,8 @@ import { SOCIAL_HOME_FIELDS } from './opening-social-reference.js';
 import { PORTRAIT_FREE_IDS, buildPortraitFreePreview, isPortraitFree } from './status-portrait-free.js?v=0.11.37';
 import { isBundledHomeTheme } from './opening-bundled-themes.js?v=0.11.43';
 import { parseSingleStatusResult, singleStatusCatalog, selectStatusCandidates } from './status-ai-single.js?v=0.11.37';
-import { makePortableRegex } from './portable-regex.js?v=0.11.30';
+import { makePortableRegex } from './portable-regex.js?v=1.0.2';
+import { compactRegexFonts } from './font-resources.js?v=1.0.2';
 import {
     CHAT_APPEARANCE_PRESETS,
     CHAT_FRAME_ASSET_URLS,
@@ -149,7 +150,7 @@ import { getCharaFilename } from '../../../utils.js';
 import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.43';
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '1.0.1';
+const VERSION = '1.0.2';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -5482,6 +5483,12 @@ async function installGeneratedRegex(script, requestedScope = settings().install
         if (requireCurrentCharacterContext().character?.avatar !== avatar) throw new Error('读取期间切换了角色，已停止写入');
     }
     currentScripts = Array.isArray(currentScripts) ? currentScripts : [];
+    const compacted = await compactRegexFonts([...currentScripts, script]);
+    script = compacted.scripts.pop();
+    currentScripts = compacted.scripts;
+    if (type === SCRIPT_TYPES.SCOPED && requireCurrentCharacterContext().character?.avatar !== selection.character?.avatar) {
+        throw new Error('处理字体期间切换了角色，已停止写入');
+    }
     const { installedScript, replaced, scripts } = preserveIdentity ? {
         installedScript: script,
         replaced: currentScripts.filter(item => item.id === script.id || item.scriptName === script.scriptName),

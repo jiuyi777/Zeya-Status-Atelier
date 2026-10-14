@@ -1,6 +1,6 @@
 import {MOTIFS,MOTIF_BY_ID,writeMotifAssets} from './reference-motifs.mjs';
 import {buildWechatTemplate} from './reference-wechat.mjs';
-import {readFile,writeFile} from 'node:fs/promises';
+import {readFile} from 'node:fs/promises';
 const root=new URL('../',import.meta.url);
 const dir=new URL('assets/reference-status/',root);
 const ornament=await readFile(new URL('ornament.svg',dir),'utf8');
@@ -58,6 +58,4 @@ export function editorialize(html,id){
 }
 export async function buildEditorialAssets(){
  await writeMotifAssets(new URL('motifs/',dir));
- const font=(await readFile(new URL('fonts/HuiwenMincho.woff2',dir))).toString('base64');
- await writeFile(new URL('reference-font-data.js',root),'// Generated full CC0 font; shared once by all templates.\nexport const REFERENCE_FONT='+JSON.stringify(font)+';\n');
 }

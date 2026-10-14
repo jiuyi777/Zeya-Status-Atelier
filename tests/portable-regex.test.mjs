@@ -149,7 +149,12 @@ test('every shipped status template can be packaged without plugin-directory ref
             const source = isStatusBeauty01To15(preset.id)
                 ? await loadStatusBeautyBundledRegex(preset.id)
                 : buildRegexScript({ structure: preset.id, pageFieldsText: preset.fields.map(field => field.join('|')).join('\n') });
-            const output = await makePortableRegex(source, { fetchResource: fileFetch, optimizeImage: async value => value });
+            // Exercise packaging with the raster encoder's bounded-output contract.
+            // Canvas encoding itself requires a browser; keep this fixture deterministic.
+            const output = await makePortableRegex(source, { fetchResource: fileFetch,
+                optimizeImage: value => compactRasterDataUrl(value, async () => ({bytes:new Uint8Array(12000),type:'image/webp'})) });
+            assert.ok(Buffer.byteLength(JSON.stringify(output)) < 1024 * 1024, preset.id);
+            assert.doesNotMatch(output.replaceString, /data:font\//, preset.id);
             assert.doesNotMatch(output.replaceString, /file:\/\/\/|tauri\.localhost|\/scripts\/extensions\/third-party\//, preset.id);
             for (const match of output.replaceString.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) {
                 assert.doesNotThrow(() => new Function(match[1]), `${preset.id}: exported script syntax`);

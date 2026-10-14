@@ -1,5 +1,7 @@
-import {REFERENCE_FONT} from './reference-font-data.js';
-export function referenceFontStyle(preview=false){return '<style>@font-face{font-family:Huiwen;src:url('+ (preview?'/scripts/extensions/third-party/status-atelier/assets/reference-status/fonts/HuiwenMincho.woff2':'data:font/woff2;base64,'+REFERENCE_FONT)+') format("woff2");font-display:swap;font-weight:400}</style>';}
+import {HUIWEN_PUBLIC_FONT_URL} from './font-resources.js';
+const installedFontUrl=new URL('./assets/reference-status/fonts/HuiwenMincho.woff2',import.meta.url);
+const previewFontUrl=installedFontUrl.protocol==='file:'?'./fonts/HuiwenMincho.woff2':installedFontUrl.href;
+export function referenceFontStyle(preview=false){return '<style>@font-face{font-family:Huiwen;src:url('+JSON.stringify(preview?previewFontUrl:HUIWEN_PUBLIC_FONT_URL)+') format("woff2");font-display:swap;font-weight:400}</style>';}
 export function editorialRuntime(id){
  const root=document.querySelector('.sta-edition');if(!root)return;
  const button=root.querySelector('.sta-theme');const key='jiuyi:reference:'+id+':mode';

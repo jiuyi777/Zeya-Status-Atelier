@@ -14,7 +14,7 @@ const requiredFiles = [
     'manifest.json',
     'reference-status.js',
     'reference-editorial-runtime.js',
-    'reference-font-data.js',
+    'font-resources.js',
     'reference-status-data.js',
     'opening-social-reference.js',
     'reference-home-data.js',

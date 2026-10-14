@@ -1,5 +1,6 @@
 // Resolve author-side resources once, before downloading or installing a regex.
 // Public URLs and host-runtime character lookups remain usable on the recipient's host.
+import { compactEmbeddedFonts, publicFontForBytes, checkEmbeddedFontSize } from './font-resources.js';
 const RESOURCE_EXTENSION = /\.(?:css|png|jpe?g|webp|gif|svg|avif|ico|woff2?|ttf|otf)(?:[?#].*)?$/i;
 const LOCAL_HOST = /^(?:localhost|.*\.localhost|127(?:\.\d+){3}|0\.0\.0\.0|\[::1\]|10(?:\.\d+){3}|192\.168(?:\.\d+){2}|172\.(?:1[6-9]|2\d|3[01])(?:\.\d+){2})$/i;
 
@@ -131,6 +132,11 @@ export async function makePortableRegex(script, { baseUrl = import.meta.url, fet
                 if (!/^(?:image\/|font\/|application\/(?:font|x-font|vnd\.ms-fontobject|octet-stream))/.test(type)) throw new Error('图片或字体响应格式错误');
                 const bytes = new Uint8Array(await response.arrayBuffer());
                 if (!bytes.length) throw new Error('资源为空');
+                if (/^(?:font\/|application\/(?:[\w.-]*font|octet-stream))/.test(type) || /\.(?:woff2?|ttf|otf)(?:[?#]|$)/i.test(url)) {
+                    const publicFont = await publicFontForBytes(bytes);
+                    if (publicFont) return { data: publicFont };
+                    if (/font/i.test(type) || /\.(?:woff2?|ttf|otf)(?:[?#]|$)/i.test(url)) checkEmbeddedFontSize(bytes.length);
+                }
                 return { data: dataUrl(pngImageBytes(bytes), type) };
             } catch (error) {
                 const name = decodeURIComponent(new URL(url).pathname.split('/').pop() || '图片');
@@ -150,9 +156,9 @@ export async function makePortableRegex(script, { baseUrl = import.meta.url, fet
             const url = localUrl(match[1] ?? match[2] ?? match[3], relativeTo);
             return url ? `url("${(await resource(url, chain)).data}")` : match[0];
         });
-        return result;
+        return compactEmbeddedFonts(result);
     }
-    let html = String(script.replaceString || '');
+    let html = await compactEmbeddedFonts(String(script.replaceString || ''));
     html = await replaceAsync(html, /<link\b[^>]*>/gi, async match => {
         if (!/\brel\s*=\s*["']stylesheet["']/i.test(match[0])) return match[0];
         const href = match[0].match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1];
@@ -186,5 +192,9 @@ export async function makePortableRegex(script, { baseUrl = import.meta.url, fet
         if (!images.has(match[0])) images.set(match[0], optimizeImage(match[0]));
         return images.get(match[0]);
     });
-    return { ...script, replaceString: html };
+    const output = { ...script, replaceString: html };
+    if (new TextEncoder().encode(JSON.stringify(output)).byteLength > 1024 * 1024) {
+        throw new Error('状态栏正则超过 1 MiB，请将大字体、图片改为公开链接后重新生成');
+    }
+    return output;
 }

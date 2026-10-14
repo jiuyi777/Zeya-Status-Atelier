@@ -2,4 +2,4 @@
 来源：https://github.com/bosswnx/huiwenmincho-improved
 原作者：特里王
 许可：CC0，见 LICENSE.txt
-网页预览共用完整字体；独立正则嵌入完整字体。
+网页预览共用插件字体文件；独立正则引用固定版本的同一份公开字体，不嵌入字体数据。

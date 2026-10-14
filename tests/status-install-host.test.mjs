@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
 import {mergeStatusRegexScripts} from '../rule-generator.js';
+import {compactRegexFonts} from '../font-resources.js';
 
 const source = await readFile(new URL('../index.js', import.meta.url), 'utf8');
 const code = source.match(/async function installGeneratedRegex\(script, requestedScope = settings\(\)\.installScope, preserveIdentity = false\) \{[\s\S]*?\n\}/)[0];
@@ -22,6 +23,7 @@ test('copy install confirms the active regex engine and does not reload a missin
             getScriptsByType:(type, options)=>{assert.equal(type,1);assert.equal(options.allowedOnly,true);return engineSeesInstall?[script]:[];},
             reloadCurrentChat:async()=>{refreshed++;throw new Error('Chat could not be loaded');},
         };
+        box.compactRegexFonts=compactRegexFonts;
         vm.runInNewContext(code,box);
         if(engineSeesInstall) {
             await box.installGeneratedRegex(script,'scoped');
@@ -49,6 +51,7 @@ test('scoped install merges from disk and rejects data lost after settings save'
             saveSettings:async()=>{saved=true;},getScriptsByType:()=>character.data.extensions.regex_scripts,
             reloadCurrentChat:()=>{throw new Error('must not access chat');},
         };
+        box.compactRegexFonts=compactRegexFonts;
         vm.runInNewContext(code,box);
         if(loseAfterSave)await assert.rejects(box.installGeneratedRegex(fresh,'scoped'),/最终回读/);
         else {
@@ -77,6 +80,7 @@ test('opening pair survives installation, repeat installation and persisted rere
         saveSettings:async()=>{},getScriptsByType:()=>character.data.extensions.regex_scripts,
         reloadCurrentChat:()=>{throw new Error('must not rewrite chat');},
     };
+    box.compactRegexFonts=compactRegexFonts;
     vm.runInNewContext(code,box);
     for (let repeat=0;repeat<2;repeat++) {
         for(const script of pack) await box.installGeneratedRegex(script,'scoped',true);
