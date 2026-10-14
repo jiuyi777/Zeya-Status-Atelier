@@ -1,5 +1,5 @@
 import { HOME_TEMPLATES } from './opening-home-catalog.js?v=1.0.0';
-import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.43';
+import { mountOpeningReturnNavigation, buildOpeningReturnRegex, stripOpeningReturnMarker } from './opening-return-navigation.js?v=1.0.1';
 import { createOpeningImagePicker } from './opening-image-picker.js?v=0.11.43';
 import { insertImageAt } from './opening-image-tools.js?v=0.11.43';
 import { createOpeningTemplate, applyOpeningTemplate } from './opening-template-package.js?v=1.0.0';
@@ -74,7 +74,7 @@ import {
     buildOpeningHomePreviewDocument,
     buildOpeningHomeRegexPack,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=1.0.0';
+} from './opening-home-generator.js?v=1.0.1';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -113,7 +113,7 @@ import {
     shouldReplaceCurrentChatGreeting,
     freshOpeningHomeForCharacter,
     switchOpeningHomeProfile,
-} from './greeting-workflow.js?v=0.11.16';
+} from './greeting-workflow.js?v=1.0.1';
 import { buildOpeningOverview, mergeOpeningOverviewMetadata } from './opening-overview.js?v=0.11.43';
 import {
     buildCharacterHomepageContext,
@@ -149,7 +149,7 @@ import { getCharaFilename } from '../../../utils.js';
 import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.43';
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '1.0.0';
+const VERSION = '1.0.1';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -5789,7 +5789,7 @@ function alternateGreetingData(rawEntriesOverride = null) {
             ctx?.character?.alternate_greetings,
         ].find(Array.isArray) || [];
     const notes = settings().openingNotes[key] || {};
-    const entries = usableGreetingRecords(rawEntries)
+    const entries = usableGreetingRecords(rawEntries.map(stripOpeningReturnMarker))
         .map(({ raw, sourceIndex, preview }, index) => {
             const saved = notes[sourceIndex] || notes[index] || {};
             const metadata = parseGreetingMetadata(raw);
@@ -7729,12 +7729,23 @@ async function addSettingsPanel() {
     return true;
 }
 
+async function upgradeOpeningReturnRule() {
+    const fixed = buildOpeningReturnRegex();
+    for (const [type, scope] of [[SCRIPT_TYPES.GLOBAL, 'global'], [SCRIPT_TYPES.SCOPED, 'scoped']]) {
+        const old = getScriptsByType(type).find(rule => rule.id === fixed.id);
+        if (!old || old.disabled || old.findRegex === fixed.findRegex) continue;
+        try { await installGeneratedRegex(fixed, scope, true); }
+        catch (error) { console.error('[工坊] 返回目录规则升级失败', error); }
+    }
+}
+
 function bindEvents() {
     const ctx = context();
     const events = ctx?.eventTypes || ctx?.event_types;
     const source = ctx?.eventSource;
     if (!events || !source?.on) return;
     if (events.CHAT_CHANGED) source.on(events.CHAT_CHANGED, () => {
+        void upgradeOpeningReturnRule();
         const switched = switchOpeningProfileForCurrentCharacter();
         if (switched) {
             loadSettingsUI();
@@ -7763,10 +7774,12 @@ async function initialize() {
         if (document.querySelector('#status-atelier-opening-menu-item') && document.querySelector('#status-atelier-status-menu-item')) break;
         await new Promise(resolve => setTimeout(resolve, 250));
     }
+    await upgradeOpeningReturnRule();
     const cleanupOpeningReturn = mountOpeningReturnNavigation(context, () => {
-        const portable = [SCRIPT_TYPES.SCOPED, SCRIPT_TYPES.GLOBAL].some(type =>
+        const marked = String(context()?.chat?.[0]?.mes || '').endsWith('<!--sta-opening-return-->');
+        const portable = marked && [SCRIPT_TYPES.SCOPED, SCRIPT_TYPES.GLOBAL].some(type =>
             getScriptsByType(type, { allowedOnly: true }).some(rule => rule.id === 'jiuyi-opening-return-portable-v1' && !rule.disabled));
-        return !portable && isBundledHomeTheme(settings().openingHome.theme);
+        return !portable;
     });
     globalThis.addEventListener('pagehide', cleanupOpeningReturn, { once: true });
     console.info(`[九一 正则状态工坊] v${VERSION} 已加载`);

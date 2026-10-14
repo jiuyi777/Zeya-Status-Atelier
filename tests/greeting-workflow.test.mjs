@@ -1,3 +1,4 @@
+import { stripOpeningReturnMarker } from '../opening-return-navigation.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -65,17 +66,17 @@ test('one-click homepage preserves the original first message as an extra greeti
 
     assert.equal(plan.marker, '【主页】');
     assert.equal(plan.movedPrimary, true);
-    assert.deepEqual(plan.alternateGreetings, ['原来的第一条开场', '少年线开场', '罪人线开场']);
+    assert.deepEqual(plan.alternateGreetings.map(stripOpeningReturnMarker), ['原来的第一条开场', '少年线开场', '罪人线开场']);
 });
 
 test('one-click homepage does not duplicate an existing greeting or marker', () => {
     const duplicate = planOpeningHomeCharacterUpdate('原开场', ['原开场', '支线']);
     const prepared = planOpeningHomeCharacterUpdate('【主页】', ['原开场', '支线']);
 
-    assert.deepEqual(duplicate.alternateGreetings, ['原开场', '支线']);
+    assert.deepEqual(duplicate.alternateGreetings.map(stripOpeningReturnMarker), ['原开场', '支线']);
     assert.equal(duplicate.movedPrimary, false);
     assert.equal(prepared.alreadyPrepared, true);
-    assert.deepEqual(prepared.alternateGreetings, ['原开场', '支线']);
+    assert.deepEqual(prepared.alternateGreetings.map(stripOpeningReturnMarker), ['原开场', '支线']);
 });
 
 test('current chat greeting is only replaced when it still matches the character opening', () => {
@@ -119,4 +120,11 @@ test('switching characters saves and restores independent opening-home profiles'
     assert.equal(second.home.title, '卡A');
     assert.deepEqual(second.home.worldlines, [{ name: '少年线' }]);
     assert.deepEqual(second.profiles['character:card-b'].worldlines, [{ name: '神明线' }]);
+});
+
+test('preparing marked greetings again is idempotent and preserves whitespace', () => {
+ const first = planOpeningHomeCharacterUpdate('正文 \n', ['另一篇']);
+ const next = planOpeningHomeCharacterUpdate('【主页】', first.alternateGreetings);
+ assert.deepEqual(next.alternateGreetings, first.alternateGreetings);
+ assert.equal(stripOpeningReturnMarker(next.alternateGreetings[0]), '正文 \n');
 });

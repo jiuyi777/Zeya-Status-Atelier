@@ -1,3 +1,15 @@
+// Owned suffix is added only when preparing alternate greetings, never to AI replies.
+const RETURN_MARKER = '<!--sta-opening-return-->';
+export function stripOpeningReturnMarker(text) {
+    let value = String(text ?? '');
+    while (value.endsWith(RETURN_MARKER)) value = value.slice(0, -RETURN_MARKER.length);
+    return value;
+}
+export function markOpeningReturn(text) {
+    const value = stripOpeningReturnMarker(text);
+    return value.trim() && value.trim() !== '【主页】' ? value + RETURN_MARKER : value;
+}
+
 export function homeSwipeIndex(swipes) {
     const matches = (Array.isArray(swipes) ? swipes : []).flatMap((text, index) => String(text).trim() === '【主页】' ? [index] : []);
     return matches.length === 1 ? matches[0] : -1;
@@ -110,9 +122,9 @@ export function buildOpeningReturnRegex() {
         id: 'jiuyi-opening-return-portable-v1',
         scriptName: '九一 · 开场白返回作品目录',
         disabled: false, runOnEdit: true,
-        findRegex: '/^(?!\\s*【主页】)(?![\\s\\S]*<!--sta-opening-home-->)([\\s\\S]+)$/', trimStrings: [],
-        // SillyTavern expands numbered captures; retain the complete text before the return iframe.
-        replaceString: '$1\n\n```html\n<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;background:transparent;scrollbar-width:none}*::-webkit-scrollbar{display:none}button{display:block;margin:8px auto;padding:7px 16px;border:1px solid #9c8970;border-radius:4px;background:#f3eadb;color:#594638;font:14px/1.5 serif;cursor:pointer}[hidden]{display:none!important}p{margin:4px;font:13px/1.5 serif;color:#a54b39}</style></head><body><button id="sta-opening-return" type="button" hidden>← 返回作品目录</button><p id="sta-opening-return-note" role="status" hidden></p><script>(' + portableOpeningReturn.toString() + ')();</script></body></html>\n```\n',
+        findRegex: '/<!--sta-opening-return-->$/', trimStrings: [],
+        // Replace only the owned suffix; ordinary conversation is never matched.
+        replaceString: '\n\n```html\n<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;background:transparent;scrollbar-width:none}*::-webkit-scrollbar{display:none}button{display:block;margin:8px auto;padding:7px 16px;border:1px solid #9c8970;border-radius:4px;background:#f3eadb;color:#594638;font:14px/1.5 serif;cursor:pointer}[hidden]{display:none!important}p{margin:4px;font:13px/1.5 serif;color:#a54b39}</style></head><body><button id="sta-opening-return" type="button" hidden>← 返回作品目录</button><p id="sta-opening-return-note" role="status" hidden></p><script>(' + portableOpeningReturn.toString() + ')();</script></body></html>\n```\n',
         placement: [2], substituteRegex: 0, minDepth: null, maxDepth: null,
         markdownOnly: true, promptOnly: false,
     };

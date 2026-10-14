@@ -16,7 +16,7 @@ for (const theme of KEEPSAKE_THEMES) {
   const fields = buildKeepsakeGreetingFields(data);
   const rules = buildOpeningHomeRegexPack(home);
   for (const replacement of [fields.first_mes, ...fields.alternate_greetings, ...rules.map(rule => rule.replaceString)]) {
-    const html = replacement.replace(/^\$1\n\n(?=```html\n)/, '');
+    const html = replacement.replace(/^(?:\$1)?\n\n(?=```html\n)/, '');
     if (!/^```html\n<!DOCTYPE html>[\s\S]*<body>[\s\S]*<\/body><\/html>\n```\n?$/.test(html)) throw new Error('不完整的导出文档');
     for (const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) new Script(match[1]);
     if (/<img[^>]*src="(?:data:|blob:|file:|http:)/i.test(html)) throw new Error('导出包含非 HTTPS 图片');

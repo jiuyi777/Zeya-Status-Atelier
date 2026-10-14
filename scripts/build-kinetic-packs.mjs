@@ -9,7 +9,7 @@ for(const theme of KINETIC_THEMES){
  const d=kineticDefaults(theme.id),home={...d,font:d.fontStyle,text:d.ink,entries:d.entries.map((e,i)=>({...e,target:i+2}))};
  const fields=buildKineticGreetingFields(d),rules=buildOpeningHomeRegexPack(home);
  for(const replacement of [fields.first_mes,...fields.alternate_greetings,...rules.map(r=>r.replaceString)]){
-  const html=replacement.replace(/^\$1\n\n(?=```html\n)/,'');
+  const html=replacement.replace(/^(?:\$1)?\n\n(?=```html\n)/,'');
   if(!/^```html\n<!DOCTYPE html>[\s\S]*<body>[\s\S]*<\/body><\/html>\n```\n?$/.test(html))throw new Error('导出缺少完整文档');
   for(const script of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g))new Script(script[1]);
   if(/(?:src="|url\(')(?:data:|blob:|file:|http:)/.test(html))throw new Error('图片应使用 HTTPS 外链');

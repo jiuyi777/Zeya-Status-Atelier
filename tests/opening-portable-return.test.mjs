@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { buildOpeningHomeRegexPack } from '../opening-home-generator.js';
-import { buildOpeningReturnRegex } from '../opening-return-navigation.js';
+import { buildOpeningReturnRegex, markOpeningReturn, stripOpeningReturnMarker } from '../opening-return-navigation.js';
 
 async function loadReturn(row, floor = 0, fail = false, frame = null) {
     const button = { hidden: true, addEventListener(_, fn) { this.click = fn; } };
@@ -38,7 +38,11 @@ test('serialized export appends one return document after the complete opening t
         '保留 $1、$&、$$ 与 $<name>。\r\n\r\n落款\r\n',
         '长文段落。\n\n'.repeat(40000) + '正文最后一句。',
     ]) {
-        const result = original.replace(pattern, pack[1].replaceString);
+        assert.equal(original.replace(pattern, pack[1].replaceString), original, 'ordinary AI replies must remain untouched');
+        const marked = markOpeningReturn(original);
+        assert.equal(markOpeningReturn(marked), marked);
+        assert.equal(stripOpeningReturnMarker(marked), original);
+        const result = marked.replace(pattern, pack[1].replaceString);
         assert.equal(result.slice(0, original.length), original);
         const footer = result.slice(original.length);
         assert.match(footer, /^\n\n```html\n<!DOCTYPE html>/);

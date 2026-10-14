@@ -1,3 +1,5 @@
+import { markOpeningReturn, stripOpeningReturnMarker } from './opening-return-navigation.js?v=1.0.1';
+
 function clean(value) {
     return String(value ?? '').replace(/\s+/g, ' ').trim();
 }
@@ -61,12 +63,12 @@ export function planOpeningHomeCharacterUpdate(firstMessage, alternateGreetings,
     const targetMarker = String(marker || '【主页】').trim() || '【主页】';
     const existing = Array.isArray(alternateGreetings) ? alternateGreetings.map(value => String(value ?? '')) : [];
     const alreadyPrepared = primary.trim() === targetMarker;
-    const hasPrimaryCopy = existing.some(value => value.trim() === primary.trim());
+    const hasPrimaryCopy = existing.some(value => stripOpeningReturnMarker(value).trim() === stripOpeningReturnMarker(primary).trim());
     const shouldPreservePrimary = !alreadyPrepared && Boolean(primary.trim()) && !hasPrimaryCopy;
     return {
         marker: targetMarker,
         originalFirstMessage: primary,
-        alternateGreetings: shouldPreservePrimary ? [primary, ...existing] : existing,
+        alternateGreetings: (shouldPreservePrimary ? [primary, ...existing] : existing).map(markOpeningReturn),
         movedPrimary: shouldPreservePrimary,
         alreadyPrepared,
     };

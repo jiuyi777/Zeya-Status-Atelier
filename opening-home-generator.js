@@ -1,6 +1,6 @@
 import { withClassicalFrame } from './opening-classical-frame.js?v=0.11.41';
 import { EDITORIAL_HOME_STYLE } from './opening-editorial-style.js?v=0.11.41';
-import { buildOpeningReturnRegex } from './opening-return-navigation.js?v=0.11.41';
+import { buildOpeningReturnRegex } from './opening-return-navigation.js?v=1.0.1';
 import { REFINED_HOME_THEMES, buildRefinedHomeDocument } from './opening-refined-layouts.js?v=0.11.41';
 import { isBundledHomeTheme, buildBundledHomeDocument } from './opening-bundled-themes.js?v=0.11.43';
 import { HOME_TEMPLATES } from './opening-home-catalog.js?v=1.0.0';
