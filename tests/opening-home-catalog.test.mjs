@@ -33,3 +33,10 @@ test('workbench and gallery use the same catalog and approved letter art reaches
  assert.match(buildBloomPage({},'home',{artVariant:'pencil'}),/letter-pencil-blush-v2/);
  for(const theme of ['classical','scroll','collage','glass']){const exported=buildOpeningHomeRegex({theme}).replaceString;assert.doesNotMatch(exported,/file:\/\/|http:\/\/(?:localhost|127\.0\.0\.1)/);assert.match(exported,/https:\/\/raw.githubusercontent.com\/jiuyi777\/Zeya-Status-Atelier\/v0.11.41\/assets\//);}
 });
+
+test('template chooser catalog follows numeric order across early and bundled designs',()=>{
+ const numbers=HOME_TEMPLATES.map(item=>parseInt(item.name,10));
+ assert.deepEqual(numbers,[...numbers].sort((a,b)=>a-b));
+ assert.equal(numbers[0],1);
+ assert.equal(numbers.at(-1),27);
+});

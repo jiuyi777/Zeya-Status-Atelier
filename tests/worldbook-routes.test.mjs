@@ -105,3 +105,23 @@ test('supports route number and separator variants without inventing routes for 
     assert.equal(canonicalWorldbookRouteLabel('世界观设定'),'');
     assert.equal(canonicalWorldbookRouteLabel('亲密关系·自我放逐'),'');
 });
+
+test('recognizes route markers, punctuation and longer names without treating ordinary entries as routes', () => {
+    for (const title of ['路线·瞒天过海', '路线：瞒天过海', '【路线】瞒天过海', '线路 / 瞒天过海', '世界线｜瞒天过海', '剧情线—瞒天过海', '故事路线 → 瞒天过海', '分支：瞒天过海', '支线·瞒天过海', '主线 瞒天过海', 'Route: 瞒天过海', '瞒天过海剧情线']) {
+        assert.equal(canonicalWorldbookRouteLabel(title), '瞒天过海线', title);
+    }
+    const title = '这一场久别重逢之后才揭开的旧日秘密';
+    assert.equal(canonicalWorldbookRouteLabel(`路线·${title}`), `${title}线`);
+    for (const title of ['角色设定', '路线', '线路：', '支线任务说明', '世界线设定', '没有明确路线标记的说明']) {
+        assert.equal(canonicalWorldbookRouteLabel(title), '', title);
+    }
+});
+
+test('new route formats flow through catalog, AI matching and UID bindings', () => {
+    const catalog = extractWorldbookRouteCatalog([{name:'江湖',entries:[{uid:7,comment:'路线·瞒天过海'},{uid:9,keys:['分支：暗渡陈仓']}]}]);
+    assert.deepEqual(worldbookRouteLabels(catalog), ['瞒天过海线','暗渡陈仓线']);
+    assert.equal(constrainRouteToCatalog('瞒天过海',catalog),'瞒天过海线');
+    assert.equal(constrainRouteToCatalog('',catalog),'');
+    const lines=[];syncRouteCatalogWorldlines(lines,catalog);
+    assert.deepEqual(lines.map(line=>line.entries[0].uid),[7,9]);
+});

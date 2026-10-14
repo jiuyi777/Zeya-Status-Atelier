@@ -1,4 +1,4 @@
-import { HOME_TEMPLATES } from './opening-home-catalog.js?v=0.11.43';
+import { HOME_TEMPLATES } from './opening-home-catalog.js?v=0.11.44';
 import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.43';
 import { createOpeningImagePicker } from './opening-image-picker.js?v=0.11.43';
 import { insertImageAt } from './opening-image-tools.js?v=0.11.43';
@@ -98,7 +98,7 @@ import {
     routeCatalogPrompt,
     syncRouteCatalogWorldlines,
     worldbookRouteLabels,
-} from './worldbook-routes.js?v=0.11.43';
+} from './worldbook-routes.js?v=0.11.44';
 import {
     entryDialogBindingKey,
     mountAndShowEntryDialog,
@@ -149,7 +149,7 @@ import { getCharaFilename } from '../../../utils.js';
 import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.43';
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.43';
+const VERSION = '0.11.44';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,

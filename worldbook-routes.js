@@ -5,18 +5,17 @@ function clean(value) {
 export function canonicalWorldbookRouteLabel(value) {
     const source = clean(value);
     if (!source) return '';
-    // Numbered worldbook headings, including Chinese and full-width separators.
-    const heading = source.match(/^[【[(（]?\s*(?:路线|线路|route|line)\s*([一二三四五六七八九十百零〇两\d]+)?(?:\s*[｜|:：=_—–-]\s*|\s*[】\])）]\s*|\s+)([^|｜：:【\[（(】\])）]+?)(?:\s*(?:nsfw|sfw))?$/iu);
-    if (heading) {
-        const name = clean(heading[2]).replace(/(?:路线|线路|线)$/u, '');
-        if (name) return `${name}线`;
-    }
+    const marker = '(?:剧情路线|故事路线|分支路线|世界线|剧情线|故事线|分支线|路线|线路|主线|支线|分支|route|line)';
+    if (new RegExp('^[【\\[（(]?'+marker+'[\\s:：·】\\]）)]*$', 'iu').test(source)) return '';
     const numbered = source.match(/^[【[(（]?\s*(?:路线|线路|route|line)\s*([一二三四五六七八九十百零〇两\d]+)\s*[】\])）]?$/iu);
     if (numbered) return `线路${numbered[1]}`;
-
-    const prefixed = source.match(/(?:路线|线路|route|line)\s*[:：=_-]\s*[【[(（]?([\p{Script=Han}A-Za-z0-9·_-]{1,12})/iu)?.[1];
-    if (prefixed) return `${prefixed.replace(/(?:路线|线路|线)$/u, '')}线`;
-    const match = source.match(/([\p{Script=Han}A-Za-z0-9·_-]{1,12}?)(?:路线|线路|线)(?=\s|[：:（(【[]|nsfw|NSFW|$)/u);
+    const prefix = new RegExp('(?:^|[\\s【\\[（(])' + marker + '(?:\\s*[一二三四五六七八九十百零〇两\\d]+)?(?:[\\s:：=·•・|｜/／_—–→-]+|[】\\]）)]+\\s*)[【\\[（(「『]?(.+)$', 'iu');
+    const prefixed = source.match(prefix)?.[1];
+    if (prefixed) {
+        const name = clean(prefixed.replace(/(?:nsfw|sfw)\s*$/iu, '').split(/[【\[（(「『】\]）)」』：:|｜/／]/u)[0]).replace(new RegExp(marker + '$', 'iu'), '').replace(/线$/u, '').trim();
+        return name && name.length <= 64 ? `${name}线` : '';
+    }
+    const match = source.match(/([\p{Script=Han}A-Za-z0-9·_-]{1,64}?)(?:剧情路线|故事路线|分支路线|世界线|剧情线|故事线|分支线|路线|线路|线)(?=\s|[：:（(【\[]|nsfw|NSFW|$)/u);
     return match?.[1] ? `${clean(match[1])}线` : '';
 }
 
@@ -79,6 +78,7 @@ export function constrainRouteToCatalog(value, catalog) {
     const labels = worldbookRouteLabels(catalog);
     if (!labels.length) return '未分类线';
     const normalized = canonicalWorldbookRouteLabel(value) || clean(value);
+    if (!normalized) return '';
     return labels.find(label => label === normalized) || labels.find(label => normalized.includes(label) || label.includes(normalized)) || '';
 }
 

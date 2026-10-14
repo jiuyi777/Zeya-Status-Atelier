@@ -50,7 +50,7 @@ export const HOME_TEMPLATES = Object.freeze([
         id: 'negative-space', name: '13 立绘分割', description: '大图 / 立绘区 · 左右切换 · 自定义比例',
         values: { theme: 'negative-space', font: 'sans', background: '#f4f1ea', cardBackground: '#fffdfa', text: '#201b1b', accent: '#6c463b', secondary: '#81746b', introBackground: '#ded7cd', buttonColor: '#201b1b', imagePosition: 'left', imageWidth: 42 },
     },
-]);
+].sort((left, right) => parseInt(left.name, 10) - parseInt(right.name, 10)));
 
 export const LEGACY_HOME_TEMPLATES = HOME_TEMPLATES.filter(t => !BUNDLED_HOME_TEMPLATES.some(b => b.id === t.id));
 export function openingPreviewHref(id) {
