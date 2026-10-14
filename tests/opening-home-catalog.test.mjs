@@ -40,3 +40,15 @@ test('template chooser catalog follows numeric order across early and bundled de
  assert.equal(numbers[0],1);
  assert.equal(numbers.at(-1),27);
 });
+
+test('scroll preview and exported regex retain revised readable typography and compact botanical frame',()=>{
+ const template=HOME_TEMPLATES.find(item=>item.id==='scroll');
+ for(const html of [buildOpeningHomePreviewDocument(template.values),buildOpeningHomeRegex(template.values).replaceString]){
+  assert.match(html,/AtelierApprovedSong/);
+  assert.match(html,/FZXSSJW\.TTF/);
+  assert.match(html,/peach-frame-v4\.webp/);
+  assert.match(html,/ink-paper-v2\.webp/);
+  assert.match(html,/padding:66px 43px 60px/);
+  assert.doesNotMatch(html,/fonts\.googleapis\.com/);
+ }
+});

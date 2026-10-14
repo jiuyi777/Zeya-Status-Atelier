@@ -1,8 +1,8 @@
-import { HOME_TEMPLATES } from './opening-home-catalog.js?v=0.11.44';
+import { HOME_TEMPLATES } from './opening-home-catalog.js?v=1.0.0';
 import { mountOpeningReturnNavigation } from './opening-return-navigation.js?v=0.11.43';
 import { createOpeningImagePicker } from './opening-image-picker.js?v=0.11.43';
 import { insertImageAt } from './opening-image-tools.js?v=0.11.43';
-import { createOpeningTemplate, applyOpeningTemplate } from './opening-template-package.js?v=0.11.43';
+import { createOpeningTemplate, applyOpeningTemplate } from './opening-template-package.js?v=1.0.0';
 import { REFINED_HOME_THEMES } from './opening-refined-layouts.js?v=0.11.43';
 import { STATUS_BEAUTY_32_41_IDS, buildStatusBeauty32To41Preview, isStatusBeauty32To41 } from './status-beauty-32-41.js?v=0.11.43';
 import { REFERENCE_STATUS_IDS, isReferenceStatus, referenceStatusMeta, buildReferencePreview } from './reference-status.js';
@@ -74,7 +74,7 @@ import {
     buildOpeningHomePreviewDocument,
     buildOpeningHomeRegexPack,
     normalizeOpeningHomeSettings,
-} from './opening-home-generator.js?v=0.11.43';
+} from './opening-home-generator.js?v=1.0.0';
 import {
     BATCH_SUMMARY_JSON_SCHEMA,
     ENTRY_BATCH_JSON_SCHEMA,
@@ -149,7 +149,7 @@ import { getCharaFilename } from '../../../utils.js';
 import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.43';
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '0.11.44';
+const VERSION = '1.0.0';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,

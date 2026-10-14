@@ -20,7 +20,7 @@ export const HOME_TEMPLATES = Object.freeze([
     },
     {
         id: 'scroll', name: '06 古风卷轴', description: '花绕折角 · 素笺留白',
-        values: { theme: 'scroll', font: 'serif', background: '#fbf9f4', cardBackground: '#fdfbf7', text: '#534b43', accent: '#8a716b', secondary: '#7b7469', introBackground: '#fbf9f4', buttonColor: '#8a716b' },
+        values: { theme: 'scroll', font: 'serif', background: '#fbf9f4', cardBackground: '#fdfbf7', text: '#363a32', accent: '#765746', secondary: '#53594e', introBackground: '#fbf9f4', buttonColor: '#8a716b' },
     },
     {
         id: 'editorial', name: '07 美式杂志', description: '黑红刊头 · 留白分栏 · 连续篇目',
