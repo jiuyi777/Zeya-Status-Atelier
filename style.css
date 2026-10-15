@@ -1,4 +1,21 @@
 @import url("./opening-template-picker.css?v=0.11.44");
+@import url("./status-maker.css?v=1.0.3");
+/* ---- Maker entry layout ---------------------------------------------------------- */
+/* Drawer: entry cards first; the full workbench only when asked for. */
+.status-atelier-launch{display:grid;gap:10px;margin:0 0 12px}
+.status-atelier-launch-card{display:flex!important;align-items:center;gap:14px;width:100%;min-height:72px;margin:0!important;padding:14px 16px!important;border-radius:14px!important;text-align:left;white-space:normal!important}
+.status-atelier-launch-card>i{flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:color-mix(in srgb,var(--status-atelier-ui-accent,#8b3a35) 18%,transparent);color:var(--status-atelier-ui-accent,#8b3a35);font-size:18px}
+.status-atelier-launch-card>span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.status-atelier-launch-card b{font-size:16px}
+.status-atelier-launch-card small{opacity:.72;font-size:12px;line-height:1.45}
+.status-atelier-launch-full{display:flex;justify-content:space-between;align-items:center;width:100%;padding:8px 4px;border:0;border-top:1px dashed var(--SmartThemeBorderColor);background:transparent;color:inherit;opacity:.7;font-size:12.5px;cursor:pointer}
+.status-atelier-launch-full i{font-style:normal;transition:transform .2s}
+.status-atelier-launch-full[aria-expanded="true"] i{transform:rotate(90deg)}
+#status-atelier-settings[data-full="0"] .status-atelier-workbench>:not(.status-atelier-launch){display:none!important}
+/* Opening maker: look + preview first, then the content. */
+.status-atelier-greeting-step-label{display:flex;flex-direction:column;gap:2px;margin:16px 0 8px}
+.status-atelier-greeting-step-label small{opacity:.68;font-size:12px}
+#status-atelier-modal .status-atelier-greeting-theme-step>.status-atelier-greeting-preview-panel{margin:8px 0 10px}
 :root {
     --status-atelier-ui-accent: #b27b58;
 }
@@ -780,6 +797,24 @@
     grid-column: 2;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     margin: 0;
+    min-width: 0;
+}
+
+.status-atelier-dialog-header-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-atelier-dialog-header-actions .menu_button {
+    margin: 0;
+    min-height: 40px;
+    white-space: nowrap;
+}
+
+.status-atelier-dialog-header-actions #status-atelier-open-full-workbench {
+    font-size: 13px;
 }
 
 .status-atelier-opening-live[data-theme="negative-space"] .status-atelier-opening-live-meta > div {
@@ -3091,35 +3126,6 @@ summary.status-atelier-section-heading {
     background: #37322e;
 }
 
-#status-atelier-modal .status-atelier-entry-mode-switch .menu_button {
-    border-color: #cfc4b6 !important;
-    color: #5f5750 !important;
-    background: #fffaf3 !important;
-}
-
-#status-atelier-modal .status-atelier-entry-mode-switch .menu_button[aria-pressed="true"] {
-    border-color: #7f2e2b !important;
-    color: #fff !important;
-    background: #7f2e2b !important;
-}
-
-#status-atelier-modal .status-atelier-entry-mode-switch .menu_button[aria-pressed="true"] :is(strong, small) {
-    color: inherit !important;
-}
-
-#status-atelier-modal .status-atelier-modal-status-controls select.text_pole {
-    border: 1px solid #cfc4b6 !important;
-    color: #2d2925 !important;
-    background: #fffaf3 !important;
-    opacity: 1 !important;
-    -webkit-text-fill-color: #2d2925;
-}
-
-#status-atelier-modal .status-atelier-modal-status-controls select.text_pole option {
-    color: #2d2925;
-    background: #fffaf3;
-}
-
 #status-atelier-modal[data-status-entry-mode="simple"] .status-atelier-modal-status-advanced,
 #status-atelier-modal[data-status-entry-mode="expert"] .status-atelier-modal-ai-simple-flow {
     display: none;
@@ -3165,12 +3171,12 @@ summary.status-atelier-section-heading {
 .status-atelier-ai-simple-flow {
     display: grid;
     gap: 14px;
-    padding: clamp(18px, 4vw, 28px) !important;
+    padding: var(--sae-ai-padding, clamp(18px, 4vw, 28px)) !important;
     overflow: hidden;
-    border: 1px solid #d9d4c8 !important;
-    border-radius: 24px !important;
+    border: 1px solid var(--sae-ai-border, #d9d4c8) !important;
+    border-radius: var(--sae-ai-radius, 24px) !important;
     background: #f8f2e8 !important;
-    box-shadow: 0 10px 28px rgba(53, 42, 32, .10) !important;
+    box-shadow: var(--sae-ai-shadow, 0 10px 28px rgba(53, 42, 32, .10)) !important;
 }
 
 .status-atelier-ai-simple-flow::before,
@@ -3399,9 +3405,7 @@ summary.status-atelier-section-heading {
 }
 
 .status-atelier-workbench .status-atelier-ai-generate,
-.status-atelier-workbench .status-atelier-ai-recommendation .status-atelier-primary-action,
-#status-atelier-modal .status-atelier-ai-generate,
-#status-atelier-modal .status-atelier-ai-recommendation .status-atelier-primary-action {
+.status-atelier-workbench .status-atelier-ai-recommendation .status-atelier-primary-action {
     width: 100%;
     min-height: 50px;
     padding: 12px 18px;
@@ -3415,9 +3419,7 @@ summary.status-atelier-section-heading {
 }
 
 .status-atelier-workbench .status-atelier-ai-generate:is(:hover, :focus-visible),
-.status-atelier-workbench .status-atelier-ai-recommendation .status-atelier-primary-action:is(:hover, :focus-visible),
-#status-atelier-modal .status-atelier-ai-generate:is(:hover, :focus-visible),
-#status-atelier-modal .status-atelier-ai-recommendation .status-atelier-primary-action:is(:hover, :focus-visible) {
+.status-atelier-workbench .status-atelier-ai-recommendation .status-atelier-primary-action:is(:hover, :focus-visible) {
     color: #fff;
     background: #a23d38;
 }
@@ -3457,7 +3459,7 @@ summary.status-atelier-section-heading {
 }
 
 .status-atelier-modal-ai-simple-flow {
-    padding: clamp(16px, 4vw, 24px) !important;
+    padding: var(--sae-ai-padding, clamp(16px, 4vw, 24px)) !important;
     box-shadow: none !important;
 }
 

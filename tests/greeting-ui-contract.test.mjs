@@ -8,6 +8,7 @@ import { buildOpeningHomeRegex } from '../opening-home-generator.js';
 const source = fs.readFileSync(new URL('../index.js', import.meta.url), 'utf8');
 const settingsMarkup = fs.readFileSync(new URL('../settings.html', import.meta.url), 'utf8');
 const styleSource = fs.readFileSync(new URL('../style.css', import.meta.url), 'utf8');
+const makerStyle = fs.readFileSync(new URL('../status-maker.css', import.meta.url), 'utf8');
 const mapEditorMarkup = fs.readFileSync(new URL('../design-drafts/map-beauty/index.html', import.meta.url), 'utf8');
 
 test('greeting modal exposes explicit fill-missing and regenerate-all actions', () => {
@@ -186,7 +187,7 @@ test('mobile workbench keeps bottom sheets inside safe areas with touch-sized co
 });
 
 test('simple greeting flow keeps one primary footer action and moves secondary actions into more', () => {
-    const footer = source.match(/<footer class="status-atelier-dialog-footer[^"]*">([\s\S]*?)<\/footer>/)?.[1] || '';
+    const footer = source.match(/<footer class="status-atelier-dialog-footer status-atelier-opening-only">([\s\S]*?)<\/footer>/)?.[1] || '';
     assert.match(footer, /id="status-atelier-modal-apply"/);
     assert.equal((footer.match(/<button/g) || []).length, 1);
     assert.doesNotMatch(footer, /modal-copy-home|modal-download-regex|open-full-workbench|regenerate-all/);
@@ -214,7 +215,7 @@ test('mobile greeting modal offers a stateless copy-only overview and directly i
     assert.match(source, /id="status-atelier-modal-apply-status"/);
     assert.match(source, /id="status-atelier-modal-add-field"/);
     assert.match(source, /id="status-atelier-modal-status-schema"/);
-    assert.match(source, /字段与 AI 动态数值/);
+    assert.match(source, /内容字段/);
     const statusBlock = source.match(/async function applyModalStatus\(button\) \{([\s\S]*?)\n\}/)?.[1] || '';
     assert.match(statusBlock, /await installRegex\('scoped'\)/);
     assert.doesNotMatch(statusBlock, /title: style\.title|subtitle: style\.subtitle/);
@@ -238,7 +239,10 @@ test('wand exposes a simple AI status flow while the plugin settings keep the fu
     assert.match(settingsMarkup, /id="status-atelier-ai-remix"[^>]*type="radio"/);
     assert.match(source, /id="status-atelier-modal-apply-status"[^>]*disabled[^>]*>确认安装到当前角色</);
     assert.match(source, /id="status-atelier-modal-ai-recommendation"[^>]*hidden/);
-    assert.match(source, /class="status-atelier-modal-status-preview-wrap">\s*<small>实时预览<\/small>/);
+    // The live preview sits on top of the status step, before the simple flow and the complex controls.
+    assert.match(source, /<section class="status-atelier-greeting-status-step">\s*<div class="status-atelier-modal-status-preview-wrap" data-collapsed="0">\s*<div class="status-atelier-preview-bar"><small>实时预览/);
+    assert.match(settingsMarkup, /class="status-atelier-launch"[\s\S]*?data-status-atelier-launch="status"[\s\S]*?data-status-atelier-launch="opening"/);
+    assert.match(styleSource, /#status-atelier-settings\[data-full="0"\] \.status-atelier-workbench>:not\(\.status-atelier-launch\)\{display:none!important\}/);
     assert.doesNotMatch(source, /id="status-atelier-open-full-status-workbench"/);
     assert.match(source, /testStatusAiGeneration\(event\.currentTarget, 'modal', true\)/);
     assert.match(settingsMarkup, /id="status-atelier-settings"[^>]*data-entry-mode="expert"/);
@@ -273,7 +277,12 @@ test('wand exposes a simple AI status flow while the plugin settings keep the fu
 });
 
 test('complex status mode keeps readable controls and exposes its own one-click install', () => {
-    const advancedMarkup = source.match(/<details class="status-atelier-modal-status-advanced">([\s\S]*?)<\/details>\s*<div class="status-atelier-modal-status-preview-wrap">/)?.[1] || '';
+    const advancedMarkup = source.match(/<details class="status-atelier-modal-status-advanced">([\s\S]*?)<details class="status-atelier-greeting-more/)?.[1] || '';
+    assert.match(advancedMarkup, /class="status-atelier-tpl-picker"/);
+    const statusFooter = source.match(/<footer class="status-atelier-dialog-footer status-atelier-status-footer">([\s\S]*?)<\/footer>/)?.[1] || '';
+    assert.match(statusFooter, /id="status-atelier-modal-footer-install"[^>]*>一键安装到当前角色</);
+    assert.match(statusFooter, /class="status-atelier-modal-install-status/);
+    assert.match(source, /querySelector\('#status-atelier-modal-footer-install'\)\.addEventListener\('click', event => applyModalStatus\(event\.currentTarget\)\)/);
     assert.match(advancedMarkup, /id="status-atelier-modal-apply-status-expert"[^>]*>一键安装到当前角色</);
     assert.match(advancedMarkup, /class="status-atelier-modal-install-status"/);
     assert.match(source, /querySelector\('#status-atelier-modal-apply-status-expert'\)\.addEventListener\('click', event => applyModalStatus\(event\.currentTarget\)\)/);
@@ -281,10 +290,10 @@ test('complex status mode keeps readable controls and exposes its own one-click 
     assert.match(installBlock, /querySelectorAll\('\.status-atelier-modal-install-status'\)/);
     assert.match(installBlock, /state\.dataset\.state = 'success'/);
     assert.match(installBlock, /state\.dataset\.state = 'error'/);
-    assert.match(styleSource, /#status-atelier-modal \.status-atelier-entry-mode-switch \.menu_button\[aria-pressed="true"\][\s\S]*?color:\s*#fff\s*!important;[\s\S]*?background:\s*#7f2e2b\s*!important;/);
-    assert.match(styleSource, /#status-atelier-modal \.status-atelier-entry-mode-switch \.menu_button\[aria-pressed="true"\] :is\(strong, small\)[\s\S]*?color:\s*inherit\s*!important;/);
-    assert.match(styleSource, /#status-atelier-modal \.status-atelier-modal-status-controls select\.text_pole[\s\S]*?color:\s*#2d2925\s*!important;[\s\S]*?background:\s*#fffaf3\s*!important;/);
-    assert.match(styleSource, /#status-atelier-modal \.status-atelier-expert-install \.menu_button[\s\S]*?width:\s*100%;[\s\S]*?background:\s*#8f3531\s*!important;/);
+    assert.match(styleSource, /@import url\("\.\/status-maker\.css\?v=1\.0\.3"\)/);
+    assert.match(makerStyle, /\.status-atelier-modal-entry-mode-switch \.menu_button\[aria-pressed="true"\]\{[^}]*background:var\(--sae-panel\);color:var\(--sae-ink\)/);
+    assert.match(makerStyle, /\.text_pole\{[^}]*background:var\(--sae-panel\);color:var\(--sae-ink\)/);
+    assert.match(makerStyle, /\.status-atelier-primary-action\{[^}]*background:var\(--sae-accent\)[^}]*color:#fff/);
 });
 
 test('status quick editor updates fields without reloading the whole opening-home workbench', () => {

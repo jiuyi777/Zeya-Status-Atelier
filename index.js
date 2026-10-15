@@ -150,7 +150,7 @@ import { getCharaFilename } from '../../../utils.js';
 import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.43';
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '1.0.2';
+const VERSION = '1.0.3';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -3569,6 +3569,7 @@ function createStatusBeautyDirectEditor(rule) {
         return row;
     };
     const show = (children, focusTarget) => {
+        if (root.closest('#status-atelier-modal')) setStatusPreviewExpanded(false);
         root.replaceChildren(...children);
         root.hidden = false;
         focusTarget?.focus();
@@ -3800,7 +3801,16 @@ function mountStatusBeautyPreview(host, frame, rule, options = {}) {
         avatarButton.addEventListener('click', editor.openMedia);
         actions.append(avatarButton);
     }
-    stack.append(frame, actions, editor.root);
+    const inspector = host.id === 'status-atelier-modal-status-preview'
+        ? greetingModal?.querySelector('.status-atelier-inspector-direct') : null;
+    const mediaActions = inspector && greetingModal.querySelector('.status-atelier-editor-media-actions');
+    if (inspector && mediaActions) {
+        stack.append(frame);
+        inspector.replaceChildren(editor.root);
+        mediaActions.replaceChildren(actions);
+    } else {
+        stack.append(frame, actions, editor.root);
+    }
     host.replaceChildren(stack);
     bindStatusBeautyPreviewEditing(frame, rule, { ...options, editor });
     return stack;
@@ -4078,6 +4088,10 @@ function renderStatusBeautyBundledPreview(host, rule, generatedValues = []) {
 
 function renderStatusPreview(host) {
     if (!host) return;
+    if (host.id === 'status-atelier-modal-status-preview') {
+        greetingModal?.querySelector('.status-atelier-inspector-direct')?.replaceChildren();
+        greetingModal?.querySelector('.status-atelier-editor-media-actions')?.replaceChildren();
+    }
     if (!document.querySelector('#status-atelier-exported-theme-css')) {
         const style = document.createElement('style');
         style.id = 'status-atelier-exported-theme-css';
@@ -6020,6 +6034,20 @@ function setStatusEntryMode(viewName, mode) {
     }
 }
 
+function setStatusEditorPanel(name) {
+    if (!greetingModal) return;
+    const selected = ['templates', 'content', 'appearance'].includes(name) ? name : 'templates';
+    greetingModal.dataset.editorPanel = selected;
+    greetingModal.querySelectorAll('[data-editor-tab]').forEach(button => {
+        const active = button.dataset.editorTab === selected;
+        button.setAttribute('aria-selected', String(active));
+        button.tabIndex = active ? 0 : -1;
+    });
+    greetingModal.querySelectorAll('[data-editor-panel]').forEach(panel => {
+        panel.hidden = panel.dataset.editorPanel !== selected;
+    });
+}
+
 function applyStatusAiRecommendation(recommendation) {
     saveCurrentProfileTemplateDraft();
     if (recommendation.structure === 'profile') settings().profileAppearance = recommendation.profileAppearance;
@@ -6584,6 +6612,69 @@ function renderGreetingThemeChooser() {
     if (!otherHost.children.length) otherHost.append(makeElement('small', 'status-atelier-empty', '所有主页外观都已收藏。'));
 }
 
+// Visual stand-in for the two <select>s: type chips plus a searchable card gallery.
+// The selects stay in the DOM and remain the single source of truth.
+function renderTemplatePicker(structureSelect, styleSelect) {
+    const picker = greetingModal?.querySelector('.status-atelier-tpl-picker');
+    if (!picker || !structureSelect) return;
+    const kinds = picker.querySelector('.status-atelier-tpl-kinds');
+    const kindOptions = [...structureSelect.options];
+    if (kinds.children.length !== kindOptions.length) {
+        kinds.replaceChildren(...kindOptions.map(option => {
+            const chip = makeElement('button', 'status-atelier-tpl-kind', option.textContent);
+            chip.type = 'button';
+            chip.dataset.tplKind = option.value;
+            chip.setAttribute('role', 'tab');
+            return chip;
+        }));
+    }
+    kinds.querySelectorAll('[data-tpl-kind]').forEach(chip => chip.setAttribute('aria-selected', String(chip.dataset.tplKind === structureSelect.value)));
+    const gallery = picker.querySelector('.status-atelier-tpl-gallery');
+    const tools = picker.querySelector('.status-atelier-tpl-tools');
+    gallery.hidden = tools.hidden = !styleSelect;
+    if (!styleSelect) return;
+    if (gallery.children.length !== PROFILE_APPEARANCE_PRESETS.length) {
+        gallery.replaceChildren(...PROFILE_APPEARANCE_PRESETS.map(style => {
+            const card = makeElement('button', 'status-atelier-tpl-card');
+            card.type = 'button';
+            card.dataset.tplId = style.id;
+            card.setAttribute('role', 'option');
+            const name = String(style.name || '').replace(/^\d{2}\s*[·.、-]\s*/, '');
+            card.dataset.search = `${style.code} ${name} ${style.description || ''}`.toLowerCase();
+            card.append(makeElement('b', '', style.code), makeElement('strong', '', name), makeElement('small', '', style.description || ''));
+            return card;
+        }));
+    }
+    let active = null;
+    gallery.querySelectorAll('[data-tpl-id]').forEach(card => {
+        const on = card.dataset.tplId === styleSelect.value;
+        card.setAttribute('aria-selected', String(on));
+        if (on) active = card;
+    });
+    const count = picker.querySelector('.status-atelier-tpl-count');
+    if (count) count.textContent = `${PROFILE_APPEARANCE_PRESETS.length} 款`;
+    filterTemplatePicker(picker.querySelector('.status-atelier-tpl-search')?.value || '');
+    if (active && !picker.dataset.scrolled) {
+        picker.dataset.scrolled = '1';
+        requestAnimationFrame(() => { gallery.scrollTop = Math.max(0, active.offsetTop - gallery.clientHeight / 2 + active.clientHeight / 2); });
+    }
+}
+
+function filterTemplatePicker(query) {
+    const words = String(query || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+    let shown = 0;
+    greetingModal?.querySelectorAll('.status-atelier-tpl-gallery [data-tpl-id]').forEach(card => {
+        const hit = words.every(word => card.dataset.search.includes(word));
+        card.hidden = !hit;
+        if (hit) shown += 1;
+    });
+    const count = greetingModal?.querySelector('.status-atelier-tpl-count');
+    if (count) count.textContent = words.length ? `找到 ${shown} 款` : `${PROFILE_APPEARANCE_PRESETS.length} 款`;
+    const gallery = greetingModal?.querySelector('.status-atelier-tpl-gallery');
+    const active = gallery?.querySelector('[aria-selected="true"]');
+    if (!words.length && active) requestAnimationFrame(() => { gallery.scrollTop = Math.max(0, active.offsetTop - gallery.clientHeight / 2 + active.clientHeight / 2); });
+}
+
 function renderGreetingStatusChooser() {
     const select = greetingModal?.querySelector('#status-atelier-modal-status-style');
     const structureSelect = greetingModal?.querySelector('#status-atelier-modal-status-structure');
@@ -6606,6 +6697,7 @@ function renderGreetingStatusChooser() {
     populateStatusStructureSelect(structureSelect);
     if (structureSelect) structureSelect.value = settings().structure || 'custom';
     renderModalStructureControls();
+    renderTemplatePicker(structureSelect, profileAppearanceMode ? select : null);
     if (paletteHost && paletteHost.children.length !== STATUS_PALETTE_PRESETS.length) {
         paletteHost.replaceChildren();
         STATUS_PALETTE_PRESETS.forEach(palette => {
@@ -6847,9 +6939,29 @@ function renderModalStatusSchema() {
     if (!definitions.length) host.append(makeElement('p', 'status-atelier-empty', '还没有字段，点击上面的“新增字段”。'));
 }
 
+function setStatusPreviewExpanded(expanded) {
+    if (!greetingModal) return;
+    greetingModal.dataset.previewExpanded = expanded ? '1' : '0';
+    const button = greetingModal.querySelector('.status-atelier-preview-expand');
+    if (button) {
+        button.textContent = expanded ? '返回编辑' : '放大预览';
+        button.setAttribute('aria-expanded', String(expanded));
+    }
+    if (expanded) {
+        const wrap = greetingModal.querySelector('.status-atelier-modal-status-preview-wrap');
+        const toggle = greetingModal.querySelector('.status-atelier-preview-toggle');
+        if (wrap) wrap.dataset.collapsed = '0';
+        if (toggle) {
+            toggle.textContent = '收起预览';
+            toggle.setAttribute('aria-expanded', 'true');
+        }
+    }
+}
+
 function setGreetingModalWorkspace(target = 'opening') {
     const workspace = target === 'status' ? 'status' : 'opening';
     if (!greetingModal) return;
+    setStatusPreviewExpanded(false);
     greetingModal.dataset.workspace = workspace;
     const title = greetingModal.querySelector('#status-atelier-dialog-title');
     if (title) title.textContent = workspace === 'status' ? '制作状态栏' : '制作开场白主页';
@@ -6939,7 +7051,10 @@ function buildGreetingModal() {
         <section class="status-atelier-dialog" role="dialog" aria-modal="true" aria-labelledby="status-atelier-dialog-title">
             <header class="status-atelier-dialog-header">
                 <h3 id="status-atelier-dialog-title">制作开场白主页</h3>
-                <button type="button" class="menu_button" data-status-atelier-close aria-label="关闭">×</button>
+                <div class="status-atelier-dialog-header-actions">
+                    <button type="button" class="menu_button" id="status-atelier-open-full-workbench" title="打开完整工坊，管理导入导出、全局安装与备份">完整工坊</button>
+                    <button type="button" class="menu_button" data-status-atelier-close aria-label="关闭">×</button>
+                </div>
             </header>
             <div class="status-atelier-dialog-body">
                 <details class="status-atelier-dialog-note status-atelier-opening-only">
@@ -6947,6 +7062,19 @@ function buildGreetingModal() {
                     <p>不需要填写角色卡路径。插件自动定位酒馆当前打开的单人角色聊天；主开场白保留给作品主页，这里只读取该角色卡的额外问候语。有标题与简介注释就直接使用，没有才调用工坊选择的 AI。</p>
                 </details>
                 <div class="status-atelier-greeting-read-status status-atelier-opening-only" role="status" aria-live="polite"></div>
+                <details class="status-atelier-greeting-theme-step status-atelier-opening-only" open>
+                    <summary class="status-atelier-greeting-step-heading"><strong id="status-atelier-greeting-theme-title">1 · 选择主页外观</strong><small>先看预览，再往下填资料。</small></summary>
+                    <details class="status-atelier-greeting-preview-panel" open>
+                        <summary>实时预览</summary>
+                        <div class="status-atelier-greeting-live-preview"></div>
+                    </details>
+                    <div class="status-atelier-greeting-theme-list status-atelier-greeting-theme-favorites"></div>
+                    <details class="status-atelier-library-more status-atelier-greeting-theme-more">
+                        <summary>展开未收藏主页外观</summary>
+                        <div class="status-atelier-greeting-theme-list status-atelier-greeting-theme-others"></div>
+                    </details>
+                </details>
+                <p class="status-atelier-greeting-step-label status-atelier-opening-only"><strong>2 · 作品资料与线路</strong><small>读取当前角色卡的额外问候语，缺什么点「补全缺失项」。</small></p>
                 <div class="status-atelier-greeting-generate-step status-atelier-opening-only">
                     <div class="status-atelier-greeting-quick-actions">
                         <button type="button" class="menu_button" id="status-atelier-read-current-card">补全缺失项</button>
@@ -6955,31 +7083,24 @@ function buildGreetingModal() {
                     <small>补全会写入当前主页草稿；“生成并复制”只是临时工具，不保存、不改角色卡。</small>
                 </div>
                 <div class="status-atelier-greeting-list status-atelier-opening-only"></div>
-                <details class="status-atelier-greeting-theme-step status-atelier-opening-only">
-                    <summary class="status-atelier-greeting-step-heading"><strong id="status-atelier-greeting-theme-title">选择主页外观</strong><small>默认折叠；快捷区先显示收藏。</small></summary>
-                    <div class="status-atelier-greeting-theme-list status-atelier-greeting-theme-favorites"></div>
-                    <details class="status-atelier-library-more status-atelier-greeting-theme-more">
-                        <summary>展开未收藏主页外观</summary>
-                        <div class="status-atelier-greeting-theme-list status-atelier-greeting-theme-others"></div>
-                    </details>
-                    <details class="status-atelier-greeting-preview-panel" open>
-                        <summary>实时预览</summary>
-                        <div class="status-atelier-greeting-live-preview"></div>
-                    </details>
-                </details>
                 <section class="status-atelier-greeting-status-step">
+                    <div class="status-atelier-modal-status-preview-wrap" data-collapsed="0">
+                        <div class="status-atelier-preview-bar"><small>实时预览</small><div class="status-atelier-preview-actions">
+                            <button type="button" class="menu_button status-atelier-preview-expand" aria-expanded="false" aria-controls="status-atelier-modal-status-preview">放大预览</button>
+                            <button type="button" class="status-atelier-preview-toggle" aria-expanded="true" aria-controls="status-atelier-modal-status-preview">收起预览</button>
+                        </div></div>
+                        <div id="status-atelier-modal-status-preview" role="region" aria-label="状态栏实时预览" tabindex="0"></div>
+                    </div>
+                    <div class="status-atelier-editor-inspector">
                     <nav class="status-atelier-entry-mode-switch status-atelier-modal-entry-mode-switch" aria-label="状态栏操作模式">
-                        <button type="button" class="menu_button" data-status-entry-mode="simple" aria-pressed="true"><strong>简单模式</strong><small>AI 自动推荐并生成</small></button>
-                        <button type="button" class="menu_button" data-status-entry-mode="expert" aria-pressed="false"><strong>复杂模式</strong><small>手动换模板和字段</small></button>
+                        <button type="button" class="menu_button" data-status-entry-mode="simple" aria-pressed="true">AI 生成</button>
+                        <button type="button" class="menu_button" data-status-entry-mode="expert" aria-pressed="false">手动调整</button>
                     </nav>
+                    <div class="status-atelier-inspector-direct"></div>
                     <section class="status-atelier-ai-simple-flow status-atelier-modal-ai-simple-flow">
-                        <span class="status-atelier-ai-simple-badge">当前角色 · 简单模式</span>
                         <div class="status-atelier-ai-simple-copy">
-                            <h4>让 AI 按这个角色直接做好</h4>
-                            <p>读取当前角色卡、当前选中剧情与启用世界书，自动挑选合适的内置正则模板并生成预览。</p>
-                        </div>
-                        <div class="status-atelier-ai-source-list" aria-label="AI 读取范围">
-                            <span>角色卡设定</span><span>当前选中剧情</span><span>启用世界书</span>
+                            <h4>为当前角色制作</h4>
+                            <p>根据角色设定与当前剧情，选择模板并填写内容。</p>
                         </div>
                         <fieldset class="status-atelier-ai-methods" aria-label="选择生成方式">
                             <legend>选择生成方式</legend>
@@ -7022,29 +7143,46 @@ function buildGreetingModal() {
                     </section>
                     <details class="status-atelier-modal-status-advanced">
                         <summary><strong>调整状态栏</strong><small>结构、字段与色卡</small></summary>
+                        <nav class="status-atelier-editor-tabs" role="tablist" aria-label="编辑内容">
+                            <button type="button" id="sta-editor-tab-templates" role="tab" data-editor-tab="templates" aria-selected="true" aria-controls="sta-editor-panel-templates">模板</button>
+                            <button type="button" id="sta-editor-tab-content" role="tab" data-editor-tab="content" aria-selected="false" aria-controls="sta-editor-panel-content" tabindex="-1">内容</button>
+                            <button type="button" id="sta-editor-tab-appearance" role="tab" data-editor-tab="appearance" aria-selected="false" aria-controls="sta-editor-panel-appearance" tabindex="-1">外观</button>
+                        </nav>
+                        <section id="sta-editor-panel-templates" class="status-atelier-editor-panel" data-editor-panel="templates" role="tabpanel" aria-labelledby="sta-editor-tab-templates">
+                        <section class="status-atelier-tpl-picker" aria-label="选择模板">
+                            <div class="status-atelier-tpl-kinds" role="tablist" aria-label="作品类型"></div>
+                            <div class="status-atelier-tpl-tools"><input type="search" class="text_pole status-atelier-tpl-search" placeholder="搜索编号、名称或风格" aria-label="搜索模板"><small class="status-atelier-tpl-count"></small></div>
+                            <div class="status-atelier-tpl-gallery" role="listbox" aria-label="人物状态栏外观"></div>
+                        </section>
                         <div class="status-atelier-modal-status-controls">
                             <label>作品类型<select id="status-atelier-modal-status-structure" class="text_pole"></select></label>
                             <label>人物状态栏外观<select id="status-atelier-modal-status-style" class="text_pole"></select></label>
                         </div>
-                        <section id="status-atelier-modal-structure-controls" class="status-atelier-modal-structure-controls"></section>
-                        <details class="status-atelier-modal-schema-editor">
-                            <summary><strong>字段与 AI 动态数值</strong><small>增加、改名、改类型或删除</small></summary>
+                        </section>
+                        <section id="sta-editor-panel-content" class="status-atelier-editor-panel" data-editor-panel="content" role="tabpanel" aria-labelledby="sta-editor-tab-content" hidden>
+                        <details class="status-atelier-modal-schema-editor" open>
+                            <summary><strong>内容字段</strong><small>AI 会根据剧情填写这些内容</small></summary>
                             <button type="button" class="menu_button" id="status-atelier-modal-add-field">＋ 新增字段</button>
                             <div id="status-atelier-modal-status-schema" class="status-atelier-modal-schema-list"></div>
+                        </details>
+                        </section>
+                        <section id="sta-editor-panel-appearance" class="status-atelier-editor-panel" data-editor-panel="appearance" role="tabpanel" aria-labelledby="sta-editor-tab-appearance" hidden>
+                        <div class="status-atelier-editor-media-actions"></div>
+                        <details class="status-atelier-modal-look" open>
+                            <summary><strong>外观细节</strong><small>图片、背景与手机外壳</small></summary>
+                            <section id="status-atelier-modal-structure-controls" class="status-atelier-modal-structure-controls"></section>
                         </details>
                         <details class="status-atelier-status-palette-library">
                             <summary><strong>色卡</strong><small>只改变颜色</small></summary>
                             <div id="status-atelier-modal-status-palettes" class="status-atelier-status-palettes"></div>
                         </details>
+                        </section>
                         <div class="status-atelier-expert-install">
                             <button type="button" class="menu_button status-atelier-primary-action" id="status-atelier-modal-apply-status-expert">一键安装到当前角色</button>
                             <small>按当前复杂模式的模板、字段、图片和配色直接写入当前角色。</small>
                             <p class="status-atelier-modal-install-status" role="status" aria-live="polite"></p>
                         </div>
                     </details>
-                    <div class="status-atelier-modal-status-preview-wrap">
-                        <small>实时预览</small>
-                        <div id="status-atelier-modal-status-preview"></div>
                     </div>
                 </section>
                 <details class="status-atelier-greeting-more status-atelier-opening-only">
@@ -7052,11 +7190,14 @@ function buildGreetingModal() {
                     <div class="status-atelier-greeting-more-actions">
                         <button type="button" class="menu_button status-atelier-regenerate-all" id="status-atelier-regenerate-all">全部重新生成</button>
                         <button type="button" class="menu_button" id="status-atelier-modal-copy-home">复制主页标记</button>
-                        <button type="button" class="menu_button" id="status-atelier-open-full-workbench">打开完整工坊</button>
                     </div>
                     <small>高级工坊会保留 API、世界线、颜色和现有编辑内容。</small>
                 </details>
             </div>
+            <footer class="status-atelier-dialog-footer status-atelier-status-footer">
+                <p class="status-atelier-modal-install-status status-atelier-footer-status" role="status" aria-live="polite"></p>
+                <button type="button" class="menu_button status-atelier-primary-action" id="status-atelier-modal-footer-install">一键安装到当前角色</button>
+            </footer>
             <footer class="status-atelier-dialog-footer status-atelier-opening-only">
                 <button type="button" class="menu_button status-atelier-primary-action" id="status-atelier-modal-apply">一键生成并应用</button>
             </footer>
@@ -7076,7 +7217,7 @@ function buildGreetingModal() {
         setGreetingModalStatus('已复制主页标记【主页】；可以粘贴到主开场白。', 'success', 'copy');
         notify('success', '已复制主页标记【主页】；请放进主开场白');
     });
-    greetingModal.querySelector('#status-atelier-open-full-workbench').addEventListener('click', () => openFullWorkbench('opening'));
+    greetingModal.querySelector('#status-atelier-open-full-workbench').addEventListener('click', () => openFullWorkbench(greetingModal.dataset.workspace));
     greetingModal.querySelector('#status-atelier-modal-test-ai').addEventListener('click', event => testStatusAiGeneration(event.currentTarget, 'modal'));
     greetingModal.querySelector('#status-atelier-modal-ai-regenerate').addEventListener('click', event => testStatusAiGeneration(event.currentTarget, 'modal', true));
     greetingModal.querySelector('#status-atelier-modal-ai-save-template').addEventListener('click', saveCurrentStatusTemplate);
@@ -7106,6 +7247,53 @@ function buildGreetingModal() {
     greetingModal.querySelector('#status-atelier-modal-add-field').addEventListener('click', addStatusField);
     greetingModal.querySelector('#status-atelier-modal-apply-status').addEventListener('click', event => applyModalStatus(event.currentTarget));
     greetingModal.querySelector('#status-atelier-modal-apply-status-expert').addEventListener('click', event => applyModalStatus(event.currentTarget));
+    greetingModal.querySelector('#status-atelier-modal-footer-install').addEventListener('click', event => applyModalStatus(event.currentTarget));
+    greetingModal.querySelector('.status-atelier-preview-toggle').addEventListener('click', event => {
+        const wrap = event.currentTarget.closest('.status-atelier-modal-status-preview-wrap');
+        const collapsed = wrap.dataset.collapsed !== '1';
+        wrap.dataset.collapsed = collapsed ? '1' : '0';
+        event.currentTarget.textContent = collapsed ? '展开预览' : '收起预览';
+        event.currentTarget.setAttribute('aria-expanded', String(!collapsed));
+    });
+    greetingModal.querySelector('.status-atelier-preview-expand').addEventListener('click', () => {
+        setStatusPreviewExpanded(greetingModal.dataset.previewExpanded !== '1');
+    });
+    greetingModal.addEventListener('keydown', event => {
+        if (event.key !== 'Escape' || greetingModal.dataset.previewExpanded !== '1') return;
+        event.preventDefault();
+        event.stopPropagation();
+        setStatusPreviewExpanded(false);
+        greetingModal.querySelector('.status-atelier-preview-expand')?.focus();
+    });
+    const editorTabs = greetingModal.querySelector('.status-atelier-editor-tabs');
+    editorTabs.addEventListener('click', event => {
+        const button = event.target.closest('[data-editor-tab]');
+        if (button) setStatusEditorPanel(button.dataset.editorTab);
+    });
+    editorTabs.addEventListener('keydown', event => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        const tabs = [...editorTabs.querySelectorAll('[data-editor-tab]')];
+        const current = tabs.indexOf(event.target);
+        if (current < 0) return;
+        event.preventDefault();
+        const index = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1
+            : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+        setStatusEditorPanel(tabs[index].dataset.editorTab);
+        tabs[index].focus();
+    });
+    const picker = greetingModal.querySelector('.status-atelier-tpl-picker');
+    picker.addEventListener('click', event => {
+        const kind = event.target.closest('[data-tpl-kind]');
+        const card = event.target.closest('[data-tpl-id]');
+        const target = kind
+            ? greetingModal.querySelector('#status-atelier-modal-status-structure')
+            : card ? greetingModal.querySelector('#status-atelier-modal-status-style') : null;
+        const value = kind?.dataset.tplKind || card?.dataset.tplId;
+        if (!target || !value || target.value === value) return;
+        target.value = value;
+        target.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    picker.querySelector('.status-atelier-tpl-search').addEventListener('input', event => filterTemplatePicker(event.currentTarget.value));
     greetingModal.querySelector('#status-atelier-modal-apply').addEventListener('click', event => applyGreetingModal(event.currentTarget));
     document.body.append(greetingModal);
     setGreetingModalWorkspace('opening');
@@ -7117,6 +7305,10 @@ function openFullWorkbench(target = 'opening') {
     const drawerContent = document.querySelector('#rm_extensions_block');
     if (drawerContent?.classList.contains('closedDrawer')) {
         extensionsDrawer?.querySelector(':scope > .drawer-toggle')?.click();
+    }
+    if (settingsRoot) {
+        settingsRoot.dataset.full = '1';
+        settingsRoot.querySelector('.status-atelier-launch-full')?.setAttribute('aria-expanded', 'true');
     }
     setTimeout(() => {
         setWorkspace(target);
@@ -7434,6 +7626,7 @@ function openGreetingModal(target = 'opening') {
 }
 
 function closeGreetingModal() {
+    setStatusPreviewExpanded(false);
     snapshotCurrentOpeningProfile();
     context()?.saveSettingsDebounced?.();
     greetingModal?.classList.remove('status-atelier-modal-open');
@@ -7500,6 +7693,14 @@ async function addSettingsPanel() {
     settingsRoot = template.content.firstElementChild;
     host.append(settingsRoot);
     setStatusEntryMode('settings', 'expert');
+    // The drawer is only an entry point; the full workbench stays one tap away.
+    settingsRoot.dataset.full = '0';
+    settingsRoot.querySelectorAll('[data-status-atelier-launch]').forEach(button => button.addEventListener('click', () => openGreetingModal(button.dataset.statusAtelierLaunch)));
+    settingsRoot.querySelector('.status-atelier-launch-full')?.addEventListener('click', event => {
+        const full = settingsRoot.dataset.full !== '1';
+        settingsRoot.dataset.full = full ? '1' : '0';
+        event.currentTarget.setAttribute('aria-expanded', String(full));
+    });
 
     settingsRoot.querySelectorAll('[data-status-workspace]').forEach(button => button.addEventListener('click', () => setWorkspace(button.dataset.statusWorkspace)));
     settingsRoot.querySelectorAll('[data-status-entry-mode]').forEach(button => {

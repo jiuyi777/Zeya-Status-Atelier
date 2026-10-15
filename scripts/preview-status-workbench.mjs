@@ -55,7 +55,27 @@ button,input,textarea,select{font:inherit}button,[role=button],summary{cursor:po
     output.dataset.filename = link.download; output.textContent = text;
   });
 }, true);</script>
-<script type="module" src="${prefix}index.js"></script></html>`;
+<script type="module">
+await import('${prefix}index.js');
+if (new URLSearchParams(location.search).get('view') === 'editor-review') {
+  const openMaker = () => {
+    const entry = document.querySelector('[data-status-atelier-launch="status"]');
+    if (!entry) return false;
+    entry.click();
+    requestAnimationFrame(() => {
+      const manual = document.querySelector('#status-atelier-modal [data-status-entry-mode="expert"]');
+      manual?.click();
+      document.querySelector('#sta-editor-tab-templates')?.focus();
+    });
+    return true;
+  };
+  if (!openMaker()) {
+    const observer = new MutationObserver(() => { if (openMaker()) observer.disconnect(); });
+    observer.observe(document.getElementById('extensions_settings'), { childList:true, subtree:true });
+    setTimeout(() => observer.disconnect(), 10000);
+  }
+}
+</script></html>`;
 const types = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css',
   '.html': 'text/html', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg',
   '.webp': 'image/webp', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
