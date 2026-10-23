@@ -1,6 +1,6 @@
-## 酒馆助手脚本版 1.1.0
+## 酒馆助手脚本版 1.1.1
 
-[下载脚本 JSON](https://github.com/jiuyi777/Zeya-Status-Atelier/releases/download/script-v1.1.0/jiuyi-status-atelier.json)，导入酒馆助手的**全局脚本**并启用。使用「制作状态栏」「制作开场白」脚本按钮或魔杖菜单。不需要安装九一工坊扩展；若同名扩展已经启用，请先停用，避免重复挂载。
+[下载脚本 JSON](https://github.com/jiuyi777/Zeya-Status-Atelier/releases/download/script-v1.1.1/jiuyi-status-atelier.json)，导入酒馆助手的**全局脚本**并启用。使用「制作状态栏」「制作开场白」脚本按钮或魔杖菜单。不需要安装九一工坊扩展；若同名扩展已经启用，请先停用，避免重复挂载。
 
 本版复用原工坊，新增八款插画开场白。作品资料、目录标题、线路和摘要由当前角色数据或编辑内容生成；目录数量随实际开场变化。图片及原字体独立托管，导出的卡不重复内嵌大素材。首次加载需要联网。
 

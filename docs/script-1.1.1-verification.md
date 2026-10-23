@@ -1,4 +1,4 @@
-# 脚本版 1.1.0 验证记录
+# 脚本版 1.1.1 验证记录
 
 - 基线：原已发布 1.0.3，提交 68f79a36f87f750b12aaf7dcd9b13a5531fb371c。
 - 新增 8 款插画开场白，提取 11 幅 WebP 和 2 份原字体；原文件哈希见 provenance.json。
@@ -14,3 +14,5 @@
 ## 指南回执
 
 交付范围 component；路线 sillytavern-component-update；参考快照 2026-08-18；读取 A0/A2/A6/B2 与组件导入格式契约。没有打包或改写整张角色卡。运行时符号核对了酒馆助手的 getButtonEvent/eventOn 声明和现有工坊的宿主调用。
+
+- 发布资源核验发现 jsDelivr 仓库 50 MB 限制；1.1.1 改用 GitHub Raw，脚本读取为 Blob 模块，主样式合并读取，内页样式构建为 CSS data URL，避免 Raw 的文本 MIME 阻止样式加载。

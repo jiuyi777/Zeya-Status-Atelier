@@ -1,5 +1,5 @@
 import { ILLUSTRATED_DATA } from './opening-illustrated-data.js';
-export const ILLUSTRATED_ASSET_BASE = 'https://cdn.jsdelivr.net/gh/jiuyi777/Zeya-Status-Atelier@script-v1.1.0/assets/opening-illustrated/';
+export const ILLUSTRATED_ASSET_BASE = 'https://raw.githubusercontent.com/jiuyi777/Zeya-Status-Atelier/script-v1.1.1/assets/opening-illustrated/';
 export const ILLUSTRATED_THEMES = Object.values(ILLUSTRATED_DATA).map((t,i)=>({id:t.id,name:`${i+28} ${t.name}`,description:'原版插画 · 动态作品资料与开场目录',values:{theme:t.id,font:'serif'}}));
 export const isIllustratedTheme = theme => Object.hasOwn(ILLUSTRATED_DATA,theme);
 const escape = value=>String(value??'').replace(/[&<>"'`]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[c]));

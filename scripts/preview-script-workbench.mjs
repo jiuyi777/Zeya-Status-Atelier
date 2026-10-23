@@ -97,6 +97,6 @@ createServer(async (request, response) => {
       response.writeHead(403); response.end(); return;
     }
     response.setHeader('Content-Type', types[extname(file)] || 'application/octet-stream');
-    let content=await readFile(file); if(['.mjs','.js','.css'].includes(extname(file))){content=Buffer.from(content.toString().replaceAll('https://cdn.jsdelivr.net/gh/jiuyi777/Zeya-Status-Atelier@script-v1.1.0/', 'http://127.0.0.1:'+port+prefix));} response.end(content);
+    let content=await readFile(file); if(['.mjs','.js','.css'].includes(extname(file))){content=Buffer.from(content.toString().replaceAll('https://raw.githubusercontent.com/jiuyi777/Zeya-Status-Atelier/script-v1.1.1/', 'http://127.0.0.1:'+port+prefix));} response.end(content);
   } catch { response.writeHead(404); response.end(); }
 }).listen(port, '127.0.0.1', () => console.log(`Workbench UI: http://127.0.0.1:${port}/`));

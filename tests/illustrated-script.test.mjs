@@ -23,5 +23,5 @@ for(const theme of ILLUSTRATED_THEMES)for(const count of [0,1,5])test(`${theme.i
 test('script import artifact is stable and host module paths stay local',async()=>{
  const a=JSON.parse(await readFile(new URL('../script-version/jiuyi-status-atelier.json',import.meta.url)));
  assert.equal(a.type,'script');assert.equal(a.id,'jiuyi-status-atelier-script-v1');assert.equal(a.button.buttons.length,2);new Function(a.content);
- const bundle=await readFile(new URL('../script-version/workbench.mjs',import.meta.url),'utf8');assert.doesNotMatch(bundle,/from ["']\.\.\//);assert.match(bundle,/from "\/scripts\/extensions.js"/);assert.match(bundle,/bindEvents\(\);/);assert.match(bundle,/export \{/);
+ const bundle=await readFile(new URL('../script-version/workbench.mjs',import.meta.url),'utf8');assert.doesNotMatch(bundle,/from ["']\.\.\//);assert.match(bundle,/from "\/scripts\/extensions.js"/);assert.match(bundle,/bindEvents\(\);/);assert.match(bundle,/export \{/);assert.doesNotMatch(a.content,/cdn\.jsdelivr/);assert.match(a.content,/workbench\.css/);assert.match(bundle,/replaceString: isIllustratedTheme/);
 });

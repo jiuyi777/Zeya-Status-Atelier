@@ -1,7 +1,7 @@
-// 九一 · 状态与开场工坊 1.1.0 — run in a Tavern Helper global script.
+// 九一 · 状态与开场工坊 1.1.1 — run in a Tavern Helper global script.
 (async()=>{
  const host=window.parent,doc=host.document,key='__jiuyiStatusAtelierScriptV1';
- const base='https://cdn.jsdelivr.net/gh/jiuyi777/Zeya-Status-Atelier@script-v1.1.0/';
+ const base='https://raw.githubusercontent.com/jiuyi777/Zeya-Status-Atelier/script-v1.1.1/';
  if(!host.SillyTavern?.getContext){throw Error('请在酒馆助手的全局脚本中导入并启用。');}
  if(host[key]||doc.getElementById('status-atelier-settings')){host.toastr?.warning('九一工坊已经运行，请停用重复脚本或同名扩展后重试。');return;}
  const owner={stopped:false,api:null};host[key]=owner;
@@ -14,7 +14,9 @@
   let code=await response.text();
   code=code.replace(/from\s+(["'])(\/scripts\/[^"']+|\/script\.js)\1/g,(_,quote,file)=>'from '+JSON.stringify(host.location.origin+file));
   if(owner.stopped)return;
-  await new Promise((resolve,reject)=>{const link=doc.createElement('link');link.rel='stylesheet';link.href=base+'style.css';const timer=setTimeout(()=>reject(Error('工坊样式下载超时')),60000);link.onload=()=>{clearTimeout(timer);resolve();};link.onerror=()=>{clearTimeout(timer);reject(Error('工坊样式下载失败'));};nodes.push(link);doc.head.append(link);});
+  const css=await fetch(base+'script-version/workbench.css',{signal:AbortSignal.timeout(60000)});
+  if(!css.ok)throw Error('工坊样式下载失败：'+css.status);
+  const style=doc.createElement('style');style.textContent=await css.text();nodes.push(style);doc.head.append(style);
   if(owner.stopped){cleanup();return;}
   blobUrl=URL.createObjectURL(new Blob([code],{type:'text/javascript'}));
   await new Promise((resolve,reject)=>{

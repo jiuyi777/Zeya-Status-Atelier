@@ -246,7 +246,7 @@ export function buildOpeningHomeRegex(input = {}) {
         runOnEdit: true,
         findRegex: '/【主页】/s',
         trimStrings: [],
-        replaceString: replacementHtml(data).replaceAll(new URL('./assets/', import.meta.url).href, 'https://raw.githubusercontent.com/jiuyi777/Zeya-Status-Atelier/v0.11.41/assets/'),
+        replaceString: isIllustratedTheme(data.theme) ? replacementHtml(data) : replacementHtml(data).replaceAll(new URL('./assets/', import.meta.url).href, 'https://raw.githubusercontent.com/jiuyi777/Zeya-Status-Atelier/v0.11.41/assets/'),
         placement: [1, 2],
         substituteRegex: 0,
         minDepth: null,
