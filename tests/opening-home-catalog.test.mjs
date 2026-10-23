@@ -7,11 +7,11 @@ import { buildOpeningHomePreviewDocument, buildOpeningHomeRegex, normalizeOpenin
 import { createOpeningTemplate, parseOpeningTemplate } from '../opening-template-package.js';
 import { buildBloomPage } from '../opening-bloom-letter.js';
 
-test('the full catalog preserves all 12 early and 14 later designs with working preview targets',()=>{
- assert.equal(HOME_TEMPLATES.length,26);assert.equal(LEGACY_HOME_TEMPLATES.length,12);
- assert.equal(new Set(HOME_TEMPLATES.map(t=>t.id)).size,26);
+test('the full catalog preserves all 12 early, 14 later and 8 illustrated designs with working preview targets',()=>{
+ assert.equal(HOME_TEMPLATES.length,34);assert.equal(LEGACY_HOME_TEMPLATES.length,12);
+ assert.equal(new Set(HOME_TEMPLATES.map(t=>t.id)).size,34);
  const later=HOME_TEMPLATES.filter(t=>!LEGACY_HOME_TEMPLATES.includes(t));
- assert.deepEqual(later.map(t=>Number(t.name.match(/^\d+/)?.[0])),Array.from({length:14},(_,i)=>i+14));
+ assert.deepEqual(later.map(t=>Number(t.name.match(/^\d+/)?.[0])),Array.from({length:22},(_,i)=>i+14));
  for(const t of HOME_TEMPLATES){
   assert.equal(normalizeOpeningHomeSettings(t.values).theme,t.id);
   assert.equal(parseOpeningTemplate(createOpeningTemplate(t.values,t.name)).appearance.theme,t.id);
@@ -38,7 +38,7 @@ test('template chooser catalog follows numeric order across early and bundled de
  const numbers=HOME_TEMPLATES.map(item=>parseInt(item.name,10));
  assert.deepEqual(numbers,[...numbers].sort((a,b)=>a-b));
  assert.equal(numbers[0],1);
- assert.equal(numbers.at(-1),27);
+ assert.equal(numbers.at(-1),35);
 });
 
 test('scroll preview and exported regex retain revised readable typography and compact botanical frame',()=>{

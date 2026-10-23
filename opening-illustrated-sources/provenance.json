@@ -1,0 +1,136 @@
+{
+  "source": "User-provided ChatGPT original HTML documents",
+  "available": [
+    {
+      "id": "illustrated-flight",
+      "name": "双幅飞鸟",
+      "source": "01-双幅飞鸟-开场白主页.html",
+      "sha256": "77cc12a291e756fb13936670498a56e55117121679810a81169ed7315360b034"
+    },
+    {
+      "id": "illustrated-botanical",
+      "name": "花笺序页",
+      "source": "02-花笺序页-开场白主页.html",
+      "sha256": "618782fda7f371c6c768f2662aaa8883c852d1c744e2f57475dba1cf945e39d6"
+    },
+    {
+      "id": "illustrated-cobalt",
+      "name": "蓝墨来信",
+      "source": "03-蓝墨来信-开场白主页.html",
+      "sha256": "fb5db9e14270bf2c664cd9ddfe981804e9ff709ffe9f0515e685b8e6e9d75aa8"
+    },
+    {
+      "id": "illustrated-blue-letter",
+      "name": "蓝花来信",
+      "source": "04-蓝花来信-开场白主页.html",
+      "sha256": "5cb864759df0bbb1f526665aa9e43529ee1cb822a7ad687c68dcd52ac8710e58"
+    },
+    {
+      "id": "illustrated-cloud",
+      "name": "星夜云层",
+      "source": "星夜云层-开场白主页.html",
+      "sha256": "259532417a45782cec272665cf885d0879be0e6e9f908f2cb04ec64208b92098"
+    },
+    {
+      "id": "illustrated-ink",
+      "name": "墨迹拼贴",
+      "source": "墨迹拼贴-开场白主页.html",
+      "sha256": "15e0a5f555007c44b64b0e3b5d553e784977921163591cd7f778771a19e926ee"
+    },
+    {
+      "id": "illustrated-indigo",
+      "name": "靛蓝序章",
+      "source": "靛蓝序章-开场白主页.html",
+      "sha256": "6e74a6b3363292eb4ce8989c659abd318a3c6f2d185b9e6a44c9f71e7b3dbd06"
+    },
+    {
+      "id": "illustrated-index",
+      "name": "花间索引",
+      "source": "花间索引-开场白主页.html",
+      "sha256": "1fe7fe6bf801c5fa2426a7a04d21dd1f8b9a57e9ac878dbe9671b0245354c1e9"
+    }
+  ],
+  "missing": [
+    "旧街来信-图文错落版.html"
+  ],
+  "assets": [
+    {
+      "path": "01fa3ffff6c44b59483b.woff2",
+      "mime": "font/woff2",
+      "sha256": "01fa3ffff6c44b59483b4eb3898272fae30601dbf85701219e5c64203fab44e0",
+      "bytes": 8245656
+    },
+    {
+      "path": "c11e93147a33ef82468c.webp",
+      "mime": "image/webp",
+      "sha256": "c11e93147a33ef82468c65b53411de5248a5a489a55c84efdf5f474736b1f725",
+      "bytes": 241260
+    },
+    {
+      "path": "e833bd1e39ae53210932.webp",
+      "mime": "image/webp",
+      "sha256": "e833bd1e39ae5321093275c44fe935861d3fd215165ef7fcfd93952cc187cd6a",
+      "bytes": 619936
+    },
+    {
+      "path": "5f912b8ae3c7967a7e4f.woff2",
+      "mime": "font/woff2",
+      "sha256": "5f912b8ae3c7967a7e4fe4e615f9f6c33214658a104d7b9daf2e6689d55d5e54",
+      "bytes": 16708476
+    },
+    {
+      "path": "565aee69bc28af1528a0.webp",
+      "mime": "image/webp",
+      "sha256": "565aee69bc28af1528a033b5efed037fff77e8e9563c1fcc1af85c5726ee2c65",
+      "bytes": 364136
+    },
+    {
+      "path": "94cca4c4718d49a0d0a1.webp",
+      "mime": "image/webp",
+      "sha256": "94cca4c4718d49a0d0a16c82478e2f7b23919ca724bba859e29f825ec69a7ab9",
+      "bytes": 475948
+    },
+    {
+      "path": "1777ee67fc0b2b734b04.webp",
+      "mime": "image/webp",
+      "sha256": "1777ee67fc0b2b734b040217224d129d6e8e841d53e9eaed8117ec44b8e13a93",
+      "bytes": 496236
+    },
+    {
+      "path": "ac303319fbc21d93e49a.webp",
+      "mime": "image/webp",
+      "sha256": "ac303319fbc21d93e49ad8f4390bb8ff824213b7a3d50262c4c321b5ac263a5f",
+      "bytes": 289566
+    },
+    {
+      "path": "47126e52234975f3d4e4.webp",
+      "mime": "image/webp",
+      "sha256": "47126e52234975f3d4e4e54b88e7738992f14353027a7f759fac76111d884b46",
+      "bytes": 272376
+    },
+    {
+      "path": "639b0a089b172a3adb72.webp",
+      "mime": "image/webp",
+      "sha256": "639b0a089b172a3adb724da6adbf2ab9d769dbf135fb1f98e024b680a0d10b3f",
+      "bytes": 643320
+    },
+    {
+      "path": "143fae05c3c80971ea9a.webp",
+      "mime": "image/webp",
+      "sha256": "143fae05c3c80971ea9abcfa405c55bb026ee49a63c588c1132b47554ccd0cbc",
+      "bytes": 790534
+    },
+    {
+      "path": "2d63ea131ba62aee5f7d.webp",
+      "mime": "image/webp",
+      "sha256": "2d63ea131ba62aee5f7dcf0ab391d9eda4b45ab5aea9d3ad497c6ce4794f5527",
+      "bytes": 326490
+    },
+    {
+      "path": "a2e6518a982a0af461d5.webp",
+      "mime": "image/webp",
+      "sha256": "a2e6518a982a0af461d5a3674650aedbbb77bc8bbacf20f4af2afe792a849472",
+      "bytes": 347708
+    }
+  ]
+}

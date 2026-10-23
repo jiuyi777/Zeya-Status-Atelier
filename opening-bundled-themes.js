@@ -1,3 +1,4 @@
+import { isIllustratedTheme } from './opening-illustrated.js';
 import { buildStarPage } from './opening-star-atlas.js?v=0.11.41';
 import { buildLilyPage } from './opening-lily-moon.js?v=0.11.41';
 import { buildNoirPage } from './opening-sakura-noir.js?v=0.11.41';
@@ -20,7 +21,7 @@ export const BUNDLED_HOME_TEMPLATES = [
     ['floral-letter', '花间来信', '白金花卉 · 紧凑信笺', '#bca56b', '#57515e'],
     ['social-reference', '暗夜社交主页', '身份翻牌 · 资料表单 · 世界书开关', '#58a6ff', '#c9d1d9', 'sans'],
 ].map(([id, name, description, accent, text, font], index) => ({ id, name: `${index + 14} ${name}`, description, values: { theme: id, font: font || (['floral-letter', 'bloom-letter'].includes(id) ? 'kai' : 'serif'), accent, text } }));
-export const isBundledHomeTheme = theme => theme === 'social-reference' || Object.hasOwn(builders, theme);
+export const isBundledHomeTheme = theme => isIllustratedTheme(theme) || theme === 'social-reference' || Object.hasOwn(builders, theme);
 
 // Reuse the production navigation/worldbook runtime, with the approved sample layout.
 export function buildBundledHomeDocument(data, navigationScript) {

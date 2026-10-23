@@ -1,3 +1,4 @@
+import { isIllustratedTheme } from './opening-illustrated.js';
 import { HOME_TEMPLATES } from './opening-home-catalog.js?v=1.0.0';
 import { mountOpeningReturnNavigation, buildOpeningReturnRegex, stripOpeningReturnMarker } from './opening-return-navigation.js?v=1.0.1';
 import { createOpeningImagePicker } from './opening-image-picker.js?v=0.11.43';
@@ -150,7 +151,7 @@ import { getCharaFilename } from '../../../utils.js';
 import { createStatusInstallInstance } from './status-install-instance.js?v=0.11.43';
 const MODULE_NAME = 'status_atelier';
 const PROMPT_KEY = 'status_atelier_generated_rule';
-const VERSION = '1.0.3';
+const VERSION = '1.1.0';
 const OPENING_HOME_SCHEMA_VERSION = 2;
 const SOCIAL_THEME_ART_URLS = Object.freeze({
     'personal-dossier': new URL('./assets/personal-feed/blue-fabric-scrapbook-v1-compact.jpg', import.meta.url).href,
@@ -1721,7 +1722,8 @@ function renderOpeningHomePreview(host) {
     if (isBundledHomeTheme(data.theme) || REFINED_HOME_THEMES.includes(data.theme)) {
         const frame = makeElement('iframe');
         frame.title = '开场白主页预览';
-        frame.setAttribute('sandbox', 'allow-scripts');
+        // Only reviewed built-in illustrated scripts run here; user text is escaped by the generator.
+        frame.setAttribute('sandbox', isIllustratedTheme(data.theme) ? 'allow-scripts allow-same-origin' : 'allow-scripts');
         frame.style.cssText = 'width:100%;height:700px;border:0;';
         frame.srcdoc = buildOpeningHomePreviewDocument(data);
         host.replaceChildren(frame);

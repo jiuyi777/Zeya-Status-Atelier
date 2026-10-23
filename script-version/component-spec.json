@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "deliveryMode": "component",
+  "kind": "helper-script",
+  "items": [
+    {
+      "artifactName": "jiuyi-status-atelier",
+      "value": {
+        "type": "script",
+        "enabled": true,
+        "name": "九一 · 状态与开场工坊（脚本版）",
+        "id": "jiuyi-status-atelier-script-v1",
+        "content": "// 九一 · 状态与开场工坊 1.1.0 — run in a Tavern Helper global script.\r\n(async()=>{\r\n const host=window.parent,doc=host.document,key='__jiuyiStatusAtelierScriptV1';\r\n const base='https://cdn.jsdelivr.net/gh/jiuyi777/Zeya-Status-Atelier@script-v1.1.0/';\r\n if(!host.SillyTavern?.getContext){throw Error('请在酒馆助手的全局脚本中导入并启用。');}\r\n if(host[key]||doc.getElementById('status-atelier-settings')){host.toastr?.warning('九一工坊已经运行，请停用重复脚本或同名扩展后重试。');return;}\r\n const owner={stopped:false,api:null};host[key]=owner;\r\n const nodes=[];let blobUrl='';\r\n const cleanup=()=>{owner.stopped=true;owner.api?.disposeScriptWorkbench();nodes.forEach(n=>n.remove());if(blobUrl)URL.revokeObjectURL(blobUrl);if(host[key]===owner)delete host[key];};\r\n window.addEventListener('pagehide',cleanup,{once:true});\r\n try{\r\n  const response=await fetch(base+'script-version/workbench.mjs',{signal:AbortSignal.timeout(60000)});\r\n  if(!response.ok)throw Error('脚本资源下载失败：'+response.status);\r\n  let code=await response.text();\r\n  code=code.replace(/from\\s+([\"'])(\\/scripts\\/[^\"']+|\\/script\\.js)\\1/g,(_,quote,file)=>'from '+JSON.stringify(host.location.origin+file));\r\n  if(owner.stopped)return;\r\n  await new Promise((resolve,reject)=>{const link=doc.createElement('link');link.rel='stylesheet';link.href=base+'style.css';const timer=setTimeout(()=>reject(Error('工坊样式下载超时')),60000);link.onload=()=>{clearTimeout(timer);resolve();};link.onerror=()=>{clearTimeout(timer);reject(Error('工坊样式下载失败'));};nodes.push(link);doc.head.append(link);});\r\n  if(owner.stopped){cleanup();return;}\r\n  blobUrl=URL.createObjectURL(new Blob([code],{type:'text/javascript'}));\r\n  await new Promise((resolve,reject)=>{\r\n   const timer=setTimeout(()=>reject(Error('工坊启动超时，请检查酒馆版本与控制台错误')),60000);\r\n   owner.ready=()=>{clearTimeout(timer);resolve();};owner.failed=error=>{clearTimeout(timer);reject(error);};\r\n   const element=doc.createElement('script');element.type='module';\r\n   element.textContent=`try { const api=await import(${JSON.stringify(blobUrl)}); const owner=window[${JSON.stringify(key)}]; if(owner&&!owner.stopped){ owner.api=api; await api.mountScriptWorkbench(); if(owner.stopped)api.disposeScriptWorkbench(); else owner.ready(); } } catch(error){window[${JSON.stringify(key)}]?.failed(error);}`;\r\n   nodes.push(element);doc.head.append(element);\r\n  });\r\n  if(owner.stopped){cleanup();return;}\r\n  for(const [label,kind] of [['制作状态栏','status'],['制作开场白','opening']]){\r\n   if(typeof eventOn==='function'&&typeof getButtonEvent==='function')eventOn(getButtonEvent(label),()=>owner.api.openScriptWorkbench(kind));\r\n  }\r\n  host.toastr?.success('九一脚本工坊已就绪，可从脚本按钮或魔杖菜单打开。');\r\n }catch(error){cleanup();host.toastr?.error(error.message,'九一工坊加载失败');console.error('[九一工坊]',error.message);}\r\n})();\r\n",
+        "info": "九一｜1.1.0｜酒馆助手全局脚本。保留原状态栏工坊、八款插画开场与动态角色数据。需要 SillyTavern 原生接口；勿与同名扩展同时启用。",
+        "button": {
+          "enabled": true,
+          "buttons": [
+            {
+              "name": "制作状态栏",
+              "visible": true
+            },
+            {
+              "name": "制作开场白",
+              "visible": true
+            }
+          ]
+        },
+        "data": {},
+        "export_with": {
+          "data": true,
+          "button": true
+        }
+      }
+    }
+  ]
+}

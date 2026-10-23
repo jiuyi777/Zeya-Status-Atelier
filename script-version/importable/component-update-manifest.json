@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "deliveryMode": "component",
+  "kind": "helper-script",
+  "artifacts": [
+    {
+      "artifactName": "jiuyi-status-atelier",
+      "id": "jiuyi-status-atelier-script-v1",
+      "kind": "helper-script",
+      "relativePath": "jiuyi-status-atelier.script.json",
+      "sha256": "58a9c05b6f45dfd421ec55bc724158d98c2d3f5f23ee1398bcc0830a94f4af41"
+    }
+  ]
+}

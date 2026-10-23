@@ -1,3 +1,4 @@
+import { isIllustratedTheme, buildIllustratedDocument } from './opening-illustrated.js';
 import { withClassicalFrame } from './opening-classical-frame.js?v=0.11.41';
 import { EDITORIAL_HOME_STYLE } from './opening-editorial-style.js?v=0.11.41';
 import { buildOpeningReturnRegex } from './opening-return-navigation.js?v=1.0.1';
@@ -224,7 +225,7 @@ function replacementHtml(input) {
 </body>
 </html>`.trim();
     const dedicatedStyle = data.theme === 'classical' ? CLASSICAL_HOME_STYLE : data.theme === 'scroll' ? SCROLL_HOME_STYLE : data.theme === 'editorial' ? EDITORIAL_HOME_STYLE : null;
-    const output = dedicatedStyle ? documentHtml.replace(/<style>[\s\S]*?<\/style>/, () => `<style>${dedicatedStyle}</style>`) : REFINED_HOME_THEMES.includes(data.theme) ? buildRefinedHomeDocument(data, documentHtml.match(/<script>([\s\S]*?)<\/script>/)[1]) : isBundledHomeTheme(data.theme) ? buildBundledHomeDocument(data, documentHtml.match(/<script>([\s\S]*?)<\/script>/)[1]) : documentHtml;
+    const output = isIllustratedTheme(data.theme) ? buildIllustratedDocument(data, documentHtml.match(/<script>([\s\S]*?)<\/script>/)[1]) : dedicatedStyle ? documentHtml.replace(/<style>[\s\S]*?<\/style>/, () => `<style>${dedicatedStyle}</style>`) : REFINED_HOME_THEMES.includes(data.theme) ? buildRefinedHomeDocument(data, documentHtml.match(/<script>([\s\S]*?)<\/script>/)[1]) : isBundledHomeTheme(data.theme) ? buildBundledHomeDocument(data, documentHtml.match(/<script>([\s\S]*?)<\/script>/)[1]) : documentHtml;
     // The following return rule receives this rendered HTML, not the original homepage token.
     return ['```html', (data.theme === 'classical' ? withClassicalFrame(output) : output).replace('<body>', '<body><!--sta-opening-home-->'), '```'].join('\n');
 }

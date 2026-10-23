@@ -1,6 +1,8 @@
+import { ILLUSTRATED_THEMES } from './opening-illustrated.js';
 import { BUNDLED_HOME_TEMPLATES } from './opening-bundled-themes.js?v=0.11.43';
 
 export const HOME_TEMPLATES = Object.freeze([
+    ...ILLUSTRATED_THEMES,
     ...BUNDLED_HOME_TEMPLATES,
     {
         id: 'classical', name: '01 古典徽章', description: '古籍笺页 · 墨字朱印 · 章回目录',
@@ -52,7 +54,7 @@ export const HOME_TEMPLATES = Object.freeze([
     },
 ].sort((left, right) => parseInt(left.name, 10) - parseInt(right.name, 10)));
 
-export const LEGACY_HOME_TEMPLATES = HOME_TEMPLATES.filter(t => !BUNDLED_HOME_TEMPLATES.some(b => b.id === t.id));
+export const LEGACY_HOME_TEMPLATES = HOME_TEMPLATES.filter(t => !ILLUSTRATED_THEMES.some(b => b.id === t.id) && !BUNDLED_HOME_TEMPLATES.some(b => b.id === t.id));
 export function openingPreviewHref(id) {
   if (!HOME_TEMPLATES.some(t => t.id === id)) throw new Error('未知开场白模板');
   if (id === 'social-reference') return './opening-home-preview.html?theme=' + id;
